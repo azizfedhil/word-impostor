@@ -17,8 +17,8 @@
     <meta name="apple-mobile-web-app-title" content="الدخيل">
     <link rel="apple-touch-icon" href="icon-192.png">
 
-    <!-- Version bumped to 4.9 to force CSS update -->
-    <link rel="stylesheet" href="style.css?v=4.9">
+    <!-- Version bumped to 5.0 -->
+    <link rel="stylesheet" href="style.css?v=5.0">
 </head>
 <body>
     <div class="orb orb-1"></div>
@@ -26,27 +26,34 @@
     <div class="orb orb-3"></div>
 
     <div class="container">
+        
+        <!-- Language Toggle -->
+        <div class="lang-switch">
+            <div class="lang-btn" data-lang="ar">عربي</div>
+            <div class="lang-btn active" data-lang="tn">تونسي</div>
+        </div>
+
         <header>
-            <h1>🕵️‍♂️ من هو الدخيل؟</h1>
+            <h1 data-i18n="title">🕵️‍♂️ شكونو هو؟</h1>
         </header>
 
         <div id="setup-screen" class="screen active">
-            <h2>إعدادات الجولة</h2>
+            <h2 data-i18n="settings_title">ريڨلاج الطرح</h2>
 
             <div class="settings-group">
-                <label>👥 أسماء اللاعبين:</label>
+                <label data-i18n="players_label">👥 اساميكم:</label>
                 <div id="players-inputs-container"></div>
-                <button type="button" id="add-player-btn" class="secondary-btn">➕ إضافة لاعب آخر</button>
+                <button type="button" id="add-player-btn" class="secondary-btn" data-i18n="add_player_btn">➕ زيد واحد اخر</button>
             </div>
 
-            <!-- New Side-By-Side Layout for Impostors and Timer Settings -->
+            <!-- Side-By-Side Layout -->
             <div class="settings-row">
                 <div class="setting-card" id="btn-edit-impostors">
-                    <span class="label">🎭 عدد الدخلاء</span>
+                    <span class="label" data-i18n="impostors_label">🎭 قداش من كذاب</span>
                     <span class="value" id="val-impostors">1</span>
                 </div>
                 <div class="setting-card" id="btn-edit-timer">
-                    <span class="label">⏱️ مدة الجولة</span>
+                    <span class="label" data-i18n="timer_label">⏱️ وقت الطرح</span>
                     <span class="value" id="val-timer">03:00</span>
                 </div>
             </div>
@@ -54,69 +61,74 @@
             <!-- Advanced options collapsible -->
             <div class="advanced-wrapper">
                 <button type="button" id="advanced-toggle-btn" class="advanced-toggle-btn">
-                    <span>🔧 خيارات متقدمة</span>
+                    <span data-i18n="advanced_btn">🔧 زيد بربش</span>
                     <span class="chevron" id="advanced-chevron">▼</span>
                 </button>
                 <div id="advanced-panel" class="advanced-panel">
                     <div class="advanced-inner">
                         <div class="settings-group checkbox-group">
                             <input type="checkbox" id="random-impostors-toggle">
-                            <label for="random-impostors-toggle">🎲 عدد عشوائي من الدخلاء</label>
+                            <label for="random-impostors-toggle" data-i18n="adv_random">🎲 كذابين على كيف اللعبة</label>
+                            <span class="info-icon" data-info="random">ℹ️</span>
                         </div>
                         <div class="settings-group checkbox-group">
                             <input type="checkbox" id="all-impostors-toggle">
-                            <label for="all-impostors-toggle">😈 وضع الفوضى</label>
+                            <label for="all-impostors-toggle" data-i18n="adv_chaos">😈 خلوضها</label>
+                            <span class="info-icon" data-info="chaos">ℹ️</span>
                         </div>
                         <div class="settings-group checkbox-group">
                             <input type="checkbox" id="elimination-mode">
-                            <label for="elimination-mode">⚔️ وضع الاستبعاد</label>
+                            <label for="elimination-mode" data-i18n="adv_elimination">⚔️ نقص بالواحد بالواحد</label>
+                            <span class="info-icon" data-info="elimination">ℹ️</span>
                         </div>
                         <div class="settings-group checkbox-group">
                             <input type="checkbox" id="no-hints-toggle">
-                            <label for="no-hints-toggle">🙈 إخفاء التلميح عن الدخيل</label>
+                            <label for="no-hints-toggle" data-i18n="adv_nohint">🙈 سبورة كحلة مع الكذاب</label>
+                            <span class="info-icon" data-info="nohint">ℹ️</span>
                         </div>
                         <div class="settings-group checkbox-group">
                             <input type="checkbox" id="all-correct-hints-toggle">
-                            <label for="all-correct-hints-toggle">💡 منح جميع الدخلاء التلميح الصحيح</label>
+                            <label for="all-correct-hints-toggle" data-i18n="adv_allhint">💡 الكذابين الكل ياخذو نفس التلميح</label>
+                            <span class="info-icon" data-info="allhint">ℹ️</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <button id="start-game-btn" class="primary-btn glow-btn">🚀 بدء اللعبة</button>
+            <button id="start-game-btn" class="primary-btn glow-btn" data-i18n="start_btn">🚀 انافا</button>
             <p id="setup-error" class="error-msg"></p>
         </div>
 
         <div id="reveal-screen" class="screen">
-            <h2>🃏 توزيع الأدوار</h2>
+            <h2 data-i18n="reveal_title">🃏 شكون شنية</h2>
             <h3 id="current-player-turn-msg" style="color: var(--accent-color);"></h3>
-            <p id="reveal-instructions">اضغط مطولاً على البطاقة لمعرفة دورك، عند إفلات الضغط ستختفي البطاقة.</p>
+            <p id="reveal-instructions" data-i18n="reveal_instructions">اقعد نازل على الكارتة باش تعرف دورك، كي تسيبها تعاود تدور.</p>
             <div id="single-card-container" class="single-card-wrapper"></div>
             <button id="next-player-btn" class="primary-btn hidden"></button>
         </div>
 
         <div id="timer-screen" class="screen">
-            <h2>💬 وقت النقاش</h2>
+            <h2 data-i18n="discussion_title">💬 وقت التقطييع والترييش</h2>
             <div id="starter-player" class="starter-player"></div>
             <div id="timer-display" class="timer">03:00</div>
-            <button id="go-to-vote-btn" class="danger-btn">🗳️ إنهاء النقاش والتصويت</button>
+            <button id="go-to-vote-btn" class="danger-btn" data-i18n="vote_btn">🗳️ سكر عليا، عرفنا البلعوط</button>
         </div>
 
         <div id="voting-screen" class="screen">
-            <h2>🗳️ التصويت</h2>
-            <p>من تعتقدون أنه الدخيل؟</p>
+            <h2 data-i18n="voting_title">🗳️ الفرز</h2>
+            <p data-i18n="who_impostor">شكونو البلعوط؟</p>
             <div id="voting-list" class="voting-grid"></div>
         </div>
 
         <div id="result-screen" class="screen">
-            <h2>🏆 النتيجة</h2>
+            <h2 data-i18n="result_title">🏆 شكون طلع؟</h2>
             <p id="result-message"></p>
             <div id="impostors-reveal" class="reveal-box"></div>
-            <button id="next-round-btn" class="primary-btn">🔄 متابعة / جولة جديدة</button>
+            <button id="next-round-btn" class="primary-btn" data-i18n="next_round_btn">🔄 عاود انده</button>
         </div>
     </div>
 
-    <!-- Modal window for Impostor and Timer adjustments -->
+    <!-- Modal window for Edit Impostor and Timer -->
     <div id="edit-modal" class="modal hidden">
         <div class="modal-content">
             <h3 id="modal-title">تعديل</h3>
@@ -125,30 +137,30 @@
                 <span id="modal-val">1</span>
                 <button id="btn-plus" class="primary-btn">+</button>
             </div>
-            <button id="btn-confirm" class="primary-btn">تم</button>
+            <button id="btn-confirm" class="primary-btn" data-i18n="done_btn">مريڨل</button>
         </div>
     </div>
 
-    <!-- Version bumped to 4.9 to force JS update -->
-    <script src="app.js?v=4.9"></script>
+    <!-- Modal window for Info Explanations -->
+    <div id="info-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3 data-i18n="info_title">ℹ️ معلومة</h3>
+            <p id="info-modal-text" style="line-height: 1.6; font-size: 16px;"></p>
+            <button id="close-info-btn" class="primary-btn" data-i18n="close_btn">فهمت</button>
+        </div>
+    </div>
 
-   <!-- Version bumped to 4.9 to force JS update -->
-    <script src="app.js?v=4.9"></script>
+    <!-- Version bumped to 5.0 -->
+    <script src="app.js?v=5.0"></script>
 
     <script>
-      // Register standard Service Worker without the infinite-loop timestamp
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./sw.js')
-            .then(reg => {
-              // Optionally check for updates silently in the background
-              reg.update();
-              console.log('SW registered.');
-            })
+            .then(reg => { reg.update(); })
             .catch(err => console.warn('SW registration failed:', err));
         });
 
-        // Safely reload ONLY if a genuine update is found and applied
         let refreshing = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
             if (!refreshing) {
@@ -158,7 +170,5 @@
         });
       }
     </script>
-</body>
-</html>
 </body>
 </html>
