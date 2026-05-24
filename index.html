@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة الدخيل (Word Impostor)</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🕵️‍♂️ من هو الدخيل؟</h1>
+        </header>
+
+        <div id="setup-screen" class="screen active">
+            <h2>إعدادات الجولة</h2>
+            
+            <div class="settings-group">
+                <label>أسماء اللاعبين:</label>
+                <div id="players-inputs-container">
+                    </div>
+                <button type="button" id="add-player-btn" class="secondary-btn">➕ إضافة لاعب آخر</button>
+            </div>
+
+            <div class="settings-group">
+                <label for="impostor-count">عدد الدخلاء:</label>
+                <input type="number" id="impostor-count" value="1" min="1">
+            </div>
+
+            <div class="settings-group checkbox-group">
+                <input type="checkbox" id="random-impostors-toggle">
+                <label for="random-impostors-toggle">عدد عشوائي من الدخلاء (يتجاهل الرقم المحدد أعلاه)</label>
+            </div>
+
+            <div class="settings-group checkbox-group">
+                <input type="checkbox" id="all-impostors-toggle">
+                <label for="all-impostors-toggle">تفعيل فرصة "الجميع دخلاء" عشوائياً</label>
+            </div>
+
+            <div class="settings-group checkbox-group">
+                <input type="checkbox" id="elimination-mode">
+                <label for="elimination-mode">وضع الاستبعاد (عند التصويت الخاطئ، يُستبعد اللاعب وتستمر اللعبة بدون كشف الدخيل)</label>
+            </div>
+
+            <div class="settings-group">
+                <label for="timer-minutes">مدة الجولة (بالدقائق):</label>
+                <input type="number" id="timer-minutes" value="3" min="1">
+            </div>
+
+            <button id="start-game-btn" class="primary-btn">بدء اللعبة</button>
+            <p id="setup-error" class="error-msg"></p>
+        </div>
+
+        <div id="reveal-screen" class="screen">
+            <h2>توزيع الأدوار</h2>
+            <h3 id="current-player-turn-msg" style="color: var(--accent-color);"></h3>
+            <p id="reveal-instructions">اضغط على البطاقة لمعرفة دورك.</p>
+            
+            <div id="single-card-container" class="single-card-wrapper"></div>
+            
+            <button id="next-player-btn" class="primary-btn hidden"></button>
+        </div>
+
+        <div id="timer-screen" class="screen">
+            <h2>وقت النقاش</h2>
+            <div id="timer-display" class="timer">03:00</div>
+            <button id="go-to-vote-btn" class="danger-btn">إنهاء النقاش والتصويت</button>
+        </div>
+
+        <div id="voting-screen" class="screen">
+            <h2>التصويت</h2>
+            <p>من تعتقدون أنه الدخيل؟</p>
+            <div id="voting-list" class="voting-grid"></div>
+        </div>
+
+        <div id="result-screen" class="screen">
+            <h2>النتيجة</h2>
+            <p id="result-message"></p>
+            <div id="impostors-reveal" class="reveal-box"></div>
+            <button id="next-round-btn" class="primary-btn">متابعة / جولة جديدة</button>
+        </div>
+
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
