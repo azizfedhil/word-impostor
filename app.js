@@ -134,6 +134,23 @@ let impostorConfig = 1;
 let timerConfig = 3;
 let playerCount = 0;
 
+// ====== LOCAL STORAGE LOGIC ======
+function saveSettings() {
+    const playerInputs = Array.from(document.querySelectorAll('.player-input')).map(input => input.value);
+    const settings = {
+        players: playerInputs,
+        impostors: impostorConfig,
+        timer: timerConfig,
+        lang: currentLang,
+        randomImpostors: document.getElementById('random-impostors-toggle').checked,
+        chaos: document.getElementById('all-impostors-toggle').checked,
+        elimination: document.getElementById('elimination-mode').checked,
+        noHints: document.getElementById('no-hints-toggle').checked,
+        allCorrect: document.getElementById('all-correct-hints-toggle').checked
+    };
+    localStorage.setItem('dakheel_settings', JSON.stringify(settings));
+}
+
 // Language Toggle Function
 function applyTranslations() {
     // Apply static text
@@ -149,6 +166,15 @@ function applyTranslations() {
         input.placeholder = i18n[currentLang].player_placeholder;
     });
 
+    // Update Language Buttons UI
+    document.querySelectorAll('.lang-btn').forEach(b => {
+        if (b.getAttribute('data-lang') === currentLang) {
+            b.classList.add('active');
+        } else {
+            b.classList.remove('active');
+        }
+    });
+
     // Update Modals dynamically if open
     const modalTitle = document.getElementById('modal-title');
     if (modalTitle.innerText.includes("تعديل") || modalTitle.innerText.includes("بدّل")) {
@@ -158,7 +184,7 @@ function applyTranslations() {
     }
 }
 
-function addPlayerInput() {
+function addPlayerInput(savedName = '') {
     const playersContainer = document.getElementById('players-inputs-container');
     if (!playersContainer) return;
     playerCount++;
@@ -167,13 +193,21 @@ function addPlayerInput() {
     const input = document.createElement('input');
     input.type = 'text';
     input.className = 'player-input';
-    input.value = ''; 
+    input.value = savedName; 
     input.placeholder = i18n[currentLang].player_placeholder;
+    
+    // Save when user types a name
+    input.addEventListener('input', saveSettings);
+
     const removeBtn = document.createElement('button');
     removeBtn.type = 'button';
     removeBtn.className = 'remove-player-btn danger-btn';
     removeBtn.innerHTML = '✖';
-    removeBtn.addEventListener('click', () => { row.remove(); });
+    removeBtn.addEventListener('click', () => { 
+        row.remove(); 
+        saveSettings(); // Save when user deletes a player
+    });
+    
     row.appendChild(input);
     row.appendChild(removeBtn);
     playersContainer.appendChild(row);
@@ -184,20 +218,56 @@ let tempVal = 1;
 
 window.addEventListener('DOMContentLoaded', () => {
     
-    // Set initial translations
+    // Load Settings from Local Storage
+    const saved = localStorage.getItem('dakheel_settings');
+    if (saved) {
+        const parsed = JSON.parse(saved);
+        currentLang = parsed.lang || 'tn';
+        
+        // Load checkboxes
+        document.getElementById('random-impostors-toggle').checked = !!parsed.randomImpostors;
+        document.getElementById('all-impostors-toggle').checked = !!parsed.chaos;
+        document.getElementById('elimination-mode').checked = !!parsed.elimination;
+        document.getElementById('no-hints-toggle').checked = !!parsed.noHints;
+        document.getElementById('all-correct-hints-toggle').checked = !!parsed.allCorrect;
+
+        // Load configs
+        impostorConfig = parsed.impostors || 1;
+        timerConfig = parsed.timer || 3;
+
+        // Load players
+        if (parsed.players && parsed.players.length > 0) {
+            parsed.players.forEach(name => addPlayerInput(name));
+        } else {
+            for (let i = 1; i <= 4; i++) addPlayerInput();
+        }
+    } else {
+        for (let i = 1; i <= 4; i++) addPlayerInput();
+    }
+
+    document.getElementById('val-impostors').innerText = impostorConfig;
+    document.getElementById('val-timer').innerText = timerConfig.toString().padStart(2, '0') + ':00';
+
     applyTranslations();
+
+    // Trigger changes manually to apply UI locking rules
+    document.getElementById('random-impostors-toggle').dispatchEvent(new Event('change'));
+    document.getElementById('no-hints-toggle').dispatchEvent(new Event('change'));
+    document.getElementById('all-correct-hints-toggle').dispatchEvent(new Event('change'));
+
+    // Listen to Checkbox changes to save them instantly
+    document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        cb.addEventListener('change', saveSettings);
+    });
 
     // Language Switcher Logic
     document.querySelectorAll('.lang-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
-            e.target.classList.add('active');
             currentLang = e.target.getAttribute('data-lang');
             applyTranslations();
+            saveSettings();
         });
     });
-
-    for (let i = 1; i <= 4; i++) addPlayerInput();
 
     // Modals
     const editModal = document.getElementById('edit-modal');
@@ -246,6 +316,7 @@ window.addEventListener('DOMContentLoaded', () => {
             timerConfig = tempVal;
             document.getElementById('val-timer').innerText = timerConfig.toString().padStart(2, '0') + ':00';
         }
+        saveSettings(); // Save configs
         editModal.classList.remove('active');
         setTimeout(() => editModal.classList.add('hidden'), 300);
     };
@@ -318,7 +389,10 @@ window.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-document.getElementById('add-player-btn').addEventListener('click', () => { addPlayerInput(); });
+document.getElementById('add-player-btn').addEventListener('click', () => { 
+    addPlayerInput(); 
+    saveSettings(); 
+});
 
 fetch('word list.json', { cache: 'no-store' })
     .then(r => r.json())
@@ -344,6 +418,8 @@ function triggerAnimation(type) {
 }
 
 document.getElementById('start-game-btn').addEventListener('click', () => {
+    saveSettings(); // Ensure settings are saved right before starting
+
     const namesInput = Array.from(document.querySelectorAll('.player-input'))
                            .map((input, idx) => input.value.trim() || `لاعب ${idx + 1}`);
 
@@ -408,9 +484,6 @@ document.getElementById('start-game-btn').addEventListener('click', () => {
     remainingTime = timeMins * 60;
     currentRevealIndex = 0;
     
-    // Set static text for Reveal screen based on language
-    const currentMsgEl = document.getElementById('current-player-turn-msg');
-    // Using simple text content replacement for dynamic labels
     renderSingleCard();
     showScreen('reveal-screen');
 });
@@ -424,7 +497,6 @@ function renderSingleCard() {
     nextBtn.classList.add('hidden');
 
     const player = players[currentRevealIndex];
-    // "الدور الحالي: يا " or "دالّتك يا "
     titleMsg.innerText = (currentLang === 'tn' ? "دالّتك يا " : "الدور الحالي: يا ") + player.name;
 
     const card = document.createElement('div');
