@@ -1,807 +1,807 @@
 [
   {
     "word": "كسكسي",
-    "hint": "طعام تقليدي",
+    "hint": "تقليدي",
     "category": "Food"
   },
-   {
+  {
     "word": "فؤاد",
     "hint": "طحان",
     "category": "people"
   },
   {
     "word": "لبلابي",
-    "hint": "أكلة شعبية",
+    "hint": "شعبية",
     "category": "Food"
   },
   {
     "word": "بريك",
-    "hint": "طبق مقرمش",
+    "hint": "مقرمش",
     "category": "Food"
   },
   {
     "word": "هريسة",
-    "hint": "مذاق حار",
+    "hint": "حار",
     "category": "Food"
   },
   {
     "word": "ملوخية",
-    "hint": "طبق مطبوخ",
+    "hint": "مطبوخ",
     "category": "Food"
   },
   {
     "word": "مقرونة",
-    "hint": "وجبة شائعة",
+    "hint": "شائعة",
     "category": "Food"
   },
   {
     "word": "شاورما",
-    "hint": "أكلة سريعة",
+    "hint": "سريعة",
     "category": "Food"
   },
   {
     "word": "بيتزا",
-    "hint": "عجينة مخبوزة",
+    "hint": "مخبوزة",
     "category": "Food"
   },
   {
     "word": "تمر",
-    "hint": "ثمرة حلوة",
+    "hint": "حلوة",
     "category": "Food"
   },
   {
     "word": "زيت زيتون",
-    "hint": "سائل طبيعي",
+    "hint": "طبيعي",
     "category": "Food"
   },
   {
     "word": "جامع",
-    "hint": "مكان للعبادة",
+    "hint": "عبادة",
     "category": "Places"
   },
   {
     "word": "قهوة",
-    "hint": "مكان للجلوس",
+    "hint": "جلوس",
     "category": "Places"
   },
   {
     "word": "شاطئ",
-    "hint": "موقع ساحلي",
+    "hint": "ساحلي",
     "category": "Places"
   },
   {
     "word": "مدينة",
-    "hint": "تجمع سكني",
+    "hint": "سكني",
     "category": "Places"
   },
   {
     "word": "سوق",
-    "hint": "مكان للتجارة",
+    "hint": "تجارة",
     "category": "Places"
   },
   {
     "word": "مدرسة",
-    "hint": "مكان للتعلم",
+    "hint": "تعلم",
     "category": "Places"
   },
   {
     "word": "ملعب",
-    "hint": "مساحة رياضية",
+    "hint": "رياضية",
     "category": "Places"
   },
   {
     "word": "مطار",
-    "hint": "محطة سفر",
+    "hint": "سفر",
     "category": "Places"
   },
   {
     "word": "صيدلية",
-    "hint": "مرفق صحي",
+    "hint": "صحي",
     "category": "Places"
   },
   {
     "word": "حمام",
-    "hint": "مكان للاغتسال",
+    "hint": "اغتسال",
     "category": "Places"
   },
   {
     "word": "هاتف",
-    "hint": "جهاز اتصال",
+    "hint": "اتصال",
     "category": "Objects"
   },
   {
     "word": "مفتاح",
-    "hint": "أداة فتح",
+    "hint": "فتح",
     "category": "Objects"
   },
   {
     "word": "كرسي",
-    "hint": "أثاث للجلوس",
+    "hint": "جلوس",
     "category": "Objects"
   },
   {
     "word": "طاولة",
-    "hint": "قطعة أثاث",
+    "hint": "أثاث",
     "category": "Objects"
   },
   {
     "word": "سبحة",
-    "hint": "أداة تسبيح",
+    "hint": "تسبيح",
     "category": "Objects"
   },
   {
     "word": "كاس",
-    "hint": "وعاء للشرب",
+    "hint": "شرب",
     "category": "Objects"
   },
   {
     "word": "شنطة",
-    "hint": "وعاء للحفظ",
+    "hint": "حفظ",
     "category": "Objects"
   },
   {
     "word": "ريموت",
-    "hint": "أداة تحكم",
+    "hint": "تحكم",
     "category": "Objects"
   },
   {
     "word": "مروحة",
-    "hint": "جهاز تهوية",
+    "hint": "تهوية",
     "category": "Objects"
   },
   {
     "word": "حاسوب",
-    "hint": "جهاز إلكتروني",
+    "hint": "إلكتروني",
     "category": "Objects"
   },
   {
     "word": "لواج",
-    "hint": "مركبة أجرة",
+    "hint": "أجرة",
     "category": "Transportation"
   },
   {
     "word": "مترو",
-    "hint": "قطار حضري",
+    "hint": "حضري",
     "category": "Transportation"
   },
   {
     "word": "تاكسي",
-    "hint": "سيارة أجرة",
+    "hint": "أجرة",
     "category": "Transportation"
   },
   {
     "word": "حافلة",
-    "hint": "مركبة نقل",
+    "hint": "نقل",
     "category": "Transportation"
   },
   {
     "word": "دراجة",
-    "hint": "وسيلة بعجلتين",
+    "hint": "بعجلتين",
     "category": "Transportation"
   },
   {
     "word": "سيارة",
-    "hint": "مركبة خاصة",
+    "hint": "خاصة",
     "category": "Transportation"
   },
   {
     "word": "طائرة",
-    "hint": "وسيلة جوية",
+    "hint": "جوية",
     "category": "Transportation"
   },
   {
     "word": "قطار",
-    "hint": "وسيلة حديدية",
+    "hint": "حديدية",
     "category": "Transportation"
   },
   {
     "word": "سفينة",
-    "hint": "مركبة بحرية",
+    "hint": "بحرية",
     "category": "Transportation"
   },
   {
     "word": "سكوتر",
-    "hint": "مركبة صغيرة",
+    "hint": "صغيرة",
     "category": "Transportation"
   },
   {
     "word": "شمس",
-    "hint": "نجم مضيء",
+    "hint": "مضيء",
     "category": "Nature"
   },
   {
     "word": "قمر",
-    "hint": "جرم سماوي",
+    "hint": "سماوي",
     "category": "Nature"
   },
   {
     "word": "مطر",
-    "hint": "قطرات ماء",
+    "hint": "ماء",
     "category": "Nature"
   },
   {
     "word": "ريح",
-    "hint": "هواء متحرك",
+    "hint": "متحرك",
     "category": "Nature"
   },
   {
     "word": "بحر",
-    "hint": "مسطح مائي",
+    "hint": "مائي",
     "category": "Nature"
   },
   {
     "word": "جبل",
-    "hint": "تضاريس مرتفعة",
+    "hint": "مرتفعة",
     "category": "Nature"
   },
   {
     "word": "غابة",
-    "hint": "مساحة خضراء",
+    "hint": "خضراء",
     "category": "Nature"
   },
   {
     "word": "رمل",
-    "hint": "حبيبات صغيرة",
+    "hint": "صغيرة",
     "category": "Nature"
   },
   {
     "word": "نخلة",
-    "hint": "شجرة مثمرة",
+    "hint": "مثمرة",
     "category": "Nature"
   },
   {
     "word": "وردة",
-    "hint": "نبات مزهر",
+    "hint": "مزهر",
     "category": "Nature"
   },
   {
     "word": "قطة",
-    "hint": "حيوان أليف",
+    "hint": "أليف",
     "category": "Animals"
   },
   {
     "word": "كلب",
-    "hint": "حيوان حارس",
+    "hint": "حارس",
     "category": "Animals"
   },
   {
     "word": "جمل",
-    "hint": "حيوان صحراوي",
+    "hint": "صحراوي",
     "category": "Animals"
   },
   {
     "word": "حصان",
-    "hint": "حيوان للركوب",
+    "hint": "ركوب",
     "category": "Animals"
   },
   {
     "word": "عصفور",
-    "hint": "طائر صغير",
+    "hint": "صغير",
     "category": "Animals"
   },
   {
     "word": "سمكة",
-    "hint": "كائن مائي",
+    "hint": "مائي",
     "category": "Animals"
   },
   {
     "word": "خروف",
-    "hint": "حيوان عشبي",
+    "hint": "عشبي",
     "category": "Animals"
   },
   {
     "word": "دجاجة",
-    "hint": "طائر داجن",
+    "hint": "داجن",
     "category": "Animals"
   },
   {
     "word": "ذيب",
-    "hint": "حيوان مفترس",
+    "hint": "مفترس",
     "category": "Animals"
   },
   {
     "word": "نحلة",
-    "hint": "حشرة نافعة",
+    "hint": "نافعة",
     "category": "Animals"
   },
   {
     "word": "طبيب",
-    "hint": "مقدم رعاية",
+    "hint": "رعاية",
     "category": "Jobs"
   },
   {
     "word": "معلم",
-    "hint": "موجه تعليمي",
+    "hint": "تعليمي",
     "category": "Jobs"
   },
   {
     "word": "شرطي",
-    "hint": "رجل أمن",
+    "hint": "أمن",
     "category": "Jobs"
   },
   {
     "word": "خباز",
-    "hint": "صانع طعام",
+    "hint": "طعام",
     "category": "Jobs"
   },
   {
     "word": "سائق",
-    "hint": "موجه مركبة",
+    "hint": "مركبة",
     "category": "Jobs"
   },
   {
     "word": "نجار",
-    "hint": "حرفي خشب",
+    "hint": "خشب",
     "category": "Jobs"
   },
   {
     "word": "حلاق",
-    "hint": "مزين شعر",
+    "hint": "شعر",
     "category": "Jobs"
   },
   {
     "word": "طباخ",
-    "hint": "صانع وجبات",
+    "hint": "وجبات",
     "category": "Jobs"
   },
   {
     "word": "مهندس",
-    "hint": "مخطط مشاريع",
+    "hint": "مشاريع",
     "category": "Jobs"
   },
   {
     "word": "فلاح",
-    "hint": "عامل زراعي",
+    "hint": "زراعي",
     "category": "Jobs"
   },
   {
     "word": "كرة قدم",
-    "hint": "رياضة شعبية",
+    "hint": "شعبية",
     "category": "Entertainment"
   },
   {
     "word": "بلايستيشن",
-    "hint": "جهاز ألعاب",
+    "hint": "ألعاب",
     "category": "Entertainment"
   },
   {
     "word": "فيلم",
-    "hint": "عرض مرئي",
+    "hint": "مرئي",
     "category": "Entertainment"
   },
   {
     "word": "موسيقى",
-    "hint": "أصوات متناغمة",
+    "hint": "متناغمة",
     "category": "Entertainment"
   },
   {
     "word": "تيك توك",
-    "hint": "تطبيق مقاطع",
+    "hint": "مقاطع",
     "category": "Entertainment"
   },
   {
     "word": "يوتيوب",
-    "hint": "منصة فيديوهات",
+    "hint": "فيديوهات",
     "category": "Entertainment"
   },
   {
     "word": "ورق لعب",
-    "hint": "أداة تسلية",
+    "hint": "تسلية",
     "category": "Entertainment"
   },
   {
     "word": "شطرنج",
-    "hint": "لعبة ذهنية",
+    "hint": "ذهنية",
     "category": "Entertainment"
   },
   {
     "word": "ميم",
-    "hint": "صورة طريفة",
+    "hint": "طريفة",
     "category": "Entertainment"
   },
   {
     "word": "كونسير",
-    "hint": "عرض فني",
+    "hint": "فني",
     "category": "Entertainment"
   },
   {
     "word": "قرطاج",
-    "hint": "موقع أثري",
+    "hint": "أثري",
     "category": "Tunisia"
   },
   {
     "word": "سيدي بوسعيد",
-    "hint": "مدينة سياحية",
+    "hint": "سياحية",
     "category": "Tunisia"
   },
   {
     "word": "الترجي",
-    "hint": "فريق رياضي",
+    "hint": "رياضي",
     "category": "Tunisia"
   },
   {
     "word": "الإفريقي",
-    "hint": "نادي عريق",
+    "hint": "عريق",
     "category": "Tunisia"
   },
   {
     "word": "شاشية",
-    "hint": "غطاء رأس",
+    "hint": "رأس",
     "category": "Tunisia"
   },
   {
     "word": "فريكاسي",
-    "hint": "أكلة خفيفة",
+    "hint": "خفيفة",
     "category": "Tunisia"
   },
   {
     "word": "دڨلة",
-    "hint": "صنف تمور",
+    "hint": "تمور",
     "category": "Tunisia"
   },
   {
     "word": "زنقة",
-    "hint": "ممر ضيق",
+    "hint": "ضيق",
     "category": "Tunisia"
   },
   {
     "word": "بابور",
-    "hint": "وسيلة بحرية",
+    "hint": "بحرية",
     "category": "Tunisia"
   },
   {
     "word": "قفة",
-    "hint": "وعاء تقليدي",
+    "hint": "تقليدي",
     "category": "Tunisia"
   },
   {
     "word": "عجة",
-    "hint": "أكلة سريعة",
+    "hint": "سريعة",
     "category": "Food"
   },
   {
     "word": "كفتاجي",
-    "hint": "طبق مقلي",
+    "hint": "مقلي",
     "category": "Food"
   },
   {
     "word": "طاجين",
-    "hint": "أكلة بالفرن",
+    "hint": "فرن",
     "category": "Food"
   },
   {
     "word": "مشوي",
-    "hint": "لحم مطهو",
+    "hint": "مطهو",
     "category": "Food"
   },
   {
     "word": "زلابية",
-    "hint": "حلوى مقلية",
+    "hint": "مقلية",
     "category": "Food"
   },
   {
     "word": "مقروض",
-    "hint": "حلوى تقليدية",
+    "hint": "تقليدية",
     "category": "Food"
   },
   {
     "word": "بسيسة",
-    "hint": "خليط مطحون",
+    "hint": "مطحون",
     "category": "Food"
   },
   {
     "word": "سلاطة مشوية",
-    "hint": "مقبلات مشوية",
+    "hint": "مشوية",
     "category": "Food"
   },
   {
     "word": "كعك ورقة",
-    "hint": "حلوى للمناسبات",
+    "hint": "مناسبات",
     "category": "Food"
   },
   {
     "word": "غريبة",
-    "hint": "حلوى هشة",
+    "hint": "هشة",
     "category": "Food"
   },
   {
     "word": "شاي",
-    "hint": "مشروب ساخن",
+    "hint": "ساخن",
     "category": "Drinks"
   },
   {
     "word": "عصير",
-    "hint": "مشروب فواكه",
+    "hint": "فواكه",
     "category": "Drinks"
   },
   {
     "word": "ماء",
-    "hint": "سائل حيوي",
+    "hint": "حيوي",
     "category": "Drinks"
   },
   {
     "word": "ليمونادة",
-    "hint": "مشروب منعش",
+    "hint": "منعش",
     "category": "Drinks"
   },
   {
     "word": "قازوز",
-    "hint": "مشروب غازي",
+    "hint": "غازي",
     "category": "Drinks"
   },
   {
     "word": "كابتشينو",
-    "hint": "مشروب قهوة",
+    "hint": "قهوة",
     "category": "Drinks"
   },
   {
     "word": "لبن",
-    "hint": "مشروب حليبي",
+    "hint": "حليبي",
     "category": "Drinks"
   },
   {
     "word": "حليب",
-    "hint": "سائل أبيض",
+    "hint": "أبيض",
     "category": "Drinks"
   },
   {
     "word": "قهوة عربي",
-    "hint": "مشروب مركز",
+    "hint": "مركز",
     "category": "Drinks"
   },
   {
     "word": "موكا",
-    "hint": "قهوة بالشوكولاتة",
+    "hint": "شوكولاتة",
     "category": "Drinks"
   },
   {
     "word": "ساعة",
-    "hint": "أداة قياس",
+    "hint": "قياس",
     "category": "Objects"
   },
   {
     "word": "نظارات",
-    "hint": "إكسسوار للعين",
+    "hint": "عين",
     "category": "Objects"
   },
   {
     "word": "شاحن",
-    "hint": "مزود طاقة",
+    "hint": "طاقة",
     "category": "Objects"
   },
   {
     "word": "بطانية",
-    "hint": "غطاء شتوي",
+    "hint": "شتوي",
     "category": "Objects"
   },
   {
     "word": "وسادة",
-    "hint": "شيء مريح",
+    "hint": "مريح",
     "category": "Objects"
   },
   {
     "word": "مصباح",
-    "hint": "مصدر إضاءة",
+    "hint": "إضاءة",
     "category": "Objects"
   },
   {
     "word": "مقص",
-    "hint": "أداة قطع",
+    "hint": "قطع",
     "category": "Objects"
   },
   {
     "word": "دفتر",
-    "hint": "مجموعة أوراق",
+    "hint": "أوراق",
     "category": "Objects"
   },
   {
     "word": "قلم",
-    "hint": "أداة كتابة",
+    "hint": "كتابة",
     "category": "Objects"
   },
   {
     "word": "مرآة",
-    "hint": "سطح عاكس",
+    "hint": "عاكس",
     "category": "Objects"
   },
   {
     "word": "واي فاي",
-    "hint": "شبكة لاسلكية",
+    "hint": "لاسلكية",
     "category": "Technology"
   },
   {
     "word": "كيبورد",
-    "hint": "لوحة مفاتيح",
+    "hint": "مفاتيح",
     "category": "Technology"
   },
   {
     "word": "ماوس",
-    "hint": "أداة تحكم",
+    "hint": "تحكم",
     "category": "Technology"
   },
   {
     "word": "سماعات",
-    "hint": "مكبر صوت",
+    "hint": "صوت",
     "category": "Technology"
   },
   {
     "word": "كاميرا",
-    "hint": "أداة تصوير",
+    "hint": "تصوير",
     "category": "Technology"
   },
   {
     "word": "ميموري",
-    "hint": "وحدة تخزين",
+    "hint": "تخزين",
     "category": "Technology"
   },
   {
     "word": "شاشة",
-    "hint": "سطح عرض",
+    "hint": "عرض",
     "category": "Technology"
   },
   {
     "word": "ميكروفون",
-    "hint": "لاقط صوت",
+    "hint": "صوت",
     "category": "Technology"
   },
   {
     "word": "لابتوب",
-    "hint": "حاسوب محمول",
+    "hint": "محمول",
     "category": "Technology"
   },
   {
     "word": "تابلت",
-    "hint": "لوح ذكي",
+    "hint": "ذكي",
     "category": "Technology"
   },
   {
     "word": "قميص",
-    "hint": "لباس علوي",
+    "hint": "علوي",
     "category": "Clothes"
   },
   {
     "word": "سروال",
-    "hint": "قطعة ملابس",
+    "hint": "ملابس",
     "category": "Clothes"
   },
   {
     "word": "جاكيت",
-    "hint": "معطف قصير",
+    "hint": "قصير",
     "category": "Clothes"
   },
   {
     "word": "صباط",
-    "hint": "حذاء للقدم",
+    "hint": "قدم",
     "category": "Clothes"
   },
   {
     "word": "قبعة",
-    "hint": "غطاء للرأس",
+    "hint": "رأس",
     "category": "Clothes"
   },
   {
     "word": "شال",
-    "hint": "قطعة قماش",
+    "hint": "قماش",
     "category": "Clothes"
   },
   {
     "word": "حزام",
-    "hint": "أداة ربط",
+    "hint": "ربط",
     "category": "Clothes"
   },
   {
     "word": "شراب",
-    "hint": "غطاء للقدم",
+    "hint": "قدم",
     "category": "Clothes"
   },
   {
     "word": "جلابة",
-    "hint": "لباس طويل",
+    "hint": "طويل",
     "category": "Clothes"
   },
   {
     "word": "برنوس",
-    "hint": "معطف تقليدي",
+    "hint": "تقليدي",
     "category": "Clothes"
   },
   {
     "word": "كرة سلة",
-    "hint": "لعبة جماعية",
+    "hint": "جماعية",
     "category": "Sports"
   },
   {
     "word": "تنس",
-    "hint": "رياضة المضرب",
+    "hint": "المضرب",
     "category": "Sports"
   },
   {
     "word": "سباحة",
-    "hint": "نشاط مائي",
+    "hint": "مائي",
     "category": "Sports"
   },
   {
     "word": "جري",
-    "hint": "حركة سريعة",
+    "hint": "سريعة",
     "category": "Sports"
   },
   {
     "word": "حديد",
-    "hint": "أثقال رياضية",
+    "hint": "رياضية",
     "category": "Sports"
   },
   {
     "word": "ملاكمة",
-    "hint": "رياضة قتالية",
+    "hint": "قتالية",
     "category": "Sports"
   },
   {
     "word": "كرة طائرة",
-    "hint": "رياضة شبكية",
+    "hint": "شبكية",
     "category": "Sports"
   },
   {
     "word": "حكم",
-    "hint": "مراقب مباراة",
+    "hint": "مباراة",
     "category": "Sports"
   },
   {
     "word": "مدرب",
-    "hint": "موجه رياضي",
+    "hint": "رياضي",
     "category": "Sports"
   },
   {
     "word": "هدف",
-    "hint": "نقطة مسجلة",
+    "hint": "مسجلة",
     "category": "Sports"
   },
   {
     "word": "جار",
-    "hint": "شخص مجاور",
+    "hint": "مجاور",
     "category": "People"
   },
   {
     "word": "صديق",
-    "hint": "رفيق مقرب",
+    "hint": "مقرب",
     "category": "People"
   },
   {
     "word": "طفل",
-    "hint": "إنسان صغير",
+    "hint": "صغير",
     "category": "People"
   },
   {
     "word": "عروس",
-    "hint": "امرأة تتزوج",
+    "hint": "تتزوج",
     "category": "People"
   },
   {
     "word": "عريس",
-    "hint": "رجل يتزوج",
+    "hint": "يتزوج",
     "category": "People"
   },
   {
     "word": "سائح",
-    "hint": "زائر أجنبي",
+    "hint": "أجنبي",
     "category": "People"
   },
   {
     "word": "لاعب",
-    "hint": "ممارس رياضة",
+    "hint": "رياضة",
     "category": "People"
   },
   {
     "word": "مغني",
-    "hint": "مؤدي أصوات",
+    "hint": "أصوات",
     "category": "People"
   },
   {
     "word": "ممثل",
-    "hint": "مؤدي أدوار",
+    "hint": "أدوار",
     "category": "People"
   },
   {
     "word": "بائع",
-    "hint": "مقدم سلع",
+    "hint": "سلع",
     "category": "People"
   },
   {
@@ -836,2062 +836,2062 @@
   },
   {
     "word": "ستارة",
-    "hint": "غطاء نافذة",
+    "hint": "نافذة",
     "category": "Home"
   },
   {
     "word": "سجادة",
-    "hint": "غطاء أرضي",
+    "hint": "أرضي",
     "category": "Home"
   },
   {
     "word": "دوش",
-    "hint": "مرفق استحمام",
+    "hint": "استحمام",
     "category": "Home"
   },
   {
     "word": "بلكونة",
-    "hint": "شرفة منزل",
+    "hint": "منزل",
     "category": "Home"
   },
   {
     "word": "غيم",
-    "hint": "بخار متجمع",
+    "hint": "متجمع",
     "category": "Nature"
   },
   {
     "word": "برق",
-    "hint": "ضوء ساطع",
+    "hint": "ساطع",
     "category": "Nature"
   },
   {
     "word": "وادي",
-    "hint": "منخفض طبيعي",
+    "hint": "طبيعي",
     "category": "Nature"
   },
   {
     "word": "صحراء",
-    "hint": "منطقة جافة",
+    "hint": "جافة",
     "category": "Nature"
   },
   {
     "word": "زيتونة",
-    "hint": "شجرة مباركة",
+    "hint": "مباركة",
     "category": "Nature"
   },
   {
     "word": "عشب",
-    "hint": "نبات أرضي",
+    "hint": "أرضي",
     "category": "Nature"
   },
   {
     "word": "موج",
-    "hint": "حركة مائية",
+    "hint": "مائية",
     "category": "Nature"
   },
   {
     "word": "نجمة",
-    "hint": "نقطة مضيئة",
+    "hint": "مضيئة",
     "category": "Nature"
   },
   {
     "word": "كهف",
-    "hint": "تجويف صخري",
+    "hint": "صخري",
     "category": "Nature"
   },
   {
     "word": "شلال",
-    "hint": "مياه متساقطة",
+    "hint": "متساقطة",
     "category": "Nature"
   },
   {
     "word": "بقرة",
-    "hint": "حيوان منتج",
+    "hint": "منتج",
     "category": "Animals"
   },
   {
     "word": "ماعز",
-    "hint": "حيوان ريفي",
+    "hint": "ريفي",
     "category": "Animals"
   },
   {
     "word": "ديك",
-    "hint": "طائر يصيح",
+    "hint": "يصيح",
     "category": "Animals"
   },
   {
     "word": "بطريق",
-    "hint": "طائر مائي",
+    "hint": "مائي",
     "category": "Animals"
   },
   {
     "word": "أرنب",
-    "hint": "حيوان سريع",
+    "hint": "سريع",
     "category": "Animals"
   },
   {
     "word": "سلحفاة",
-    "hint": "كائن بطيء",
+    "hint": "بطيء",
     "category": "Animals"
   },
   {
     "word": "دلفين",
-    "hint": "حيوان بحري",
+    "hint": "بحري",
     "category": "Animals"
   },
   {
     "word": "أسد",
-    "hint": "مفترس بري",
+    "hint": "بري",
     "category": "Animals"
   },
   {
     "word": "نمر",
-    "hint": "حيوان مخطط",
+    "hint": "مخطط",
     "category": "Animals"
   },
   {
     "word": "فيل",
-    "hint": "حيوان ضخم",
+    "hint": "ضخم",
     "category": "Animals"
   },
   {
     "word": "قفصة",
-    "hint": "مدينة جنوبية",
+    "hint": "جنوبية",
     "category": "Tunisia"
   },
   {
     "word": "صفاقس",
-    "hint": "ولاية اقتصادية",
+    "hint": "اقتصادية",
     "category": "Tunisia"
   },
   {
     "word": "سوسة",
-    "hint": "مدينة ساحلية",
+    "hint": "ساحلية",
     "category": "Tunisia"
   },
   {
     "word": "قليبية",
-    "hint": "موقع بحري",
+    "hint": "بحري",
     "category": "Tunisia"
   },
   {
     "word": "جربة",
-    "hint": "جزيرة تونسية",
+    "hint": "تونسية",
     "category": "Tunisia"
   },
   {
     "word": "قفطان",
-    "hint": "لباس تقليدي",
+    "hint": "تقليدي",
     "category": "Tunisia"
   },
   {
     "word": "فوطة",
-    "hint": "قطعة قماش",
+    "hint": "قماش",
     "category": "Tunisia"
   },
   {
     "word": "بامبالوني",
-    "hint": "حلوى مقلية",
+    "hint": "مقلية",
     "category": "Tunisia"
   },
   {
     "word": "كعيبة",
-    "hint": "شيء مفرد",
+    "hint": "مفرد",
     "category": "Tunisia"
   },
   {
     "word": "كوشة",
-    "hint": "مخبز تقليدي",
+    "hint": "تقليدي",
     "category": "Tunisia"
   },
   {
     "word": "سر",
-    "hint": "أمر مخفي",
+    "hint": "مخفي",
     "category": "Random"
   },
   {
     "word": "هدية",
-    "hint": "عطاء مجاني",
+    "hint": "مجاني",
     "category": "Random"
   },
   {
     "word": "حفلة",
-    "hint": "تجمع احتفالي",
+    "hint": "احتفالي",
     "category": "Random"
   },
   {
     "word": "عرس",
-    "hint": "مناسبة زواج",
+    "hint": "زواج",
     "category": "Random"
   },
   {
     "word": "امتحان",
-    "hint": "اختبار قدرات",
+    "hint": "قدرات",
     "category": "Random"
   },
   {
     "word": "صورة",
-    "hint": "لقطة مرئية",
+    "hint": "مرئية",
     "category": "Random"
   },
   {
     "word": "ضحكة",
-    "hint": "تعبير سعيد",
+    "hint": "سعيد",
     "category": "Random"
   },
   {
     "word": "حلم",
-    "hint": "رؤية ليلية",
+    "hint": "ليلية",
     "category": "Random"
   },
   {
     "word": "مفتاح سيارة",
-    "hint": "أداة تشغيل",
+    "hint": "تشغيل",
     "category": "Random"
   },
   {
     "word": "بطاقة",
-    "hint": "قطعة ورقية",
+    "hint": "ورقية",
     "category": "Random"
   },
   {
     "word": "المشموم",
-    "hint": "باقة ياسمين"
+    "hint": "ياسمين"
   },
   {
     "word": "البلوزة",
-    "hint": "لباس تقليدي"
+    "hint": "تقليدي"
   },
   {
     "word": "الشلاكة",
-    "hint": "حذاء خفيف"
+    "hint": "خفيف"
   },
   {
     "word": "الكانون",
-    "hint": "موقد فخاري"
+    "hint": "فخاري"
   },
   {
     "word": "البراد",
-    "hint": "وعاء شاي"
+    "hint": "شاي"
   },
   {
     "word": "الفخار",
-    "hint": "أواني طينية"
+    "hint": "طينية"
   },
   {
     "word": "المرمومة",
-    "hint": "سلطة حارة"
+    "hint": "حارة"
   },
   {
     "word": "العرجون",
-    "hint": "عنقود تمر"
+    "hint": "تمر"
   },
   {
     "word": "الخمسة",
-    "hint": "رمز وقاية"
+    "hint": "وقاية"
   },
   {
     "word": "التبسية",
-    "hint": "صحن عميق"
+    "hint": "عميق"
   },
   {
     "word": "الزغرودة",
-    "hint": "صوت فرح"
+    "hint": "فرح"
   },
   {
     "word": "الدرجوحة",
-    "hint": "أرجوحة للعب"
+    "hint": "عب"
   },
   {
     "word": "الحرقوس",
-    "hint": "زينة تقليدية"
+    "hint": "تقليدية"
   },
   {
     "word": "الملوية",
-    "hint": "خبز مورق"
+    "hint": "مورق"
   },
   {
     "word": "الملاوي",
-    "hint": "عجين مطهو"
+    "hint": "مطهو"
   },
   {
     "word": "التبون",
-    "hint": "خبز تقليدي"
+    "hint": "تقليدي"
   },
   {
     "word": "العصيدة",
-    "hint": "طبق احتفالي"
+    "hint": "احتفالي"
   },
   {
     "word": "الزريقة",
-    "hint": "تحلية تونسية"
+    "hint": "تونسية"
   },
   {
     "word": "البوزة",
-    "hint": "مشروب كثيف"
+    "hint": "كثيف"
   },
   {
     "word": "السلاطة المشوية",
-    "hint": "شيء معروف"
+    "hint": "معروف"
   },
   {
     "word": "المرقاز",
-    "hint": "نقانق مشوية"
+    "hint": "مشوية"
   },
   {
     "word": "المحمص",
-    "hint": "معكرونة تقليدية"
+    "hint": "تقليدية"
   },
   {
     "word": "البوجة",
-    "hint": "مهرجان شعبي"
+    "hint": "شعبي"
   },
   {
     "word": "السفساري",
-    "hint": "غطاء نسائي"
+    "hint": "نسائي"
   },
   {
     "word": "الدنقري",
-    "hint": "سترة زرقاء"
+    "hint": "زرقاء"
   },
   {
     "word": "الحايك",
-    "hint": "لباس نسائي"
+    "hint": "نسائي"
   },
   {
     "word": "البلغة",
-    "hint": "حذاء تقليدي"
+    "hint": "تقليدي"
   },
   {
     "word": "الكوتش",
-    "hint": "عربة خيل"
+    "hint": "خيل"
   },
   {
     "word": "التاكسي الجماعي",
-    "hint": "نقل مشترك"
+    "hint": "مشترك"
   },
   {
     "word": "الكار",
-    "hint": "حافلة نقل"
+    "hint": "نقل"
   },
   {
     "word": "اللوأج",
-    "hint": "شيء معروف"
+    "hint": "معروف"
   },
   {
     "word": "الحماص",
-    "hint": "بائع فواكه"
+    "hint": "فواكه"
   },
   {
     "word": "العطار",
-    "hint": "دكان بقالة"
+    "hint": "بقالة"
   },
   {
     "word": "القهوة العربي",
-    "hint": "شيء معروف"
+    "hint": "معروف"
   },
   {
     "word": "البطحة",
-    "hint": "ساحة فارغة"
+    "hint": "فارغة"
   },
   {
     "word": "الحومة",
-    "hint": "حي سكني"
+    "hint": "سكني"
   },
   {
     "word": "المارشي",
-    "hint": "سوق شعبي"
+    "hint": "شعبي"
   },
   {
     "word": "البلدية",
-    "hint": "إدارة محلية"
+    "hint": "محلية"
   },
   {
     "word": "الجو",
-    "hint": "أجواء ممتعة"
+    "hint": "ممتعة"
   },
   {
     "word": "التبوريب",
-    "hint": "استعراض قوة"
+    "hint": "قوة"
   },
   {
     "word": "التكعير",
-    "hint": "كثرة الكلام"
+    "hint": "الكلام"
   },
   {
     "word": "التمسكيط",
-    "hint": "تصرف غريب"
+    "hint": "غريب"
   },
   {
     "word": "التكبيس",
-    "hint": "إنجاز سريع"
+    "hint": "سريع"
   },
   {
     "word": "التشخشيخ",
-    "hint": "طعام دسم"
+    "hint": "دسم"
   },
   {
     "word": "التزعبين",
-    "hint": "دلال زائد"
+    "hint": "زائد"
   },
   {
     "word": "الركشة",
-    "hint": "جلسة هادئة"
+    "hint": "هادئة"
   },
   {
     "word": "التفيسخ",
-    "hint": "غش بالامتحان"
+    "hint": "امتحان"
   },
   {
     "word": "الفيس",
-    "hint": "تباهي زائد"
+    "hint": "زائد"
   },
   {
     "word": "البهنيس",
-    "hint": "تظاهر بالجهل"
+    "hint": "جهل"
   },
   {
     "word": "البلعة",
-    "hint": "شرب مكثف"
+    "hint": "مكثف"
   },
   {
     "word": "الحطة",
-    "hint": "أناقة ملفتة"
+    "hint": "ملفتة"
   },
   {
     "word": "اللقطة",
-    "hint": "حركة مميزة"
+    "hint": "مميزة"
   },
   {
     "word": "الفازة",
-    "hint": "تصرف ذكي"
+    "hint": "ذكي"
   },
   {
     "word": "التمنيك",
-    "hint": "سخرية ومزاح"
+    "hint": "ومزاح"
   },
   {
     "word": "التفريك",
-    "hint": "مزاح مبالغ"
+    "hint": "مبالغ"
   },
   {
     "word": "التنبير",
-    "hint": "نقد ساخر"
+    "hint": "ساخر"
   },
   {
     "word": "الحرقة",
-    "hint": "هجرة غير شرعية"
+    "hint": "شرعية"
   },
   {
     "word": "الكلندار",
-    "hint": "جدول مواعيد"
+    "hint": "مواعيد"
   },
   {
     "word": "الدفوار",
-    "hint": "امتحان مدرسي"
+    "hint": "مدرسي"
   },
   {
     "word": "الأستاذ",
-    "hint": "معلم ومربي"
+    "hint": "ومربي"
   },
   {
     "word": "الروكور",
-    "hint": "دورة تدارك"
+    "hint": "تدارك"
   },
   {
     "word": "الكريدي",
-    "hint": "دين مالي"
+    "hint": "مالي"
   },
   {
     "word": "المصروف",
-    "hint": "مبلغ يومي"
+    "hint": "يومي"
   },
   {
     "word": "البوز",
-    "hint": "شهرة سريعة"
+    "hint": "سريعة"
   },
   {
     "word": "ستوري",
-    "hint": "حالة مؤقتة"
+    "hint": "مؤقتة"
   },
   {
     "word": "الميساج",
-    "hint": "رسالة نصية"
+    "hint": "نصية"
   },
   {
     "word": "الانستا",
-    "hint": "تطبيق صور"
+    "hint": "صور"
   },
   {
     "word": "الفيس بوك",
-    "hint": "منصة تواصل"
+    "hint": "تواصل"
   },
   {
     "word": "الفريب",
-    "hint": "ملابس مستعملة"
+    "hint": "مستعملة"
   },
   {
     "word": "المريول",
-    "hint": "قميص رياضي"
+    "hint": "رياضي"
   },
   {
     "word": "الستيل",
-    "hint": "مظهر خارجي"
+    "hint": "خارجي"
   },
   {
     "word": "الدايركت",
-    "hint": "رسالة خاصة"
+    "hint": "خاصة"
   },
   {
     "word": "الكنكسيون",
-    "hint": "اتصال إنترنت"
+    "hint": "إنترنت"
   },
   {
     "word": "الريزو",
-    "hint": "تغطية الهاتف"
+    "hint": "الهاتف"
   },
   {
     "word": "الشارج",
-    "hint": "شحن البطارية"
+    "hint": "البطارية"
   },
   {
     "word": "النمرو",
-    "hint": "رقم هاتف"
+    "hint": "هاتف"
   },
   {
     "word": "الكورسات",
-    "hint": "دروس خصوصية"
+    "hint": "خصوصية"
   },
   {
     "word": "الليفار",
-    "hint": "فوضى عارمة"
+    "hint": "عارمة"
   },
   {
     "word": "الزدمة",
-    "hint": "دخول مفاجئ"
+    "hint": "مفاجئ"
   },
   {
     "word": "الفوت",
-    "hint": "مباراة كرة"
+    "hint": "كرة"
   },
   {
     "word": "الكلوب",
-    "hint": "نادي طلابي"
+    "hint": "طلابي"
   },
   {
     "word": "السيريات",
-    "hint": "مسلسلات متتالية"
+    "hint": "متتالية"
   },
   {
     "word": "الgيمينغ",
-    "hint": "ألعاب إلكترونية"
+    "hint": "إلكترونية"
   },
   {
     "word": "الجيم",
-    "hint": "قاعة رياضة"
+    "hint": "رياضة"
   },
   {
     "word": "الخروج",
-    "hint": "نزهة خارجية"
+    "hint": "خارجية"
   },
   {
     "word": "ترند",
-    "hint": "شيء مشهور",
+    "hint": "مشهور",
     "category": "Gen Z"
   },
   {
     "word": "فايب",
-    "hint": "شعور عام",
+    "hint": "عام",
     "category": "Gen Z"
   },
   {
     "word": "كراش",
-    "hint": "إعجاب سري",
+    "hint": "سري",
     "category": "Gen Z"
   },
   {
     "word": "ديت",
-    "hint": "موعد غرامي",
+    "hint": "غرامي",
     "category": "Gen Z"
   },
   {
     "word": "توكسيك",
-    "hint": "شخص سام",
+    "hint": "سام",
     "category": "Gen Z"
   },
   {
     "word": "ريدفلاغ",
-    "hint": "علامة تحذير",
+    "hint": "تحذير",
     "category": "Gen Z"
   },
   {
     "word": "غوستينغ",
-    "hint": "اختفاء فجئي",
+    "hint": "فجئي",
     "category": "Gen Z"
   },
   {
     "word": "سيمب",
-    "hint": "مبالغة بالاهتمام",
+    "hint": "اهتمام",
     "category": "Gen Z"
   },
   {
     "word": "بيستي",
-    "hint": "صديق مفضل",
+    "hint": "مفضل",
     "category": "Gen Z"
   },
   {
     "word": "موود",
-    "hint": "حالة نفسية",
+    "hint": "نفسية",
     "category": "Gen Z"
   },
   {
     "word": "ريلز",
-    "hint": "فيديو قصير",
+    "hint": "قصير",
     "category": "Gen Z"
   },
   {
     "word": "تيكتوكر",
-    "hint": "صانع محتوى",
+    "hint": "محتوى",
     "category": "Gen Z"
   },
   {
     "word": "فلوق",
-    "hint": "يوميات مصورة",
+    "hint": "مصورة",
     "category": "Gen Z"
   },
   {
     "word": "بلوك",
-    "hint": "حظر تواصل",
+    "hint": "تواصل",
     "category": "Gen Z"
   },
   {
     "word": "سينيال",
-    "hint": "إبلاغ عن",
+    "hint": "عن",
     "category": "Gen Z"
   },
   {
     "word": "بان",
-    "hint": "منع نهائي",
+    "hint": "نهائي",
     "category": "Gen Z"
   },
   {
     "word": "سكرين",
-    "hint": "لقطة شاشة",
+    "hint": "شاشة",
     "category": "Gen Z"
   },
   {
     "word": "سكرول",
-    "hint": "تصفح سريع",
+    "hint": "سريع",
     "category": "Gen Z"
   },
   {
     "word": "انفو",
-    "hint": "معلومات سريعة",
+    "hint": "سريعة",
     "category": "Gen Z"
   },
   {
     "word": "بونبلان",
-    "hint": "خطة جيدة",
+    "hint": "جيدة",
     "category": "Gen Z"
   },
   {
     "word": "سورتي",
-    "hint": "خروجة أصحاب",
+    "hint": "أصحاب",
     "category": "Gen Z"
   },
   {
     "word": "بلان",
-    "hint": "فكرة مشروع",
+    "hint": "مشروع",
     "category": "Gen Z"
   },
   {
     "word": "كور",
-    "hint": "درس جامعي",
+    "hint": "جامعي",
     "category": "University"
   },
   {
     "word": "تيبي",
-    "hint": "عمل تطبيقي",
+    "hint": "تطبيقي",
     "category": "University"
   },
   {
     "word": "تيدي",
-    "hint": "عمل موجه",
+    "hint": "موجه",
     "category": "University"
   },
   {
     "word": "ريفزيون",
-    "hint": "مراجعة للامتحان",
+    "hint": "امتحان",
     "category": "University"
   },
   {
     "word": "اكسبوزيه",
-    "hint": "عرض شفوي",
+    "hint": "شفوي",
     "category": "University"
   },
   {
     "word": "ستاج",
-    "hint": "فترة تدريب",
+    "hint": "تدريب",
     "category": "University"
   },
   {
     "word": "سيفي",
-    "hint": "سيرة ذاتية",
+    "hint": "ذاتية",
     "category": "University"
   },
   {
     "word": "انتروتيان",
-    "hint": "مقابلة عمل",
+    "hint": "عمل",
     "category": "University"
   },
   {
     "word": "فاك",
-    "hint": "كلية جامعية",
+    "hint": "جامعية",
     "category": "Places"
   },
   {
     "word": "ليسي",
-    "hint": "معهد ثانوي",
+    "hint": "ثانوي",
     "category": "Places"
   },
   {
     "word": "كولاج",
-    "hint": "مدرسة إعدادية",
+    "hint": "إعدادية",
     "category": "Places"
   },
   {
     "word": "بريبا",
-    "hint": "مرحلة تحضيرية",
+    "hint": "تحضيرية",
     "category": "Places"
   },
   {
     "word": "فواييه",
-    "hint": "مبيت جامعي",
+    "hint": "جامعي",
     "category": "Places"
   },
   {
     "word": "رستو",
-    "hint": "مطعم جامعي",
+    "hint": "جامعي",
     "category": "Places"
   },
   {
     "word": "بوفيت",
-    "hint": "مقهى الكلية",
+    "hint": "الكلية",
     "category": "Places"
   },
   {
     "word": "كسكروت",
-    "hint": "أكلة شارع",
+    "hint": "شارع",
     "category": "Food"
   },
   {
     "word": "مقلوب",
-    "hint": "سندويتش تونسي",
+    "hint": "تونسي",
     "category": "Food"
   },
   {
     "word": "شاباتي",
-    "hint": "خبز محشي",
+    "hint": "محشي",
     "category": "Food"
   },
   {
     "word": "عياري",
-    "hint": "أكلة حارة",
+    "hint": "حارة",
     "category": "Food"
   },
   {
     "word": "فتاير",
-    "hint": "عجين مقلي",
+    "hint": "مقلي",
     "category": "Food"
   },
   {
     "word": "مخارق",
-    "hint": "حلوى باجية",
+    "hint": "باجية",
     "category": "Food"
   },
   {
     "word": "بوظة",
-    "hint": "مثلجات تقليدية",
+    "hint": "تقليدية",
     "category": "Food"
   },
   {
     "word": "درع",
-    "hint": "حساء شتوي",
+    "hint": "شتوي",
     "category": "Food"
   },
   {
     "word": "مسفوف",
-    "hint": "كسكسي حلو",
+    "hint": "حلو",
     "category": "Food"
   },
   {
     "word": "برزقان",
-    "hint": "طبق احتفالي",
+    "hint": "احتفالي",
     "category": "Food"
   },
   {
     "word": "مدفونة",
-    "hint": "أكلة ورقية",
+    "hint": "ورقية",
     "category": "Food"
   },
   {
     "word": "روز جربي",
-    "hint": "أرز بالخضار",
+    "hint": "خضار",
     "category": "Food"
   },
   {
     "word": "كمونية",
-    "hint": "مرق بالكمون",
+    "hint": "كمون",
     "category": "Food"
   },
   {
     "word": "قلاية",
-    "hint": "لحم مطبوخ",
+    "hint": "مطبوخ",
     "category": "Food"
   },
   {
     "word": "عصبان",
-    "hint": "أمعاء محشوة",
+    "hint": "محشوة",
     "category": "Food"
   },
   {
     "word": "قديد",
-    "hint": "لحم مجفف",
+    "hint": "مجفف",
     "category": "Food"
   },
   {
     "word": "شريحة",
-    "hint": "غلة مجففة",
+    "hint": "مجففة",
     "category": "Food"
   },
   {
     "word": "حلاليم",
-    "hint": "حساء تقليدي",
+    "hint": "تقليدي",
     "category": "Food"
   },
   {
     "word": "رشتة",
-    "hint": "معكرونة محلية",
+    "hint": "محلية",
     "category": "Food"
   },
   {
     "word": "نواصر",
-    "hint": "عجين مربع",
+    "hint": "مربع",
     "category": "Food"
   },
   {
     "word": "دويدة",
-    "hint": "شعيرية رقيقة",
+    "hint": "رقيقة",
     "category": "Food"
   },
   {
     "word": "عين سبنيورية",
-    "hint": "لحم مفروم",
+    "hint": "مفروم",
     "category": "Food"
   },
   {
     "word": "يويو",
-    "hint": "حلوى دائرية",
+    "hint": "دائرية",
     "category": "Food"
   },
   {
     "word": "دبلة",
-    "hint": "حلوى مقرمشة",
+    "hint": "مقرمشة",
     "category": "Food"
   },
   {
     "word": "طرشي",
-    "hint": "خضار مخللة",
+    "hint": "مخللة",
     "category": "Food"
   },
   {
     "word": "برودو",
-    "hint": "حساء خضار",
+    "hint": "خضار",
     "category": "Food"
   },
   {
     "word": "هندي",
-    "hint": "تين شوكي",
+    "hint": "شوكي",
     "category": "Nature"
   },
   {
     "word": "زعرور",
-    "hint": "ثمرة صغيرة",
+    "hint": "صغيرة",
     "category": "Nature"
   },
   {
     "word": "عوينة",
-    "hint": "فاكهة صيفية",
+    "hint": "صيفية",
     "category": "Nature"
   },
   {
     "word": "دلاع",
-    "hint": "بطيخ أحمر",
+    "hint": "أحمر",
     "category": "Nature"
   },
   {
     "word": "بطيخ",
-    "hint": "فاكهة صفراء",
+    "hint": "صفراء",
     "category": "Nature"
   },
   {
     "word": "كرموس",
-    "hint": "تين طازج",
+    "hint": "طازج",
     "category": "Nature"
   },
   {
     "word": "فريز",
-    "hint": "فراولة حمراء",
+    "hint": "حمراء",
     "category": "Nature"
   },
   {
     "word": "بنان",
-    "hint": "فاكهة استوائية",
+    "hint": "استوائية",
     "category": "Nature"
   },
   {
     "word": "تفاح",
-    "hint": "غلة مقرمشة",
+    "hint": "مقرمشة",
     "category": "Nature"
   },
   {
     "word": "رمان",
-    "hint": "حبوب حمراء",
+    "hint": "حمراء",
     "category": "Nature"
   },
   {
     "word": "خوخ",
-    "hint": "غلة صيفية",
+    "hint": "صيفية",
     "category": "Nature"
   },
   {
     "word": "مشماش",
-    "hint": "ثمرة برتقالية",
+    "hint": "برتقالية",
     "category": "Nature"
   },
   {
     "word": "لوز",
-    "hint": "مكسرات صلبة",
+    "hint": "صلبة",
     "category": "Nature"
   },
   {
     "word": "فستق",
-    "hint": "مكسرات خضراء",
+    "hint": "خضراء",
     "category": "Nature"
   },
   {
     "word": "بوفريوة",
-    "hint": "بندق محمص",
+    "hint": "محمص",
     "category": "Nature"
   },
   {
     "word": "زقوقو",
-    "hint": "حبوب سوداء",
+    "hint": "سوداء",
     "category": "Nature"
   },
   {
     "word": "قلوب",
-    "hint": "بذور عباد",
+    "hint": "عباد",
     "category": "Nature"
   },
   {
     "word": "كاكاوية",
-    "hint": "فول سوداني",
+    "hint": "سوداني",
     "category": "Nature"
   },
   {
     "word": "حمص",
-    "hint": "بذور صفراء",
+    "hint": "صفراء",
     "category": "Nature"
   },
   {
     "word": "فول",
-    "hint": "بذور خضراء",
+    "hint": "خضراء",
     "category": "Nature"
   },
   {
     "word": "جلبانة",
-    "hint": "خضار كروية",
+    "hint": "كروية",
     "category": "Nature"
   },
   {
     "word": "فنارية",
-    "hint": "جزر برتقالي",
+    "hint": "برتقالي",
     "category": "Nature"
   },
   {
     "word": "لفت",
-    "hint": "جذر أبيض",
+    "hint": "أبيض",
     "category": "Nature"
   },
   {
     "word": "بسباس",
-    "hint": "نبات عطري",
+    "hint": "عطري",
     "category": "Nature"
   },
   {
     "word": "معدنوس",
-    "hint": "أوراق خضراء",
+    "hint": "خضراء",
     "category": "Nature"
   },
   {
     "word": "كرافس",
-    "hint": "نبتة ذات",
+    "hint": "ذات",
     "category": "Nature"
   },
   {
     "word": "كلاكات",
-    "hint": "حذاء صيفي",
+    "hint": "صيفي",
     "category": "Clothes"
   },
   {
     "word": "هودي",
-    "hint": "سترة بقبعة",
+    "hint": "بقبعة",
     "category": "Clothes"
   },
   {
     "word": "سنيكرز",
-    "hint": "حذاء رياضي",
+    "hint": "رياضي",
     "category": "Clothes"
   },
   {
     "word": "دجين",
-    "hint": "سروال قماش",
+    "hint": "قماش",
     "category": "Clothes"
   },
   {
     "word": "كاسكيط",
-    "hint": "غطاء رأس",
+    "hint": "رأس",
     "category": "Clothes"
   },
   {
     "word": "فيستة",
-    "hint": "معطف خفيف",
+    "hint": "خفيف",
     "category": "Clothes"
   },
   {
     "word": "كوستيم",
-    "hint": "بدلة رسمية",
+    "hint": "رسمية",
     "category": "Clothes"
   },
   {
     "word": "كرافات",
-    "hint": "ربطة عنق",
+    "hint": "عنق",
     "category": "Clothes"
   },
   {
     "word": "صاك",
-    "hint": "حقيبة يد",
+    "hint": "يد",
     "category": "Objects"
   },
   {
     "word": "فاليز",
-    "hint": "حقيبة سفر",
+    "hint": "سفر",
     "category": "Objects"
   },
   {
     "word": "محفظة",
-    "hint": "حافظة أوراق",
+    "hint": "أوراق",
     "category": "Objects"
   },
   {
     "word": "ساشيه",
-    "hint": "كيس بلاستيك",
+    "hint": "بلاستيك",
     "category": "Objects"
   },
   {
     "word": "كردونة",
-    "hint": "علبة كرتون",
+    "hint": "كرتون",
     "category": "Objects"
   },
   {
     "word": "باكو",
-    "hint": "علبة صغيرة",
+    "hint": "صغيرة",
     "category": "Objects"
   },
   {
     "word": "دبوزة",
-    "hint": "قنينة زجاج",
+    "hint": "زجاج",
     "category": "Objects"
   },
   {
     "word": "حكة",
-    "hint": "علبة معدنية",
+    "hint": "معدنية",
     "category": "Objects"
   },
   {
     "word": "طنجرة",
-    "hint": "وعاء طبخ",
+    "hint": "طبخ",
     "category": "Objects"
   },
   {
     "word": "مقلة",
-    "hint": "وعاء قلي",
+    "hint": "قلي",
     "category": "Objects"
   },
   {
     "word": "كسكاس",
-    "hint": "وعاء تبخير",
+    "hint": "تبخير",
     "category": "Objects"
   },
   {
     "word": "مهراس",
-    "hint": "أداة دق",
+    "hint": "دق",
     "category": "Objects"
   },
   {
     "word": "غربال",
-    "hint": "أداة تصفية",
+    "hint": "تصفية",
     "category": "Objects"
   },
   {
     "word": "سطل",
-    "hint": "وعاء ماء",
+    "hint": "ماء",
     "category": "Objects"
   },
   {
     "word": "بانو",
-    "hint": "حوض غسيل",
+    "hint": "غسيل",
     "category": "Objects"
   },
   {
     "word": "شيتة",
-    "hint": "فرشاة تنظيف",
+    "hint": "تنظيف",
     "category": "Objects"
   },
   {
     "word": "مساحة",
-    "hint": "أداة مسح",
+    "hint": "مسح",
     "category": "Objects"
   },
   {
     "word": "خيشة",
-    "hint": "قطعة قماش",
+    "hint": "قماش",
     "category": "Objects"
   },
   {
     "word": "فكرون",
-    "hint": "سلحفاة برية",
+    "hint": "برية",
     "category": "Animals"
   },
   {
     "word": "ببوشة",
-    "hint": "حلزون صغير",
+    "hint": "صغير",
     "category": "Animals"
   },
   {
     "word": "وزغة",
-    "hint": "زاحف جداري",
+    "hint": "جداري",
     "category": "Animals"
   },
   {
     "word": "جرانة",
-    "hint": "ضفدع مائي",
+    "hint": "مائي",
     "category": "Animals"
   },
   {
     "word": "حنش",
-    "hint": "ثعبان سام",
+    "hint": "سام",
     "category": "Animals"
   },
   {
     "word": "عقرب",
-    "hint": "حشرة لاسعة",
+    "hint": "لاسعة",
     "category": "Animals"
   },
   {
     "word": "رتيلة",
-    "hint": "عنكبوت كبير",
+    "hint": "كبير",
     "category": "Animals"
   },
   {
     "word": "ذبانة",
-    "hint": "حشرة طائرة",
+    "hint": "طائرة",
     "category": "Animals"
   },
   {
     "word": "ناموسة",
-    "hint": "حشرة ماصة",
+    "hint": "ماصة",
     "category": "Animals"
   },
   {
     "word": "سراق زيت",
-    "hint": "صرصور ليلي",
+    "hint": "ليلي",
     "category": "Animals"
   },
   {
     "word": "فرزيط",
-    "hint": "حشرة ناطة",
+    "hint": "ناطة",
     "category": "Animals"
   },
   {
     "word": "سردوك",
-    "hint": "ذكر الدجاج",
+    "hint": "الدجاج",
     "category": "Animals"
   },
   {
     "word": "بهيم",
-    "hint": "حمار صبور",
+    "hint": "صبور",
     "category": "Animals"
   },
   {
     "word": "بغل",
-    "hint": "حيوان هجين",
+    "hint": "هجين",
     "category": "Animals"
   },
   {
     "word": "عود",
-    "hint": "حصان أصيل",
+    "hint": "أصيل",
     "category": "Animals"
   },
   {
     "word": "راس",
-    "hint": "جزء علوي",
+    "hint": "علوي",
     "category": "Body"
   },
   {
     "word": "شعر",
-    "hint": "غطاء الرأس",
+    "hint": "الرأس",
     "category": "Body"
   },
   {
     "word": "عين",
-    "hint": "حاسة بصر",
+    "hint": "بصر",
     "category": "Body"
   },
   {
     "word": "خشم",
-    "hint": "عضو شم",
+    "hint": "شم",
     "category": "Body"
   },
   {
     "word": "فم",
-    "hint": "مدخل طعام",
+    "hint": "طعام",
     "category": "Body"
   },
   {
     "word": "شلغوم",
-    "hint": "شعر الشارب",
+    "hint": "الشارب",
     "category": "Body"
   },
   {
     "word": "لحية",
-    "hint": "شعر الوجه",
+    "hint": "الوجه",
     "category": "Body"
   },
   {
     "word": "وذن",
-    "hint": "حاسة سمع",
+    "hint": "سمع",
     "category": "Body"
   },
   {
     "word": "رقبة",
-    "hint": "واصلة الجسد",
+    "hint": "الجسد",
     "category": "Body"
   },
   {
     "word": "كتف",
-    "hint": "مفصل علوي",
+    "hint": "علوي",
     "category": "Body"
   },
   {
     "word": "يد",
-    "hint": "طرف علوي",
+    "hint": "علوي",
     "category": "Body"
   },
   {
     "word": "صبع",
-    "hint": "جزء اليد",
+    "hint": "اليد",
     "category": "Body"
   },
   {
     "word": "ظفر",
-    "hint": "قشرة صلبة",
+    "hint": "صلبة",
     "category": "Body"
   },
   {
     "word": "كرش",
-    "hint": "بطن ممتلئ",
+    "hint": "ممتلئ",
     "category": "Body"
   },
   {
     "word": "ظهر",
-    "hint": "خلف الجسد",
+    "hint": "الجسد",
     "category": "Body"
   },
   {
     "word": "ساق",
-    "hint": "طرف سفلي",
+    "hint": "سفلي",
     "category": "Body"
   },
   {
     "word": "ركبة",
-    "hint": "مفصل الساق",
+    "hint": "الساق",
     "category": "Body"
   },
   {
     "word": "كعب",
-    "hint": "أسفل القدم",
+    "hint": "القدم",
     "category": "Body"
   },
   {
     "word": "راجل",
-    "hint": "ذكر بالغ",
+    "hint": "غ",
     "category": "People"
   },
   {
     "word": "مرا",
-    "hint": "أنثى بالغة",
+    "hint": "غة",
     "category": "People"
   },
   {
     "word": "وليد",
-    "hint": "ذكر يافع",
+    "hint": "يافع",
     "category": "People"
   },
   {
     "word": "بنية",
-    "hint": "فتاة شابة",
+    "hint": "شابة",
     "category": "People"
   },
   {
     "word": "شيباني",
-    "hint": "رجل مسن",
+    "hint": "مسن",
     "category": "People"
   },
   {
     "word": "عزوزة",
-    "hint": "امرأة مسنة",
+    "hint": "مسنة",
     "category": "People"
   },
   {
     "word": "كهل",
-    "hint": "متوسط العمر",
+    "hint": "العمر",
     "category": "People"
   },
   {
     "word": "مراهق",
-    "hint": "شاب ناشئ",
+    "hint": "ناشئ",
     "category": "People"
   },
   {
     "word": "بيبي",
-    "hint": "رضيع صغير",
+    "hint": "صغير",
     "category": "People"
   },
   {
     "word": "خو",
-    "hint": "شقيق ذكر",
+    "hint": "ذكر",
     "category": "People"
   },
   {
     "word": "أخت",
-    "hint": "شقيقة أنثى",
+    "hint": "أنثى",
     "category": "People"
   },
   {
     "word": "أب",
-    "hint": "والد العائلة",
+    "hint": "العائلة",
     "category": "People"
   },
   {
     "word": "أم",
-    "hint": "والدة حنون",
+    "hint": "حنون",
     "category": "People"
   },
   {
     "word": "جد",
-    "hint": "أب الوالد",
+    "hint": "الوالد",
     "category": "People"
   },
   {
     "word": "جدة",
-    "hint": "أم الوالد",
+    "hint": "الوالد",
     "category": "People"
   },
   {
     "word": "عم",
-    "hint": "أخ الأب",
+    "hint": "الأب",
     "category": "People"
   },
   {
     "word": "خال",
-    "hint": "أخ الأم",
+    "hint": "الأم",
     "category": "People"
   },
   {
     "word": "عمة",
-    "hint": "أخت الأب",
+    "hint": "الأب",
     "category": "People"
   },
   {
     "word": "خالة",
-    "hint": "أخت الأم",
+    "hint": "الأم",
     "category": "People"
   },
   {
     "word": "نسيب",
-    "hint": "قريب بالزواج",
+    "hint": "زواج",
     "category": "People"
   },
   {
     "word": "سلف",
-    "hint": "أخ الزوج",
+    "hint": "الزوج",
     "category": "People"
   },
   {
     "word": "ضرة",
-    "hint": "زوجة ثانية",
+    "hint": "ثانية",
     "category": "People"
   },
   {
     "word": "حب",
-    "hint": "شعور جميل",
+    "hint": "جميل",
     "category": "Emotions"
   },
   {
     "word": "كره",
-    "hint": "شعور سلبي",
+    "hint": "سلبي",
     "category": "Emotions"
   },
   {
     "word": "غش",
-    "hint": "انفعال شديد",
+    "hint": "شديد",
     "category": "Emotions"
   },
   {
     "word": "فرحة",
-    "hint": "سعادة غامرة",
+    "hint": "غامرة",
     "category": "Emotions"
   },
   {
     "word": "حزن",
-    "hint": "ألم نفسي",
+    "hint": "نفسي",
     "category": "Emotions"
   },
   {
     "word": "قلق",
-    "hint": "توتر عصبي",
+    "hint": "عصبي",
     "category": "Emotions"
   },
   {
     "word": "فدة",
-    "hint": "ملل شديد",
+    "hint": "شديد",
     "category": "Emotions"
   },
   {
     "word": "ستريس",
-    "hint": "ضغط نفسي",
+    "hint": "نفسي",
     "category": "Emotions"
   },
   {
     "word": "ديبريسيون",
-    "hint": "اكتئاب حاد",
+    "hint": "حاد",
     "category": "Emotions"
   },
   {
     "word": "ثقة",
-    "hint": "أمان داخلي",
+    "hint": "داخلي",
     "category": "Emotions"
   },
   {
     "word": "كذب",
-    "hint": "قول الزور",
+    "hint": "الزور",
     "category": "Emotions"
   },
   {
     "word": "نفاق",
-    "hint": "وجهان لشخص",
+    "hint": "لشخص",
     "category": "Emotions"
   },
   {
     "word": "خيانة",
-    "hint": "نقض العهد",
+    "hint": "العهد",
     "category": "Emotions"
   },
   {
     "word": "وفاء",
-    "hint": "إخلاص دائم",
+    "hint": "دائم",
     "category": "Emotions"
   },
   {
     "word": "صدق",
-    "hint": "قول الحق",
+    "hint": "الحق",
     "category": "Emotions"
   },
   {
     "word": "مرج",
-    "hint": "إلحاح مزعج",
+    "hint": "مزعج",
     "category": "Slang"
   },
   {
     "word": "تبلفيط",
-    "hint": "كلام فارغ",
+    "hint": "فارغ",
     "category": "Slang"
   },
   {
     "word": "تشقنيس",
-    "hint": "دلال مبالغ",
+    "hint": "مبالغ",
     "category": "Slang"
   },
   {
     "word": "تفشليم",
-    "hint": "ادعاء كاذب",
+    "hint": "كاذب",
     "category": "Slang"
   },
   {
     "word": "تكمبين",
-    "hint": "تخطيط خبيث",
+    "hint": "خبيث",
     "category": "Slang"
   },
   {
     "word": "تخلويض",
-    "hint": "فوضى عارمة",
+    "hint": "عارمة",
     "category": "Slang"
   },
   {
     "word": "ترهويج",
-    "hint": "دوار خفيف",
+    "hint": "خفيف",
     "category": "Slang"
   },
   {
     "word": "تغفيس",
-    "hint": "عمل عشوائي",
+    "hint": "عشوائي",
     "category": "Slang"
   },
   {
     "word": "تبهليل",
-    "hint": "تظاهر بالغباء",
+    "hint": "غباء",
     "category": "Slang"
   },
   {
     "word": "تسطيكة",
-    "hint": "ضربة خفيفة",
+    "hint": "خفيفة",
     "category": "Slang"
   },
   {
     "word": "تكركير",
-    "hint": "تباطؤ بالعمل",
+    "hint": "عمل",
     "category": "Slang"
   },
   {
     "word": "تفدليك",
-    "hint": "مزاح طريف",
+    "hint": "طريف",
     "category": "Slang"
   },
   {
     "word": "ريق",
-    "hint": "كلام مكرر",
+    "hint": "مكرر",
     "category": "Slang"
   },
   {
     "word": "بلادة",
-    "hint": "سوء تصرف",
+    "hint": "تصرف",
     "category": "Slang"
   },
   {
     "word": "ركاكة",
-    "hint": "ثقل دم",
+    "hint": "دم",
     "category": "Slang"
   },
   {
     "word": "تجلطيم",
-    "hint": "كلام مستفز",
+    "hint": "مستفز",
     "category": "Slang"
   },
   {
     "word": "تقعويج",
-    "hint": "صعوبة مفتعلة",
+    "hint": "مفتعلة",
     "category": "Slang"
   },
   {
     "word": "تنقنيق",
-    "hint": "تذمر مستمر",
+    "hint": "مستمر",
     "category": "Slang"
   },
   {
     "word": "ترهدين",
-    "hint": "خبث مخفي",
+    "hint": "مخفي",
     "category": "Slang"
   },
   {
     "word": "تفليم",
-    "hint": "تمثيل درامي",
+    "hint": "درامي",
     "category": "Slang"
   },
   {
     "word": "تخرنين",
-    "hint": "شكوى دائمة",
+    "hint": "دائمة",
     "category": "Slang"
   },
   {
     "word": "تبوحيط",
-    "hint": "بكاء مصطنع",
+    "hint": "مصطنع",
     "category": "Slang"
   },
   {
     "word": "تشعبين",
-    "hint": "تصرف ماكر",
+    "hint": "ماكر",
     "category": "Slang"
   },
   {
     "word": "تكمش",
-    "hint": "انكماش جسدي",
+    "hint": "جسدي",
     "category": "Slang"
   },
   {
     "word": "تكشبير",
-    "hint": "عبوس الوجه",
+    "hint": "الوجه",
     "category": "Slang"
   },
   {
     "word": "تلغويج",
-    "hint": "كلام غيرمفهوم",
+    "hint": "غيرمفهوم",
     "category": "Slang"
   },
   {
     "word": "تسخسيخ",
-    "hint": "توبيخ شديد",
+    "hint": "شديد",
     "category": "Slang"
   },
   {
     "word": "تبزنيس",
-    "hint": "معاكسة كلامية",
+    "hint": "كلامية",
     "category": "Slang"
   },
   {
     "word": "تطييح",
-    "hint": "إهانة مقصودة",
+    "hint": "مقصودة",
     "category": "Slang"
   },
   {
     "word": "تكمبيص",
-    "hint": "تدبير سري",
+    "hint": "سري",
     "category": "Slang"
   },
   {
     "word": "تغنحيش",
-    "hint": "دلال مصطنع",
+    "hint": "مصطنع",
     "category": "Slang"
   },
   {
     "word": "بيسي",
-    "hint": "حاسوب شخصي",
+    "hint": "شخصي",
     "category": "Technology"
   },
   {
     "word": "ايفون",
-    "hint": "هاتف ذكي",
+    "hint": "ذكي",
     "category": "Technology"
   },
   {
     "word": "ايربودز",
-    "hint": "سماعات أذن",
+    "hint": "أذن",
     "category": "Technology"
   },
   {
     "word": "شارجور",
-    "hint": "كابل طاقة",
+    "hint": "طاقة",
     "category": "Technology"
   },
   {
     "word": "باوربانك",
-    "hint": "بطارية متنقلة",
+    "hint": "متنقلة",
     "category": "Technology"
   },
   {
     "word": "فلاش",
-    "hint": "ذاكرة صغيرة",
+    "hint": "صغيرة",
     "category": "Technology"
   },
   {
     "word": "مونيتور",
-    "hint": "شاشة عرض",
+    "hint": "عرض",
     "category": "Technology"
   },
   {
     "word": "كابل",
-    "hint": "سلك توصيل",
+    "hint": "توصيل",
     "category": "Technology"
   },
   {
     "word": "سويتش",
-    "hint": "قاطع تيار",
+    "hint": "تيار",
     "category": "Technology"
   },
   {
     "word": "بلاي",
-    "hint": "منصة لعب",
+    "hint": "لعب",
     "category": "Technology"
   },
   {
     "word": "سيبار",
-    "hint": "مقهى انترنت",
+    "hint": "انترنت",
     "category": "Places"
   },
   {
     "word": "وتيل",
-    "hint": "فندق سياحي",
+    "hint": "سياحي",
     "category": "Places"
   },
   {
     "word": "بيسين",
-    "hint": "مسبح ماء",
+    "hint": "ماء",
     "category": "Places"
   },
   {
     "word": "بارك",
-    "hint": "حديقة عامة",
+    "hint": "عامة",
     "category": "Places"
   },
   {
     "word": "ماناج",
-    "hint": "مدينة ملاهي",
+    "hint": "ملاهي",
     "category": "Places"
   },
   {
     "word": "زوو",
-    "hint": "حديقة حيوان",
+    "hint": "حيوان",
     "category": "Places"
   },
   {
     "word": "سينيما",
-    "hint": "قاعة أفلام",
+    "hint": "أفلام",
     "category": "Places"
   },
   {
     "word": "مسرح",
-    "hint": "خشبة تمثيل",
+    "hint": "تمثيل",
     "category": "Places"
   },
   {
     "word": "متحف",
-    "hint": "معرض آثار",
+    "hint": "آثار",
     "category": "Places"
   },
   {
     "word": "معرض",
-    "hint": "صالة عرض",
+    "hint": "عرض",
     "category": "Places"
   },
   {
     "word": "فريبرية",
-    "hint": "ملابس مستعملة",
+    "hint": "مستعملة",
     "category": "Places"
   },
   {
     "word": "بوتيك",
-    "hint": "متجر ملابس",
+    "hint": "ملابس",
     "category": "Places"
   },
   {
     "word": "مغازة",
-    "hint": "مساحة تجارية",
+    "hint": "تجارية",
     "category": "Places"
   },
   {
     "word": "عطرية",
-    "hint": "دكان توابل",
+    "hint": "توابل",
     "category": "Places"
   },
   {
     "word": "كوافور",
-    "hint": "صالون حلاقة",
+    "hint": "حلاقة",
     "category": "Places"
   },
   {
     "word": "فرماسي",
-    "hint": "صيدلية دواء",
+    "hint": "دواء",
     "category": "Places"
   },
   {
     "word": "سبيطار",
-    "hint": "مستشفى عام",
+    "hint": "عام",
     "category": "Places"
   },
   {
     "word": "كلينيك",
-    "hint": "مصحة خاصة",
+    "hint": "خاصة",
     "category": "Places"
   },
   {
     "word": "بوستة",
-    "hint": "مركز بريد",
+    "hint": "بريد",
     "category": "Places"
   },
   {
     "word": "بانكة",
-    "hint": "مؤسسة مالية",
+    "hint": "مالية",
     "category": "Places"
   },
   {
     "word": "كوميسارية",
-    "hint": "مركز شرطة",
+    "hint": "شرطة",
     "category": "Places"
   },
   {
     "word": "قباضة",
-    "hint": "مركز ضرائب",
+    "hint": "ضرائب",
     "category": "Places"
   },
   {
     "word": "محطة",
-    "hint": "موقف حافلات",
+    "hint": "حافلات",
     "category": "Places"
   },
   {
     "word": "بياج",
-    "hint": "محطة استخلاص",
+    "hint": "استخلاص",
     "category": "Places"
   },
   {
     "word": "رومبوان",
-    "hint": "مفترق دائري",
+    "hint": "دائري",
     "category": "Places"
   },
   {
     "word": "كياس",
-    "hint": "طريق معبد",
+    "hint": "معبد",
     "category": "Places"
   },
   {
     "word": "تروتوار",
-    "hint": "رصيف مشاة",
+    "hint": "مشاة",
     "category": "Places"
   },
   {
     "word": "بيست",
-    "hint": "طريق ترابي",
+    "hint": "ترابي",
     "category": "Places"
   },
   {
     "word": "سكة",
-    "hint": "مسار قطار",
+    "hint": "قطار",
     "category": "Places"
   },
   {
     "word": "قنطرة",
-    "hint": "جسر عبور",
+    "hint": "عبور",
     "category": "Places"
   },
   {
     "word": "نفق",
-    "hint": "ممر سفلي",
+    "hint": "سفلي",
     "category": "Places"
   },
   {
     "word": "باركينغ",
-    "hint": "مأوى سيارات",
+    "hint": "سيارات",
     "category": "Places"
   },
   {
     "word": "كرهبة",
-    "hint": "سيارة نقل",
+    "hint": "نقل",
     "category": "Transportation"
   },
   {
     "word": "موتور",
-    "hint": "دراجة نارية",
+    "hint": "نارية",
     "category": "Transportation"
   },
   {
     "word": "بسكلات",
-    "hint": "دراجة هوائية",
+    "hint": "هوائية",
     "category": "Transportation"
   },
   {
     "word": "كميون",
-    "hint": "شاحنة سلع",
+    "hint": "سلع",
     "category": "Transportation"
   },
   {
     "word": "تراكتور",
-    "hint": "جرار زراعي",
+    "hint": "زراعي",
     "category": "Transportation"
   },
   {
     "word": "تران",
-    "hint": "قطار ركاب",
+    "hint": "ركاب",
     "category": "Transportation"
   },
   {
     "word": "بطاح",
-    "hint": "سفينة نقل",
+    "hint": "نقل",
     "category": "Transportation"
   },
   {
     "word": "فلوكة",
-    "hint": "قارب صغير",
+    "hint": "صغير",
     "category": "Transportation"
   },
   {
     "word": "شقف",
-    "hint": "قارب صيد",
+    "hint": "صيد",
     "category": "Transportation"
   },
   {
     "word": "يخت",
-    "hint": "سفينة فخمة",
+    "hint": "فخمة",
     "category": "Transportation"
   },
   {
     "word": "طاكسيفون",
-    "hint": "هاتف عمومي",
+    "hint": "عمومي",
     "category": "Objects"
   },
   {
     "word": "بريكة",
-    "hint": "ولاعة غاز",
+    "hint": "غاز",
     "category": "Objects"
   },
   {
     "word": "دخان",
-    "hint": "تبغ لف",
+    "hint": "لف",
     "category": "Objects"
   },
   {
     "word": "شيشة",
-    "hint": "أرجيلة تدخين",
+    "hint": "تدخين",
     "category": "Objects"
   },
   {
     "word": "معسل",
-    "hint": "تبغ منكه",
+    "hint": "منكه",
     "category": "Objects"
   },
   {
     "word": "فحم",
-    "hint": "جمر مشتعل",
+    "hint": "مشتعل",
     "category": "Objects"
   },
   {
     "word": "كسرونة",
-    "hint": "إناء طبخ",
+    "hint": "طبخ",
     "category": "Objects"
   },
   {
     "word": "تبسي",
-    "hint": "صحن عميق",
+    "hint": "عميق",
     "category": "Objects"
   },
   {
     "word": "شقالة",
-    "hint": "وعاء كبير",
+    "hint": "كبير",
     "category": "Objects"
   },
   {
     "word": "مغرفة",
-    "hint": "ملعقة طعام",
+    "hint": "طعام",
     "category": "Objects"
   },
   {
     "word": "فرشيطة",
-    "hint": "شوكة أكل",
+    "hint": "أكل",
     "category": "Objects"
   },
   {
     "word": "موس",
-    "hint": "سكين قطع",
+    "hint": "قطع",
     "category": "Objects"
   },
   {
     "word": "فنجان",
-    "hint": "كوب قهوة",
+    "hint": "قهوة",
     "category": "Objects"
   },
   {
     "word": "سنيوة",
-    "hint": "صينية تقديم",
+    "hint": "تقديم",
     "category": "Objects"
   },
   {
     "word": "عصا",
-    "hint": "عود خشب",
+    "hint": "خشب",
     "category": "Objects"
   },
   {
     "word": "زلايز",
-    "hint": "بلاط أرضي",
+    "hint": "أرضي",
     "category": "Materials"
   },
   {
     "word": "جير",
-    "hint": "طلاء أبيض",
+    "hint": "أبيض",
     "category": "Materials"
   },
   {
     "word": "سيمان",
-    "hint": "مادة بناء",
+    "hint": "بناء",
     "category": "Materials"
   },
   {
     "word": "ياجور",
-    "hint": "طوب أحمر",
+    "hint": "أحمر",
     "category": "Materials"
   },
   {
     "word": "حصى",
-    "hint": "حجارة صغيرة",
+    "hint": "صغيرة",
     "category": "Materials"
   },
   {
     "word": "بلار",
-    "hint": "زجاج شفاف",
+    "hint": "شفاف",
     "category": "Materials"
   },
   {
     "word": "لوح",
-    "hint": "خشب صلب",
+    "hint": "صلب",
     "category": "Materials"
   },
   {
     "word": "نحاس",
-    "hint": "معدن لامع",
+    "hint": "لامع",
     "category": "Materials"
   },
   {
     "word": "ذهب",
-    "hint": "معدن ثمين",
+    "hint": "ثمين",
     "category": "Materials"
   },
   {
     "word": "فضة",
-    "hint": "معدن أبيض",
+    "hint": "أبيض",
     "category": "Materials"
   },
   {
     "word": "نقرة",
-    "hint": "فضة خالصة",
+    "hint": "خالصة",
     "category": "Materials"
   },
   {
     "word": "زمرد",
-    "hint": "حجر كريم",
+    "hint": "كريم",
     "category": "Materials"
   },
   {
     "word": "ياقوت",
-    "hint": "حجر أحمر",
+    "hint": "أحمر",
     "category": "Materials"
   },
   {
     "word": "لؤلؤ",
-    "hint": "جوهر بحري",
+    "hint": "بحري",
     "category": "Materials"
   },
   {
     "word": "مرجان",
-    "hint": "شعب بحرية",
+    "hint": "بحرية",
     "category": "Materials"
   },
   {
     "word": "عنبر",
-    "hint": "عطر فواح",
+    "hint": "فواح",
     "category": "Materials"
   },
   {
     "word": "مسك",
-    "hint": "رائحة طيبة",
+    "hint": "طيبة",
     "category": "Materials"
   }
 ]
