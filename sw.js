@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dakheel-v1';
+const CACHE_NAME = 'dakheel-v2';
 
 // كل الملفات التي سيتم تخزينها مؤقتاً للعمل بدون إنترنت
 const ASSETS = [
