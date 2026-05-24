@@ -17,7 +17,7 @@
     <meta name="apple-mobile-web-app-title" content="الدخيل">
     <link rel="apple-touch-icon" href="icon-192.png">
 
-    <link rel="stylesheet" href="style.css?v=3.1">
+    <link rel="stylesheet" href="style.css?v=4.8">
 </head>
 <body>
     <div class="orb orb-1"></div>
@@ -38,14 +38,16 @@
                 <button type="button" id="add-player-btn" class="secondary-btn">➕ إضافة لاعب آخر</button>
             </div>
 
-            <div class="settings-group">
-                <label for="impostor-count">🎭 عدد الدخلاء:</label>
-                <input type="number" id="impostor-count" value="1" min="1">
-            </div>
-
-            <div class="settings-group">
-                <label for="timer-minutes">⏱️ مدة الجولة (بالدقائق):</label>
-                <input type="number" id="timer-minutes" value="3" min="1">
+            <!-- New Side-By-Side Layout for Impostors and Timer Settings -->
+            <div class="settings-row">
+                <div class="setting-card" id="btn-edit-impostors">
+                    <span class="label">🎭 عدد الدخلاء</span>
+                    <span class="value" id="val-impostors">1</span>
+                </div>
+                <div class="setting-card" id="btn-edit-timer">
+                    <span class="label">⏱️ مدة الجولة</span>
+                    <span class="value" id="val-timer">03:00</span>
+                </div>
             </div>
 
             <!-- Advanced options collapsible -->
@@ -94,6 +96,7 @@
 
         <div id="timer-screen" class="screen">
             <h2>💬 وقت النقاش</h2>
+            <div id="starter-player" class="starter-player"></div>
             <div id="timer-display" class="timer">03:00</div>
             <button id="go-to-vote-btn" class="danger-btn">🗳️ إنهاء النقاش والتصويت</button>
         </div>
@@ -112,7 +115,20 @@
         </div>
     </div>
 
-    <script src="app.js?v=3.1"></script>
+    <!-- Modal window for Impostor and Timer adjustments -->
+    <div id="edit-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="modal-title">تعديل</h3>
+            <div class="stepper">
+                <button id="btn-minus" class="danger-btn">-</button>
+                <span id="modal-val">1</span>
+                <button id="btn-plus" class="primary-btn">+</button>
+            </div>
+            <button id="btn-confirm" class="primary-btn">تم</button>
+        </div>
+    </div>
+
+    <script src="app.js?v=4.8"></script>
 
     <script>
       // تسجيل Service Worker للعمل كـ PWA
