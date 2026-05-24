@@ -14,12 +14,31 @@ function addPlayerInput(defaultName = '') {
     if (!playersContainer) return;
     
     playerCount++;
+    
+    // إنشاء الحاوية (الصف) لكل لاعب
+    const row = document.createElement('div');
+    row.className = 'player-input-row';
+    
     const input = document.createElement('input');
     input.type = 'text';
     input.className = 'player-input';
     input.value = defaultName || `لاعب ${playerCount}`;
-    input.placeholder = `اسم اللاعب ${playerCount}`;
-    playersContainer.appendChild(input);
+    input.placeholder = `اسم اللاعب`;
+    
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'remove-player-btn danger-btn';
+    removeBtn.innerHTML = '✖';
+    removeBtn.title = 'إزالة اللاعب';
+    
+    // حذف حقل اللاعب عند الضغط
+    removeBtn.addEventListener('click', () => {
+        row.remove();
+    });
+
+    row.appendChild(input);
+    row.appendChild(removeBtn);
+    playersContainer.appendChild(row);
 }
 
 // تهيئة 4 حقول افتراضية عند تحميل الصفحة
@@ -86,11 +105,12 @@ document.getElementById('start-game-btn').addEventListener('click', () => {
     players = namesInput.map(name => ({
         name: name,
         isImpostor: false,
+        customHint: "", // تلميح مخصص للدخلاء
         eliminated: false,
         viewedCard: false
     }));
 
-    // اختيار الكلمة
+    // اختيار الكلمة الأساسية للمواطنين
     currentWordObj = wordsDB[Math.floor(Math.random() * wordsDB.length)];
 
     // تحديد الدخلاء
@@ -108,31 +128,42 @@ document.getElementById('start-game-btn').addEventListener('click', () => {
         }
     }
 
+    // إعطاء كل دخيل تلميحاً مختلفاً
+    // نقوم بجلب قائمة مبعثرة لكل التلميحات المتوفرة في قاعدة البيانات
+    let allHints = wordsDB.map(w => w.hint).sort(() => 0.5 - Math.random());
+    let hintIndex = 0;
+
+    players.forEach(p => {
+        if (p.isImpostor) {
+            p.customHint = allHints[hintIndex % allHints.length];
+            hintIndex++;
+        }
+    });
+
     remainingTime = timeMins * 60;
     currentRevealIndex = 0;
     renderSingleCard();
     showScreen('reveal-screen');
 });
 
-// رسم البطاقة للاعب الحالي بالتتابع
+// رسم البطاقة للاعب الحالي بالتتابع (تعمل بالضغط المطول فقط)
 function renderSingleCard() {
     const container = document.getElementById('single-card-container');
     const titleMsg = document.getElementById('current-player-turn-msg');
-    const instructions = document.getElementById('reveal-instructions');
     const nextBtn = document.getElementById('next-player-btn');
     
     container.innerHTML = '';
     nextBtn.classList.add('hidden');
     
     let player = players[currentRevealIndex];
-    titleMsg.innerText = `الدور الحالي: يا ${player.name}، اضغط لترى دورك!`;
-    instructions.innerText = "تأكد من أن لا أحد غيرك ينظر إلى الشاشة.";
+    titleMsg.innerText = `الدور الحالي: يا ${player.name}`;
     
     const card = document.createElement('div');
     card.className = 'flip-card';
     
+    // استخدام customHint بدلاً من التلميح الثابت للدخيل
     let roleText = player.isImpostor ? 
-        `أنت الدخيل 🤫<br><br><span style="font-size:16px;">التلميح:</span><br>${currentWordObj.hint}` : 
+        `أنت الدخيل 🤫<br><br><span style="font-size:16px;">التلميح:</span><br>${player.customHint}` : 
         `أنت مواطن 🤠<br><br><span style="font-size:16px;">الكلمة:</span><br>${currentWordObj.word}`;
 
     card.innerHTML = `
@@ -146,21 +177,38 @@ function renderSingleCard() {
         </div>
     `;
     
-    card.addEventListener('click', function() {
-        if (!this.classList.contains('flipped')) {
-            this.classList.add('flipped');
-            player.viewedCard = true;
+    // معالجات أحداث الضغط المطول (Hold to reveal)
+    const showCard = (e) => {
+        e.preventDefault(); // منع تحديد النص أو ظهور قوائم المتصفح
+        card.classList.add('flipped');
+        player.viewedCard = true;
+    };
+
+    const hideCard = (e) => {
+        e.preventDefault();
+        if (card.classList.contains('flipped')) {
+            card.classList.remove('flipped');
             
-            // تغيير النص بناءً على هل يوجد لاعبين آخرين أم لا
+            // إظهار زر الانتقال فقط بعد إفلات الضغط (بعد رؤية البطاقة وإخفائها)
             if (currentRevealIndex < players.length - 1) {
-                nextBtn.innerText = `أخفِ البطاقة ومرر الهاتف لـ ${players[currentRevealIndex + 1].name}`;
+                nextBtn.innerText = `تمت الرؤية.. مرر الهاتف لـ ${players[currentRevealIndex + 1].name}`;
             } else {
                 nextBtn.innerText = "الجميع رأى دوره.. ابدأ العداد!";
             }
             nextBtn.classList.remove('hidden');
         }
-    });
+    };
+
+    // أحداث الماوس للكمبيوتر
+    card.addEventListener('mousedown', showCard);
+    card.addEventListener('mouseup', hideCard);
+    card.addEventListener('mouseleave', hideCard);
     
+    // أحداث اللمس للهواتف
+    card.addEventListener('touchstart', showCard, {passive: false});
+    card.addEventListener('touchend', hideCard, {passive: false});
+    card.addEventListener('touchcancel', hideCard, {passive: false});
+
     container.appendChild(card);
 }
 
