@@ -13,83 +13,125 @@ let playerCount = 0;
 function addPlayerInput(defaultName = '') {
     const playersContainer = document.getElementById('players-inputs-container');
     if (!playersContainer) return;
-    
+
     playerCount++;
-    
-    // إنشاء الحاوية (الصف) لكل لاعب
+
     const row = document.createElement('div');
     row.className = 'player-input-row';
-    
+
     const input = document.createElement('input');
     input.type = 'text';
     input.className = 'player-input';
     input.value = defaultName || `لاعب ${playerCount}`;
     input.placeholder = `اسم اللاعب`;
-    
+
     const removeBtn = document.createElement('button');
     removeBtn.type = 'button';
     removeBtn.className = 'remove-player-btn danger-btn';
     removeBtn.innerHTML = '✖';
     removeBtn.title = 'إزالة اللاعب';
-    
-    // حذف حقل اللاعب عند الضغط
-    removeBtn.addEventListener('click', () => {
-        row.remove();
-    });
+    removeBtn.addEventListener('click', () => { row.remove(); });
 
     row.appendChild(input);
     row.appendChild(removeBtn);
     playersContainer.appendChild(row);
 }
 
-// تهيئة 4 حقول افتراضية عند تحميل الصفحة
 window.addEventListener('DOMContentLoaded', () => {
-    for(let i = 1; i <= 4; i++) {
-        addPlayerInput(`لاعب ${i}`);
-    }
+    // تهيئة 4 لاعبين افتراضيين
+    for (let i = 1; i <= 4; i++) addPlayerInput(`لاعب ${i}`);
+
+    // ===== تبديل لوحة الخيارات المتقدمة =====
+    const advBtn   = document.getElementById('advanced-toggle-btn');
+    const advPanel = document.getElementById('advanced-panel');
+    const chevron  = document.getElementById('advanced-chevron');
+
+    advBtn.addEventListener('click', () => {
+        const isOpen = advPanel.classList.toggle('open');
+        chevron.classList.toggle('open', isOpen);
+    });
+
+    // ===== تعطيل حقل عدد الدخلاء عند تفعيل الخيار العشوائي =====
+    const randomToggle   = document.getElementById('random-impostors-toggle');
+    const impostorInput  = document.getElementById('impostor-count');
+    const impostorLabel  = document.querySelector('label[for="impostor-count"]');
+
+    randomToggle.addEventListener('change', function () {
+        const isRandom = this.checked;
+        impostorInput.disabled = isRandom;
+        impostorInput.classList.toggle('input-disabled', isRandom);
+        if (impostorLabel) impostorLabel.classList.toggle('label-disabled', isRandom);
+    });
+
+    // ===== تعطيل خيار "إخفاء التلميح" عند تفعيل "منح الجميع التلميح الصحيح" والعكس =====
+    const noHintsToggle       = document.getElementById('no-hints-toggle');
+    const allCorrectToggle    = document.getElementById('all-correct-hints-toggle');
+
+    noHintsToggle.addEventListener('change', function () {
+        if (this.checked) {
+            allCorrectToggle.checked = false;
+            allCorrectToggle.disabled = true;
+            allCorrectToggle.classList.add('input-disabled');
+            allCorrectToggle.nextElementSibling.classList.add('label-disabled');
+        } else {
+            allCorrectToggle.disabled = false;
+            allCorrectToggle.classList.remove('input-disabled');
+            allCorrectToggle.nextElementSibling.classList.remove('label-disabled');
+        }
+    });
+
+    allCorrectToggle.addEventListener('change', function () {
+        if (this.checked) {
+            noHintsToggle.checked = false;
+            noHintsToggle.disabled = true;
+            noHintsToggle.classList.add('input-disabled');
+            noHintsToggle.nextElementSibling.classList.add('label-disabled');
+        } else {
+            noHintsToggle.disabled = false;
+            noHintsToggle.classList.remove('input-disabled');
+            noHintsToggle.nextElementSibling.classList.remove('label-disabled');
+        }
+    });
 });
 
 // زر إضافة لاعب جديد
-document.getElementById('add-player-btn').addEventListener('click', () => {
-    addPlayerInput();
-});
+document.getElementById('add-player-btn').addEventListener('click', () => { addPlayerInput(); });
 
-// جلب قاعدة بيانات الكلمات (مع منع التخزين المؤقت)
+// جلب قاعدة بيانات الكلمات
 fetch('word list.json', { cache: 'no-store' })
-    .then(response => response.json())
+    .then(r => r.json())
     .then(data => { wordsDB = data; })
     .catch(err => console.error("Error loading words:", err));
 
-// دوال التنقل بين الشاشات
+// التنقل بين الشاشات
 function showScreen(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(screenId).classList.add('active');
 }
 
-// بدء اللعبة
+// ===== بدء اللعبة =====
 document.getElementById('start-game-btn').addEventListener('click', () => {
-    // جمع أسماء اللاعبين
     const namesInput = Array.from(document.querySelectorAll('.player-input'))
-                            .map(input => input.value.trim())
-                            .filter(name => name !== '');
-                            
-    let impostorCount = parseInt(document.getElementById('impostor-count').value);
-    const isRandomImpostors = document.getElementById('random-impostors-toggle').checked;
+                           .map(i => i.value.trim())
+                           .filter(n => n !== '');
+
+    let impostorCount        = parseInt(document.getElementById('impostor-count').value);
+    const isRandomImpostors  = document.getElementById('random-impostors-toggle').checked;
     const allImpostorsToggle = document.getElementById('all-impostors-toggle').checked;
-    const timeMins = parseInt(document.getElementById('timer-minutes').value);
-    
-    isEliminationMode = document.getElementById('elimination-mode').checked;
-    const noHints = document.getElementById('no-hints-toggle').checked;
-    noHintsMode = noHints;
+    const timeMins           = parseInt(document.getElementById('timer-minutes').value);
+    isEliminationMode        = document.getElementById('elimination-mode').checked;
+    noHintsMode              = document.getElementById('no-hints-toggle').checked;
+    const allCorrectHints    = document.getElementById('all-correct-hints-toggle').checked;
 
     if (namesInput.length < 3) {
         document.getElementById('setup-error').innerText = "يجب أن يكون هناك 3 لاعبين على الأقل.";
         return;
     }
-    
-    // إذا كان الخيار العشوائي مفعلاً، يتم توليد رقم عشوائي (بين 1 وعدد اللاعبين - 1)
+
     if (isRandomImpostors) {
-        impostorCount = Math.floor(Math.random() * (namesInput.length - 1)) + 1;
+        // الحد الأقصى هو نصف عدد اللاعبين لضمان بقاء المواطنين أكثر
+        const maxImpostors = Math.floor(namesInput.length / 2);
+        impostorCount = Math.floor(Math.random() * maxImpostors) + 1;
     } else {
         if (impostorCount >= namesInput.length) {
             document.getElementById('setup-error').innerText = "عدد الدخلاء يجب أن يكون أقل من عدد اللاعبين.";
@@ -103,58 +145,54 @@ document.getElementById('start-game-btn').addEventListener('click', () => {
     }
 
     document.getElementById('setup-error').innerText = "";
-    
-    // تهيئة اللاعبين
+
     players = namesInput.map(name => ({
-        name: name,
+        name,
         isImpostor: false,
-        customHint: "", // تلميح مخصص للدخلاء
+        customHint: "",
         eliminated: false,
         viewedCard: false
     }));
 
-    // اختيار الكلمة الأساسية للمواطنين
     currentWordObj = wordsDB[Math.floor(Math.random() * wordsDB.length)];
 
     // تحديد الدخلاء
-    let isAllImpostorRound = false;
-    if (allImpostorsToggle && Math.random() < 0.15) { 
-        isAllImpostorRound = true;
-    }
+    const isAllImpostorRound = allImpostorsToggle && Math.random() < 0.15;
 
     if (isAllImpostorRound) {
         players.forEach(p => p.isImpostor = true);
     } else {
-        let shuffledIndexes = [...Array(players.length).keys()].sort(() => 0.5 - Math.random());
-        for (let i = 0; i < impostorCount; i++) {
-            players[shuffledIndexes[i]].isImpostor = true;
-        }
+        const shuffled = [...Array(players.length).keys()].sort(() => 0.5 - Math.random());
+        for (let i = 0; i < impostorCount; i++) players[shuffled[i]].isImpostor = true;
     }
 
-    // --- منطق توزيع التلميحات المحدث ---
-    let impostorPlayers = players.filter(p => p.isImpostor);
-    
-    if (impostorPlayers.length === 1) {
-        // إذا كان هناك دخيل واحد فقط، يحصل على التلميح الصحيح
-        impostorPlayers[0].customHint = currentWordObj.hint;
-    } else if (impostorPlayers.length > 1) {
-        // إذا كان هناك أكثر من دخيل
-        // 1. نختار أحدهم عشوائياً ليأخذ التلميح الصحيح
-        let luckyIndex = Math.floor(Math.random() * impostorPlayers.length);
-        impostorPlayers[luckyIndex].customHint = currentWordObj.hint;
-        
-        // 2. نجلب باقي التلميحات (نستبعد التلميح الصحيح لتجنب التكرار) ونخلطها
-        let otherHints = wordsDB
+    // ===== توزيع التلميحات =====
+    const impostorPlayers = players.filter(p => p.isImpostor);
+
+    if (allCorrectHints) {
+        // جميع الدخلاء يحصلون على التلميح الصحيح
+        impostorPlayers.forEach(p => { p.customHint = currentWordObj.hint; });
+
+    } else if (impostorPlayers.length <= 1) {
+        // دخيل واحد: يحصل دائماً على التلميح الصحيح
+        if (impostorPlayers.length === 1) {
+            impostorPlayers[0].customHint = currentWordObj.hint;
+        }
+
+    } else {
+        // أكثر من دخيل: واحد عشوائي يأخذ التلميح الصحيح، الباقون يأخذون تلميحات خاطئة
+        const luckyIndex = Math.floor(Math.random() * impostorPlayers.length);
+        const wrongHints = wordsDB
             .filter(w => w.word !== currentWordObj.word)
             .map(w => w.hint)
             .sort(() => 0.5 - Math.random());
-            
+
         let hIndex = 0;
-        
-        // 3. نوزع التلميحات العشوائية على باقي الدخلاء
         for (let i = 0; i < impostorPlayers.length; i++) {
-            if (i !== luckyIndex) {
-                impostorPlayers[i].customHint = otherHints[hIndex % otherHints.length];
+            if (i === luckyIndex) {
+                impostorPlayers[i].customHint = currentWordObj.hint;
+            } else {
+                impostorPlayers[i].customHint = wrongHints[hIndex % wrongHints.length];
                 hIndex++;
             }
         }
@@ -162,173 +200,142 @@ document.getElementById('start-game-btn').addEventListener('click', () => {
 
     remainingTime = timeMins * 60;
     currentRevealIndex = 0;
-    renderSingleCard(noHints);
+    renderSingleCard();
     showScreen('reveal-screen');
 });
 
-// رسم البطاقة للاعب الحالي بالتتابع (تعمل بالضغط المطول فقط)
+// ===== رسم بطاقة اللاعب الحالي =====
 function renderSingleCard() {
     const container = document.getElementById('single-card-container');
-    const titleMsg = document.getElementById('current-player-turn-msg');
-    const nextBtn = document.getElementById('next-player-btn');
-    
+    const titleMsg  = document.getElementById('current-player-turn-msg');
+    const nextBtn   = document.getElementById('next-player-btn');
+
     container.innerHTML = '';
     nextBtn.classList.add('hidden');
-    
-    let player = players[currentRevealIndex];
+
+    const player = players[currentRevealIndex];
     titleMsg.innerText = `الدور الحالي: يا ${player.name}`;
-    
+
     const card = document.createElement('div');
     card.className = 'flip-card';
-    
+
     let roleText;
     if (player.isImpostor) {
-        if (noHintsMode) {
-            roleText = `أنت الدخيل 🤫`;
-        } else {
-            roleText = `أنت الدخيل 🤫<br><br><span style="font-size:16px;">التلميح:</span><br>${player.customHint}`;
-        }
+        roleText = noHintsMode
+            ? `أنت الدخيل 🤫`
+            : `أنت الدخيل 🤫<br><br><span style="font-size:16px;">التلميح:</span><br>${player.customHint}`;
     } else {
         roleText = `أنت مواطن 🤠<br><br><span style="font-size:16px;">الكلمة:</span><br>${currentWordObj.word}`;
     }
 
     card.innerHTML = `
         <div class="flip-card-inner">
-            <div class="flip-card-front">
-                <span>بطاقة ${player.name}</span>
-            </div>
-            <div class="flip-card-back">
-                <span>${roleText}</span>
-            </div>
-        </div>
-    `;
-    
-    // معالجات أحداث الضغط المطول (Hold to reveal)
+            <div class="flip-card-front"><span>بطاقة ${player.name}</span></div>
+            <div class="flip-card-back"><span>${roleText}</span></div>
+        </div>`;
+
     const showCard = (e) => {
-        e.preventDefault(); // منع تحديد النص أو ظهور قوائم المتصفح
+        e.preventDefault();
         card.classList.add('flipped');
         player.viewedCard = true;
     };
 
     const hideCard = (e) => {
         e.preventDefault();
-        if (card.classList.contains('flipped')) {
-            card.classList.remove('flipped');
-            
-            // إظهار زر الانتقال فقط بعد إفلات الضغط (بعد رؤية البطاقة وإخفائها)
-            if (currentRevealIndex < players.length - 1) {
-                nextBtn.innerText = `تمت الرؤية.. مرر الهاتف لـ ${players[currentRevealIndex + 1].name}`;
-            } else {
-                nextBtn.innerText = "الجميع رأى دوره.. ابدأ العداد!";
-            }
-            nextBtn.classList.remove('hidden');
-        }
+        if (!card.classList.contains('flipped')) return;
+        card.classList.remove('flipped');
+        nextBtn.innerText = currentRevealIndex < players.length - 1
+            ? `تمت الرؤية.. مرر الهاتف لـ ${players[currentRevealIndex + 1].name}`
+            : "الجميع رأى دوره.. ابدأ العداد! 🚦";
+        nextBtn.classList.remove('hidden');
     };
 
-    // أحداث الماوس للكمبيوتر
     card.addEventListener('mousedown', showCard);
     card.addEventListener('mouseup', hideCard);
     card.addEventListener('mouseleave', hideCard);
-    
-    // أحداث اللمس للهواتف
-    card.addEventListener('touchstart', showCard, {passive: false});
-    card.addEventListener('touchend', hideCard, {passive: false});
-    card.addEventListener('touchcancel', hideCard, {passive: false});
+    card.addEventListener('touchstart', showCard, { passive: false });
+    card.addEventListener('touchend', hideCard, { passive: false });
+    card.addEventListener('touchcancel', hideCard, { passive: false });
 
     container.appendChild(card);
 }
 
-// زر الانتقال للاعب التالي أو بدء العداد
+// زر اللاعب التالي أو بدء العداد
 document.getElementById('next-player-btn').addEventListener('click', () => {
     currentRevealIndex++;
     if (currentRevealIndex < players.length) {
         renderSingleCard();
     } else {
-        // إذا انتهى الجميع، انتقل لشاشة العداد
         showScreen('timer-screen');
         updateTimerDisplay();
         timerInterval = setInterval(() => {
             remainingTime--;
             updateTimerDisplay();
-            if (remainingTime <= 0) {
-                clearInterval(timerInterval);
-                goToVoting();
-            }
+            if (remainingTime <= 0) { clearInterval(timerInterval); goToVoting(); }
         }, 1000);
     }
 });
 
-// العداد اليدوي لتجاوز الوقت
 document.getElementById('go-to-vote-btn').addEventListener('click', () => {
     clearInterval(timerInterval);
     goToVoting();
 });
 
 function updateTimerDisplay() {
-    let m = Math.floor(remainingTime / 60).toString().padStart(2, '0');
-    let s = (remainingTime % 60).toString().padStart(2, '0');
+    const m = Math.floor(remainingTime / 60).toString().padStart(2, '0');
+    const s = (remainingTime % 60).toString().padStart(2, '0');
     document.getElementById('timer-display').innerText = `${m}:${s}`;
 }
 
-// شاشة التصويت
 function goToVoting() {
     showScreen('voting-screen');
     const votingList = document.getElementById('voting-list');
     votingList.innerHTML = '';
-    
-    let activePlayers = players.filter(p => !p.eliminated);
-    
-    activePlayers.forEach((player) => {
+    players.filter(p => !p.eliminated).forEach(player => {
         const btn = document.createElement('button');
         btn.className = 'vote-btn';
-        btn.innerText = `التصويت ضد ${player.name}`;
+        btn.innerText = `🗳️ ${player.name}`;
         btn.onclick = () => handleVote(player);
         votingList.appendChild(btn);
     });
 }
 
-// معالجة التصويت
 function handleVote(votedPlayer) {
     const resultMsg = document.getElementById('result-message');
     const revealBox = document.getElementById('impostors-reveal');
-    const nextBtn = document.getElementById('next-round-btn');
+    const nextBtn   = document.getElementById('next-round-btn');
     revealBox.innerHTML = '';
 
     if (!isEliminationMode) {
-        if (votedPlayer.isImpostor) {
-            resultMsg.innerText = `إجابة صحيحة! 🎉\n${votedPlayer.name} كان الدخيل.`;
-        } else {
-            resultMsg.innerText = `إجابة خاطئة! ❌\n${votedPlayer.name} ليس الدخيل.`;
-        }
-        
+        resultMsg.innerText = votedPlayer.isImpostor
+            ? `إجابة صحيحة! 🎉 ${votedPlayer.name} كان الدخيل.`
+            : `إجابة خاطئة! ❌ ${votedPlayer.name} ليس الدخيل.`;
+
         const allImpostors = players.filter(p => p.isImpostor).map(p => p.name).join(' و ');
-        revealBox.innerHTML = `الدخيل (الدخلاء): <br><strong style="color:var(--accent-color);">${allImpostors}</strong><br><br>الكلمة كانت: <strong>${currentWordObj.word}</strong>`;
-        nextBtn.innerText = "جولة جديدة";
+        revealBox.innerHTML = `الدخيل (الدخلاء):<br><strong style="color:var(--accent-color);">${allImpostors}</strong><br><br>الكلمة كانت: <strong>${currentWordObj.word}</strong>`;
+        nextBtn.innerText = "🔄 جولة جديدة";
         nextBtn.onclick = () => showScreen('setup-screen');
-        
+
     } else {
         votedPlayer.eliminated = true;
-        
-        let remainingImpostors = players.filter(p => p.isImpostor && !p.eliminated);
-        let remainingRegulars = players.filter(p => !p.isImpostor && !p.eliminated);
+        const remainingImpostors = players.filter(p => p.isImpostor && !p.eliminated);
+        const remainingRegulars  = players.filter(p => !p.isImpostor && !p.eliminated);
 
         if (remainingImpostors.length === 0) {
-            resultMsg.innerText = `لقد قمتم بالقضاء على جميع الدخلاء! 🎉 فاز المواطنون!`;
+            resultMsg.innerText = `لقد قضيتم على جميع الدخلاء! 🎉 فاز المواطنون!`;
             revealBox.innerHTML = `الكلمة كانت: <strong>${currentWordObj.word}</strong>`;
-            nextBtn.innerText = "جولة جديدة";
+            nextBtn.innerText = "🔄 جولة جديدة";
             nextBtn.onclick = () => showScreen('setup-screen');
-        } 
-        else if (remainingImpostors.length >= remainingRegulars.length) {
-            resultMsg.innerText = `لقد سيطر الدخلاء على اللعبة! 😈 فاز الدخلاء!`;
+        } else if (remainingImpostors.length >= remainingRegulars.length) {
+            resultMsg.innerText = `سيطر الدخلاء على اللعبة! 😈 فاز الدخلاء!`;
             const allImpostors = players.filter(p => p.isImpostor).map(p => p.name).join(' و ');
-            revealBox.innerHTML = `الدخيل (الدخلاء): <br><strong style="color:var(--accent-color);">${allImpostors}</strong><br><br>الكلمة كانت: <strong>${currentWordObj.word}</strong>`;
-            nextBtn.innerText = "جولة جديدة";
+            revealBox.innerHTML = `الدخيل (الدخلاء):<br><strong style="color:var(--accent-color);">${allImpostors}</strong><br><br>الكلمة كانت: <strong>${currentWordObj.word}</strong>`;
+            nextBtn.innerText = "🔄 جولة جديدة";
             nextBtn.onclick = () => showScreen('setup-screen');
-        } 
-        else {
+        } else {
             resultMsg.innerText = `تم استبعاد ${votedPlayer.name}!`;
             revealBox.innerHTML = `لكن اللعبة لم تنتهِ بعد... هل كان هو الدخيل أم لا؟ لن نخبركم! 🤐`;
-            nextBtn.innerText = "متابعة النقاش والتصويت (دقيقة واحدة)";
+            nextBtn.innerText = "⏱️ متابعة النقاش والتصويت (دقيقة واحدة)";
             nextBtn.onclick = () => {
                 remainingTime = 60;
                 showScreen('timer-screen');
@@ -336,14 +343,11 @@ function handleVote(votedPlayer) {
                 timerInterval = setInterval(() => {
                     remainingTime--;
                     updateTimerDisplay();
-                    if (remainingTime <= 0) {
-                        clearInterval(timerInterval);
-                        goToVoting();
-                    }
+                    if (remainingTime <= 0) { clearInterval(timerInterval); goToVoting(); }
                 }, 1000);
             };
         }
     }
-    
+
     showScreen('result-screen');
 }
