@@ -7,63 +7,48 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>لعبة الدخيل</title>
+
+    <!-- PWA -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#06060f">
+    <meta name="theme-color" content="#e74c3c">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="الدخيل">
     <link rel="apple-touch-icon" href="icon-192.png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=4.1">
+
+    <link rel="stylesheet" href="style.css?v=3.1">
 </head>
 <body>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
     <div class="container">
         <header>
             <h1>🕵️‍♂️ من هو الدخيل؟</h1>
         </header>
 
-        <!-- ──────────── SETUP ──────────── -->
         <div id="setup-screen" class="screen active">
             <h2>إعدادات الجولة</h2>
 
             <div class="settings-group">
-                <label>👥 أسماء اللاعبين</label>
+                <label>👥 أسماء اللاعبين:</label>
                 <div id="players-inputs-container"></div>
                 <button type="button" id="add-player-btn" class="secondary-btn">➕ إضافة لاعب آخر</button>
             </div>
 
-            <!-- Compact row: impostors + timer -->
-            <div class="settings-row">
-
-                <!-- Impostor count — compact -->
-                <div class="settings-group compact-group">
-                    <label for="impostor-count">🎭 الدخلاء</label>
-                    <input type="number" id="impostor-count" value="1" min="1" class="compact-input">
-                </div>
-
-                <!-- Time picker — compact trigger + popup -->
-                <div class="settings-group compact-group" id="time-group">
-                    <label>⏱️ المدة</label>
-                    <div class="compact-input time-trigger" id="time-trigger" role="button" tabindex="0">
-                        <span id="time-display-label">3 دق</span>
-                        <span class="time-caret">▾</span>
-                    </div>
-                    <div class="time-picker-popup hidden" id="time-picker-popup">
-                        <button type="button" id="time-minus" class="stepper-btn">−</button>
-                        <div class="stepper-value">
-                            <span id="time-value-display">3</span>
-                            <span class="stepper-unit">دقائق</span>
-                        </div>
-                        <button type="button" id="time-plus" class="stepper-btn">+</button>
-                    </div>
-                </div>
-
+            <div class="settings-group">
+                <label for="impostor-count">🎭 عدد الدخلاء:</label>
+                <input type="number" id="impostor-count" value="1" min="1">
             </div>
 
-            <!-- Advanced options -->
+            <div class="settings-group">
+                <label for="timer-minutes">⏱️ مدة الجولة (بالدقائق):</label>
+                <input type="number" id="timer-minutes" value="3" min="1">
+            </div>
+
+            <!-- Advanced options collapsible -->
             <div class="advanced-wrapper">
                 <button type="button" id="advanced-toggle-btn" class="advanced-toggle-btn">
                     <span>🔧 خيارات متقدمة</span>
@@ -73,15 +58,15 @@
                     <div class="advanced-inner">
                         <div class="settings-group checkbox-group">
                             <input type="checkbox" id="random-impostors-toggle">
-                            <label for="random-impostors-toggle">🎲 عدد عشوائي من الدخلاء</label>
+                            <label for="random-impostors-toggle">🎲 عدد عشوائي من الدخلاء (يتجاهل الرقم المحدد أعلاه)</label>
                         </div>
                         <div class="settings-group checkbox-group">
                             <input type="checkbox" id="all-impostors-toggle">
-                            <label for="all-impostors-toggle">😈 فرصة "الجميع دخلاء" عشوائياً</label>
+                            <label for="all-impostors-toggle">😈 تفعيل فرصة "الجميع دخلاء" عشوائياً</label>
                         </div>
                         <div class="settings-group checkbox-group">
                             <input type="checkbox" id="elimination-mode">
-                            <label for="elimination-mode">⚔️ وضع الاستبعاد التدريجي</label>
+                            <label for="elimination-mode">⚔️ وضع الاستبعاد (اللعبة تستمر بعد التصويت الخاطئ)</label>
                         </div>
                         <div class="settings-group checkbox-group">
                             <input type="checkbox" id="no-hints-toggle">
@@ -99,30 +84,26 @@
             <p id="setup-error" class="error-msg"></p>
         </div>
 
-        <!-- ──────────── REVEAL ──────────── -->
         <div id="reveal-screen" class="screen">
             <h2>🃏 توزيع الأدوار</h2>
             <h3 id="current-player-turn-msg" style="color: var(--accent-color);"></h3>
-            <p id="reveal-instructions">اضغط مطولاً على البطاقة لمعرفة دورك — أفلت لإخفائها.</p>
+            <p id="reveal-instructions">اضغط مطولاً على البطاقة لمعرفة دورك، عند إفلات الضغط ستختفي البطاقة.</p>
             <div id="single-card-container" class="single-card-wrapper"></div>
             <button id="next-player-btn" class="primary-btn hidden"></button>
         </div>
 
-        <!-- ──────────── TIMER ──────────── -->
         <div id="timer-screen" class="screen">
             <h2>💬 وقت النقاش</h2>
             <div id="timer-display" class="timer">03:00</div>
             <button id="go-to-vote-btn" class="danger-btn">🗳️ إنهاء النقاش والتصويت</button>
         </div>
 
-        <!-- ──────────── VOTING ──────────── -->
         <div id="voting-screen" class="screen">
             <h2>🗳️ التصويت</h2>
             <p>من تعتقدون أنه الدخيل؟</p>
             <div id="voting-list" class="voting-grid"></div>
         </div>
 
-        <!-- ──────────── RESULT ──────────── -->
         <div id="result-screen" class="screen">
             <h2>🏆 النتيجة</h2>
             <p id="result-message"></p>
@@ -131,8 +112,10 @@
         </div>
     </div>
 
-    <script src="app.js?v=4.1"></script>
+    <script src="app.js?v=3.1"></script>
+
     <script>
+      // تسجيل Service Worker للعمل كـ PWA
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./sw.js')
