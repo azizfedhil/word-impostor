@@ -53,8 +53,8 @@ document.getElementById('add-player-btn').addEventListener('click', () => {
     addPlayerInput();
 });
 
-// جلب قاعدة بيانات الكلمات
-fetch('word list.json')
+// جلب قاعدة بيانات الكلمات (مع منع التخزين المؤقت)
+fetch('word list.json', { cache: 'no-store' })
     .then(response => response.json())
     .then(data => { wordsDB = data; })
     .catch(err => console.error("Error loading words:", err));
