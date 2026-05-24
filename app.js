@@ -27,7 +27,7 @@ function addPlayerInput() {
     input.type = 'text';
     input.className = 'player-input';
     input.value = ''; // No pre-allocated names
-    input.placeholder = `اسم اللاعب (اختياري)`;
+    input.placeholder = `اسم اللاعب `;
 
     const removeBtn = document.createElement('button');
     removeBtn.type = 'button';
