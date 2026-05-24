@@ -6,6 +6,7 @@ let remainingTime = 0;
 let isEliminationMode = false;
 let noHintsMode = false;
 let currentRevealIndex = 0;
+let timerMinutes = 3; // controlled by stepper
 
 // إدارة حقول اللاعبين
 let playerCount = 0;
@@ -22,8 +23,8 @@ function addPlayerInput(defaultName = '') {
     const input = document.createElement('input');
     input.type = 'text';
     input.className = 'player-input';
-    input.value = defaultName || `لاعب ${playerCount}`;
-    input.placeholder = `اسم اللاعب`;
+    input.value = '';
+    input.placeholder = `اللاعب ${playerCount} — اكتب اسمك`;
 
     const removeBtn = document.createElement('button');
     removeBtn.type = 'button';
@@ -39,7 +40,7 @@ function addPlayerInput(defaultName = '') {
 
 window.addEventListener('DOMContentLoaded', () => {
     // تهيئة 4 لاعبين افتراضيين
-    for (let i = 1; i <= 4; i++) addPlayerInput(`لاعب ${i}`);
+    for (let i = 1; i <= 4; i++) addPlayerInput();
 
     // ===== تبديل لوحة الخيارات المتقدمة =====
     const advBtn   = document.getElementById('advanced-toggle-btn');
@@ -49,6 +50,18 @@ window.addEventListener('DOMContentLoaded', () => {
     advBtn.addEventListener('click', () => {
         const isOpen = advPanel.classList.toggle('open');
         chevron.classList.toggle('open', isOpen);
+    });
+
+    // ===== ضبط العداد (stepper) =====
+    function updateStepperDisplay() {
+        const m = String(timerMinutes).padStart(2, '0');
+        document.getElementById('timer-stepper-display').textContent = `${m}:00`;
+    }
+    document.getElementById('timer-minus-btn').addEventListener('click', () => {
+        if (timerMinutes > 1) { timerMinutes--; updateStepperDisplay(); }
+    });
+    document.getElementById('timer-plus-btn').addEventListener('click', () => {
+        if (timerMinutes < 60) { timerMinutes++; updateStepperDisplay(); }
     });
 
     // ===== تعطيل حقل عدد الدخلاء عند تفعيل الخيار العشوائي =====
@@ -112,13 +125,12 @@ function showScreen(screenId) {
 // ===== بدء اللعبة =====
 document.getElementById('start-game-btn').addEventListener('click', () => {
     const namesInput = Array.from(document.querySelectorAll('.player-input'))
-                           .map(i => i.value.trim())
-                           .filter(n => n !== '');
+                           .map((inp, idx) => inp.value.trim() || `لاعب ${idx + 1}`);
 
     let impostorCount        = parseInt(document.getElementById('impostor-count').value);
     const isRandomImpostors  = document.getElementById('random-impostors-toggle').checked;
     const allImpostorsToggle = document.getElementById('all-impostors-toggle').checked;
-    const timeMins           = parseInt(document.getElementById('timer-minutes').value);
+    const timeMins           = timerMinutes;
     isEliminationMode        = document.getElementById('elimination-mode').checked;
     noHintsMode              = document.getElementById('no-hints-toggle').checked;
     const allCorrectHints    = document.getElementById('all-correct-hints-toggle').checked;
@@ -266,6 +278,10 @@ document.getElementById('next-player-btn').addEventListener('click', () => {
     if (currentRevealIndex < players.length) {
         renderSingleCard();
     } else {
+        const activePlayers = players.filter(p => !p.eliminated);
+        const firstSpeaker  = activePlayers[Math.floor(Math.random() * activePlayers.length)];
+        document.getElementById('first-speaker-msg').innerText =
+            `🎤 يبدأ الكلام: ${firstSpeaker.name}`;
         showScreen('timer-screen');
         updateTimerDisplay();
         timerInterval = setInterval(() => {
@@ -338,6 +354,10 @@ function handleVote(votedPlayer) {
             nextBtn.innerText = "⏱️ متابعة النقاش والتصويت (دقيقة واحدة)";
             nextBtn.onclick = () => {
                 remainingTime = 60;
+                const activePlayers = players.filter(p => !p.eliminated);
+                const firstSpeaker  = activePlayers[Math.floor(Math.random() * activePlayers.length)];
+                document.getElementById('first-speaker-msg').innerText =
+                    `🎤 يبدأ الكلام: ${firstSpeaker.name}`;
                 showScreen('timer-screen');
                 updateTimerDisplay();
                 timerInterval = setInterval(() => {
