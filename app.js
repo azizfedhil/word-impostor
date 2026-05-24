@@ -480,15 +480,52 @@ function showScreen(screenId) {
 
 function triggerAnimation(type) {
     const overlay = document.createElement('div');
-    overlay.className = type === 'win' ? 'anim-win-overlay' : 'anim-lose-overlay';
-    overlay.innerHTML = type === 'win' ? '🎉' : '☠️';
-    document.body.appendChild(overlay);
-    if (type === 'lose') {
+
+    if (type === 'win') {
+        overlay.className = 'anim-win-overlay';
+        document.body.appendChild(overlay);
+
+        // Burst particles
+        const winEmojis = ['🎉','🏆','🎊','⭐','✨','🎈','🥳','🌟','💫','🎆','🎇','🏅','🌈','💥'];
+        const count = 14;
+        for (let i = 0; i < count; i++) {
+            const p = document.createElement('div');
+            p.className = 'win-particle';
+            p.innerText = winEmojis[i % winEmojis.length];
+            const angle = (i / count) * 2 * Math.PI + (Math.random() - 0.5) * 0.5;
+            const dist  = 100 + Math.random() * 130;
+            p.style.setProperty('--dx',    (Math.cos(angle) * dist).toFixed(1) + 'px');
+            p.style.setProperty('--dy',    (Math.sin(angle) * dist).toFixed(1) + 'px');
+            p.style.setProperty('--rot',   (Math.random() * 720 - 360).toFixed(0) + 'deg');
+            p.style.setProperty('--delay', (Math.random() * 0.28).toFixed(2) + 's');
+            overlay.appendChild(p);
+        }
+
+        // Big center emoji
+        const center = document.createElement('div');
+        center.className = 'win-center';
+        center.innerText = '🎉';
+        overlay.appendChild(center);
+
+        setTimeout(() => { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 2800);
+
+    } else {
+        overlay.className = 'anim-lose-overlay';
+        document.body.appendChild(overlay);
+
+        // Falling skull
+        const center = document.createElement('div');
+        center.className = 'lose-center';
+        center.innerText = '💀';
+        overlay.appendChild(center);
+
+        // Shake the container
         const container = document.querySelector('.container');
         container.classList.add('shake-container');
-        setTimeout(() => container.classList.remove('shake-container'), 500);
+        setTimeout(() => container.classList.remove('shake-container'), 600);
+
+        setTimeout(() => { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 2800);
     }
-    setTimeout(() => { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 2500);
 }
 
 document.getElementById('start-game-btn').addEventListener('click', () => {
