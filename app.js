@@ -45,7 +45,7 @@ window.addEventListener('DOMContentLoaded', () => {
     // تهيئة 4 لاعبين افتراضيين كبداية
     for (let i = 1; i <= 4; i++) addPlayerInput();
 
-    // ===== Modal Logic for Impostors & Timer =====
+    // ===== Modal Logic for Impostors & Timer (iOS Safari Fixes) =====
     const editModal = document.getElementById('edit-modal');
     const modalTitle = document.getElementById('modal-title');
     const modalVal = document.getElementById('modal-val');
@@ -53,7 +53,9 @@ window.addEventListener('DOMContentLoaded', () => {
     let editingWhat = '';
     let tempVal = 1;
 
-    document.getElementById('btn-edit-impostors').addEventListener('click', () => {
+    // Helper functions for modal opening
+    const openImpostorsModal = (e) => {
+        if(e) e.preventDefault();
         if(document.getElementById('random-impostors-toggle').checked) return; // Disabled
         editingWhat = 'impostors';
         tempVal = impostorConfig;
@@ -61,28 +63,49 @@ window.addEventListener('DOMContentLoaded', () => {
         modalVal.innerText = tempVal;
         editModal.classList.remove('hidden');
         setTimeout(() => editModal.classList.add('active'), 10);
-    });
+    };
 
-    document.getElementById('btn-edit-timer').addEventListener('click', () => {
+    const openTimerModal = (e) => {
+        if(e) e.preventDefault();
         editingWhat = 'timer';
         tempVal = timerConfig;
         modalTitle.innerText = 'تعديل وقت الجولة (بالدقائق)';
         modalVal.innerText = tempVal;
         editModal.classList.remove('hidden');
         setTimeout(() => editModal.classList.add('active'), 10);
-    });
+    };
 
-    document.getElementById('btn-minus').addEventListener('click', () => {
+    // Attach click and touchstart to kill Safari 300ms delay
+    const btnEditImpostors = document.getElementById('btn-edit-impostors');
+    const btnEditTimer = document.getElementById('btn-edit-timer');
+
+    btnEditImpostors.addEventListener('click', openImpostorsModal);
+    btnEditImpostors.addEventListener('touchstart', openImpostorsModal, { passive: false });
+
+    btnEditTimer.addEventListener('click', openTimerModal);
+    btnEditTimer.addEventListener('touchstart', openTimerModal, { passive: false });
+
+    // Plus & Minus Buttons logic
+    const handleMinus = (e) => {
+        if(e) e.preventDefault();
         if (tempVal > 1) tempVal--;
         modalVal.innerText = tempVal;
-    });
-
-    document.getElementById('btn-plus').addEventListener('click', () => {
+    };
+    const handlePlus = (e) => {
+        if(e) e.preventDefault();
         tempVal++;
         modalVal.innerText = tempVal;
-    });
+    };
 
-    document.getElementById('btn-confirm').addEventListener('click', () => {
+    document.getElementById('btn-minus').addEventListener('click', handleMinus);
+    document.getElementById('btn-minus').addEventListener('touchstart', handleMinus, { passive: false });
+
+    document.getElementById('btn-plus').addEventListener('click', handlePlus);
+    document.getElementById('btn-plus').addEventListener('touchstart', handlePlus, { passive: false });
+
+    // Confirm Button logic
+    const handleConfirm = (e) => {
+        if(e) e.preventDefault();
         if (editingWhat === 'impostors') {
             impostorConfig = tempVal;
             document.getElementById('val-impostors').innerText = impostorConfig;
@@ -92,7 +115,10 @@ window.addEventListener('DOMContentLoaded', () => {
         }
         editModal.classList.remove('active');
         setTimeout(() => editModal.classList.add('hidden'), 300);
-    });
+    };
+
+    document.getElementById('btn-confirm').addEventListener('click', handleConfirm);
+    document.getElementById('btn-confirm').addEventListener('touchstart', handleConfirm, { passive: false });
 
 
     // ===== تبديل لوحة الخيارات المتقدمة =====
