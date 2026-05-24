@@ -7,10 +7,14 @@ let isEliminationMode = false;
 let noHintsMode = false;
 let currentRevealIndex = 0;
 
+// Settings configuration
+let impostorConfig = 1;
+let timerConfig = 3;
+
 // إدارة حقول اللاعبين
 let playerCount = 0;
 
-function addPlayerInput(defaultName = '') {
+function addPlayerInput() {
     const playersContainer = document.getElementById('players-inputs-container');
     if (!playersContainer) return;
 
@@ -22,8 +26,8 @@ function addPlayerInput(defaultName = '') {
     const input = document.createElement('input');
     input.type = 'text';
     input.className = 'player-input';
-    input.value = defaultName || `لاعب ${playerCount}`;
-    input.placeholder = `اسم اللاعب`;
+    input.value = ''; // No pre-allocated names
+    input.placeholder = `اسم اللاعب (اختياري)`;
 
     const removeBtn = document.createElement('button');
     removeBtn.type = 'button';
@@ -38,8 +42,58 @@ function addPlayerInput(defaultName = '') {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-    // تهيئة 4 لاعبين افتراضيين
-    for (let i = 1; i <= 4; i++) addPlayerInput(`لاعب ${i}`);
+    // تهيئة 4 لاعبين افتراضيين كبداية
+    for (let i = 1; i <= 4; i++) addPlayerInput();
+
+    // ===== Modal Logic for Impostors & Timer =====
+    const editModal = document.getElementById('edit-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalVal = document.getElementById('modal-val');
+    
+    let editingWhat = '';
+    let tempVal = 1;
+
+    document.getElementById('btn-edit-impostors').addEventListener('click', () => {
+        if(document.getElementById('random-impostors-toggle').checked) return; // Disabled
+        editingWhat = 'impostors';
+        tempVal = impostorConfig;
+        modalTitle.innerText = 'تعديل عدد الدخلاء';
+        modalVal.innerText = tempVal;
+        editModal.classList.remove('hidden');
+        setTimeout(() => editModal.classList.add('active'), 10);
+    });
+
+    document.getElementById('btn-edit-timer').addEventListener('click', () => {
+        editingWhat = 'timer';
+        tempVal = timerConfig;
+        modalTitle.innerText = 'تعديل وقت الجولة (بالدقائق)';
+        modalVal.innerText = tempVal;
+        editModal.classList.remove('hidden');
+        setTimeout(() => editModal.classList.add('active'), 10);
+    });
+
+    document.getElementById('btn-minus').addEventListener('click', () => {
+        if (tempVal > 1) tempVal--;
+        modalVal.innerText = tempVal;
+    });
+
+    document.getElementById('btn-plus').addEventListener('click', () => {
+        tempVal++;
+        modalVal.innerText = tempVal;
+    });
+
+    document.getElementById('btn-confirm').addEventListener('click', () => {
+        if (editingWhat === 'impostors') {
+            impostorConfig = tempVal;
+            document.getElementById('val-impostors').innerText = impostorConfig;
+        } else {
+            timerConfig = tempVal;
+            document.getElementById('val-timer').innerText = timerConfig.toString().padStart(2, '0') + ':00';
+        }
+        editModal.classList.remove('active');
+        setTimeout(() => editModal.classList.add('hidden'), 300);
+    });
+
 
     // ===== تبديل لوحة الخيارات المتقدمة =====
     const advBtn   = document.getElementById('advanced-toggle-btn');
@@ -52,15 +106,12 @@ window.addEventListener('DOMContentLoaded', () => {
     });
 
     // ===== تعطيل حقل عدد الدخلاء عند تفعيل الخيار العشوائي =====
-    const randomToggle   = document.getElementById('random-impostors-toggle');
-    const impostorInput  = document.getElementById('impostor-count');
-    const impostorLabel  = document.querySelector('label[for="impostor-count"]');
+    const randomToggle = document.getElementById('random-impostors-toggle');
+    const impCard      = document.getElementById('btn-edit-impostors');
 
     randomToggle.addEventListener('change', function () {
         const isRandom = this.checked;
-        impostorInput.disabled = isRandom;
-        impostorInput.classList.toggle('input-disabled', isRandom);
-        if (impostorLabel) impostorLabel.classList.toggle('label-disabled', isRandom);
+        impCard.classList.toggle('input-disabled', isRandom);
     });
 
     // ===== تعطيل خيار "إخفاء التلميح" عند تفعيل "منح الجميع التلميح الصحيح" والعكس =====
@@ -109,16 +160,36 @@ function showScreen(screenId) {
     document.getElementById(screenId).classList.add('active');
 }
 
+// ===== Full Screen Animation Generator =====
+function triggerAnimation(type) {
+    const overlay = document.createElement('div');
+    overlay.className = type === 'win' ? 'anim-win-overlay' : 'anim-lose-overlay';
+    overlay.innerHTML = type === 'win' ? '🎉' : '☠️';
+    document.body.appendChild(overlay);
+
+    if (type === 'lose') {
+        const container = document.querySelector('.container');
+        container.classList.add('shake-container');
+        setTimeout(() => container.classList.remove('shake-container'), 500);
+    }
+
+    setTimeout(() => {
+        if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+    }, 2500);
+}
+
+
 // ===== بدء اللعبة =====
 document.getElementById('start-game-btn').addEventListener('click', () => {
+    // Collect names, assigning a fallback name dynamically to any empty input
     const namesInput = Array.from(document.querySelectorAll('.player-input'))
-                           .map(i => i.value.trim())
-                           .filter(n => n !== '');
+                           .map((input, idx) => input.value.trim() || `لاعب ${idx + 1}`);
 
-    let impostorCount        = parseInt(document.getElementById('impostor-count').value);
+    let impostorCount        = impostorConfig;
     const isRandomImpostors  = document.getElementById('random-impostors-toggle').checked;
     const allImpostorsToggle = document.getElementById('all-impostors-toggle').checked;
-    const timeMins           = parseInt(document.getElementById('timer-minutes').value);
+    const timeMins           = timerConfig;
+    
     isEliminationMode        = document.getElementById('elimination-mode').checked;
     noHintsMode              = document.getElementById('no-hints-toggle').checked;
     const allCorrectHints    = document.getElementById('all-correct-hints-toggle').checked;
@@ -129,7 +200,6 @@ document.getElementById('start-game-btn').addEventListener('click', () => {
     }
 
     if (isRandomImpostors) {
-        // الحد الأقصى هو نصف عدد اللاعبين لضمان بقاء المواطنين أكثر
         const maxImpostors = Math.floor(namesInput.length / 2);
         impostorCount = Math.floor(Math.random() * maxImpostors) + 1;
     } else {
@@ -156,7 +226,6 @@ document.getElementById('start-game-btn').addEventListener('click', () => {
 
     currentWordObj = wordsDB[Math.floor(Math.random() * wordsDB.length)];
 
-    // تحديد الدخلاء
     const isAllImpostorRound = allImpostorsToggle && Math.random() < 0.15;
 
     if (isAllImpostorRound) {
@@ -170,17 +239,10 @@ document.getElementById('start-game-btn').addEventListener('click', () => {
     const impostorPlayers = players.filter(p => p.isImpostor);
 
     if (allCorrectHints) {
-        // جميع الدخلاء يحصلون على التلميح الصحيح
         impostorPlayers.forEach(p => { p.customHint = currentWordObj.hint; });
-
     } else if (impostorPlayers.length <= 1) {
-        // دخيل واحد: يحصل دائماً على التلميح الصحيح
-        if (impostorPlayers.length === 1) {
-            impostorPlayers[0].customHint = currentWordObj.hint;
-        }
-
+        if (impostorPlayers.length === 1) impostorPlayers[0].customHint = currentWordObj.hint;
     } else {
-        // أكثر من دخيل: واحد عشوائي يأخذ التلميح الصحيح، الباقون يأخذون تلميحات خاطئة
         const luckyIndex = Math.floor(Math.random() * impostorPlayers.length);
         const wrongHints = wordsDB
             .filter(w => w.word !== currentWordObj.word)
@@ -189,9 +251,8 @@ document.getElementById('start-game-btn').addEventListener('click', () => {
 
         let hIndex = 0;
         for (let i = 0; i < impostorPlayers.length; i++) {
-            if (i === luckyIndex) {
-                impostorPlayers[i].customHint = currentWordObj.hint;
-            } else {
+            if (i === luckyIndex) impostorPlayers[i].customHint = currentWordObj.hint;
+            else {
                 impostorPlayers[i].customHint = wrongHints[hIndex % wrongHints.length];
                 hIndex++;
             }
@@ -204,7 +265,7 @@ document.getElementById('start-game-btn').addEventListener('click', () => {
     showScreen('reveal-screen');
 });
 
-// ===== رسم بطاقة اللاعب الحالي =====
+
 function renderSingleCard() {
     const container = document.getElementById('single-card-container');
     const titleMsg  = document.getElementById('current-player-turn-msg');
@@ -260,12 +321,16 @@ function renderSingleCard() {
     container.appendChild(card);
 }
 
-// زر اللاعب التالي أو بدء العداد
+
 document.getElementById('next-player-btn').addEventListener('click', () => {
     currentRevealIndex++;
     if (currentRevealIndex < players.length) {
         renderSingleCard();
     } else {
+        // Random starter player logic
+        const starterPlayer = players[Math.floor(Math.random() * players.length)];
+        document.getElementById('starter-player').innerText = `🗣️ يبدأ النقاش: ${starterPlayer.name}`;
+        
         showScreen('timer-screen');
         updateTimerDisplay();
         timerInterval = setInterval(() => {
@@ -307,9 +372,13 @@ function handleVote(votedPlayer) {
     revealBox.innerHTML = '';
 
     if (!isEliminationMode) {
-        resultMsg.innerText = votedPlayer.isImpostor
-            ? `إجابة صحيحة! 🎉 ${votedPlayer.name} كان الدخيل.`
-            : `إجابة خاطئة! ❌ ${votedPlayer.name} ليس الدخيل.`;
+        if (votedPlayer.isImpostor) {
+            triggerAnimation('win');
+            resultMsg.innerText = `إجابة صحيحة! 🎉 ${votedPlayer.name} كان الدخيل.`;
+        } else {
+            triggerAnimation('lose');
+            resultMsg.innerText = `إجابة خاطئة! ❌ ${votedPlayer.name} ليس الدخيل.`;
+        }
 
         const allImpostors = players.filter(p => p.isImpostor).map(p => p.name).join(' و ');
         revealBox.innerHTML = `الدخيل (الدخلاء):<br><strong style="color:var(--accent-color);">${allImpostors}</strong><br><br>الكلمة كانت: <strong>${currentWordObj.word}</strong>`;
@@ -322,22 +391,32 @@ function handleVote(votedPlayer) {
         const remainingRegulars  = players.filter(p => !p.isImpostor && !p.eliminated);
 
         if (remainingImpostors.length === 0) {
+            triggerAnimation('win');
             resultMsg.innerText = `لقد قضيتم على جميع الدخلاء! 🎉 فاز المواطنون!`;
             revealBox.innerHTML = `الكلمة كانت: <strong>${currentWordObj.word}</strong>`;
             nextBtn.innerText = "🔄 جولة جديدة";
             nextBtn.onclick = () => showScreen('setup-screen');
         } else if (remainingImpostors.length >= remainingRegulars.length) {
+            triggerAnimation('lose');
             resultMsg.innerText = `سيطر الدخلاء على اللعبة! 😈 فاز الدخلاء!`;
             const allImpostors = players.filter(p => p.isImpostor).map(p => p.name).join(' و ');
             revealBox.innerHTML = `الدخيل (الدخلاء):<br><strong style="color:var(--accent-color);">${allImpostors}</strong><br><br>الكلمة كانت: <strong>${currentWordObj.word}</strong>`;
             nextBtn.innerText = "🔄 جولة جديدة";
             nextBtn.onclick = () => showScreen('setup-screen');
         } else {
+            if (!votedPlayer.isImpostor) triggerAnimation('lose'); // Voted out a citizen wrongly
+            
             resultMsg.innerText = `تم استبعاد ${votedPlayer.name}!`;
             revealBox.innerHTML = `لكن اللعبة لم تنتهِ بعد... هل كان هو الدخيل أم لا؟ لن نخبركم! 🤐`;
             nextBtn.innerText = "⏱️ متابعة النقاش والتصويت (دقيقة واحدة)";
             nextBtn.onclick = () => {
                 remainingTime = 60;
+                
+                // Randomly select next starter after an elimination round continues
+                const alivePlayers = players.filter(p => !p.eliminated);
+                const starterPlayer = alivePlayers[Math.floor(Math.random() * alivePlayers.length)];
+                document.getElementById('starter-player').innerText = `🗣️ يكمل النقاش: ${starterPlayer.name}`;
+
                 showScreen('timer-screen');
                 updateTimerDisplay();
                 timerInterval = setInterval(() => {
