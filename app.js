@@ -14,6 +14,8 @@ const i18n = {
         adv_nohint: "🙈 إخفاء التلميح عن الدخيل",
         adv_allhint: "💡 منح جميع الدخلاء التلميح الصحيح",
         start_btn: "🚀 بدء اللعبة",
+        reset_btn: "🔄 إعادة الإعدادات الافتراضية",
+        reset_confirm: "هل أنت متأكد أنك تريد مسح جميع الأسماء وإعادة الإعدادات إلى وضعها الافتراضي؟",
         reveal_title: "🃏 توزيع الأدوار",
         reveal_instructions: "اضغط مطولاً على البطاقة لمعرفة دورك، عند إفلات الضغط ستختفي البطاقة.",
         discussion_title: "💬 وقت النقاش",
@@ -61,6 +63,8 @@ const i18n = {
         adv_nohint: "🙈 سبورة كحلة مع الكذاب",
         adv_allhint: "💡 الكذابين الكل ياخذو نفس التلميح",
         start_btn: "🚀 انافا",
+        reset_btn: "🔄 فسّخ ورجّع كيما كان",
+        reset_confirm: "متأكد تحب تفسّخ الأسامي الكل وترجّع كل شي كيما كان؟",
         reveal_title: "🃏 شكون شنية",
         reveal_instructions: "اقعد نازل على الكارتة باش تعرف دورك، كي تسيبها تعاود تدور.",
         discussion_title: "💬 وقت التقطييع والترييش",
@@ -134,8 +138,21 @@ let impostorConfig = 1;
 let timerConfig = 3;
 let playerCount = 0;
 
-// ====== LOCAL STORAGE LOGIC ======
-function saveSettings() {
+// ====== LOCAL DB LOGIC (IndexedDB - Strictly Per Device, Prevents Cloud Sync) ======
+const dbPromise = new Promise((resolve, reject) => {
+    try {
+        const request = indexedDB.open('DakheelLocalDB', 1);
+        request.onupgradeneeded = (e) => {
+            e.target.result.createObjectStore('settingsStore');
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => resolve(null); // Fallback gracefully if Private Mode blocks it
+    } catch (e) {
+        resolve(null);
+    }
+});
+
+async function saveSettings() {
     const playerInputs = Array.from(document.querySelectorAll('.player-input')).map(input => input.value);
     const settings = {
         players: playerInputs,
@@ -148,34 +165,46 @@ function saveSettings() {
         noHints: document.getElementById('no-hints-toggle').checked,
         allCorrect: document.getElementById('all-correct-hints-toggle').checked
     };
-    localStorage.setItem('dakheel_settings', JSON.stringify(settings));
+    
+    try {
+        const db = await dbPromise;
+        if (!db) return;
+        const tx = db.transaction('settingsStore', 'readwrite');
+        tx.objectStore('settingsStore').put(settings, 'game_settings');
+    } catch (e) { console.warn("Saving to local device failed", e); }
+}
+
+async function loadSettings() {
+    try {
+        const db = await dbPromise;
+        if (!db) return null;
+        return new Promise((resolve) => {
+            const tx = db.transaction('settingsStore', 'readonly');
+            const req = tx.objectStore('settingsStore').get('game_settings');
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => resolve(null);
+        });
+    } catch (e) {
+        return null;
+    }
 }
 
 // Language Toggle Function
 function applyTranslations() {
-    // Apply static text
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
-        if (i18n[currentLang][key]) {
-            el.innerText = i18n[currentLang][key];
-        }
+        if (i18n[currentLang][key]) el.innerText = i18n[currentLang][key];
     });
     
-    // Apply placeholders
     document.querySelectorAll('.player-input').forEach(input => {
         input.placeholder = i18n[currentLang].player_placeholder;
     });
 
-    // Update Language Buttons UI
     document.querySelectorAll('.lang-btn').forEach(b => {
-        if (b.getAttribute('data-lang') === currentLang) {
-            b.classList.add('active');
-        } else {
-            b.classList.remove('active');
-        }
+        if (b.getAttribute('data-lang') === currentLang) b.classList.add('active');
+        else b.classList.remove('active');
     });
 
-    // Update Modals dynamically if open
     const modalTitle = document.getElementById('modal-title');
     if (modalTitle.innerText.includes("تعديل") || modalTitle.innerText.includes("بدّل")) {
         modalTitle.innerText = editingWhat === 'impostors' 
@@ -196,7 +225,6 @@ function addPlayerInput(savedName = '') {
     input.value = savedName; 
     input.placeholder = i18n[currentLang].player_placeholder;
     
-    // Save when user types a name
     input.addEventListener('input', saveSettings);
 
     const removeBtn = document.createElement('button');
@@ -205,7 +233,7 @@ function addPlayerInput(savedName = '') {
     removeBtn.innerHTML = '✖';
     removeBtn.addEventListener('click', () => { 
         row.remove(); 
-        saveSettings(); // Save when user deletes a player
+        saveSettings(); 
     });
     
     row.appendChild(input);
@@ -216,12 +244,15 @@ function addPlayerInput(savedName = '') {
 let editingWhat = '';
 let tempVal = 1;
 
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
     
-    // Load Settings from Local Storage
-    const saved = localStorage.getItem('dakheel_settings');
-    if (saved) {
-        const parsed = JSON.parse(saved);
+    // Apply default language first to prevent flashing
+    applyTranslations();
+
+    // 1. Load Settings strictly from the local device hardware
+    const parsed = await loadSettings();
+    
+    if (parsed) {
         currentLang = parsed.lang || 'tn';
         
         // Load checkboxes
@@ -242,15 +273,16 @@ window.addEventListener('DOMContentLoaded', () => {
             for (let i = 1; i <= 4; i++) addPlayerInput();
         }
     } else {
+        // If brand new device, add 4 empty inputs
         for (let i = 1; i <= 4; i++) addPlayerInput();
     }
 
     document.getElementById('val-impostors').innerText = impostorConfig;
     document.getElementById('val-timer').innerText = timerConfig.toString().padStart(2, '0') + ':00';
 
-    applyTranslations();
+    applyTranslations(); // Re-apply in case it was loaded as 'ar' from DB
 
-    // Trigger changes manually to apply UI locking rules
+    // Trigger visual UI rules
     document.getElementById('random-impostors-toggle').dispatchEvent(new Event('change'));
     document.getElementById('no-hints-toggle').dispatchEvent(new Event('change'));
     document.getElementById('all-correct-hints-toggle').dispatchEvent(new Event('change'));
@@ -267,6 +299,48 @@ window.addEventListener('DOMContentLoaded', () => {
             applyTranslations();
             saveSettings();
         });
+    });
+
+    // Reset Default Settings Logic
+    document.getElementById('reset-settings-btn').addEventListener('click', async () => {
+        if (!confirm(i18n[currentLang].reset_confirm)) return;
+
+        // Wipe DB
+        try {
+            const db = await dbPromise;
+            if (db) {
+                const tx = db.transaction('settingsStore', 'readwrite');
+                tx.objectStore('settingsStore').delete('game_settings');
+            }
+        } catch (e) { console.warn("Failed to clear DB", e); }
+
+        // Reset JS Variables
+        impostorConfig = 1;
+        timerConfig = 3;
+
+        // Reset Checkboxes
+        document.getElementById('random-impostors-toggle').checked = false;
+        document.getElementById('all-impostors-toggle').checked = false;
+        document.getElementById('elimination-mode').checked = false;
+        document.getElementById('no-hints-toggle').checked = false;
+        document.getElementById('all-correct-hints-toggle').checked = false;
+
+        // Reset Config Visuals
+        document.getElementById('val-impostors').innerText = '1';
+        document.getElementById('val-timer').innerText = '03:00';
+
+        // Trigger visual UI rules
+        document.getElementById('random-impostors-toggle').dispatchEvent(new Event('change'));
+        document.getElementById('no-hints-toggle').dispatchEvent(new Event('change'));
+
+        // Reset Players
+        const playersContainer = document.getElementById('players-inputs-container');
+        playersContainer.innerHTML = '';
+        playerCount = 0;
+        for (let i = 1; i <= 4; i++) addPlayerInput();
+
+        // Save fresh empty state just in case
+        saveSettings();
     });
 
     // Modals
@@ -316,7 +390,7 @@ window.addEventListener('DOMContentLoaded', () => {
             timerConfig = tempVal;
             document.getElementById('val-timer').innerText = timerConfig.toString().padStart(2, '0') + ':00';
         }
-        saveSettings(); // Save configs
+        saveSettings(); // Save configs locally
         editModal.classList.remove('active');
         setTimeout(() => editModal.classList.add('hidden'), 300);
     };
