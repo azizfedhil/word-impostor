@@ -200,7 +200,10 @@ function applyTranslations() {
         input.placeholder = i18n[currentLang].player_placeholder;
     });
 
-    document.querySelectorAll('.lang-btn').forEach(b => {
+    // Update dropdown label and active state
+    const langLabel = document.getElementById('lang-label');
+    if (langLabel) langLabel.innerText = currentLang === 'ar' ? 'عربي' : 'تونسي';
+    document.querySelectorAll('.lang-option').forEach(b => {
         if (b.getAttribute('data-lang') === currentLang) b.classList.add('active');
         else b.classList.remove('active');
     });
@@ -292,13 +295,38 @@ window.addEventListener('DOMContentLoaded', async () => {
         cb.addEventListener('change', saveSettings);
     });
 
-    // Language Switcher Logic
-    document.querySelectorAll('.lang-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            currentLang = e.target.getAttribute('data-lang');
+    // Language Dropdown Logic
+    const langDropdownBtn = document.getElementById('lang-dropdown-btn');
+    const langDropdownMenu = document.getElementById('lang-dropdown-menu');
+    const langChevron = document.getElementById('lang-chevron');
+
+    function closeLangDropdown() {
+        langDropdownMenu.classList.add('hidden');
+        langChevron.classList.remove('open');
+    }
+
+    langDropdownBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = !langDropdownMenu.classList.contains('hidden');
+        if (isOpen) {
+            closeLangDropdown();
+        } else {
+            langDropdownMenu.classList.remove('hidden');
+            langChevron.classList.add('open');
+        }
+    });
+
+    document.querySelectorAll('.lang-option').forEach(opt => {
+        opt.addEventListener('click', () => {
+            currentLang = opt.getAttribute('data-lang');
             applyTranslations();
             saveSettings();
+            closeLangDropdown();
         });
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!langDropdownBtn.contains(e.target)) closeLangDropdown();
     });
 
     // Reset Default Settings Logic
