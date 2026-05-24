@@ -17,8 +17,8 @@
     <meta name="apple-mobile-web-app-title" content="الدخيل">
     <link rel="apple-touch-icon" href="icon-192.png">
 
-    <!-- Version bumped to 5.1 -->
-    <link rel="stylesheet" href="style.css?v=5.1">
+    <!-- Version bumped to 5.2 -->
+    <link rel="stylesheet" href="style.css?v=5.2">
 </head>
 <body>
     <div class="orb orb-1"></div>
@@ -43,7 +43,12 @@
             <div class="settings-group">
                 <label data-i18n="players_label">👥 اساميكم:</label>
                 <div id="players-inputs-container"></div>
-                <button type="button" id="add-player-btn" class="secondary-btn" data-i18n="add_player_btn">➕ زيد واحد اخر</button>
+                
+                <!-- NEW Add Player / Reset Row Layout -->
+                <div class="player-input-row">
+                    <button type="button" id="add-player-btn" class="add-player-style" data-i18n="add_player_btn">➕ زيد واحد اخر</button>
+                    <button type="button" id="reset-settings-btn" class="remove-player-btn action-btn-gray" data-i18n-title="reset_tooltip">🔄</button>
+                </div>
             </div>
 
             <!-- Side-By-Side Layout -->
@@ -94,9 +99,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Reset Settings Button -->
-            <button type="button" id="reset-settings-btn" class="secondary-btn" data-i18n="reset_btn" style="margin-bottom: 15px; background-color: #95a5a6; border-radius: 10px;">🔄 فسّخ ورجّع كيما كان</button>
 
             <button id="start-game-btn" class="primary-btn glow-btn" data-i18n="start_btn">🚀 انافا</button>
             <p id="setup-error" class="error-msg"></p>
@@ -153,8 +155,8 @@
         </div>
     </div>
 
-    <!-- Version bumped to 5.1 -->
-    <script src="app.js?v=5.1"></script>
+    <!-- Version bumped to 5.2 -->
+    <script src="app.js?v=5.2"></script>
 
     <script>
       if ('serviceWorker' in navigator) {
