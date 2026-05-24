@@ -8,8 +8,8 @@ const ASSETS = [
   './style.css',
   './app.js',
   './manifest.json',
-  './icon-192.png',
-  './icon-512.png',
+  './icon192.png',
+  './icon512.png',
   './word list.json'
 ];
 
