@@ -269,3 +269,14 @@ button {
     line-height: 1.5;
     color: var(--text-color);
 }
+
+/* حالة الحقل المعطّل (عند تفعيل الخيار العشوائي) */
+.input-disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background-color: var(--input-bg) !important;
+}
+
+.label-disabled {
+    opacity: 0.4;
+}
