@@ -56,7 +56,7 @@
   },
   {
     "word": "جامع",
-    "hint": "عبادة",
+    "hint": "راحة",
     "category": "Places"
   },
   {
@@ -71,7 +71,7 @@
   },
   {
     "word": "مدينة",
-    "hint": "سكني",
+    "hint": "طريق",
     "category": "Places"
   },
   {
@@ -91,7 +91,7 @@
   },
   {
     "word": "مطار",
-    "hint": "سفر",
+    "hint": "خروج",
     "category": "Places"
   },
   {
@@ -111,7 +111,7 @@
   },
   {
     "word": "مفتاح",
-    "hint": "فتح",
+    "hint": "دخول",
     "category": "Objects"
   },
   {
@@ -121,17 +121,17 @@
   },
   {
     "word": "طاولة",
-    "hint": "أثاث",
+    "hint": "دار",
     "category": "Objects"
   },
   {
     "word": "سبحة",
-    "hint": "تسبيح",
+    "hint": "راحة",
     "category": "Objects"
   },
   {
     "word": "كاس",
-    "hint": "شرب",
+    "hint": "ادوات",
     "category": "Objects"
   },
   {
@@ -140,13 +140,13 @@
     "category": "Objects"
   },
   {
-    "word": "ريموت",
+    "word": "commande",
     "hint": "تحكم",
     "category": "Objects"
   },
   {
     "word": "مروحة",
-    "hint": "تهوية",
+    "hint": "صيف",
     "category": "Objects"
   },
   {
@@ -156,27 +156,27 @@
   },
   {
     "word": "لواج",
-    "hint": "أجرة",
+    "hint": "خلاص",
     "category": "Transportation"
   },
   {
     "word": "مترو",
-    "hint": "حضري",
+    "hint": "تونس",
     "category": "Transportation"
   },
   {
     "word": "تاكسي",
-    "hint": "أجرة",
+    "hint": "عداد",
     "category": "Transportation"
   },
   {
     "word": "حافلة",
-    "hint": "نقل",
+    "hint": "عباد",
     "category": "Transportation"
   },
   {
     "word": "دراجة",
-    "hint": "بعجلتين",
+    "hint": "دائرتين",
     "category": "Transportation"
   },
   {
@@ -216,7 +216,7 @@
   },
   {
     "word": "مطر",
-    "hint": "ماء",
+    "hint": "هبوط",
     "category": "Nature"
   },
   {
@@ -251,12 +251,12 @@
   },
   {
     "word": "وردة",
-    "hint": "مزهر",
+    "hint": "روائح",
     "category": "Nature"
   },
   {
     "word": "قطة",
-    "hint": "أليف",
+    "hint": "شعر",
     "category": "Animals"
   },
   {
@@ -291,7 +291,7 @@
   },
   {
     "word": "دجاجة",
-    "hint": "داجن",
+    "hint": "حيوان",
     "category": "Animals"
   },
   {
@@ -316,7 +316,7 @@
   },
   {
     "word": "شرطي",
-    "hint": "أمن",
+    "hint": "عمل",
     "category": "Jobs"
   },
   {
@@ -331,7 +331,7 @@
   },
   {
     "word": "نجار",
-    "hint": "خشب",
+    "hint": "عمل",
     "category": "Jobs"
   },
   {
@@ -371,7 +371,7 @@
   },
   {
     "word": "موسيقى",
-    "hint": "متناغمة",
+    "hint": "اجواء",
     "category": "Entertainment"
   },
   {
@@ -391,16 +391,16 @@
   },
   {
     "word": "شطرنج",
-    "hint": "ذهنية",
+    "hint": "تفكير",
     "category": "Entertainment"
   },
   {
-    "word": "ميم",
+    "word": "memes",
     "hint": "طريفة",
     "category": "Entertainment"
   },
   {
-    "word": "كونسير",
+    "word": "concert",
     "hint": "فني",
     "category": "Entertainment"
   },
@@ -411,7 +411,7 @@
   },
   {
     "word": "سيدي بوسعيد",
-    "hint": "سياحية",
+    "hint": "ازرق",
     "category": "Tunisia"
   },
   {
@@ -420,8 +420,8 @@
     "category": "Tunisia"
   },
   {
-    "word": "الإفريقي",
-    "hint": "عريق",
+    "word": "النادي الافريقي",
+    "hint": "رياضي",
     "category": "Tunisia"
   },
   {
