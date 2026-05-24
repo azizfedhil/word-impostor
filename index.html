@@ -17,7 +17,8 @@
     <meta name="apple-mobile-web-app-title" content="الدخيل">
     <link rel="apple-touch-icon" href="icon-192.png">
 
-    <link rel="stylesheet" href="style.css?v=4.8">
+    <!-- Version bumped to 4.9 to force CSS update -->
+    <link rel="stylesheet" href="style.css?v=4.9">
 </head>
 <body>
     <div class="orb orb-1"></div>
@@ -128,15 +129,27 @@
         </div>
     </div>
 
-    <script src="app.js?v=4.8"></script>
+    <!-- Version bumped to 4.9 to force JS update -->
+    <script src="app.js?v=4.9"></script>
 
     <script>
-      // تسجيل Service Worker للعمل كـ PWA
+      // Force Safari to bypass cache and update the Service Worker
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('SW registered:', reg.scope))
+          navigator.serviceWorker.register('./sw.js?v=' + new Date().getTime())
+            .then(reg => {
+              reg.update(); // Force check for new files
+              console.log('SW registered and updating.');
+            })
             .catch(err => console.warn('SW registration failed:', err));
+        });
+
+        // Automatically reload page if the Service Worker updates the files
+        let refreshing;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (refreshing) return;
+            refreshing = true;
+            window.location.reload();
         });
       }
     </script>
