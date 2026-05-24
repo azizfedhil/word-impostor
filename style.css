@@ -51,14 +51,14 @@
 * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
 
 /* ===== GLOWING ORBS BACKGROUND ===== */
-.orb { position: fixed; border-radius: 50%; pointer-events: none; z-index: 0; filter: blur(70px); opacity: var(--orb-opacity); }
-.orb-1 { width: 350px; height: 350px; background: radial-gradient(circle, #e74c3c, #c0392b); top: -120px; right: -100px; animation: orbDrift1 10s ease-in-out infinite; }
-.orb-2 { width: 280px; height: 280px; background: radial-gradient(circle, #8e44ad, #6c3483); bottom: -80px; left: -80px; animation: orbDrift2 13s ease-in-out infinite; }
-.orb-3 { width: 220px; height: 220px; background: radial-gradient(circle, #2980b9, #1a5276); top: 40%; left: 30%; animation: orbDrift3 16s ease-in-out infinite; }
-
-@keyframes orbDrift1 { 0%, 100% { transform: translate(0, 0) scale(1); } 40% { transform: translate(-40px, 30px) scale(1.08); } 70% { transform: translate(20px, -20px) scale(0.94); } }
-@keyframes orbDrift2 { 0%, 100% { transform: translate(0, 0) scale(1); } 35% { transform: translate(35px, -25px) scale(1.06); } 65% { transform: translate(-15px, 20px) scale(0.96); } }
-@keyframes orbDrift3 { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(-30px, 40px) scale(1.1); } }
+/* Animations removed: filter:blur() + animated transform forces a full repaint
+   every frame — the main cause of device heating. Static blurred divs are
+   composited once and never touched again. translateZ(0) promotes each orb
+   to its own GPU layer so it doesn't share a layer with the scrollable content. */
+.orb { position: fixed; border-radius: 50%; pointer-events: none; z-index: 0; filter: blur(50px); opacity: var(--orb-opacity); transform: translateZ(0); will-change: auto; }
+.orb-1 { width: 350px; height: 350px; background: radial-gradient(circle, #e74c3c, #c0392b); top: -120px; right: -100px; }
+.orb-2 { width: 280px; height: 280px; background: radial-gradient(circle, #8e44ad, #6c3483); bottom: -80px; left: -80px; }
+.orb-3 { width: 220px; height: 220px; background: radial-gradient(circle, #2980b9, #1a5276); top: 40%; left: 30%; }
 
 /* ===== LAYOUT ===== */
 body { background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; display: flex; justify-content: center; transition: background-color 0.3s, color 0.3s; min-height: 100vh; }
@@ -68,8 +68,9 @@ body { background-color: var(--bg-color); color: var(--text-color); margin: 0; p
 @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-12px); } 40%, 80% { transform: translateX(12px); } }
 @keyframes containerPop { from { opacity: 0; transform: scale(0.96) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
 
-header h1 { color: var(--accent-color); margin-bottom: 20px; font-size: 2rem; animation: titlePulse 3.5s ease-in-out infinite; }
-@keyframes titlePulse { 0%, 100% { text-shadow: 0 0 8px var(--glow-color), 0 0 18px var(--glow-color); } 50% { text-shadow: 0 0 16px var(--glow-color), 0 0 40px var(--glow-color), 0 0 70px rgba(231, 76, 60, 0.2); } }
+/* text-shadow animation removed — animating text-shadow triggers a repaint every
+   frame. A static text-shadow is composited once. */
+header h1 { color: var(--accent-color); margin-bottom: 20px; font-size: 2rem; text-shadow: 0 0 10px var(--glow-color), 0 0 22px var(--glow-color); }
 
 h2, p { color: var(--text-color); }
 
@@ -151,7 +152,7 @@ h2, p { color: var(--text-color); }
 .setting-card .value { font-size: 26px; font-weight: bold; color: var(--primary-color); pointer-events: none; }
 
 /* ===== MODAL ===== */
-.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); }
 .modal.active { opacity: 1; pointer-events: auto; }
 .modal-content { background: var(--card-bg); padding: 30px; border-radius: 18px; text-align: center; width: 90%; max-width: 350px; transform: scale(0.8) translateZ(0); -webkit-backface-visibility: hidden; backface-visibility: hidden; transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
 .modal.active .modal-content { transform: scale(1) translateZ(0); }
@@ -188,9 +189,20 @@ button:active { transform: scale(0.97); }
 .secondary-btn { background: var(--grad-secondary); color: white; padding: 12px; font-size: 16px; margin-top: 5px; border-radius: 8px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
 .secondary-btn:hover { opacity: 0.88; }
 
-.glow-btn { animation: btnGlow 2.5s ease-in-out infinite; }
-@keyframes btnGlow { 0%, 100% { box-shadow: 0 0 8px var(--btn-glow); } 50% { box-shadow: 0 0 22px var(--btn-glow), 0 0 45px rgba(44, 62, 80, 0.2); } }
-@media (prefers-color-scheme: dark) { @keyframes btnGlow { 0%, 100% { box-shadow: 0 0 8px var(--btn-glow); } 50% { box-shadow: 0 0 22px var(--btn-glow), 0 0 50px rgba(138, 180, 248, 0.2); } } }
+/* glow-btn: opacity is one of only two CSS properties (with transform) that the
+   browser can animate on the compositor thread without any repaint. By putting a
+   static box-shadow on a ::after pseudo-element and animating only its opacity,
+   we get the same pulsing glow effect with zero paint cost. */
+.glow-btn { position: relative; }
+.glow-btn::after {
+    content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    box-shadow: 0 0 22px var(--btn-glow), 0 0 45px rgba(44, 62, 80, 0.22);
+    opacity: 0; animation: glowFade 2.5s ease-in-out infinite;
+}
+@keyframes glowFade { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
+@media (prefers-color-scheme: dark) {
+    .glow-btn::after { box-shadow: 0 0 22px var(--btn-glow), 0 0 50px rgba(138, 180, 248, 0.22); }
+}
 
 .hidden { display: none !important; }
 .error-msg { color: var(--accent-color); font-weight: bold; }
@@ -201,15 +213,25 @@ button:active { transform: scale(0.97); }
 .flip-card-inner { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.4s ease-in-out; transform-style: preserve-3d; }
 .flip-card.flipped .flip-card-inner { transform: rotateY(180deg); }
 .flip-card-front, .flip-card-back { position: absolute; width: 100%; height: 100%; -webkit-backface-visibility: hidden; backface-visibility: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 15px; padding: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
-.flip-card-front { background: linear-gradient(135deg, #2c3e50, #1a252f); color: white; font-size: 24px; font-weight: bold; animation: cardFrontGlow 4s ease-in-out infinite; }
-@keyframes cardFrontGlow { 0%, 100% { box-shadow: 0 8px 24px rgba(0,0,0,0.25), 0 0 0 rgba(52, 73, 94, 0); } 50% { box-shadow: 0 8px 24px rgba(0,0,0,0.25), 0 0 25px rgba(52, 73, 94, 0.5); } }
+.flip-card-front { background: linear-gradient(135deg, #2c3e50, #1a252f); color: white; font-size: 24px; font-weight: bold; position: relative; }
+/* opacity-only pseudo-element glow — no box-shadow animation, no repaint */
+.flip-card-front::after {
+    content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    box-shadow: 0 0 28px rgba(52, 73, 94, 0.6);
+    opacity: 0; animation: glowFade 4s ease-in-out infinite;
+}
 .flip-card-back { background: linear-gradient(135deg, #f1c40f, #f39c12); color: #333; transform: rotateY(180deg); font-size: 22px; }
 
 /* ===== TIMER & STARTER PLAYER ===== */
-.starter-player { background: var(--reveal-box-bg); border: 2px solid var(--reveal-box-border); color: var(--text-color); padding: 12px; border-radius: 10px; font-size: 1.2rem; margin: -10px auto 20px auto; max-width: 90%; animation: starterPulse 2s infinite; }
-@keyframes starterPulse { 0%, 100% { box-shadow: 0 0 5px var(--reveal-box-border); } 50% { box-shadow: 0 0 15px var(--reveal-box-border); } }
-.timer { font-size: 56px; font-weight: bold; color: var(--accent-color); margin: 30px 0; animation: timerGlow 2s ease-in-out infinite; font-variant-numeric: tabular-nums; }
-@keyframes timerGlow { 0%, 100% { text-shadow: 0 0 10px var(--glow-color); } 50% { text-shadow: 0 0 25px var(--glow-color), 0 0 50px rgba(231, 76, 60, 0.2); } }
+.starter-player { background: var(--reveal-box-bg); border: 2px solid var(--reveal-box-border); color: var(--text-color); padding: 12px; border-radius: 10px; font-size: 1.2rem; margin: -10px auto 20px auto; max-width: 90%; position: relative; box-shadow: 0 0 6px var(--reveal-box-border); }
+/* opacity-only pseudo-element — replaces animated box-shadow */
+.starter-player::after {
+    content: ''; position: absolute; inset: -2px; border-radius: inherit; pointer-events: none;
+    box-shadow: 0 0 18px var(--reveal-box-border);
+    opacity: 0; animation: glowFade 2s ease-in-out infinite;
+}
+/* text-shadow animation removed — static glow only */
+.timer { font-size: 56px; font-weight: bold; color: var(--accent-color); margin: 30px 0; text-shadow: 0 0 14px var(--glow-color), 0 0 28px var(--glow-color); font-variant-numeric: tabular-nums; }
 
 /* ===== VOTING ===== */
 .voting-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; margin-top: 20px; }
@@ -298,3 +320,21 @@ button:active { transform: scale(0.97); }
 /* ===== INFO ICON ===== */
 .info-icon { margin-right: auto; cursor: pointer; font-size: 18px; transition: transform 0.2s; -webkit-tap-highlight-color: transparent; display: inline-flex; align-items: center; justify-content: center; padding: 5px; }
 .info-icon:active { transform: scale(0.85); }
+
+/* ===== ACCESSIBILITY: REDUCED MOTION ===== */
+/* Users who have requested reduced motion get zero decorative animation */
+@media (prefers-reduced-motion: reduce) {
+    .glow-btn::after,
+    .flip-card-front::after,
+    .starter-player::after,
+    .screen.active,
+    .player-input-row,
+    .container,
+    .reveal-box,
+    .win-center, .win-particle,
+    .anim-win-overlay, .anim-lose-overlay, .lose-center {
+        animation: none !important;
+        transition: none !important;
+    }
+    .flip-card-inner { transition: transform 0.15s ease; }
+}
