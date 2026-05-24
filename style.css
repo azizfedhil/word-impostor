@@ -202,7 +202,8 @@ h2, p { color: var(--text-color); }
     border: 1px solid var(--input-border);
     border-radius: 12px;
     padding: 15px;
-    cursor: pointer;
+    cursor: pointer; /* Safari Fix */
+    -webkit-tap-highlight-color: transparent; /* Safari Fix */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -224,12 +225,14 @@ h2, p { color: var(--text-color); }
     font-weight: bold;
     color: var(--text-color);
     margin-bottom: 8px;
+    pointer-events: none; /* Safari Fix */
 }
 
 .setting-card .value {
     font-size: 26px;
     font-weight: bold;
     color: var(--primary-color);
+    pointer-events: none; /* Safari Fix */
 }
 
 /* ===== MODAL ===== */
@@ -239,19 +242,25 @@ h2, p { color: var(--text-color); }
     display: flex; justify-content: center; align-items: center;
     opacity: 0; pointer-events: none; transition: opacity 0.3s;
     backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px); /* Safari Fix */
 }
 .modal.active { opacity: 1; pointer-events: auto; }
+
 .modal-content {
     background: var(--card-bg);
     padding: 30px;
     border-radius: 18px;
     text-align: center;
     width: 90%; max-width: 350px;
-    transform: scale(0.8); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform: scale(0.8) translateZ(0); /* Safari hardware acceleration Fix */
+    -webkit-backface-visibility: hidden; /* Safari visual glitch Fix */
+    backface-visibility: hidden;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     box-shadow: 0 10px 40px rgba(0,0,0,0.3);
 }
-.modal.active .modal-content { transform: scale(1); }
+.modal.active .modal-content { transform: scale(1) translateZ(0); }
 .modal-content h3 { margin-top: 0; color: var(--text-color); margin-bottom: 20px;}
+
 .stepper {
     display: flex; align-items: center; justify-content: space-between;
     margin-bottom: 25px;
@@ -464,27 +473,4 @@ button:active { transform: scale(0.97); }
     position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
     pointer-events: none; z-index: 9999;
     background: rgba(46, 204, 113, 0);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 140px;
-    animation: winFlash 2.5s ease-out forwards;
-}
-@keyframes winFlash {
-    0% { opacity: 0; background: rgba(46, 204, 113, 0.85); transform: scale(0.3); }
-    15% { opacity: 1; transform: scale(1.2); }
-    30% { transform: scale(1); }
-    100% { opacity: 0; background: rgba(46, 204, 113, 0); transform: scale(1); }
-}
-
-.anim-lose-overlay {
-    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-    pointer-events: none; z-index: 9999;
-    background: rgba(231, 76, 60, 0);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 140px;
-    animation: loseFlash 2.5s ease-out forwards;
-}
-@keyframes loseFlash {
-    0% { opacity: 0; background: rgba(231, 76, 60, 0.85); transform: scale(1.8); }
-    15% { opacity: 1; transform: scale(1); }
-    100% { opacity: 0; background: rgba(231, 76, 60, 0); transform: scale(1); }
-}
+    display: flex; align-items: center; justify-
