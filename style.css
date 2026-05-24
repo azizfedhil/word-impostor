@@ -474,3 +474,47 @@ button:active { transform: scale(0.97); }
     pointer-events: none; z-index: 9999;
     background: rgba(46, 204, 113, 0);
     display: flex; align-items: center; justify-
+    /* ===== LANGUAGE TOGGLE ===== */
+.lang-switch {
+    display: flex;
+    justify-content: center;
+    background: var(--input-bg);
+    border-radius: 25px;
+    border: 2px solid var(--input-border);
+    margin: 0 auto 20px auto;
+    width: fit-content;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.lang-btn {
+    padding: 8px 25px;
+    cursor: pointer;
+    font-weight: bold;
+    color: var(--text-color);
+    transition: background-color 0.3s, color 0.3s;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.lang-btn.active {
+    background: var(--accent-color);
+    color: white;
+}
+
+/* ===== INFO ICON ===== */
+.info-icon {
+    margin-right: auto;
+    cursor: pointer;
+    font-size: 18px;
+    transition: transform 0.2s;
+    -webkit-tap-highlight-color: transparent;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+}
+
+.info-icon:active {
+    transform: scale(0.85);
+}
