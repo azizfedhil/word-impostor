@@ -14,7 +14,7 @@ const i18n = {
         adv_nohint: "🙈 إخفاء التلميح عن الدخيل",
         adv_allhint: "💡 منح جميع الدخلاء التلميح الصحيح",
         start_btn: "🚀 بدء اللعبة",
-        reset_btn: "🔄 إعادة الإعدادات الافتراضية",
+        reset_tooltip: "إعادة الإعدادات الافتراضية",
         reset_confirm: "هل أنت متأكد أنك تريد مسح جميع الأسماء وإعادة الإعدادات إلى وضعها الافتراضي؟",
         reveal_title: "🃏 توزيع الأدوار",
         reveal_instructions: "اضغط مطولاً على البطاقة لمعرفة دورك، عند إفلات الضغط ستختفي البطاقة.",
@@ -63,7 +63,7 @@ const i18n = {
         adv_nohint: "🙈 سبورة كحلة مع الكذاب",
         adv_allhint: "💡 الكذابين الكل ياخذو نفس التلميح",
         start_btn: "🚀 انافا",
-        reset_btn: "🔄 فسّخ ورجّع كيما كان",
+        reset_tooltip: "فسّخ ورجّع كيما كان",
         reset_confirm: "متأكد تحب تفسّخ الأسامي الكل وترجّع كل شي كيما كان؟",
         reveal_title: "🃏 شكون شنية",
         reveal_instructions: "اقعد نازل على الكارتة باش تعرف دورك، كي تسيبها تعاود تدور.",
@@ -123,9 +123,9 @@ const infoDescriptions = {
     }
 };
 
-let currentLang = 'tn'; // Default Language
-// ============================================
+let currentLang = 'tn'; 
 
+// ============================================
 let wordsDB = [];
 let players = [];
 let currentWordObj = null;
@@ -194,6 +194,11 @@ function applyTranslations() {
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
         if (i18n[currentLang][key]) el.innerText = i18n[currentLang][key];
+    });
+
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+        const key = el.getAttribute('data-i18n-title');
+        if (i18n[currentLang][key]) el.title = i18n[currentLang][key];
     });
     
     document.querySelectorAll('.player-input').forEach(input => {
@@ -564,158 +569,4 @@ document.getElementById('start-game-btn').addEventListener('click', () => {
 
 function renderSingleCard() {
     const container = document.getElementById('single-card-container');
-    const titleMsg = document.getElementById('current-player-turn-msg');
-    const nextBtn = document.getElementById('next-player-btn');
-
-    container.innerHTML = '';
-    nextBtn.classList.add('hidden');
-
-    const player = players[currentRevealIndex];
-    titleMsg.innerText = (currentLang === 'tn' ? "دالّتك يا " : "الدور الحالي: يا ") + player.name;
-
-    const card = document.createElement('div');
-    card.className = 'flip-card';
-
-    let roleText;
-    if (player.isImpostor) {
-        roleText = noHintsMode
-            ? `${i18n[currentLang].impostor_role}`
-            : `${i18n[currentLang].impostor_role}<br><br><span style="font-size:16px;">${i18n[currentLang].hint_label}</span><br>${player.customHint}`;
-    } else {
-        roleText = `${i18n[currentLang].citizen_role}<br><br><span style="font-size:16px;">${i18n[currentLang].word_label}</span><br>${currentWordObj.word}`;
-    }
-
-    card.innerHTML = `
-        <div class="flip-card-inner">
-            <div class="flip-card-front"><span>${i18n[currentLang].card_of}${player.name}</span></div>
-            <div class="flip-card-back"><span>${roleText}</span></div>
-        </div>`;
-
-    const showCard = (e) => { e.preventDefault(); card.classList.add('flipped'); player.viewedCard = true; };
-    const hideCard = (e) => {
-        e.preventDefault();
-        if (!card.classList.contains('flipped')) return;
-        card.classList.remove('flipped');
-        nextBtn.innerText = currentRevealIndex < players.length - 1
-            ? `${i18n[currentLang].pass_to}${players[currentRevealIndex + 1].name}`
-            : i18n[currentLang].all_seen;
-        nextBtn.classList.remove('hidden');
-    };
-
-    card.addEventListener('mousedown', showCard);
-    card.addEventListener('mouseup', hideCard);
-    card.addEventListener('mouseleave', hideCard);
-    card.addEventListener('touchstart', showCard, { passive: false });
-    card.addEventListener('touchend', hideCard, { passive: false });
-    card.addEventListener('touchcancel', hideCard, { passive: false });
-
-    container.appendChild(card);
-}
-
-document.getElementById('next-player-btn').addEventListener('click', () => {
-    currentRevealIndex++;
-    if (currentRevealIndex < players.length) {
-        renderSingleCard();
-    } else {
-        const starterPlayer = players[Math.floor(Math.random() * players.length)];
-        document.getElementById('starter-player').innerText = `${i18n[currentLang].starter_is}${starterPlayer.name}`;
-        
-        showScreen('timer-screen');
-        updateTimerDisplay();
-        timerInterval = setInterval(() => {
-            remainingTime--;
-            updateTimerDisplay();
-            if (remainingTime <= 0) { clearInterval(timerInterval); goToVoting(); }
-        }, 1000);
-    }
-});
-
-document.getElementById('go-to-vote-btn').addEventListener('click', () => {
-    clearInterval(timerInterval);
-    goToVoting();
-});
-
-function updateTimerDisplay() {
-    const m = Math.floor(remainingTime / 60).toString().padStart(2, '0');
-    const s = (remainingTime % 60).toString().padStart(2, '0');
-    document.getElementById('timer-display').innerText = `${m}:${s}`;
-}
-
-function goToVoting() {
-    showScreen('voting-screen');
-    const votingList = document.getElementById('voting-list');
-    votingList.innerHTML = '';
-    players.filter(p => !p.eliminated).forEach(player => {
-        const btn = document.createElement('button');
-        btn.className = 'vote-btn';
-        btn.innerText = `🗳️ ${player.name}`;
-        btn.onclick = () => handleVote(player);
-        votingList.appendChild(btn);
-    });
-}
-
-function handleVote(votedPlayer) {
-    const resultMsg = document.getElementById('result-message');
-    const revealBox = document.getElementById('impostors-reveal');
-    const nextBtn = document.getElementById('next-round-btn');
-    revealBox.innerHTML = '';
-
-    const trans = i18n[currentLang];
-
-    if (!isEliminationMode) {
-        if (votedPlayer.isImpostor) {
-            triggerAnimation('win');
-            resultMsg.innerText = trans.correct_guess.replace('{name}', votedPlayer.name);
-        } else {
-            triggerAnimation('lose');
-            resultMsg.innerText = trans.wrong_guess.replace('{name}', votedPlayer.name);
-        }
-
-        const allImpostors = players.filter(p => p.isImpostor).map(p => p.name).join(' و ');
-        revealBox.innerHTML = `${trans.impostors_were}<br><strong style="color:var(--accent-color);">${allImpostors}</strong><br><br>${trans.word_was} <strong>${currentWordObj.word}</strong>`;
-        nextBtn.innerText = trans.next_round_btn;
-        nextBtn.onclick = () => showScreen('setup-screen');
-
-    } else {
-        votedPlayer.eliminated = true;
-        const remainingImpostors = players.filter(p => p.isImpostor && !p.eliminated);
-        const remainingRegulars  = players.filter(p => !p.isImpostor && !p.eliminated);
-
-        if (remainingImpostors.length === 0) {
-            triggerAnimation('win');
-            resultMsg.innerText = trans.all_impostors_dead;
-            revealBox.innerHTML = `${trans.word_was} <strong>${currentWordObj.word}</strong>`;
-            nextBtn.innerText = trans.next_round_btn;
-            nextBtn.onclick = () => showScreen('setup-screen');
-        } else if (remainingImpostors.length >= remainingRegulars.length) {
-            triggerAnimation('lose');
-            resultMsg.innerText = trans.impostors_win;
-            const allImpostors = players.filter(p => p.isImpostor).map(p => p.name).join(' و ');
-            revealBox.innerHTML = `${trans.impostors_were}<br><strong style="color:var(--accent-color);">${allImpostors}</strong><br><br>${trans.word_was} <strong>${currentWordObj.word}</strong>`;
-            nextBtn.innerText = trans.next_round_btn;
-            nextBtn.onclick = () => showScreen('setup-screen');
-        } else {
-            if (!votedPlayer.isImpostor) triggerAnimation('lose');
-            
-            resultMsg.innerText = trans.eliminated_msg.replace('{name}', votedPlayer.name);
-            revealBox.innerHTML = trans.elimination_cliffhanger;
-            nextBtn.innerText = trans.continue_discussion;
-            nextBtn.onclick = () => {
-                remainingTime = 60;
-                const alivePlayers = players.filter(p => !p.eliminated);
-                const starterPlayer = alivePlayers[Math.floor(Math.random() * alivePlayers.length)];
-                document.getElementById('starter-player').innerText = `${trans.starter_continue}${starterPlayer.name}`;
-
-                showScreen('timer-screen');
-                updateTimerDisplay();
-                timerInterval = setInterval(() => {
-                    remainingTime--;
-                    updateTimerDisplay();
-                    if (remainingTime <= 0) { clearInterval(timerInterval); goToVoting(); }
-                }, 1000);
-            };
-        }
-    }
-
-    showScreen('result-screen');
-}
+    co
