@@ -10,19 +10,25 @@
 
     <!-- PWA -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#e74c3c">
+    <meta name="theme-color" content="#0a0618">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="الدخيل">
     <link rel="apple-touch-icon" href="icon-192.png">
 
-    <link rel="stylesheet" href="style.css?v=3.1">
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="style.css?v=4.0">
 </head>
 <body>
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
     <div class="orb orb-3"></div>
+    <div class="orb orb-4"></div>
 
     <div class="container">
         <header>
@@ -38,14 +44,19 @@
                 <button type="button" id="add-player-btn" class="secondary-btn">➕ إضافة لاعب آخر</button>
             </div>
 
-            <div class="settings-group">
-                <label for="impostor-count">🎭 عدد الدخلاء:</label>
-                <input type="number" id="impostor-count" value="1" min="1">
-            </div>
-
-            <div class="settings-group">
-                <label for="timer-minutes">⏱️ مدة الجولة (بالدقائق):</label>
-                <input type="number" id="timer-minutes" value="3" min="1">
+            <div class="compact-row">
+                <div class="compact-group">
+                    <label for="impostor-count">🎭 عدد الدخلاء</label>
+                    <input type="number" id="impostor-count" value="1" min="1" class="compact-number">
+                </div>
+                <div class="compact-group">
+                    <label>⏱️ مدة الجولة</label>
+                    <div class="timer-stepper">
+                        <button type="button" id="timer-minus-btn" class="stepper-btn">−</button>
+                        <span id="timer-stepper-display">03:00</span>
+                        <button type="button" id="timer-plus-btn" class="stepper-btn">+</button>
+                    </div>
+                </div>
             </div>
 
             <!-- Advanced options collapsible -->
@@ -80,13 +91,13 @@
                 </div>
             </div>
 
-            <button id="start-game-btn" class="primary-btn glow-btn">🚀 بدء اللعبة</button>
+            <button id="start-game-btn" class="glow-btn">🚀 بدء اللعبة</button>
             <p id="setup-error" class="error-msg"></p>
         </div>
 
         <div id="reveal-screen" class="screen">
             <h2>🃏 توزيع الأدوار</h2>
-            <h3 id="current-player-turn-msg" style="color: var(--accent-color);"></h3>
+            <h3 id="current-player-turn-msg" style="color: var(--accent);"></h3>
             <p id="reveal-instructions">اضغط مطولاً على البطاقة لمعرفة دورك، عند إفلات الضغط ستختفي البطاقة.</p>
             <div id="single-card-container" class="single-card-wrapper"></div>
             <button id="next-player-btn" class="primary-btn hidden"></button>
@@ -94,6 +105,7 @@
 
         <div id="timer-screen" class="screen">
             <h2>💬 وقت النقاش</h2>
+            <p id="first-speaker-msg" class="first-speaker"></p>
             <div id="timer-display" class="timer">03:00</div>
             <button id="go-to-vote-btn" class="danger-btn">🗳️ إنهاء النقاش والتصويت</button>
         </div>
@@ -112,10 +124,9 @@
         </div>
     </div>
 
-    <script src="app.js?v=3.1"></script>
+    <script src="app.js?v=4.0"></script>
 
     <script>
-      // تسجيل Service Worker للعمل كـ PWA
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./sw.js')
