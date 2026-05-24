@@ -1,8 +1,31 @@
 :root {
+    /* ألوان الوضع الفاتح (الافتراضي) */
     --primary-color: #2c3e50;
     --accent-color: #e74c3c;
     --bg-color: #ecf0f1;
     --card-bg: #fff;
+    --text-color: #2c3e50;
+    --input-bg: #fff;
+    --input-border: #ccc;
+    --input-text: #333;
+    --reveal-box-bg: #e8f8f5;
+    --reveal-box-border: #1abc9c;
+}
+
+/* التبديل التلقائي للوضع الليلي حسب النظام */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --primary-color: #8ab4f8;
+        --accent-color: #f28b82;
+        --bg-color: #121212;
+        --card-bg: #1e1e1e;
+        --text-color: #e8eaed;
+        --input-bg: #2d2d2d;
+        --input-border: #555;
+        --input-text: #e8eaed;
+        --reveal-box-bg: #2a3b38;
+        --reveal-box-border: #34d399;
+    }
 }
 
 * {
@@ -12,26 +35,32 @@
 
 body {
     background-color: var(--bg-color);
-    color: var(--primary-color);
+    color: var(--text-color);
     margin: 0;
     padding: 20px;
     display: flex;
     justify-content: center;
+    transition: background-color 0.3s, color 0.3s;
 }
 
 .container {
     max-width: 600px;
     width: 100%;
-    background: white;
+    background: var(--card-bg);
     padding: 30px;
     border-radius: 15px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
     text-align: center;
+    transition: background-color 0.3s;
 }
 
 header h1 {
     color: var(--accent-color);
     margin-bottom: 20px;
+}
+
+h2, p {
+    color: var(--text-color);
 }
 
 .screen {
@@ -57,6 +86,7 @@ header h1 {
     display: block;
     font-weight: bold;
     margin-bottom: 5px;
+    color: var(--text-color);
 }
 
 /* تنسيق الحقول */
@@ -65,10 +95,36 @@ header h1 {
 .settings-group textarea {
     width: 100%;
     padding: 12px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--input-border);
     border-radius: 5px;
     font-size: 16px;
     margin-bottom: 10px;
+    background-color: var(--input-bg);
+    color: var(--input-text);
+}
+
+/* صف إضافة/إزالة اللاعبين */
+.player-input-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    align-items: center;
+}
+
+.player-input-row input {
+    margin-bottom: 0 !important;
+    flex-grow: 1;
+}
+
+.remove-player-btn {
+    width: auto !important;
+    margin-top: 0 !important;
+    padding: 10px 15px !important;
+    font-size: 16px !important;
+    border-radius: 5px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .checkbox-group {
@@ -92,15 +148,15 @@ button {
 
 .primary-btn {
     background-color: var(--primary-color);
-    color: white;
+    color: #fff;
 }
-.primary-btn:hover { background-color: #1a252f; }
+.primary-btn:hover { opacity: 0.9; }
 
 .danger-btn {
     background-color: var(--accent-color);
     color: white;
 }
-.danger-btn:hover { background-color: #c0392b; }
+.danger-btn:hover { opacity: 0.9; }
 
 .secondary-btn {
     background-color: #95a5a6;
@@ -114,9 +170,7 @@ button {
     width: 100%;
     transition: 0.3s;
 }
-.secondary-btn:hover {
-    background-color: #7f8c8d;
-}
+.secondary-btn:hover { background-color: #7f8c8d; }
 
 .hidden { display: none !important; }
 .error-msg { color: var(--accent-color); font-weight: bold; }
@@ -134,6 +188,8 @@ button {
     margin: 30px auto;
     max-width: 320px;
     height: 220px;
+    user-select: none; /* لمنع تحديد النص أثناء الضغط المطول */
+    -webkit-user-select: none;
 }
 
 .flip-card {
@@ -149,7 +205,7 @@ button {
     width: 100%;
     height: 100%;
     text-align: center;
-    transition: transform 0.6s;
+    transition: transform 0.4s ease-in-out;
     transform-style: preserve-3d;
 }
 
@@ -173,7 +229,7 @@ button {
 }
 
 .flip-card-front {
-    background-color: var(--primary-color);
+    background-color: #2c3e50; /* تم تثبيته ليكون داكناً دائماً ليتناسب مع النص الأبيض */
     color: white;
     font-size: 24px;
     font-weight: bold;
@@ -200,15 +256,16 @@ button {
     font-size: 16px;
     border-radius: 8px;
 }
-.vote-btn:hover { background-color: #2c3e50; }
+.vote-btn:hover { opacity: 0.8; }
 
 .reveal-box {
     margin: 20px 0;
     padding: 15px;
-    background: #e8f8f5;
-    border: 2px solid #1abc9c;
+    background: var(--reveal-box-bg);
+    border: 2px solid var(--reveal-box-border);
     border-radius: 8px;
     font-weight: bold;
     font-size: 18px;
     line-height: 1.5;
+    color: var(--text-color);
 }
