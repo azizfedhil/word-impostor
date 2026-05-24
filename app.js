@@ -128,17 +128,34 @@ document.getElementById('start-game-btn').addEventListener('click', () => {
         }
     }
 
-    // إعطاء كل دخيل تلميحاً مختلفاً
-    // نقوم بجلب قائمة مبعثرة لكل التلميحات المتوفرة في قاعدة البيانات
-    let allHints = wordsDB.map(w => w.hint).sort(() => 0.5 - Math.random());
-    let hintIndex = 0;
-
-    players.forEach(p => {
-        if (p.isImpostor) {
-            p.customHint = allHints[hintIndex % allHints.length];
-            hintIndex++;
+    // --- منطق توزيع التلميحات المحدث ---
+    let impostorPlayers = players.filter(p => p.isImpostor);
+    
+    if (impostorPlayers.length === 1) {
+        // إذا كان هناك دخيل واحد فقط، يحصل على التلميح الصحيح
+        impostorPlayers[0].customHint = currentWordObj.hint;
+    } else if (impostorPlayers.length > 1) {
+        // إذا كان هناك أكثر من دخيل
+        // 1. نختار أحدهم عشوائياً ليأخذ التلميح الصحيح
+        let luckyIndex = Math.floor(Math.random() * impostorPlayers.length);
+        impostorPlayers[luckyIndex].customHint = currentWordObj.hint;
+        
+        // 2. نجلب باقي التلميحات (نستبعد التلميح الصحيح لتجنب التكرار) ونخلطها
+        let otherHints = wordsDB
+            .filter(w => w.word !== currentWordObj.word)
+            .map(w => w.hint)
+            .sort(() => 0.5 - Math.random());
+            
+        let hIndex = 0;
+        
+        // 3. نوزع التلميحات العشوائية على باقي الدخلاء
+        for (let i = 0; i < impostorPlayers.length; i++) {
+            if (i !== luckyIndex) {
+                impostorPlayers[i].customHint = otherHints[hIndex % otherHints.length];
+                hIndex++;
+            }
         }
-    });
+    }
 
     remainingTime = timeMins * 60;
     currentRevealIndex = 0;
@@ -161,7 +178,7 @@ function renderSingleCard() {
     const card = document.createElement('div');
     card.className = 'flip-card';
     
-    // استخدام customHint بدلاً من التلميح الثابت للدخيل
+    // استخدام customHint المجهز مسبقاً للدخيل
     let roleText = player.isImpostor ? 
         `أنت الدخيل 🤫<br><br><span style="font-size:16px;">التلميح:</span><br>${player.customHint}` : 
         `أنت مواطن 🤠<br><br><span style="font-size:16px;">الكلمة:</span><br>${currentWordObj.word}`;
