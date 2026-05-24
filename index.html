@@ -27,17 +27,22 @@
 
     <div class="container">
         
-        <!-- Language Toggle -->
-        <div class="lang-switch">
-            <div class="lang-btn" data-lang="ar">عربي</div>
-            <div class="lang-btn active" data-lang="tn">تونسي</div>
-        </div>
-
         <header>
             <h1 data-i18n="title">🕵️‍♂️ شكونو هو؟</h1>
         </header>
 
         <div id="setup-screen" class="screen active">
+            <!-- Language Dropdown — only visible on setup screen -->
+            <div class="lang-dropdown-wrapper">
+                <button type="button" class="lang-dropdown-btn" id="lang-dropdown-btn">
+                    🌐 <span id="lang-label">تونسي</span> <span class="lang-chevron" id="lang-chevron">▾</span>
+                </button>
+                <div class="lang-dropdown-menu hidden" id="lang-dropdown-menu">
+                    <div class="lang-option" data-lang="ar">🇹🇳 عربي</div>
+                    <div class="lang-option active" data-lang="tn">🗣️ تونسي</div>
+                </div>
+            </div>
+
             <h2 data-i18n="settings_title">ريڨلاج الطرح</h2>
 
             <div class="settings-group">
