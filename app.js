@@ -4,6 +4,7 @@ let currentWordObj = null;
 let timerInterval = null;
 let remainingTime = 0;
 let isEliminationMode = false;
+let noHintsMode = false;
 let currentRevealIndex = 0;
 
 // إدارة حقول اللاعبين
@@ -78,6 +79,8 @@ document.getElementById('start-game-btn').addEventListener('click', () => {
     const timeMins = parseInt(document.getElementById('timer-minutes').value);
     
     isEliminationMode = document.getElementById('elimination-mode').checked;
+    const noHints = document.getElementById('no-hints-toggle').checked;
+    noHintsMode = noHints;
 
     if (namesInput.length < 3) {
         document.getElementById('setup-error').innerText = "يجب أن يكون هناك 3 لاعبين على الأقل.";
@@ -159,7 +162,7 @@ document.getElementById('start-game-btn').addEventListener('click', () => {
 
     remainingTime = timeMins * 60;
     currentRevealIndex = 0;
-    renderSingleCard();
+    renderSingleCard(noHints);
     showScreen('reveal-screen');
 });
 
@@ -178,10 +181,16 @@ function renderSingleCard() {
     const card = document.createElement('div');
     card.className = 'flip-card';
     
-    // استخدام customHint المجهز مسبقاً للدخيل
-    let roleText = player.isImpostor ? 
-        `أنت الدخيل 🤫<br><br><span style="font-size:16px;">التلميح:</span><br>${player.customHint}` : 
-        `أنت مواطن 🤠<br><br><span style="font-size:16px;">الكلمة:</span><br>${currentWordObj.word}`;
+    let roleText;
+    if (player.isImpostor) {
+        if (noHintsMode) {
+            roleText = `أنت الدخيل 🤫`;
+        } else {
+            roleText = `أنت الدخيل 🤫<br><br><span style="font-size:16px;">التلميح:</span><br>${player.customHint}`;
+        }
+    } else {
+        roleText = `أنت مواطن 🤠<br><br><span style="font-size:16px;">الكلمة:</span><br>${currentWordObj.word}`;
+    }
 
     card.innerHTML = `
         <div class="flip-card-inner">
