@@ -8,6 +8,7 @@
     <meta http-equiv="Expires" content="0">
     <title>لعبة الدخيل</title>
 
+    <!-- PWA -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#e74c3c">
     <meta name="mobile-web-app-capable" content="yes">
@@ -24,62 +25,56 @@
     <div class="orb orb-3"></div>
 
     <div class="container">
-        <div class="lang-switch" style="text-align: right; margin-bottom: 15px;">
-            <select id="lang-selector" style="padding: 8px; border-radius: 8px; background: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); font-weight: bold; cursor: pointer;">
-                <option value="standard">العربية (Standard)</option>
-                <option value="plus18">+18+ (Tunisian Slang)</option>
-            </select>
-        </div>
-
         <header>
-            <h1 id="ui-title">🕵️‍♂️ من هو الدخيل؟</h1>
+            <h1>🕵️‍♂️ من هو الدخيل؟</h1>
         </header>
 
         <div id="setup-screen" class="screen active">
-            <h2 id="ui-setup-title">إعدادات الجولة</h2>
+            <h2>إعدادات الجولة</h2>
 
             <div class="settings-group">
-                <label id="ui-players-label">👥 أسماء اللاعبين:</label>
+                <label>👥 أسماء اللاعبين:</label>
                 <div id="players-inputs-container"></div>
                 <button type="button" id="add-player-btn" class="secondary-btn">➕ إضافة لاعب آخر</button>
             </div>
 
             <div class="settings-group">
-                <label for="impostor-count" id="ui-impostor-label">🎭 عدد الدخلاء:</label>
+                <label for="impostor-count">🎭 عدد الدخلاء:</label>
                 <input type="number" id="impostor-count" value="1" min="1">
             </div>
 
             <div class="settings-group">
-                <label for="timer-minutes" id="ui-timer-label">⏱️ مدة الجولة (بالدقائق):</label>
+                <label for="timer-minutes">⏱️ مدة الجولة (بالدقائق):</label>
                 <input type="number" id="timer-minutes" value="3" min="1">
             </div>
 
+            <!-- Advanced options collapsible -->
             <div class="advanced-wrapper">
                 <button type="button" id="advanced-toggle-btn" class="advanced-toggle-btn">
-                    <span id="ui-adv-btn">🔧 خيارات متقدمة</span>
+                    <span>🔧 خيارات متقدمة</span>
                     <span class="chevron" id="advanced-chevron">▼</span>
                 </button>
                 <div id="advanced-panel" class="advanced-panel">
                     <div class="advanced-inner">
                         <div class="settings-group checkbox-group">
                             <input type="checkbox" id="random-impostors-toggle">
-                            <label for="random-impostors-toggle" id="ui-rand-imp-label">🎲 عدد عشوائي من الدخلاء (يتجاهل الرقم المحدد أعلاه)</label>
+                            <label for="random-impostors-toggle">🎲 عدد عشوائي من الدخلاء (يتجاهل الرقم المحدد أعلاه)</label>
                         </div>
                         <div class="settings-group checkbox-group">
                             <input type="checkbox" id="all-impostors-toggle">
-                            <label for="all-impostors-toggle" id="ui-all-imp-label">😈 تفعيل فرصة "الجميع دخلاء" عشوائياً</label>
+                            <label for="all-impostors-toggle">😈 تفعيل فرصة "الجميع دخلاء" عشوائياً</label>
                         </div>
                         <div class="settings-group checkbox-group">
                             <input type="checkbox" id="elimination-mode">
-                            <label for="elimination-mode" id="ui-elim-label">⚔️ وضع الاستبعاد (اللعبة تستمر بعد التصويت الخاطئ)</label>
+                            <label for="elimination-mode">⚔️ وضع الاستبعاد (اللعبة تستمر بعد التصويت الخاطئ)</label>
                         </div>
                         <div class="settings-group checkbox-group">
                             <input type="checkbox" id="no-hints-toggle">
-                            <label for="no-hints-toggle" id="ui-no-hint-label">🙈 إخفاء التلميح عن الدخيل</label>
+                            <label for="no-hints-toggle">🙈 إخفاء التلميح عن الدخيل</label>
                         </div>
                         <div class="settings-group checkbox-group">
                             <input type="checkbox" id="all-correct-hints-toggle">
-                            <label for="all-correct-hints-toggle" id="ui-all-correct-label">💡 منح جميع الدخلاء التلميح الصحيح</label>
+                            <label for="all-correct-hints-toggle">💡 منح جميع الدخلاء التلميح الصحيح</label>
                         </div>
                     </div>
                 </div>
@@ -90,7 +85,7 @@
         </div>
 
         <div id="reveal-screen" class="screen">
-            <h2 id="ui-reveal-title">🃏 توزيع الأدوار</h2>
+            <h2>🃏 توزيع الأدوار</h2>
             <h3 id="current-player-turn-msg" style="color: var(--accent-color);"></h3>
             <p id="reveal-instructions">اضغط مطولاً على البطاقة لمعرفة دورك، عند إفلات الضغط ستختفي البطاقة.</p>
             <div id="single-card-container" class="single-card-wrapper"></div>
@@ -98,14 +93,14 @@
         </div>
 
         <div id="timer-screen" class="screen">
-            <h2 id="ui-timer-screen-title">💬 وقت النقاش</h2>
+            <h2>💬 وقت النقاش</h2>
             <div id="timer-display" class="timer">03:00</div>
             <button id="go-to-vote-btn" class="danger-btn">🗳️ إنهاء النقاش والتصويت</button>
         </div>
 
         <div id="voting-screen" class="screen">
-            <h2 id="ui-vote-title">🗳️ التصويت</h2>
-            <p id="ui-vote-desc">من تعتقدون أنه الدخيل؟</p>
+            <h2>🗳️ التصويت</h2>
+            <p>من تعتقدون أنه الدخيل؟</p>
             <div id="voting-list" class="voting-grid"></div>
         </div>
 
@@ -117,9 +112,10 @@
         </div>
     </div>
 
-    <script src="app.js?v=3.2"></script>
+    <script src="app.js?v=3.1"></script>
 
     <script>
+      // تسجيل Service Worker للعمل كـ PWA
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./sw.js')

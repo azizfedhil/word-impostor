@@ -6,66 +6,16 @@ let remainingTime = 0;
 let isEliminationMode = false;
 let noHintsMode = false;
 let currentRevealIndex = 0;
+
+// إدارة حقول اللاعبين
 let playerCount = 0;
-
-// Language Management
-let currentLang = 'standard';
-const uiTranslations = {
-    title: { standard: "🕵️‍♂️ من هو الدخيل؟", plus18: "🕵️‍♂️ شبيك تحشي فيه؟" },
-    setupTitle: { standard: "إعدادات الجولة", plus18: "ركّح زبورم الطرح" },
-    playersLabel: { standard: "👥 أسماء اللاعبين:", plus18: "👥 اساميكم" },
-    addPlayerBtn: { standard: "➕ إضافة لاعب آخر", plus18: "➕ زيد قحبون آخر" },
-    impostorLabel: { standard: "🎭 عدد الدخلاء:", plus18: "🎭 قداش من بلعوط؟" },
-    timerLabel: { standard: "⏱️ مدة الجولة (بالدقائق):", plus18: "⏱️ وقت الطرح" },
-    advBtn: { standard: "🔧 خيارات متقدمة", plus18: "🔧 زيد بعبص" },
-    randImpLabel: { standard: "🎲 عدد عشوائي من الدخلاء (يتجاهل الرقم المحدد أعلاه)", plus18: "🎲 اللعبة تنيك روحها وتحط منيكين قد ما تحب" },
-    allImpLabel: { standard: "😈 تفعيل فرصة 'الجميع دخلاء' عشوائياً", plus18: "😈 نيك حل فترية" },
-    elimLabel: { standard: "⚔️ وضع الاستبعاد (اللعبة تستمر بعد التصويت الخاطئ)", plus18: "⚔️ نيك كل واحد وحدو - الي تنيكو يخرج حتى كان طلع خاطيه عصبة ليه الطرح يكمل" },
-    noHintLabel: { standard: "🙈 إخفاء التلميح عن الدخيل", plus18: "🙈 الكذاب عصبة ليه - ما ينيك حتى عصبة من اللعبة" },
-    allCorrectLabel: { standard: "💡 منح جميع الدخلاء التلميح الصحيح", plus18: "💡 منح جميع الدخلاء التلميح الصحيح" },
-    startBtn: { standard: "🚀 بدء اللعبة", plus18: "🚀 قدّم نيّك" },
-    revealInstructions: { standard: "اضغط مطولاً على البطاقة لمعرفة دورك، عند إفلات الضغط ستختفي البطاقة.", plus18: "اقعد بعبص في الكارتة باش تعرف دوركك، كي تسيبو يرجع عليك" },
-    timerScreenTitle: { standard: "💬 وقت النقاش", plus18: "💬 وقت تنيكلها أمها" },
-    goToVoteBtn: { standard: "🗳️ إنهاء النقاش والتصويت", plus18: "🗳️ سكر على زبي، عرفنا البلعوط" },
-    voteDesc: { standard: "من تعتقدون أنه الدخيل؟", plus18: "شكونو هالزبور" }
-};
-
-function applyTranslations() {
-    const t = (key) => uiTranslations[key][currentLang];
-    document.getElementById('ui-title').innerText = t('title');
-    document.getElementById('ui-setup-title').innerText = t('setupTitle');
-    document.getElementById('ui-players-label').innerText = t('playersLabel');
-    document.getElementById('add-player-btn').innerText = t('addPlayerBtn');
-    document.getElementById('ui-impostor-label').innerText = t('impostorLabel');
-    document.getElementById('ui-timer-label').innerText = t('timerLabel');
-    document.getElementById('ui-adv-btn').innerText = t('advBtn');
-    document.getElementById('ui-rand-imp-label').innerText = t('randImpLabel');
-    document.getElementById('ui-all-imp-label').innerText = t('allImpLabel');
-    document.getElementById('ui-elim-label').innerText = t('elimLabel');
-    document.getElementById('ui-no-hint-label').innerText = t('noHintLabel');
-    document.getElementById('ui-all-correct-label').innerText = t('allCorrectLabel');
-    document.getElementById('start-game-btn').innerText = t('startBtn');
-    document.getElementById('reveal-instructions').innerText = t('revealInstructions');
-    document.getElementById('ui-timer-screen-title').innerText = t('timerScreenTitle');
-    document.getElementById('go-to-vote-btn').innerText = t('goToVoteBtn');
-    document.getElementById('ui-vote-desc').innerText = t('voteDesc');
-}
-
-function loadWords(filename) {
-    fetch(filename, { cache: 'no-store' })
-        .then(r => r.json())
-        .then(data => { 
-            // .flat() handles nested arrays like the one in your adult word list.json
-            wordsDB = data.flat(); 
-        })
-        .catch(err => console.error("Error loading words:", err));
-}
 
 function addPlayerInput(defaultName = '') {
     const playersContainer = document.getElementById('players-inputs-container');
     if (!playersContainer) return;
 
     playerCount++;
+
     const row = document.createElement('div');
     row.className = 'player-input-row';
 
@@ -88,28 +38,10 @@ function addPlayerInput(defaultName = '') {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-    // Initial Load
-    loadWords('word list.json');
+    // تهيئة 4 لاعبين افتراضيين
     for (let i = 1; i <= 4; i++) addPlayerInput(`لاعب ${i}`);
 
-    // Language Toggle Listener
-    document.getElementById('lang-selector').addEventListener('change', (e) => {
-        if (e.target.value === 'plus18') {
-            const confirmed = confirm("Are you sure? This contains explicit +18 language.");
-            if (!confirmed) {
-                e.target.value = 'standard';
-                return;
-            }
-            currentLang = 'plus18';
-            loadWords('adult word list.json');
-        } else {
-            currentLang = 'standard';
-            loadWords('word list.json');
-        }
-        applyTranslations();
-    });
-
-    // Toggle Advanced Panel
+    // ===== تبديل لوحة الخيارات المتقدمة =====
     const advBtn   = document.getElementById('advanced-toggle-btn');
     const advPanel = document.getElementById('advanced-panel');
     const chevron  = document.getElementById('advanced-chevron');
@@ -119,9 +51,10 @@ window.addEventListener('DOMContentLoaded', () => {
         chevron.classList.toggle('open', isOpen);
     });
 
+    // ===== تعطيل حقل عدد الدخلاء عند تفعيل الخيار العشوائي =====
     const randomToggle   = document.getElementById('random-impostors-toggle');
     const impostorInput  = document.getElementById('impostor-count');
-    const impostorLabel  = document.getElementById('ui-impostor-label');
+    const impostorLabel  = document.querySelector('label[for="impostor-count"]');
 
     randomToggle.addEventListener('change', function () {
         const isRandom = this.checked;
@@ -130,6 +63,7 @@ window.addEventListener('DOMContentLoaded', () => {
         if (impostorLabel) impostorLabel.classList.toggle('label-disabled', isRandom);
     });
 
+    // ===== تعطيل خيار "إخفاء التلميح" عند تفعيل "منح الجميع التلميح الصحيح" والعكس =====
     const noHintsToggle       = document.getElementById('no-hints-toggle');
     const allCorrectToggle    = document.getElementById('all-correct-hints-toggle');
 
@@ -160,14 +94,22 @@ window.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+// زر إضافة لاعب جديد
 document.getElementById('add-player-btn').addEventListener('click', () => { addPlayerInput(); });
 
+// جلب قاعدة بيانات الكلمات
+fetch('word list.json', { cache: 'no-store' })
+    .then(r => r.json())
+    .then(data => { wordsDB = data; })
+    .catch(err => console.error("Error loading words:", err));
+
+// التنقل بين الشاشات
 function showScreen(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(screenId).classList.add('active');
 }
 
-// ===== Start Game =====
+// ===== بدء اللعبة =====
 document.getElementById('start-game-btn').addEventListener('click', () => {
     const namesInput = Array.from(document.querySelectorAll('.player-input'))
                            .map(i => i.value.trim())
@@ -178,9 +120,7 @@ document.getElementById('start-game-btn').addEventListener('click', () => {
     const allImpostorsToggle = document.getElementById('all-impostors-toggle').checked;
     const timeMins           = parseInt(document.getElementById('timer-minutes').value);
     isEliminationMode        = document.getElementById('elimination-mode').checked;
-    
-    // Force No Hints mode if +18 language is selected
-    noHintsMode = currentLang === 'plus18' ? true : document.getElementById('no-hints-toggle').checked;
+    noHintsMode              = document.getElementById('no-hints-toggle').checked;
     const allCorrectHints    = document.getElementById('all-correct-hints-toggle').checked;
 
     if (namesInput.length < 3) {
@@ -189,6 +129,7 @@ document.getElementById('start-game-btn').addEventListener('click', () => {
     }
 
     if (isRandomImpostors) {
+        // الحد الأقصى هو نصف عدد اللاعبين لضمان بقاء المواطنين أكثر
         const maxImpostors = Math.floor(namesInput.length / 2);
         impostorCount = Math.floor(Math.random() * maxImpostors) + 1;
     } else {
@@ -215,6 +156,7 @@ document.getElementById('start-game-btn').addEventListener('click', () => {
 
     currentWordObj = wordsDB[Math.floor(Math.random() * wordsDB.length)];
 
+    // تحديد الدخلاء
     const isAllImpostorRound = allImpostorsToggle && Math.random() < 0.15;
 
     if (isAllImpostorRound) {
@@ -224,13 +166,21 @@ document.getElementById('start-game-btn').addEventListener('click', () => {
         for (let i = 0; i < impostorCount; i++) players[shuffled[i]].isImpostor = true;
     }
 
+    // ===== توزيع التلميحات =====
     const impostorPlayers = players.filter(p => p.isImpostor);
 
     if (allCorrectHints) {
+        // جميع الدخلاء يحصلون على التلميح الصحيح
         impostorPlayers.forEach(p => { p.customHint = currentWordObj.hint; });
+
     } else if (impostorPlayers.length <= 1) {
-        if (impostorPlayers.length === 1) impostorPlayers[0].customHint = currentWordObj.hint;
+        // دخيل واحد: يحصل دائماً على التلميح الصحيح
+        if (impostorPlayers.length === 1) {
+            impostorPlayers[0].customHint = currentWordObj.hint;
+        }
+
     } else {
+        // أكثر من دخيل: واحد عشوائي يأخذ التلميح الصحيح، الباقون يأخذون تلميحات خاطئة
         const luckyIndex = Math.floor(Math.random() * impostorPlayers.length);
         const wrongHints = wordsDB
             .filter(w => w.word !== currentWordObj.word)
@@ -254,7 +204,7 @@ document.getElementById('start-game-btn').addEventListener('click', () => {
     showScreen('reveal-screen');
 });
 
-// ===== Render Card =====
+// ===== رسم بطاقة اللاعب الحالي =====
 function renderSingleCard() {
     const container = document.getElementById('single-card-container');
     const titleMsg  = document.getElementById('current-player-turn-msg');
@@ -264,17 +214,16 @@ function renderSingleCard() {
     nextBtn.classList.add('hidden');
 
     const player = players[currentRevealIndex];
-    titleMsg.innerText = currentLang === 'plus18' ? `عصبتك يا ${player.name}` : `الدور الحالي: يا ${player.name}`;
+    titleMsg.innerText = `الدور الحالي: يا ${player.name}`;
 
     const card = document.createElement('div');
     card.className = 'flip-card';
 
     let roleText;
     if (player.isImpostor) {
-        let impTitle = currentLang === 'plus18' ? `يعطك عصبة راك كذاب 🤫` : `أنت الدخيل 🤫`;
         roleText = noHintsMode
-            ? impTitle
-            : `${impTitle}<br><br><span style="font-size:16px;">التلميح:</span><br>${player.customHint}`;
+            ? `أنت الدخيل 🤫`
+            : `أنت الدخيل 🤫<br><br><span style="font-size:16px;">التلميح:</span><br>${player.customHint}`;
     } else {
         roleText = `أنت مواطن 🤠<br><br><span style="font-size:16px;">الكلمة:</span><br>${currentWordObj.word}`;
     }
@@ -295,13 +244,8 @@ function renderSingleCard() {
         e.preventDefault();
         if (!card.classList.contains('flipped')) return;
         card.classList.remove('flipped');
-        
-        let nextPlayerName = currentRevealIndex < players.length - 1 ? players[currentRevealIndex + 1].name : "";
-        let standardMsg = `تمت الرؤية.. مرر الهاتف لـ ${nextPlayerName}`;
-        let plus18Msg = `ماك عرفت تحرك نيك عدي للي بعدك لـ ${nextPlayerName}`;
-        
         nextBtn.innerText = currentRevealIndex < players.length - 1
-            ? (currentLang === 'plus18' ? plus18Msg : standardMsg)
+            ? `تمت الرؤية.. مرر الهاتف لـ ${players[currentRevealIndex + 1].name}`
             : "الجميع رأى دوره.. ابدأ العداد! 🚦";
         nextBtn.classList.remove('hidden');
     };
@@ -316,6 +260,7 @@ function renderSingleCard() {
     container.appendChild(card);
 }
 
+// زر اللاعب التالي أو بدء العداد
 document.getElementById('next-player-btn').addEventListener('click', () => {
     currentRevealIndex++;
     if (currentRevealIndex < players.length) {
@@ -361,11 +306,10 @@ function handleVote(votedPlayer) {
     const nextBtn   = document.getElementById('next-round-btn');
     revealBox.innerHTML = '';
 
-    let successMsg = currentLang === 'plus18' ? `اوه على الزبي هاك طلعتو! 🎉 ${votedPlayer.name} كان البلعوط.` : `إجابة صحيحة! 🎉 ${votedPlayer.name} كان الدخيل.`;
-    let failMsg = currentLang === 'plus18' ? `يعطك عصبة راك غالط! ❌ ${votedPlayer.name} خاطيه.` : `إجابة خاطئة! ❌ ${votedPlayer.name} ليس الدخيل.`;
-
     if (!isEliminationMode) {
-        resultMsg.innerText = votedPlayer.isImpostor ? successMsg : failMsg;
+        resultMsg.innerText = votedPlayer.isImpostor
+            ? `إجابة صحيحة! 🎉 ${votedPlayer.name} كان الدخيل.`
+            : `إجابة خاطئة! ❌ ${votedPlayer.name} ليس الدخيل.`;
 
         const allImpostors = players.filter(p => p.isImpostor).map(p => p.name).join(' و ');
         revealBox.innerHTML = `الدخيل (الدخلاء):<br><strong style="color:var(--accent-color);">${allImpostors}</strong><br><br>الكلمة كانت: <strong>${currentWordObj.word}</strong>`;
