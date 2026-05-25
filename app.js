@@ -321,12 +321,12 @@ window.addEventListener('DOMContentLoaded', () => {
 document.getElementById('add-player-btn').addEventListener('click', () => addPlayerInput());
 
 // ===== LOAD WORD LISTS =====
-fetch('word_list.json', { cache: 'no-store' })
+fetch('word list.json', { cache: 'no-store' })
     .then(r => r.json())
     .then(data => { wordsDB = data; })
     .catch(err => console.error('Error loading word list:', err));
 
-fetch('adult_word_list.json', { cache: 'no-store' })
+fetch('adult word list.json', { cache: 'no-store' })
     .then(r => r.json())
     .then(data => {
         adultWordsDB = data.flat().filter(item => item && typeof item === 'object' && item.word);
