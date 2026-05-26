@@ -6,7 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>لعبة الدخيل</title>
+    <title>شكونو هو؟</title>
 
     <!-- PWA -->
     <link rel="manifest" href="manifest.json">
@@ -14,7 +14,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="الدخيل">
+    <meta name="apple-mobile-web-app-title" content="شكونو هو؟">
     <link rel="apple-touch-icon" href="icon-192.png">
 
     <link rel="stylesheet" href="style.css?v=6.0">
@@ -111,7 +111,7 @@
         </div>
 
         <div id="reveal-screen" class="screen">
-            <h2 data-i18n="reveal_title">🃏 شكون شنية</h2>
+            <h2 data-i18n="reveal_title">🃏 زعمة انتي شكون؟</h2>
             <h3 id="current-player-turn-msg" style="color: var(--accent-color);"></h3>
             <p id="reveal-instructions" data-i18n="reveal_instructions">اقعد نازل على الكارتة باش تعرف دورك، كي تسيبها تعاود تدور.</p>
             <div id="single-card-container" class="single-card-wrapper"></div>
@@ -146,7 +146,7 @@
         <div id="online-setup-screen" class="screen">
             <h2>🌐 العب أونلاين</h2>
             <p style="opacity:0.7; font-size:14px; margin-top:-10px; margin-bottom:20px;">
-                كل واحد يلعب من تلفونو الخاص 📱
+                كل واحد يلعب من تلفونو  📱
             </p>
 
             <div class="online-name-group">
@@ -155,9 +155,9 @@
             </div>
 
             <!-- Create Room -->
-            <button id="create-room-btn" class="primary-btn glow-btn">🏠 إنشاء غرفة جديدة</button>
+            <button id="create-room-btn" class="primary-btn glow-btn">🏠 اعمل روم جديدة</button>
 
-            <div class="online-or-divider">أو انضم لغرفة موجودة</div>
+            <div class="online-or-divider">والا ادخل لروم موجودة</div>
 
             <!-- Join Room -->
             <div class="join-room-group">
@@ -204,7 +204,7 @@
         <div id="online-card-screen" class="screen">
             <h2>🃏 كارطتك</h2>
             <p style="opacity:0.7; font-size:14px; margin-top:-8px">
-                اضغط مطولاً على الكارطة باش تشوف دورك
+                اقعد نازل على الكارطة باش تشوف دورك
             </p>
 
             <div id="online-card-container" class="single-card-wrapper"></div>
@@ -213,7 +213,7 @@
             <!-- Shown after confirming, waiting for others -->
             <div id="online-waiting-zone" class="online-waiting-zone hidden">
                 <div id="online-seen-status" class="seen-status-list"></div>
-                <p id="online-waiting-text" class="online-waiting-text">⏳ نستنا الكل يشوف كارطتو...</p>
+                <p id="online-waiting-text" class="online-waiting-text">⏳ نستناو الناس الكل يشوفو كوارطهم...</p>
                 <!-- Only visible to host after all seen -->
                 <button id="start-discussion-btn" class="primary-btn glow-btn hidden">💬 ابدأ النقاش</button>
             </div>
