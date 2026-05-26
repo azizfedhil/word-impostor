@@ -757,10 +757,11 @@ document.getElementById('next-player-btn').addEventListener('click', () => {
     }
 });
 
-document.getElementById('go-to-vote-btn').addEventListener('click', () => {
-    clearInterval(timerInterval);
-    goToVoting();
-});
+ document.getElementById('go-to-vote-btn').addEventListener('click', () => {
+//       if (window.onlineMode) return;   // ← ADD THIS LINE ONLY
+//       clearInterval(timerInterval);
+//       goToVoting();
+//   });
 
 function updateTimerDisplay() {
     const m = Math.floor(remainingTime / 60).toString().padStart(2, '0');
