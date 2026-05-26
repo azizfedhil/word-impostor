@@ -59,7 +59,7 @@ function _subscribe(code) {
                 _figuredOut.add(payload.pid);
                 _refreshRoundPlayerPanel();
                 const name = payload.name || '???';
-                showToast(`🎯 ${name} اكتشف الدخيل!`);
+                _showFiguredOutAnnounce(name);
                 if (typeof _sfx !== 'undefined') _sfx.notify();
             }
         })
@@ -284,6 +284,23 @@ function _renderLobby(room) {
     }
 }
 
+function _showFiguredOutAnnounce(name) {
+    // Remove any existing announcement
+    document.querySelector('.figured-center-announce')?.remove();
+    const el = document.createElement('div');
+    el.className = 'figured-center-announce';
+    el.innerHTML = `
+        <div class="figured-center-announce-inner">
+            <span class="figured-center-announce-icon">🎯</span>
+            <span class="figured-center-announce-name">${name}</span>
+            <span class="figured-center-announce-sub">عرف الكذاب!</span>
+        </div>
+    `;
+    document.body.appendChild(el);
+    // Auto-remove after animation completes (2.4s in + 0.4s out)
+    setTimeout(() => el.remove(), 2900);
+}
+
 // Refreshes all visible round-player panels without a full re-render
 function _refreshRoundPlayerPanel() {
     const screens = ['online-card-screen','timer-screen','voting-screen','result-screen'];
@@ -371,8 +388,8 @@ function _renderOnlineRoundPlayers(room, screenId) {
             <button class="voice-round-btn${voiceActive?' voice-round-active':''}" id="voice-round-btn-${screenId}">
                 ${voiceActive ? '🔴 قطع الصوت' : '🎙️ انضم للصوت'}
             </button>
-            ${isTimerScreen && !myFiguredOut ? `<button class="figured-btn" id="figured-out-btn">🎯 عرفت الدخيل!</button>` : ''}
-            ${isTimerScreen && myFiguredOut  ? `<div class="figured-announced">✅ أعلنت أنك عرفت الدخيل</div>` : ''}
+            ${isTimerScreen && !myFiguredOut ? `<button class="figured-btn" id="figured-out-btn">🎯 عرفت الكذاب!</button>` : ''}
+            ${isTimerScreen && myFiguredOut  ? `<div class="figured-announced">✅ أعلنت أنك عرفت الكذاب</div>` : ''}
         </div>
         <div class="online-round-list"></div>
     `;
@@ -394,7 +411,7 @@ function _renderOnlineRoundPlayers(room, screenId) {
         _figuredOut.add(_myId);
         _channel?.send({ type:'broadcast', event:'figured-out', payload:{ pid:_myId, name:_myName } });
         _refreshRoundPlayerPanel();
-        showToast('🎯 أعلنت أنك عرفت الدخيل!');
+        _showFiguredOutAnnounce(_myName);
         if (typeof _sfx !== 'undefined') _sfx.notify();
     });
 
