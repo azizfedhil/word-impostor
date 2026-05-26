@@ -127,7 +127,7 @@
                      display: flex; flex-direction: column; justify-content: center; align-items: center;
                      padding: 24px; text-align: center; box-shadow: var(--shadow-soft); border: 1px solid var(--border-color); }
         .card-front { background: var(--primary-color); color: #fff; font-size: 1.7rem; font-weight: 800; border: none; }
-        .card-back { background: var(--surface-color); color: var(--text-main); transform: rotateY(180deg); font-size: 1.45rem; }
+        .card-back { background: linear-gradient(145deg, #fef9e7, #fceea5); color: #292524; transform: rotateY(180deg); font-size: 1.45rem; box-shadow: 0 8px 28px rgba(241,192,81,0.28); }
         .timer-display { font-size: 4.2rem; font-weight: 800; color: var(--primary-color); text-align: center;
                          margin: 24px 0; line-height: 1; font-variant-numeric: tabular-nums; }
         .starter-badge { background: var(--surface-color); border-radius: var(--radius-pill); padding: 6px 18px;
@@ -136,10 +136,31 @@
         .voting-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px,1fr)); gap: 12px; margin-top: 16px; }
         .vote-item { background: var(--surface-color); padding: 14px 10px; border-radius: var(--radius-md); text-align: center;
                      font-weight: 700; font-size: 1.05rem; cursor: pointer; transition: all 0.2s; border: 1px solid var(--border-color);
-                     box-shadow: var(--shadow-soft); }
+                     box-shadow: var(--shadow-soft); color: var(--text-main); }
         .vote-item:hover { transform: translateY(-2px); border-color: var(--primary-color); }
         .vote-item.my-vote { border-color: var(--primary-color); background: rgba(82,140,113,0.1); }
         .vote-item:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        /* ===== SEEN STATUS (local reveal) ===== */
+        .seen-panel { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 10px; }
+        .seen-chip { padding: 5px 12px; border-radius: var(--radius-pill); font-size: 0.82rem; font-weight: 700;
+                     background: var(--surface-color); border: 1px solid var(--border-color); color: var(--text-muted);
+                     transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1); }
+        .seen-chip.done { background: rgba(82,140,113,0.15); border-color: var(--primary-color); color: var(--primary-color); }
+
+        /* ===== DISCUSSION REACTIONS ===== */
+        .reaction-bar { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 20px; }
+        .reaction-btn { background: var(--surface-color); border: 1px solid var(--border-color); border-radius: var(--radius-pill);
+                        padding: 8px 14px; font-size: 1.3rem; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
+                        box-shadow: var(--shadow-soft); width: auto; }
+        .reaction-btn:active { transform: scale(0.88); }
+        .reaction-float { position: fixed; left: 50%; transform: translateX(-50%); font-size: 2.2rem;
+                          pointer-events: none; z-index: 9900; white-space: nowrap;
+                          animation: floatUp 1.8s ease-out forwards; font-weight: 700; }
+        @keyframes floatUp {
+            0%   { opacity: 1; transform: translateX(-50%) translateY(0); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-140px); }
+        }
         .result-box { background: var(--surface-color); border-radius: var(--radius-lg); padding: 24px 20px; margin: 24px 0;
                       text-align: center; border: 1px solid var(--border-color); font-size: 1.15rem; line-height: 1.6;
                       box-shadow: var(--shadow-soft); }
@@ -301,16 +322,25 @@
             <h2 data-i18n="reveal_title" style="text-align:center;">🃏 شكون شنية</h2>
             <h3 id="current-player-turn-msg" style="color:var(--primary-color); text-align:center;"></h3>
             <p id="reveal-instructions" data-i18n="reveal_instructions" style="text-align:center;">اقعد نازل على الكارتة باش تعرف دورك، كي تسيبها تعاود تدور.</p>
-            <div class="card-container" id="single-card-container"></div>
-            <button id="next-player-btn" class="primary-btn hidden"></button>
+            <div class=\"card-container\" id=\"single-card-container\"></div>
+            <div id=\"reveal-seen-panel\" class=\"seen-panel\" style=\"margin-bottom:8px;\"></div>
+            <button id=\"next-player-btn\" class=\"primary-btn hidden\"></button>
         </div>
 
         <!-- TIMER SCREEN -->
-        <div id="timer-screen" class="screen" style="text-align:center;">
-            <h2 data-i18n="discussion_title">💬 وقت التقطييع والترييش</h2>
-            <div id="starter-player" class="starter-badge"></div>
-            <div id="timer-display" class="timer-display">03:00</div>
-            <button id="go-to-vote-btn" class="danger-btn" data-i18n="vote_btn">🗳️ سكر عليا، عرفنا البلعوط</button>
+        <div id=\"timer-screen\" class=\"screen\" style=\"text-align:center;\">
+            <h2 data-i18n=\"discussion_title\">💬 وقت التقطييع والترييش</h2>
+            <div id=\"starter-player\" class=\"starter-badge\"></div>
+            <div id=\"timer-display\" class=\"timer-display\">03:00</div>
+            <div class=\"reaction-bar\" id=\"reaction-bar\">
+                <button class=\"reaction-btn\" data-msg=\"🤔 كذّاب!\">🤔</button>
+                <button class=\"reaction-btn\" data-msg=\"😂 يضحّك!\">😂</button>
+                <button class=\"reaction-btn\" data-msg=\"⏰ وقفو!\">⏰</button>
+                <button class=\"reaction-btn\" data-msg=\"🎯 عرفتك!\">🎯</button>
+                <button class=\"reaction-btn\" data-msg=\"🤫 اصمت!\">🤫</button>
+                <button class=\"reaction-btn\" data-msg=\"🔥 بلعوط!\">🔥</button>
+            </div>
+            <button id=\"go-to-vote-btn\" class=\"danger-btn\" style=\"margin-top:16px;\" data-i18n=\"vote_btn\">🗳️ سكر عليا، عرفنا البلعوط</button>
         </div>
 
         <!-- VOTING SCREEN -->
@@ -441,7 +471,7 @@
             src.connect(f); f.connect(g); g.connect(dest); src.start(start);
         }
         function _master(ctx) { const m = ctx.createGain(); m.gain.value = 0.55; m.connect(ctx.destination); return m; }
-        function tap() { try { const ctx = _getCtx(), d = _master(ctx), t = ctx.currentTime; _osc('sine',1050,t,0.055,0.18,ctx,d); _osc('sine',880,t+0.01,0.04,0.10,ctx,d); } catch(e){} }
+        function tap() { try { const ctx = _getCtx(), d = _master(ctx), t = ctx.currentTime; _osc('sine',820,t,0.06,0.038,ctx,d); _osc('sine',540,t+0.018,0.05,0.022,ctx,d); } catch(e){} }
         function cardFlip() { try { const ctx = _getCtx(), d = _master(ctx), t = ctx.currentTime; _noise(t,0.09,0.22,ctx,d); _ramp('sine',520,260,t,0.12,0.15,ctx,d); } catch(e){} }
         function gameStart() { try { const ctx = _getCtx(), d = _master(ctx), t = ctx.currentTime; [523,659,784].forEach((f,i)=>_osc('sine',f,t+i*0.1,0.22,0.22,ctx,d)); } catch(e){} }
         function tick() { try { const ctx = _getCtx(), m = ctx.createGain(); m.gain.value = 0.3; m.connect(ctx.destination); _osc('sine',1200,ctx.currentTime,0.03,0.08,ctx,m); } catch(e){} }
@@ -734,6 +764,13 @@
     }
 
     function _handleStateChange(room) {
+        // Sync language for all players (non-host gets host's chosen language)
+        const roomLang = _getLang(room);
+        if (roomLang && roomLang !== currentLang && i18n[roomLang]) {
+            currentLang = roomLang;
+            if (currentLang === 'x18') x18Unlocked = true;
+            if (typeof applyTranslations === 'function') applyTranslations();
+        }
         switch(room.state) {
             case 'lobby':      _renderLobby(room); break;
             case 'reveal':     _showMyCard(room); break;
@@ -923,16 +960,26 @@
         const trans = i18n[_getLang(room)];
         document.getElementById('starter-player').innerText = `${trans.starter_is}${room.starter_player}`;
         if (_onlineTimer) clearInterval(_onlineTimer);
+
+        // Use timer_end_at to compute remaining seconds, but fall back to config
+        // if clock skew is detected (endTime too far off from expected).
+        // Each client independently counts down to keep displays in sync.
         const endTime = new Date(room.timer_end_at).getTime();
+        const configSecs = (room.config?.timer || 3) * 60;
+        const computedSecs = Math.floor((endTime - Date.now()) / 1000);
+        // Accept computed value only if it's within ±30s of config (filters clock skew)
+        let localSecs = (computedSecs > 0 && computedSecs <= configSecs + 30) ? computedSecs : configSecs;
+
         const tick = () => {
-            const left = Math.max(0,Math.floor((endTime-Date.now())/1000));
-            const m = Math.floor(left/60).toString().padStart(2,'0');
-            const s = (left%60).toString().padStart(2,'0');
+            const display = Math.max(0, localSecs);
+            const m = Math.floor(display/60).toString().padStart(2,'0');
+            const s = (display%60).toString().padStart(2,'0');
             document.getElementById('timer-display').innerText = `${m}:${s}`;
-            if (left<=10&&left>0) _sfx.tickUrgent(); else if (left>10) _sfx.tick();
-            if (left<=0) { clearInterval(_onlineTimer); _sfx.timerEnd(); if(_isHost) _moveToVoting(); }
+            if (display<=10&&display>0) _sfx.tickUrgent(); else if (display>10) _sfx.tick();
+            localSecs--;
+            if (localSecs < 0) { clearInterval(_onlineTimer); _sfx.timerEnd(); if(_isHost) _moveToVoting(); }
         };
-        tick(); _onlineTimer = setInterval(tick,500);
+        tick(); _onlineTimer = setInterval(tick, 1000);
         document.getElementById('go-to-vote-btn').onclick = () => {
             if (!_isHost) { showToast('مولى الروم اكهو ينجم يوقف الوقت!'); return; }
             clearInterval(_onlineTimer); _moveToVoting();
@@ -1071,10 +1118,12 @@
         const card = document.createElement('div'); card.className = 'flip-card';
         card.innerHTML = `<div class="card-face card-front"><span>${i18n[currentLang].card_of}${player.name}</span></div>
                           <div class="card-face card-back"><span>${roleText}</span></div>`;
-        const showCard = e => { e.preventDefault(); card.classList.add('flipped'); player.viewedCard = true; _sfx.cardFlip(); };
+        const showCard = e => { e.preventDefault(); card.classList.add('flipped'); _sfx.cardFlip(); };
         const hideCard = e => {
             e.preventDefault(); if (!card.classList.contains('flipped')) return;
             card.classList.remove('flipped');
+            player.viewedCard = true;
+            _updateSeenPanel();
             nextBtn.innerText = currentRevealIndex < players.length-1
                 ? `${i18n[currentLang].pass_to}${players[currentRevealIndex+1].name}`
                 : i18n[currentLang].all_seen;
@@ -1083,6 +1132,14 @@
         card.addEventListener('mousedown',showCard); card.addEventListener('mouseup',hideCard); card.addEventListener('mouseleave',hideCard);
         card.addEventListener('touchstart',showCard,{passive:false}); card.addEventListener('touchend',hideCard,{passive:false}); card.addEventListener('touchcancel',hideCard,{passive:false});
         container.appendChild(card);
+        _updateSeenPanel();
+    }
+    function _updateSeenPanel() {
+        const panel = document.getElementById('reveal-seen-panel');
+        if (!panel) return;
+        panel.innerHTML = players.map(p =>
+            `<span class="seen-chip ${p.viewedCard ? 'done' : ''}">${p.viewedCard ? '✅' : '⏳'} ${p.name}</span>`
+        ).join('');
     }
     window.renderSingleCard = renderSingleCard;
 
@@ -1368,6 +1425,24 @@
         document.getElementById('go-to-vote-btn').addEventListener('click',()=>{
             if (window.onlineMode) return; // handled by online mode override
             clearInterval(timerInterval); goToVoting();
+        });
+
+        // DISCUSSION REACTIONS
+        document.getElementById('reaction-bar')?.addEventListener('click', e => {
+            const btn = e.target.closest('.reaction-btn');
+            if (!btn) return;
+            const msg = btn.dataset.msg;
+            if (!msg) return;
+            // Float the reaction message up from the button
+            const float = document.createElement('div');
+            float.className = 'reaction-float';
+            float.textContent = msg;
+            // Position roughly above the button
+            const rect = btn.getBoundingClientRect();
+            float.style.top = (rect.top - 10) + 'px';
+            document.body.appendChild(float);
+            setTimeout(() => float.remove(), 1900);
+            _sfx.tap();
         });
 
         // ONLINE BUTTONS
