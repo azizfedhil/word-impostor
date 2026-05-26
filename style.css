@@ -503,19 +503,19 @@ body.lang-x18 #all-correct-hints-toggle ~ .info-icon {
 
 .join-room-group {
     display: flex;
+    flex-direction: column;
     gap: 10px;
-    align-items: stretch;
     margin-bottom: 4px;
 }
 .join-room-group input {
-    flex: 1;
-    padding: 12px;
-    border: 1px solid var(--input-border);
-    border-radius: 8px;
-    font-size: 18px;
+    width: 100%;
+    padding: 16px;
+    border: 1.5px solid var(--input-border);
+    border-radius: 12px;
+    font-size: 28px;
     font-weight: bold;
     text-align: center;
-    letter-spacing: 4px;
+    letter-spacing: 8px;
     background: var(--input-bg);
     color: var(--input-text);
     text-transform: uppercase;
@@ -527,12 +527,11 @@ body.lang-x18 #all-correct-hints-toggle ~ .info-icon {
     box-shadow: 0 0 0 3px rgba(196, 124, 30, 0.15);
 }
 .join-room-group button {
-    width: auto;
+    width: 100%;
     margin: 0;
-    padding: 12px 20px;
-    font-size: 15px;
-    white-space: nowrap;
-    border-radius: 8px;
+    padding: 14px;
+    font-size: 16px;
+    border-radius: 12px;
 }
 
 /* ===== LOBBY SCREEN ===== */
