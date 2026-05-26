@@ -158,6 +158,58 @@ input[type="text"]:focus, input[type="password"]:focus { border-color: var(--pri
 .lobby-item:last-child { border-bottom: none; }
 .you-tag { font-size: 11px; font-weight: 700; background: var(--primary-color); color: #fff;
            padding: 2px 8px; border-radius: var(--radius-pill); margin-right: auto; }
+
+/* Voice pill in lobby player row */
+.lobby-voice-btn {
+    position: relative;
+    border-radius: var(--radius-pill);
+    padding: 5px 13px;
+    font-size: .75rem;
+    font-weight: 700;
+    cursor: pointer;
+    background: transparent;
+    color: var(--text-muted);
+    border: none;
+    white-space: nowrap;
+    transition: color .2s;
+    flex-shrink: 0;
+}
+.lobby-voice-btn::before {
+    content: '';
+    position: absolute;
+    inset: -1.5px;
+    border-radius: inherit;
+    padding: 1.5px;
+    background: linear-gradient(90deg,
+        rgba(82,140,113,0.65),
+        rgba(82,140,113,0.15),
+        rgba(82,140,113,0.65),
+        rgba(82,140,113,0.15),
+        rgba(82,140,113,0.65)
+    );
+    background-size: 300% 100%;
+    animation: lobbyVoiceRun 3.5s linear infinite;
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: destination-out;
+    mask-composite: exclude;
+    pointer-events: none;
+}
+.lobby-voice-btn.lobby-voice-active { color: #e74c3c; }
+.lobby-voice-btn.lobby-voice-active::before {
+    background: linear-gradient(90deg,
+        rgba(231,76,60,0.7),
+        rgba(231,76,60,0.2),
+        rgba(231,76,60,0.7),
+        rgba(231,76,60,0.2),
+        rgba(231,76,60,0.7)
+    );
+    background-size: 300% 100%;
+    animation: lobbyVoiceRun 1.8s linear infinite;
+}
+@keyframes lobbyVoiceRun {
+    0%   { background-position: 0% 50%; }
+    100% { background-position: 300% 50%; }
+}
 .code-input-lg { text-align: center; font-size: 1.7rem !important; letter-spacing: 5px;
                  font-family: monospace; text-transform: uppercase; font-weight: 800; }
 .join-flow-group { display: flex; gap: 10px; width: 100%; align-items: stretch; }
