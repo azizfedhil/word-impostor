@@ -173,8 +173,29 @@ function _renderLobby(room) {
     list.innerHTML = '';
     room.players.forEach(p => {
         const div = document.createElement('div'); div.className = 'lobby-item';
+        const isMe = p.id === _myId;
         div.innerHTML = (p.isHost ? '👑 ' : '👤 ') + p.name +
-            (p.id===_myId ? ' <span class="you-tag">أنا</span>' : '');
+            (isMe ? ' <span class="you-tag">أنا</span>' : '');
+        if (isMe) {
+            const voiceActive = typeof _voiceOn !== 'undefined' && _voiceOn;
+            const vBtn = document.createElement('button');
+            vBtn.id = 'lobby-voice-pill';
+            vBtn.className = 'lobby-voice-btn' + (voiceActive ? ' lobby-voice-active' : '');
+            vBtn.textContent = voiceActive ? '🔴 صوت شغال' : '🎙️ انضم للصوت';
+            vBtn.addEventListener('click', e => {
+                e.stopPropagation();
+                if (typeof _voiceOn !== 'undefined' && _voiceOn) {
+                    stopVoice();
+                    vBtn.className = 'lobby-voice-btn';
+                    vBtn.textContent = '🎙️ انضم للصوت';
+                } else {
+                    if (_room) initVoice(_room.code);
+                    vBtn.className = 'lobby-voice-btn lobby-voice-active';
+                    vBtn.textContent = '🔴 صوت شغال';
+                }
+            });
+            div.appendChild(vBtn);
+        }
         list.appendChild(div);
     });
     const n = room.players.length;
