@@ -763,6 +763,9 @@
         _channel = _supa.channel('room:'+code)
             .on('postgres_changes',{event:'UPDATE',schema:'public',table:'rooms',filter:'code=eq.'+code},
                 payload => { _room = payload.new; _handleStateChange(payload.new); })
+            .on('broadcast', { event: 'reaction' }, ({ payload }) => {
+                _showReactionFloat(payload.name + ': ' + payload.msg);
+            })
             .subscribe(s => { if(s==='SUBSCRIBED') console.log('[online] subscribed',code); });
     }
 
@@ -790,6 +793,28 @@
             elimination: _togActive('t-elimination'), noHints: _togActive('t-nohint'),
             allCorrectHints: _togActive('t-allhint')
         };
+    }
+
+    // Save lobby settings to DB (host only)
+    async function _updateRoomSettings() {
+        if (!_isHost || !_room) return;
+        const imp = parseInt(document.getElementById('ls-impostors')?.value) || 1;
+        const tim = parseInt(document.getElementById('ls-timer')?.value) || 3;
+        const config = {
+            ..._room.config,
+            impostors:       imp,
+            timer:           tim,
+            randomImpostors: document.getElementById('ls-random')?.checked  || false,
+            chaos:           document.getElementById('ls-chaos')?.checked   || false,
+            elimination:     document.getElementById('ls-elim')?.checked    || false,
+            noHints:         document.getElementById('ls-nohint')?.checked  || false,
+            allCorrectHints: document.getElementById('ls-allhint')?.checked || false
+        };
+        try {
+            await _update(_room.code, { config });
+            document.getElementById('lobby-settings-panel')?.classList.add('hidden');
+            showToast('✅ تحفظت الإعدادات!');
+        } catch(e) { console.error(e); showToast('خطأ في الحفظ'); }
     }
 
     function _mkPlayer(isHost) {
@@ -850,11 +875,107 @@
         });
         const n = room.players.length;
         const startBtn = document.getElementById('online-start-btn');
-        const waitMsg = document.getElementById('lobby-wait-msg');
+        const waitMsg  = document.getElementById('lobby-wait-msg');
+
+        // Remove stale settings UI before re-rendering
+        document.getElementById('lobby-settings-btn')?.remove();
+        document.getElementById('lobby-settings-panel')?.remove();
+
         if (_isHost) {
             startBtn.classList.remove('hidden');
             if (n < 3) { startBtn.disabled = true; startBtn.style.opacity = '0.5'; waitMsg.innerText = `⏳ نستنا لاعبين... (${n}/3 على الأقل)`; }
             else { startBtn.disabled = false; startBtn.style.opacity = ''; waitMsg.innerText = `✅ ${n} لاعبين — يمكن تبدأ!`; }
+
+            // ── Settings button ───────────────────────────────
+            const cfg = room.config || {};
+            const settBtn = document.createElement('button');
+            settBtn.id = 'lobby-settings-btn';
+            settBtn.className = 'secondary-btn';
+            settBtn.style.cssText = 'margin-top:10px; width:100%;';
+            settBtn.innerText = '⚙️ عدّل إعدادات الجولة';
+            startBtn.after(settBtn);
+
+            // ── Inline settings panel (toggled) ──────────────
+            const panel = document.createElement('div');
+            panel.id = 'lobby-settings-panel';
+            panel.className = 'surface-card hidden';
+            panel.style.cssText = 'margin-top:12px; padding:16px; text-align:right;';
+
+            const maxImps = Math.max(1, Math.floor(n / 2));
+            const curImps = Math.min(cfg.impostors || 1, maxImps);
+            const curTim  = cfg.timer || 3;
+
+            panel.innerHTML = `
+                <p style="margin:0 0 14px; font-weight:700; font-size:1rem; color:var(--primary-color);">⚙️ إعدادات الجولة</p>
+
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+                    <span style="font-size:.95rem;">عدد الدخلاء</span>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <button type="button" id="ls-imp-minus" class="counter-btn">−</button>
+                        <span id="ls-imp-val" style="min-width:22px; text-align:center; font-weight:700;">${curImps}</span>
+                        <button type="button" id="ls-imp-plus"  class="counter-btn">+</button>
+                        <input type="hidden" id="ls-impostors" value="${curImps}">
+                    </div>
+                </div>
+
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+                    <span style="font-size:.95rem;">وقت النقاش (دقائق)</span>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <button type="button" id="ls-tim-minus" class="counter-btn">−</button>
+                        <span id="ls-tim-val" style="min-width:22px; text-align:center; font-weight:700;">${curTim}</span>
+                        <button type="button" id="ls-tim-plus"  class="counter-btn">+</button>
+                        <input type="hidden" id="ls-timer" value="${curTim}">
+                    </div>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <span style="font-size:.9rem;">دخلاء عشوائيين</span>
+                    <input type="checkbox" id="ls-random" style="width:20px;height:20px;accent-color:var(--primary-color);cursor:pointer;" ${cfg.randomImpostors?'checked':''}>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <span style="font-size:.9rem;">وضع الفوضى</span>
+                    <input type="checkbox" id="ls-chaos" style="width:20px;height:20px;accent-color:var(--primary-color);cursor:pointer;" ${cfg.chaos?'checked':''}>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <span style="font-size:.9rem;">وضع الإقصاء</span>
+                    <input type="checkbox" id="ls-elim" style="width:20px;height:20px;accent-color:var(--primary-color);cursor:pointer;" ${cfg.elimination?'checked':''}>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <span style="font-size:.9rem;">بلا تلميحات</span>
+                    <input type="checkbox" id="ls-nohint" style="width:20px;height:20px;accent-color:var(--primary-color);cursor:pointer;" ${cfg.noHints?'checked':''}>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                    <span style="font-size:.9rem;">كل التلميحات صحيحة</span>
+                    <input type="checkbox" id="ls-allhint" style="width:20px;height:20px;accent-color:var(--primary-color);cursor:pointer;" ${cfg.allCorrectHints?'checked':''}>
+                </div>
+
+                <div style="display:flex; gap:10px;">
+                    <button type="button" id="ls-save"   class="primary-btn"   style="flex:1; margin:0; padding:12px;">💾 حفظ</button>
+                    <button type="button" id="ls-cancel" class="secondary-btn" style="flex:1; margin:0; padding:12px;">إلغاء</button>
+                </div>
+            `;
+            settBtn.after(panel);
+
+            // Counter helpers
+            const _counter = (hiddenId, dispId, minusId, plusId, minV, maxV) => {
+                const inp  = () => document.getElementById(hiddenId);
+                const disp = () => document.getElementById(dispId);
+                document.getElementById(minusId)?.addEventListener('click', () => {
+                    const v = Math.max(minV, parseInt(inp().value) - 1);
+                    inp().value = v; disp().innerText = v;
+                });
+                document.getElementById(plusId)?.addEventListener('click', () => {
+                    const v = Math.min(maxV, parseInt(inp().value) + 1);
+                    inp().value = v; disp().innerText = v;
+                });
+            };
+            _counter('ls-impostors','ls-imp-val','ls-imp-minus','ls-imp-plus', 1, maxImps);
+            _counter('ls-timer',    'ls-tim-val','ls-tim-minus','ls-tim-plus', 1, 10);
+
+            settBtn.addEventListener('click',  () => panel.classList.toggle('hidden'));
+            document.getElementById('ls-save')  ?.addEventListener('click', _updateRoomSettings);
+            document.getElementById('ls-cancel')?.addEventListener('click', () => panel.classList.add('hidden'));
+
         } else {
             startBtn.classList.add('hidden');
             waitMsg.innerText = `⏳ نستناو مولى الروم يبدا... (${n} لاعبين)`;
@@ -960,32 +1081,34 @@
 
     function _startClientTimer(room) {
         showScreen('timer-screen');
+        document.getElementById('reaction-bar')?.classList.remove('hidden');
         const trans = i18n[_getLang(room)];
         document.getElementById('starter-player').innerText = `${trans.starter_is}${room.starter_player}`;
         if (_onlineTimer) clearInterval(_onlineTimer);
 
-        // Use timer_end_at to compute remaining seconds, but fall back to config
-        // if clock skew is detected (endTime too far off from expected).
-        // Each client independently counts down to keep displays in sync.
+        // Use absolute end time so every client stays in sync regardless
+        // of when their realtime event arrived.
         const endTime = new Date(room.timer_end_at).getTime();
-        const configSecs = (room.config?.timer || 3) * 60;
-        const computedSecs = Math.floor((endTime - Date.now()) / 1000);
-        // Accept computed value only if it's within ±30s of config (filters clock skew)
-        let localSecs = (computedSecs > 0 && computedSecs <= configSecs + 30) ? computedSecs : configSecs;
 
         const tick = () => {
-            const display = Math.max(0, localSecs);
-            const m = Math.floor(display/60).toString().padStart(2,'0');
-            const s = (display%60).toString().padStart(2,'0');
+            const left = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
+            const m = Math.floor(left/60).toString().padStart(2,'0');
+            const s = (left%60).toString().padStart(2,'0');
             document.getElementById('timer-display').innerText = `${m}:${s}`;
-            if (display<=10&&display>0) _sfx.tickUrgent(); else if (display>10) _sfx.tick();
-            localSecs--;
-            if (localSecs < 0) { clearInterval(_onlineTimer); _sfx.timerEnd(); if(_isHost) _moveToVoting(); }
+            if (left <= 10 && left > 0) _sfx.tickUrgent(); else if (left > 10) _sfx.tick();
+            if (left <= 0) {
+                clearInterval(_onlineTimer);
+                _sfx.timerEnd();
+                document.getElementById('reaction-bar')?.classList.add('hidden');
+                if (_isHost) _moveToVoting();
+            }
         };
-        tick(); _onlineTimer = setInterval(tick, 1000);
+        tick(); _onlineTimer = setInterval(tick, 500);
         document.getElementById('go-to-vote-btn').onclick = () => {
             if (!_isHost) { showToast('مولى الروم اكهو ينجم يوقف الوقت!'); return; }
-            clearInterval(_onlineTimer); _moveToVoting();
+            clearInterval(_onlineTimer);
+            document.getElementById('reaction-bar')?.classList.add('hidden');
+            _moveToVoting();
         };
     }
 
