@@ -217,6 +217,16 @@ function _renderLobby(room) {
     const onOnlineScreen = cur && ['online-lobby-screen','online-setup-screen'].includes(cur.id);
     if (!onOnlineScreen) showScreen('online-lobby-screen');
 
+    // Sync language for non-host players from room config
+    if (!_isHost && room.config && room.config.lang) {
+        const roomLang = room.config.lang;
+        if (roomLang !== currentLang && (typeof i18n === 'undefined' || i18n[roomLang])) {
+            currentLang = roomLang;
+            if (currentLang === 'x18' && typeof x18Unlocked !== 'undefined') x18Unlocked = true;
+            if (typeof applyTranslations === 'function') applyTranslations();
+        }
+    }
+
     document.getElementById('display-room-code').innerText = room.code;
 
     const list = document.getElementById('lobby-players-list');
@@ -482,22 +492,30 @@ function _startClientTimer(room) {
 
     if (_onlineTimer) clearInterval(_onlineTimer);
 
-    const endTime = new Date(room.timer_end_at).getTime();
+    // To avoid clock-skew between devices, compute remaining seconds
+    // by comparing timer_end_at to local Date.now(), but clamp to
+    // the configured duration so a late-joining client isn't wildly off.
+    const endTime    = new Date(room.timer_end_at).getTime();
+    const configSecs = (room.config?.timer || 3) * 60;
+    const rawSecs    = Math.floor((endTime - Date.now()) / 1000);
+    // Accept computed value only within a ±30s tolerance; otherwise fall back to full duration
+    let localSecs = (rawSecs > 0 && rawSecs <= configSecs + 30) ? rawSecs : configSecs;
 
     const tick = () => {
-        const left = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
-        const m = Math.floor(left / 60).toString().padStart(2, '0');
-        const s = (left % 60).toString().padStart(2, '0');
+        const display = Math.max(0, localSecs);
+        const m = Math.floor(display / 60).toString().padStart(2, '0');
+        const s = (display % 60).toString().padStart(2, '0');
         document.getElementById('timer-display').innerText = `${m}:${s}`;
 
-        if (left <= 0) {
+        localSecs--;
+        if (localSecs < 0) {
             clearInterval(_onlineTimer);
             if (_isHost) _moveToVoting();
         }
     };
 
     tick();
-    _onlineTimer = setInterval(tick, 500);
+    _onlineTimer = setInterval(tick, 1000);
 
     // Override the "skip to vote" button
     document.getElementById('go-to-vote-btn').onclick = () => {
