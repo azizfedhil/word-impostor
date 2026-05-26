@@ -555,10 +555,17 @@ fetch('word list.json', { cache: 'no-store' })
     .then(data => { regularWordsDB = data; })
     .catch(err => console.error("Error loading regular words:", err));
 
-fetch('adult_word_list.json', { cache: 'no-store' })
-    .then(r => r.json())
-    .then(data => { adultWordsDB = data; })
-    .catch(err => console.error("Error loading adult words:", err));
+// Adult word list is decoded at runtime from adult_words_data.js (obfuscated)
+(function _loadAdultWords() {
+    if (window._adultWordsDecoded && window._adultWordsDecoded.length) {
+        adultWordsDB = window._adultWordsDecoded;
+    } else {
+        // Fallback: retry after the script has had time to execute
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window._adultWordsDecoded) adultWordsDB = window._adultWordsDecoded;
+        });
+    }
+})();
 
 function showScreen(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));

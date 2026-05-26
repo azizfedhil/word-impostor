@@ -322,25 +322,25 @@
             <h2 data-i18n="reveal_title" style="text-align:center;">🃏 شكون شنية</h2>
             <h3 id="current-player-turn-msg" style="color:var(--primary-color); text-align:center;"></h3>
             <p id="reveal-instructions" data-i18n="reveal_instructions" style="text-align:center;">اقعد نازل على الكارتة باش تعرف دورك، كي تسيبها تعاود تدور.</p>
-            <div class=\"card-container\" id=\"single-card-container\"></div>
-            <div id=\"reveal-seen-panel\" class=\"seen-panel\" style=\"margin-bottom:8px;\"></div>
-            <button id=\"next-player-btn\" class=\"primary-btn hidden\"></button>
+            <div class="card-container" id="single-card-container"></div>
+            <div id="reveal-seen-panel" class="seen-panel" style="margin-bottom:8px;"></div>
+            <button id="next-player-btn" class="primary-btn hidden"></button>
         </div>
 
         <!-- TIMER SCREEN -->
-        <div id=\"timer-screen\" class=\"screen\" style=\"text-align:center;\">
-            <h2 data-i18n=\"discussion_title\">💬 وقت التقطييع والترييش</h2>
-            <div id=\"starter-player\" class=\"starter-badge\"></div>
-            <div id=\"timer-display\" class=\"timer-display\">03:00</div>
-            <div class=\"reaction-bar\" id=\"reaction-bar\">
-                <button class=\"reaction-btn\" data-msg=\"🤔 كذّاب!\">🤔</button>
-                <button class=\"reaction-btn\" data-msg=\"😂 يضحّك!\">😂</button>
-                <button class=\"reaction-btn\" data-msg=\"⏰ وقفو!\">⏰</button>
-                <button class=\"reaction-btn\" data-msg=\"🎯 عرفتك!\">🎯</button>
-                <button class=\"reaction-btn\" data-msg=\"🤫 اصمت!\">🤫</button>
-                <button class=\"reaction-btn\" data-msg=\"🔥 بلعوط!\">🔥</button>
+        <div id="timer-screen" class="screen" style="text-align:center;">
+            <h2 data-i18n="discussion_title">💬 وقت التقطييع والترييش</h2>
+            <div id="starter-player" class="starter-badge"></div>
+            <div id="timer-display" class="timer-display">03:00</div>
+            <div class="reaction-bar" id="reaction-bar">
+                <button class="reaction-btn" data-msg="🤔 كذّاب!">🤔</button>
+                <button class="reaction-btn" data-msg="😂 يضحّك!">😂</button>
+                <button class="reaction-btn" data-msg="⏰ وقفو!">⏰</button>
+                <button class="reaction-btn" data-msg="🎯 عرفتك!">🎯</button>
+                <button class="reaction-btn" data-msg="🤫 اصمت!">🤫</button>
+                <button class="reaction-btn" data-msg="🔥 بلعوط!">🔥</button>
             </div>
-            <button id=\"go-to-vote-btn\" class=\"danger-btn\" style=\"margin-top:16px;\" data-i18n=\"vote_btn\">🗳️ سكر عليا، عرفنا البلعوط</button>
+            <button id="go-to-vote-btn" class="danger-btn" style="margin-top:16px;" data-i18n="vote_btn">🗳️ سكر عليا، عرفنا البلعوط</button>
         </div>
 
         <!-- VOTING SCREEN -->
@@ -435,9 +435,11 @@
 
     <div id="toast-msg" class="toast"></div>
 
+    <!-- Adult word list: base64-obfuscated, decoded into window._adultWordsDecoded -->
+    <script src="adult_words_data.js"></script>
+
     <script>
     'use strict';
-
     // ============================================================
     // SOUND EFFECTS
     // ============================================================
@@ -726,9 +728,10 @@
         .then(r => r.json()).then(d => { regularWordsDB = d; })
         .catch(() => { regularWordsDB = _embeddedRegular; });
 
-    fetch('adult_word_list.json', { cache: 'no-store' })
-        .then(r => r.json()).then(d => { adultWordsDB = d; })
-        .catch(err => console.error('adult words:', err));
+    // Adult word list is decoded from adult_words_data.js (obfuscated, loaded before this script)
+    if (window._adultWordsDecoded && window._adultWordsDecoded.length) {
+        adultWordsDB = window._adultWordsDecoded;
+    }
 
     // ============================================================
     // SUPABASE ONLINE — init

@@ -73,14 +73,13 @@ const _sfx = (() => {
 
     // ── Individual sounds ─────────────────────────────────────
 
-    /** Short tap — soft crystal chime */
+    /** Short tap — buttons, toggles */
     function tap() {
         const ctx  = _getCtx();
         const dest = _master(ctx);
         const t    = ctx.currentTime;
-        // Very gentle sine tap: lower gain, higher fundamental for elegance
-        _osc('sine', 820, t,         0.062, 0.038, ctx, dest);
-        _osc('sine', 540, t + 0.018, 0.052, 0.022, ctx, dest);
+        _osc('sine', 1050, t,        0.055, 0.18, ctx, dest);
+        _osc('sine',  880, t + 0.01, 0.04,  0.10, ctx, dest);
     }
 
     /** Card flip — whoosh + soft thud */
