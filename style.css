@@ -91,7 +91,7 @@ input[type="text"]:focus, input[type="password"]:focus { border-color: var(--pri
                    box-shadow: var(--shadow-soft); transition: transform 0.2s ease; }
 .advanced-header:active { transform: scale(0.98); }
 .advanced-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; }
-.advanced-content.open { max-height: 700px; }
+.advanced-content.open { max-height: 1000px; }
 .info-icon { opacity: 0.6; font-size: 1rem; cursor: pointer; padding: 2px; transition: opacity 0.2s ease; }
 .info-icon:hover { opacity: 1; }
 .divider { display: flex; align-items: center; text-align: center; color: var(--text-muted); font-size: 0.9rem; margin: 20px 0; }
