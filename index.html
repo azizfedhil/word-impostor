@@ -141,7 +141,11 @@
             <p style="font-size: 14px; margin-bottom: 16px; color: var(--text-color); opacity: 0.8;">أدخل الكلمة السرية باش تكمل</p>
             <input type="password" id="password-input" placeholder="🔑 الكلمة السرية" autocomplete="off" />
             <p id="password-error" style="display:none; color: var(--accent-color); font-weight: bold; margin-top: 8px; font-size: 14px;">❌ كلمة سرية غلط!</p>
-            <button id="password-confirm-btn" class="primary-btn" style="margin-top: 16px;">تأكيد</button>
+            <div class="pw-remember-row">
+                <input type="checkbox" id="pw-remember-toggle" />
+                <label for="pw-remember-toggle">ابقالي فاتح +18</label>
+            </div>
+            <button id="password-confirm-btn" class="primary-btn" style="margin-top: 12px;">تأكيد</button>
             <button id="password-cancel-btn" class="danger-btn" style="margin-top: 10px;">إلغاء</button>
         </div>
     </div>
