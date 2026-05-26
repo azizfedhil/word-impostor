@@ -49,44 +49,81 @@ const i18n = {
         eliminated_msg: "طردنا {name} مالطرح!",
         elimination_cliffhanger: "أما الطرح مازال ما وفاش... زعما طلع هو الكذاب ولا؟ مانا قايلينلكم شي! 🤐",
         continue_discussion: "⏱️ ارجعو قطعو وريشو (دقيقة بركا)"
+    },
+    x18: {
+        title: "🕵️‍♂️ شبيك تحشي فيه؟",
+        settings_title: "ركّح زبورك للطرح",
+        players_label: "👥 اساميكم:",
+        add_player_btn: "➕ زيد قحبون آخر",
+        impostors_label: "🎭 قداش من بلعوط؟",
+        timer_label: "⏱️ وقت الطرح",
+        advanced_btn: "🔧 زيد بعبص",
+        adv_random: "🎲 اللعبة تنيك روحها أمور كذابين",
+        adv_chaos: "😈 نيك حل فترية",
+        adv_elimination: "⚔️ نيك كل واحد وحدو",
+        adv_nohint: "🙈 الكذاب عصبة ليه",
+        adv_allhint: "💡 الكذابين الكل ياخذو نفس التلميح",
+        start_btn: "🚀 قدّم نيّك",
+        reset_btn: "🔄 فسّخ ورجّع كيما كان",
+        reset_confirm: "متأكد تحب تفسّخ الأسامي الكل وترجّع كل شي كيما كان؟",
+        reveal_title: "🃏 شكون شنية",
+        reveal_instructions: "اقعد بعبص في الكارتة باش تعرف دورك، كي تسيبو يرجع عليك",
+        reveal_player_prefix: "نمامتك يا",
+        discussion_title: "💬 وقت تنيكلها أمها",
+        vote_btn: "🗳️ سكر على زبي، عرفنا البلعوط",
+        voting_title: "🗳️ الفرز",
+        who_impostor: "شكونو هالزبور؟",
+        result_title: "🏆 شكون طلع؟",
+        next_round_btn: "🔄 عاود انده",
+        done_btn: "عصبة ليك",
+        info_title: "ℹ️ معلومة",
+        close_btn: "عصبة ليك",
+        player_placeholder: "اسم اللاعب",
+        card_of: "الكارتة متاع ",
+        pass_to: "ماك عرفت تحرك، نيك عدي للي بعدك ",
+        all_seen: "الناس الكل شافت.. ابدا العداد! 🚦",
+        starter_is: "🗣️ الي يبدا يتكلم هو: ",
+        starter_continue: "🗣️ الي يكمل يتكلم هو: ",
+        impostor_role: "يعطك عصبة راك كذاب 🤫",
+        citizen_role: "هاك حشيتو 🤠",
+        hint_label: "التلميح:",
+        word_label: "الكلمة:",
+        edit_impostors_title: "بدّل قداش من كذاب",
+        edit_timer_title: "بدّل وقت الطرح (بالدقيقة)",
+        correct_guess: "اوه على الزبي هاك طلعتو! 🎉 {name} طلع هو البلعوط.",
+        wrong_guess: "يعطك عصبة راك غالط! ❌ {name} خاطيه مسكين.",
+        impostors_were: "البلعوط (البلعوطين):",
+        word_was: "الكلمة طلعت:",
+        all_impostors_dead: "خرجتو الكذابين الكل! 🎉 المواطنين ربحو!",
+        impostors_win: "الكذابين غلبوكم وسيطرو عالطرح! 😈",
+        eliminated_msg: "طردنا {name} مالطرح!",
+        elimination_cliffhanger: "أما الطرح مازال ما وفاش... زعما طلع هو الكذاب ولا؟ مانا قايلينلكم شي! 🤐",
+        continue_discussion: "⏱️ ارجعو قطعو وريشو (دقيقة بركا)"
     }
 };
 
 const infoDescriptions = {
-    random: { tn: "اللعبة باش تختار قداش من كذاب وحدها زهر، من غير ما تاخو بالرقم الي حطيتو (الماكس شطر الملاعبية)." },
-    chaos: { tn: "فما نسبة صغيرة (حكاية 15%) الي الطرح هذا الناس الكل تطلع كذابة! خلوضة كبيرة." },
-    elimination: { tn: "الي نصوتولو يخرج. كان طلع خاطيه، الطرح يكمل والكرونو يرجع يخدم حتى نخرجو الكذابين الكل ولا يغلبونا." },
-    nohint: { tn: "الكذاب ما يجيه حتى تلميح في الكارتة متاعو، سبورة كحلة! يلزمو يدبر راسو ويفهم الكلمة من كلام لخرين." },
-    allhint: { tn: "كان فما برشا كذابين، الكلهم باش يجيهم التلميح الصحيح متاع الكلمة، باش يصعبو الطرح على العاديين." }
+    random: {
+        tn: "اللعبة باش تختار قداش من كذاب وحدها زهر، من غير ما تاخو بالرقم الي حطيتو (الماكس شطر الملاعبية).",
+        x18: "اللعبة باش تختار قداش من منيكين وحدها زهر، من غير ما تاخو بالرقم الي حطيتو (الماكس شطر الملاعبية)."
+    },
+    chaos: {
+        tn: "فما نسبة صغيرة (حكاية 15%) الي الطرح هذا الناس الكل تطلع كذابة! خلوضة كبيرة.",
+        x18: "فما نسبة صغيرة (حكاية 15%) الي الطرح هذا الناس الكل تطلع كذابة! خلوضة كبيرة."
+    },
+    elimination: {
+        tn: "الي نصوتولو يخرج. كان طلع خاطيه، الطرح يكمل والكرونو يرجع يخدم حتى نخرجو الكذابين الكل ولا يغلبونا.",
+        x18: "الي تنيكو يخرج. كان طلع خاطيه، الطرح يكمل والكرونو يرجع يخدم حتى نخرجو البلعوطين الكل ولا يغلبونا."
+    },
+    nohint: {
+        tn: "الكذاب ما يجيه حتى تلميح في الكارتة متاعو، سبورة كحلة! يلزمو يدبر راسو ويفهم الكلمة من كلام لخرين.",
+        x18: "الكذاب ما ينيك حتى عصبة من اللعبة، لا تلميح لا زبي. يلزمو يدبر راسو ويفهم الكلمة من كلام لخرين."
+    },
+    allhint: {
+        tn: "كان فما برشا كذابين، الكلهم باش يجيهم التلميح الصحيح متاع الكلمة، باش يصعبو الطرح على العاديين.",
+        x18: "كان فما برشا كذابين، الكلهم باش يجيهم التلميح الصحيح متاع الكلمة، باش يصعبو الطرح على العاديين."
+    }
 };
-
-// ============================================
-// +18 OBFUSCATED DICTIONARY AND UI DECODER
-// ============================================
-(function _decodeUI() {
-    function d(s) { return JSON.parse(decodeURIComponent(escape(atob(s)))); }
-    try {
-        i18n.x18 = d('eyJ0aXRsZSI6ICLwn5W177iP4oCN4pmC77iPINi02KjZitmDINiq2K3YtNmKINmB2YrZh9ifIiwgInNldHRpbmdzX3RpdGxlIjogItix2YPZkditINiy2KjZiNix2YMg2YTZhNi32LHYrSIsICJwbGF5ZXJzX2xhYmVsIjogIvCfkaUg2KfYs9in2YXZitmD2YU6IiwgImFkZF9wbGF5ZXJfYnRuIjogIuKelSDYstmK2K8g2YLYrdio2YjZhiDYotiu2LEiLCAiaW1wb3N0b3JzX2xhYmVsIjogIvCfjq0g2YLYr9in2LQg2YXZhiDYqNmE2LnZiNi32J8iLCAidGltZXJfbGFiZWwiOiAi4o+x77iPINmI2YLYqiDYp9mE2LfYsditIiwgImFkdmFuY2VkX2J0biI6ICLwn5SnINiy2YrYryDYqNi52KjYtSIsICJhZHZfcmFuZG9tIjogIvCfjrIg2KfZhNmE2LnYqNipINiq2YbZitmDINix2YjYrdmH2Kcg2KPZhdmI2LEg2YPYsNin2KjZitmGIiwgImFkdl9jaGFvcyI6ICLwn5iIINmG2YrZgyDYrdmEINmB2KrYsdmK2KkiLCAiYWR2X2VsaW1pbmF0aW9uIjogIuKalO+4jyDZhtmK2YMg2YPZhCDZiNin2K3YryDZiNit2K/ZiCIsICJhZHZfbm9oaW50IjogIvCfmYgg2KfZhNmD2LDYp9ioINi52LXYqNipINmE2YrZhyIsICJhZHZfYWxsaGludCI6ICLwn5KhINin2YTZg9iw2KfYqNmK2YYg2KfZhNmD2YQg2YrYp9iu2LDZiCDZhtmB2LMg2KfZhNiq2YTZhdmK2K0iLCAic3RhcnRfYnRuIjogIvCfmoAg2YLYr9mR2YUg2YbZitmR2YMiLCAicmVzZXRfYnRuIjogIvCflIQg2YHYs9mR2K4g2YjYsdis2ZHYuSDZg9mK2YXYpyDZg9in2YYiLCAicmVzZXRfY29uZmlybSI6ICLZhdiq2KPZg9ivINiq2K3YqCDYqtmB2LPZkdiuINin2YTYo9iz2KfZhdmKINin2YTZg9mEINmI2KrYsdis2ZHYuSDZg9mEINi02Yog2YPZitmF2Kcg2YPYp9mG2J8iLCAicmV2ZWFsX3RpdGxlIjogIvCfg48g2LTZg9mI2YYg2LTZhtmK2KkiLCAicmV2ZWFsX2luc3RydWN0aW9ucyI6ICLYp9mC2LnYryDYqNi52KjYtSDZgdmKINin2YTZg9in2LHYqtipINio2KfYtCDYqti52LHZgSDYr9mI2LHZg9iMINmD2Yog2KrYs9mK2KjZiCDZitix2KzYuSDYudmE2YrZgyIsICJyZXZlYWxfcGxheWVyX3ByZWZpeCI6ICLZhtmF2KfZhdiq2YMg2YrYpyIsICJkaXNjdXNzaW9uX3RpdGxlIjogIvCfkqwg2YjZgtiqINiq2YbZitmD2YTZh9inINij2YXZh9inIiwgInZvdGVfYnRuIjogIvCfl7PvuI8g2LPZg9ixINi52YTZiSDYstio2YrYjCDYudix2YHZhtinINin2YTYqNmE2LnZiNi3IiwgInZvdGluZ190aXRsZSI6ICLwn5ez77iPINin2YTZgdix2LIiLCAid2hvX2ltcG9zdG9yIjogIti02YPZiNmG2Ygg2YfYp9mE2LLYqNmI2LHYnyIsICJyZXN1bHRfdGl0bGUiOiAi8J+PhiDYtNmD2YjZhiDYt9mE2LnYnyIsICJuZXh0X3JvdW5kX2J0biI6ICLwn5SEINi52KfZiNivINin2YbYr9mHIiwgImRvbmVfYnRuIjogIti52LXYqNipINmE2YrZhyIsICJpbmZvX3RpdGxlIjogIuKEue+4jyDZhdi52YTZiNmF2KkiLCAiY2xvc2VfYnRuIjogIti52LXYqNipINmE2YrZgyIsICJwbGF5ZXJfcGxhY2Vob2xkZXIiOiAi2KfYs9mFINin2YTZhNin2LnYqCIsICJjYXJkX29mIjogItin2YTZg9in2LHYqtipINmF2KrYp9i5ICIsICJwYXNzX3RvIjogItmF2KfZgyDYudix2YHYqiDYqtit2LHZg9iMINmG2YrZgyDYudiv2Yog2YTZhNmKINio2LnYr9mDICIsICJhbGxfc2VlbiI6ICLYp9mE2YbYp9izINin2YTZg9mEINi02KfZgdiqLi4g2KfYqNiv2Kcg2KfZhNi52K/Yp9ivISDwn5qmIiwgInN0YXJ0ZXJfaXMiOiAi8J+Xo++4jyDYp9mE2Yog2YrYqNiv2Kcg2YrYqtmD2YTZhSDZh9mIOiAiLCAic3RhcnRlcl9jb250aW51ZSI6ICLwn5ej77iPINin2YTZiiDZitmD2YXZhCDZitiq2YPZhNmFINmH2Yg6ICIsICJpbXBvc3Rvcl9yb2xlIjogItmK2LnYt9mDINi52LXYqNipINix2KfZgyDZg9iw2KfYqCDwn6SrIiwgImNpdGl6ZW5fcm9sZSI6ICLZh9in2YMg2K3YtNmK2KrZiCDwn6SgIiwgImhpbnRfbGFiZWwiOiAi2KfZhNiq2YTZhdmK2K06IiwgIndvcmRfbGFiZWwiOiAi2KfZhNmD2YTZhdipOiIsICJlZGl0X2ltcG9zdG9yc190aXRsZSI6ICLYqNiv2ZHZhCDZgtiv2KfYtCDZhdmGINmD2LDYp9ioIiwgImVkaXRfdGltZXJfdGl0bGUiOiAi2KjYr9mR2YQg2YjZgtiqINin2YTYt9ix2K0gKNio2KfZhNiv2YLZitmC2KkpIiwgImNvcnJlY3RfZ3Vlc3MiOiAi2KfZiNmHINi52YTZiSDYp9mE2LLYqNmKINmH2KfZgyDYt9mE2LnYqtmIISDwn46JIHtuYW1lfSDYt9mE2Lkg2YfZiCDYp9mE2KjZhNi52YjYty4iLCAid3JvbmdfZ3Vlc3MiOiAi2YrYudi32YMg2LnYtdio2Kkg2LHYp9mDINi62KfZhNi3ISDinYwge25hbWV9INiu2KfYt9mK2Ycg2YXYs9mD2YrZhi4iLCAiaW1wb3N0b3JzX3dlcmUiOiAi2KfZhNio2YTYudmI2LcgKNin2YTYqNmE2LnZiNi32YrZhik6IiwgIndvcmRfd2FzIjogItin2YTZg9mE2YXYqSDYt9mE2LnYqjoiLCAiYWxsX2ltcG9zdG9yc19kZWFkIjogItiu2LHYrNiq2Ygg2KfZhNmD2LDYp9io2YrZhiDYp9mE2YPZhCEg8J+OiSDYp9mE2YXZiNin2LfZhtmK2YYg2LHYqNit2YghIiwgImltcG9zdG9yc193aW4iOiAi2KfZhNmD2LDYp9io2YrZhiDYutmE2KjZiNmD2YUg2YjYs9mK2LfYsdmIINi52KfZhNi32LHYrSEg8J+YiCIsICJlbGltaW5hdGVkX21zZyI6ICLYt9ix2K/ZhtinIHtuYW1lfSDZhdin2YTYt9ix2K0hIiwgImVsaW1pbmF0aW9uX2NsaWZmaGFuZ2VyIjogItij2YXYpyDYp9mE2LfYsditINmF2KfYstin2YQg2YXYpyDZiNmB2KfYtC4uLiDYsti52YXYpyDYt9mE2Lkg2YfZiCDYp9mE2YPYsNin2Kgg2YjZhNin2J8g2YXYp9mG2Kcg2YLYp9mK2YTZitmG2YTZg9mFINi02YohIPCfpJAiLCAiY29udGludWVfZGlzY3Vzc2lvbiI6ICLij7HvuI8g2KfYsdis2LnZiCDZgti32LnZiCDZiNix2YrYtNmIICjYr9mC2YrZgtipINio2LHZg9inKSJ9');
-        const infos = d('eyJyYW5kb20iOiAi2KfZhNmE2LnYqNipINio2KfYtCDYqtiu2KrYp9ixINmC2K/Yp9i0INmF2YYg2YXZhtmK2YPZitmGINmI2K3Yr9mH2Kcg2LLZh9ix2Iwg2YXZhiDYutmK2LEg2YXYpyDYqtin2K7ZiCDYqNin2YTYsdmC2YUg2KfZhNmKINit2LfZitiq2YggKNin2YTZhdin2YPYsyDYtNi32LEg2KfZhNmF2YTYp9i52KjZitipKS4iLCAiY2hhb3MiOiAi2YHZhdinINmG2LPYqNipINi12LrZitix2KkgKNit2YPYp9mK2KkgMTUlKSDYp9mE2Yog2KfZhNi32LHYrSDZh9iw2Kcg2KfZhNmG2KfYsyDYp9mE2YPZhCDYqti32YTYuSDZg9iw2KfYqNipISDYrtmE2YjYttipINmD2KjZitix2KkuIiwgImVsaW1pbmF0aW9uIjogItin2YTZiiDYqtmG2YrZg9mIINmK2K7YsdisLiDZg9in2YYg2LfZhNi5INiu2KfYt9mK2YfYjCDYp9mE2LfYsditINmK2YPZhdmEINmI2KfZhNmD2LHZiNmG2Ygg2YrYsdis2Lkg2YrYrtiv2YUg2K3YqtmJINmG2K7Ysdis2Ygg2KfZhNio2YTYudmI2LfZitmGINin2YTZg9mEINmI2YTYpyDZiti62YTYqNmI2YbYpy4iLCAibm9oaW50IjogItin2YTZg9iw2KfYqCDZhdinINmK2YbZitmDINit2KrZiSDYudi12KjYqSDZhdmGINin2YTZhNi52KjYqdiMINmE2Kcg2KrZhNmF2YrYrSDZhNinINiy2KjZii4g2YrZhNiy2YXZiCDZitiv2KjYsSDYsdin2LPZiCDZiNmK2YHZh9mFINin2YTZg9mE2YXYqSDZhdmGINmD2YTYp9mFINmE2K7YsdmK2YYuIiwgImFsbGhpbnQiOiAi2YPYp9mGINmB2YXYpyDYqNix2LTYpyDZg9iw2KfYqNmK2YbYjCDYp9mE2YPZhNmH2YUg2KjYp9i0INmK2KzZitmH2YUg2KfZhNiq2YTZhdmK2K0g2KfZhNi12K3ZititINmF2KrYp9i5INin2YTZg9mE2YXYqdiMINio2KfYtCDZiti12LnYqNmIINin2YTYt9ix2K0g2LnZhNmJINin2YTYudin2K/ZitmK2YYuIn0=');
-        Object.keys(infos).forEach(k => { if (infoDescriptions[k]) infoDescriptions[k].x18 = infos[k]; });
-        const ui = d('eyJidG4iOiAi8J+UniArMTgiLCAibW9kYWxfaWNvbiI6ICLwn5SeIiwgIm1vZGFsX3RpdGxlIjogItmF2K3YqtmI2Ykg2YTZhNmD2KjYp9ixINmB2YLYtyIsICJtb2RhbF9kZXNjIjogItij2K/YrtmEINin2YTZg9mE2YXYqSDYp9mE2LPYsdmK2Kkg2KjYp9i0INiq2YPZhdmEIiwgIm1vZGFsX3BsYWNlaG9sZGVyIjogIvCflJEg2KfZhNmD2YTZhdipINin2YTYs9ix2YrYqSIsICJtb2RhbF9lcnIiOiAi4p2MINmD2YTZhdipINiz2LHZitipINi62YTYtyEiLCAibW9kYWxfcmVtIjogItin2KjZgtin2YTZiiDZgdin2KrYrSArMTgifQ==');
-        
-        function applyUI() {
-            const x18Btn = document.getElementById('x18-btn-ui'); if(x18Btn) x18Btn.innerText = ui.btn;
-            const pwIcon = document.getElementById('pw-icon-ui'); if(pwIcon) pwIcon.innerText = ui.modal_icon;
-            const pwTitle = document.getElementById('pw-title-ui'); if(pwTitle) pwTitle.innerText = ui.modal_title;
-            const pwDesc = document.getElementById('pw-desc-ui'); if(pwDesc) pwDesc.innerText = ui.modal_desc;
-            const pwInput = document.getElementById('password-input'); if(pwInput) pwInput.placeholder = ui.modal_placeholder;
-            const pwErr = document.getElementById('password-error'); if(pwErr) pwErr.innerText = ui.modal_err;
-            const pwRem = document.getElementById('pw-rem-ui'); if(pwRem) pwRem.innerText = ui.modal_rem;
-        }
-        
-        if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', applyUI); } else { applyUI(); }
-    } catch(e) { console.warn("UI sync failed"); }
-})();
-
-let currentLang = 'tn'; // Default Language
-let x18Unlocked = false;  // Tracks whether +18 was authenticated this session
 
 let currentLang = 'tn'; // Default Language
 let x18Unlocked = false;  // Tracks whether +18 was authenticated this session
