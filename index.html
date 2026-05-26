@@ -17,8 +17,7 @@
     <meta name="apple-mobile-web-app-title" content="الدخيل">
     <link rel="apple-touch-icon" href="icon-192.png">
 
-    <!-- Version bumped to 5.1 -->
-    <link rel="stylesheet" href="style.css?v=5.3">
+    <link rel="stylesheet" href="style.css?v=6.0">
 </head>
 <body>
     <div class="orb orb-1"></div>
@@ -31,8 +30,11 @@
             <h1 data-i18n="title">🕵️‍♂️ شكونو هو؟</h1>
         </header>
 
+        <!-- ======================================================
+             EXISTING SCREENS (unchanged except for online button)
+        ====================================================== -->
+
         <div id="setup-screen" class="screen active">
-            <!-- Language Pill Selector — only visible on setup screen -->
             <div class="lang-pill-wrapper">
                 <div class="lang-pill-selector">
                     <button type="button" class="lang-pill-btn active" data-lang="tn">🇹🇳 تونسي</button>
@@ -51,7 +53,6 @@
                 </div>
             </div>
 
-            <!-- Side-By-Side Layout -->
             <div class="settings-row">
                 <div class="setting-card" id="btn-edit-impostors">
                     <span class="label" data-i18n="impostors_label">🎭 قداش من كذاب</span>
@@ -63,7 +64,6 @@
                 </div>
             </div>
 
-            <!-- Advanced options collapsible -->
             <div class="advanced-wrapper">
                 <button type="button" id="advanced-toggle-btn" class="advanced-toggle-btn">
                     <span data-i18n="advanced_btn">🔧 زيد بربش</span>
@@ -100,7 +100,13 @@
                 </div>
             </div>
 
+            <!-- Local game button -->
             <button id="start-game-btn" class="primary-btn glow-btn" data-i18n="start_btn">🚀 انافا</button>
+
+            <!-- Online mode divider + button -->
+            <div class="online-divider">أو العب أونلاين مع أصحابك</div>
+            <button id="open-online-btn" class="primary-btn">🌐 العب أونلاين</button>
+
             <p id="setup-error" class="error-msg"></p>
         </div>
 
@@ -131,7 +137,93 @@
             <div id="impostors-reveal" class="reveal-box"></div>
             <button id="next-round-btn" class="primary-btn" data-i18n="next_round_btn">🔄 عاود انده</button>
         </div>
-    </div>
+
+        <!-- ======================================================
+             NEW: ONLINE SCREENS
+        ====================================================== -->
+
+        <!-- 1. Online Setup: create or join -->
+        <div id="online-setup-screen" class="screen">
+            <h2>🌐 العب أونلاين</h2>
+            <p style="opacity:0.7; font-size:14px; margin-top:-10px; margin-bottom:20px;">
+                كل واحد يلعب من تلفونو الخاص 📱
+            </p>
+
+            <div class="online-name-group">
+                <label>اسمك في اللعبة:</label>
+                <input type="text" id="online-player-name" placeholder="اسمك" maxlength="20" autocomplete="off" />
+            </div>
+
+            <!-- Create Room -->
+            <button id="create-room-btn" class="primary-btn glow-btn">🏠 إنشاء غرفة جديدة</button>
+
+            <div class="online-or-divider">أو انضم لغرفة موجودة</div>
+
+            <!-- Join Room -->
+            <div class="join-room-group">
+                <input
+                    type="text"
+                    id="room-code-input"
+                    placeholder="ABCD12"
+                    maxlength="6"
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="characters"
+                    spellcheck="false"
+                />
+                <button id="join-room-btn" class="primary-btn" style="white-space:nowrap">🚪 انضم</button>
+            </div>
+
+            <button id="back-to-setup-btn" class="danger-btn" style="margin-top:20px">↩️ ارجع للإعدادات</button>
+            <p id="online-setup-error" class="error-msg" style="margin-top:10px"></p>
+        </div>
+
+        <!-- 2. Online Lobby: waiting room -->
+        <div id="online-lobby-screen" class="screen">
+            <h2>🕹️ الغرفة</h2>
+
+            <!-- Room code + copy/share buttons -->
+            <div class="room-code-display">
+                <span>كود:</span>
+                <strong id="display-room-code">------</strong>
+                <button id="copy-code-btn" class="secondary-btn">📋 كوبي</button>
+                <button id="share-code-btn" class="primary-btn">📤 شارك</button>
+            </div>
+
+            <!-- Players list -->
+            <div id="lobby-players-list" class="lobby-players-list"></div>
+
+            <!-- Status / start button -->
+            <p id="lobby-wait-msg" class="lobby-wait-msg">⏳ نستنا لاعبين...</p>
+            <button id="online-start-btn" class="primary-btn glow-btn hidden">🚀 ابدأ اللعبة</button>
+
+            <button id="leave-room-btn" class="danger-btn" style="margin-top:24px">🚪 اخرج من الغرفة</button>
+        </div>
+
+        <!-- 3. Online Card: each player sees their own card privately -->
+        <div id="online-card-screen" class="screen">
+            <h2>🃏 كارطتك</h2>
+            <p style="opacity:0.7; font-size:14px; margin-top:-8px">
+                اضغط مطولاً على الكارطة باش تشوف دورك
+            </p>
+
+            <div id="online-card-container" class="single-card-wrapper"></div>
+            <button id="online-seen-btn" class="primary-btn hidden">✅ شفت كارطتي</button>
+
+            <!-- Shown after confirming, waiting for others -->
+            <div id="online-waiting-zone" class="online-waiting-zone hidden">
+                <div id="online-seen-status" class="seen-status-list"></div>
+                <p id="online-waiting-text" class="online-waiting-text">⏳ نستنا الكل يشوف كارطتو...</p>
+                <!-- Only visible to host after all seen -->
+                <button id="start-discussion-btn" class="primary-btn glow-btn hidden">💬 ابدأ النقاش</button>
+            </div>
+        </div>
+
+    </div><!-- end .container -->
+
+    <!-- ======================================================
+         EXISTING MODALS (unchanged)
+    ====================================================== -->
 
     <!-- Password Modal for +18 -->
     <div id="password-modal" class="modal hidden">
@@ -150,7 +242,7 @@
         </div>
     </div>
 
-    <!-- Modal window for Edit Impostor and Timer -->
+    <!-- Edit Impostor / Timer Modal -->
     <div id="edit-modal" class="modal hidden">
         <div class="modal-content">
             <h3 id="modal-title">تعديل</h3>
@@ -163,7 +255,7 @@
         </div>
     </div>
 
-    <!-- Modal window for Info Explanations -->
+    <!-- Info Explanations Modal -->
     <div id="info-modal" class="modal hidden">
         <div class="modal-content">
             <h3 data-i18n="info_title">ℹ️ معلومة</h3>
@@ -172,8 +264,16 @@
         </div>
     </div>
 
-    <!-- Version bumped to 5.1 -->
-    <script src="app.js?v=5.3"></script>
+    <!-- ======================================================
+         SCRIPTS
+         Order matters: Supabase → app.js → online.js
+    ====================================================== -->
+
+    <!-- Supabase JS client (CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+    <script src="app.js?v=6.0"></script>
+    <script src="online.js?v=6.0"></script>
 
     <script>
       if ('serviceWorker' in navigator) {
