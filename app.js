@@ -126,6 +126,7 @@ const infoDescriptions = {
 };
 
 let currentLang = 'tn'; // Default Language
+let x18Unlocked = false;  // Tracks whether +18 was authenticated this session
 // ============================================
 
 let wordsDB = [];
@@ -263,6 +264,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (parsed) {
         // Restore +18 only if user explicitly chose to remember it
         currentLang = parsed.lang || 'tn';
+        if (currentLang === 'x18') x18Unlocked = true;
         
         // Load checkboxes
         document.getElementById('random-impostors-toggle').checked = !!parsed.randomImpostors;
@@ -306,6 +308,12 @@ window.addEventListener('DOMContentLoaded', async () => {
         btn.addEventListener('click', () => {
             const lang = btn.getAttribute('data-lang');
             if (lang === 'x18') {
+                if (x18Unlocked) {
+                    // Already authenticated this session — switch directly
+                    currentLang = 'x18';
+                    applyTranslations();
+                    return;
+                }
                 // Show password modal
                 const pwModal = document.getElementById('password-modal');
                 const pwInput = document.getElementById('password-input');
@@ -334,6 +342,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('password-confirm-btn').addEventListener('click', () => {
         if (pwInput.value === 'simba') {
+            x18Unlocked = true;
             currentLang = 'x18';
             applyTranslations();
             // Only persist if "remember me" is checked
