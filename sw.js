@@ -1,6 +1,5 @@
 const CACHE_NAME = 'dakheel-v4';
 
-// كل الملفات التي سيتم تخزينها مؤقتاً للعمل بدون إنترنت
 const ASSETS = [
   './',
   './index.html',
@@ -9,11 +8,10 @@ const ASSETS = [
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
-  './word_list.json',
-  './adult_word_list.json'
+  './word list.json',
+  './adult word list.json'
 ];
 
-// تثبيت: تخزين الملفات في الكاش
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -22,7 +20,6 @@ self.addEventListener('install', event => {
   );
 });
 
-// تفعيل: حذف الكاشات القديمة
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -35,7 +32,6 @@ self.addEventListener('activate', event => {
   );
 });
 
-// الاعتراض على الطلبات: الكاش أولاً، ثم الشبكة كاحتياط
 self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request)
