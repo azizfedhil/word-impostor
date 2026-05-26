@@ -196,17 +196,22 @@ function _renderLobby(room) {
         const curImps = Math.min(cfg.impostors || 1, maxImps);
         const curTim  = cfg.timer || 3;
 
-        const settBtn = document.createElement('button');
+        // ── Settings toggle — styled as advanced-header like main menu ──
+        const settBtn = document.createElement('div');
         settBtn.id = 'lobby-settings-btn';
-        settBtn.className = 'secondary-btn';
-        settBtn.style.cssText = 'margin-top:10px; width:100%;';
-        settBtn.innerText = '⚙️ عدّل إعدادات الجولة';
+        settBtn.className = 'advanced-header';
+        settBtn.style.cssText = 'margin-top:10px;';
+        settBtn.innerHTML = '<span>⚙️ عدّل إعدادات الجولة</span><span id="ls-outer-chevron">▼</span>';
         startBtn.after(settBtn);
 
-        // ── Settings panel — identical structure to main-menu surface-card + advanced ──
+        // ── Wrapper uses advanced-content for the drop-down animation ──
+        const panelWrapper = document.createElement('div');
+        panelWrapper.id = 'lobby-settings-panel';
+        panelWrapper.className = 'advanced-content';
+
+        // ── Inner panel — surface-card + advanced identical to main menu ──
         const panel = document.createElement('div');
-        panel.id = 'lobby-settings-panel';
-        panel.style.cssText = 'margin-top:12px;';
+        panelWrapper.appendChild(panel);
 
         const _tog = (id, active) =>
             `<div class="toggle-switch${active ? ' active' : ''}" id="${id}"><div class="toggle-thumb"></div></div>`;
@@ -265,7 +270,7 @@ function _renderLobby(room) {
                 </div>
             </div>
         `;
-        settBtn.after(panel);
+        settBtn.after(panelWrapper);
 
         // Counter helpers — read/write counter-value span directly
         const _counter = (dispId, minusId, plusId, minV, maxV) => {
@@ -294,13 +299,18 @@ function _renderLobby(room) {
         });
 
         // Outer button: show / hide whole panel
-        panel.style.display = 'none';
         settBtn.addEventListener('click', () => {
-            panel.style.display = panel.style.display === 'none' ? '' : 'none';
+            const open = panelWrapper.classList.toggle('open');
+            const outerChev = document.getElementById('ls-outer-chevron');
+            if (outerChev) outerChev.textContent = open ? '▲' : '▼';
         });
 
         document.getElementById('ls-save')  ?.addEventListener('click', _updateRoomSettings);
-        document.getElementById('ls-cancel')?.addEventListener('click', () => { panel.style.display = 'none'; });
+        document.getElementById('ls-cancel')?.addEventListener('click', () => {
+            panelWrapper.classList.remove('open');
+            const outerChev = document.getElementById('ls-outer-chevron');
+            if (outerChev) outerChev.textContent = '▼';
+        });
 
     } else {
         startBtn.classList.add('hidden');
