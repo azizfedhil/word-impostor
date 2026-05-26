@@ -110,9 +110,6 @@ async function _updateRoomSettings() {
     };
     try {
         await _update(_room.code, { config });
-        document.getElementById('lobby-settings-panel')?.classList.remove('open');
-        document.getElementById('ls-chevron') && (document.getElementById('ls-chevron').textContent = '▼');
-        showToast('✅ تحفظت الإعدادات!');
     } catch(e) { console.error(e); showToast('خطأ في الحفظ'); }
 }
 
@@ -285,22 +282,22 @@ function _renderLobby(room) {
                     <span class="toggle-label">💡 الكذابين الكل ياخذو نفس التلميح</span>
                     ${_tog('ls-allhint', cfg.allCorrectHints)}
                 </div>
-                <div style="display:flex; gap:10px; padding:16px 16px 8px;">
-                    <button type="button" id="ls-save"   class="primary-btn"   style="flex:1; margin:0; padding:12px;">💾 حفظ</button>
-                    <button type="button" id="ls-cancel" class="secondary-btn" style="flex:1; margin:0; padding:12px;">إلغاء</button>
-                </div>
             </div>
         `;
         settBtn.after(panelWrapper);
 
         // Counter helpers — read/write counter-value span directly
+        let _settingsTimer = null;
+        const _autoSave = () => { clearTimeout(_settingsTimer); _settingsTimer = setTimeout(_updateRoomSettings, 400); };
         const _counter = (dispId, minusId, plusId, minV, maxV) => {
             const disp = () => document.getElementById(dispId);
             document.getElementById(minusId)?.addEventListener('click', () => {
                 disp().textContent = Math.max(minV, parseInt(disp().textContent) - 1);
+                _autoSave();
             });
             document.getElementById(plusId)?.addEventListener('click', () => {
                 disp().textContent = Math.min(maxV, parseInt(disp().textContent) + 1);
+                _autoSave();
             });
         };
         _counter('ls-imp-val', 'ls-imp-minus', 'ls-imp-plus', 1, maxImps);
@@ -308,7 +305,7 @@ function _renderLobby(room) {
 
         // Toggle switches
         panel.querySelectorAll('.toggle-switch').forEach(sw => {
-            sw.addEventListener('click', () => sw.classList.toggle('active'));
+            sw.addEventListener('click', () => { sw.classList.toggle('active'); _autoSave(); });
         });
 
         // Advanced section collapse
@@ -326,12 +323,7 @@ function _renderLobby(room) {
             if (outerChev) outerChev.textContent = open ? '▲' : '▼';
         });
 
-        document.getElementById('ls-save')  ?.addEventListener('click', _updateRoomSettings);
-        document.getElementById('ls-cancel')?.addEventListener('click', () => {
-            panelWrapper.classList.remove('open');
-            const outerChev = document.getElementById('ls-outer-chevron');
-            if (outerChev) outerChev.textContent = '▼';
-        });
+
 
     } else {
         startBtn.classList.add('hidden');
