@@ -103,7 +103,7 @@ async function _createRoom() {
     _clearErr();
     const nameEl = document.getElementById('online-player-name');
     _myName = (nameEl && nameEl.value.trim()) || '';
-    if (!_myName) { _err('حط اسمك أولاً!'); return; }
+    if (!_myName) { _err('لازم تحط اسمك!'); return; }
 
     // Snapshot current setup-screen config
     const config = _snapshotConfig();
@@ -151,7 +151,7 @@ async function _joinRoom() {
     _myName = (nameEl && nameEl.value.trim()) || '';
     const code = (codeEl && codeEl.value.trim().toUpperCase()) || '';
 
-    if (!_myName) { _err('حط اسمك أولاً!'); return; }
+    if (!_myName) { _err('لازم تحط اسمك!'); return; }
     if (code.length < 4) { _err('أدخل كود الغرفة!'); return; }
 
     try {
@@ -162,7 +162,7 @@ async function _joinRoom() {
             .single();
 
         if (error || !room) { _err('ما لقيناش الغرفة!'); return; }
-        if (room.state !== 'lobby') { _err('اللعبة بدأت بالفعل!'); return; }
+        if (room.state !== 'lobby') { _err('اللعبة ديجا بدات'); return; }
 
         // Reconnect if already in room
         const existing = room.players.find(p => p.id === _myId);
@@ -248,7 +248,7 @@ function _renderLobby(room) {
         }
     } else {
         startBtn.classList.add('hidden');
-        waitMsg.innerText = `⏳ نستنا على الهوست يبدأ... (${room.players.length} لاعبين)`;
+        waitMsg.innerText = `⏳ نستناو مولى الروم يبدا... (${room.players.length} لاعبين)`;
     }
 }
 
@@ -264,7 +264,7 @@ async function _startOnlineGame() {
     const wordList   = lang === 'x18' ? adultWordsDB : regularWordsDB;
 
     if (!wordList || wordList.length === 0) {
-        alert('الكلمات لسا ما اتحملتش. حاول مجدداً.');
+        alert('الكلمات مازال ما جاتش، حاول مرة اخرى.');
         return;
     }
 
@@ -440,7 +440,7 @@ function _checkAllSeen(room) {
     if (_isHost) {
         discBtn.classList.toggle('hidden', !allSeen);
         document.getElementById('online-waiting-text').innerText =
-            allSeen ? '✅ كل الناس شافت كراتيبها!' : '⏳ نستنا الكل يشوف كارطتو...';
+            allSeen ? '✅ الناس الكل شافت كوارتها!' : '⏳ نستنا الكل يشوف كارطتو...';
     } else {
         discBtn.classList.add('hidden');
         document.getElementById('online-waiting-text').innerText =
@@ -502,7 +502,7 @@ function _startClientTimer(room) {
     // Override the "skip to vote" button
     document.getElementById('go-to-vote-btn').onclick = () => {
         if (!_isHost) {
-            _showToast('بس الهوست يقدر يوقف الوقت!');
+            _showToast('مولى الروم اكهو ينجم يوقف الوقت!');
             return;
         }
         clearInterval(_onlineTimer);
@@ -543,7 +543,7 @@ function _showOnlineVoting(room) {
             if (me.vote === player.id) btn.classList.add('my-vote');
         } else if (player.id === _myId) {
             btn.disabled = true;
-            btn.title = 'ما تقدرش تصوت على روحك';
+            btn.title = 'ما تنجمش تصوت على روحك';
         } else {
             btn.addEventListener('click', () => _castVote(player.id));
         }
@@ -679,7 +679,7 @@ function _showOnlineResult(room) {
                 nextBtn.innerText   = trans.continue_discussion;
                 nextBtn.onclick     = () => _continueDiscussion(room);
             } else {
-                nextBtn.innerText   = '⏳ نستنا على الهوست...';
+                nextBtn.innerText   = '⏳ نستناو مولى الروم...';
                 nextBtn.disabled    = true;
             }
             return; // early return — don't set the "next round" button
@@ -690,7 +690,7 @@ function _showOnlineResult(room) {
         nextBtn.disabled  = false;
         nextBtn.onclick   = () => _resetToLobby();
     } else {
-        nextBtn.innerText = '⏳ نستنا على الهوست...';
+        nextBtn.innerText = '⏳ نستناو مولى الروم...';
         nextBtn.disabled  = true;
     }
 }
