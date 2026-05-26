@@ -15,6 +15,9 @@ let _room = null, _channel = null, _isHost = false, _myName = '', _onlineTimer =
 let _timerSyncTicker = null, _timerSyncState = null, _lastOnlineTimerSecond = null;
 const ONLINE_NAME_KEY = 'dakheel_online_name';
 
+// Figured-out tracking (broadcast-based, per round)
+const _figuredOut = new Set(); // player IDs who announced they figured it out
+
 function _genCode() { const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return Array.from({length:6},()=>c[Math.floor(Math.random()*c.length)]).join(''); }
 function _me(room) { return (room.players||[]).find(p=>p.id===_myId)||null; }
 function _err(msg) { const el = document.getElementById('online-setup-error'); if(el) el.innerText = msg; }
@@ -50,6 +53,15 @@ function _subscribe(code) {
         })
         .on('broadcast', { event: 'timer-sync' }, ({ payload }) => {
             _handleTimerSync(payload);
+        })
+        .on('broadcast', { event: 'figured-out' }, ({ payload }) => {
+            if (payload && payload.pid) {
+                _figuredOut.add(payload.pid);
+                _refreshRoundPlayerPanel();
+                const name = payload.name || '???';
+                showToast(`🎯 ${name} اكتشف الدخيل!`);
+                if (typeof _sfx !== 'undefined') _sfx.notify();
+            }
         })
         .subscribe(s => { if(s==='SUBSCRIBED') console.log('[online] subscribed',code); });
 }
@@ -272,6 +284,70 @@ function _renderLobby(room) {
     }
 }
 
+// Refreshes all visible round-player panels without a full re-render
+function _refreshRoundPlayerPanel() {
+    const screens = ['online-card-screen','timer-screen','voting-screen','result-screen'];
+    screens.forEach(sid => {
+        const panel = document.getElementById(sid)?.querySelector('.online-round-players');
+        if (panel && _room) _rebuildChips(panel, _room, sid);
+    });
+}
+
+const CHIPS_COLLAPSE = 4; // max chips shown before "show more"
+
+function _rebuildChips(panel, room, screenId) {
+    const list = panel.querySelector('.online-round-list');
+    if (!list) return;
+    list.innerHTML = '';
+
+    // Sort: figured-out first, then rest
+    const sorted = [...room.players].sort((a, b) => {
+        const aF = _figuredOut.has(a.id) ? 0 : 1;
+        const bF = _figuredOut.has(b.id) ? 0 : 1;
+        return aF - bF;
+    });
+
+    sorted.forEach((p, idx) => {
+        const chip = document.createElement('div');
+        chip.className = 'online-player-chip';
+        if (p.id === _myId)   chip.classList.add('is-me');
+        if (p.eliminated)     chip.classList.add('is-out');
+        if (p.hasSeenCard)    chip.classList.add('has-seen');
+        if (p.vote !== null)  chip.classList.add('has-voted');
+        if (_figuredOut.has(p.id)) chip.classList.add('figured-out');
+
+        // Hide extras past collapse threshold
+        if (idx >= CHIPS_COLLAPSE && !panel.dataset.expanded) chip.classList.add('chip-hidden');
+
+        const status = p.eliminated ? '🚫' : p.vote !== null ? '🗳️' : p.hasSeenCard ? '✅' : '👤';
+        chip.innerHTML = `${p.isHost ? '👑' : status} <span>${p.name}</span>${p.id===_myId?' <span class="you-tag">أنا</span>':''}${_figuredOut.has(p.id)?'<span class="figured-badge">🎯</span>':''}`;
+        list.appendChild(chip);
+    });
+
+    // Remove old show-more btn
+    panel.querySelector('.show-more-btn')?.remove();
+
+    const extra = room.players.length - CHIPS_COLLAPSE;
+    if (extra > 0) {
+        const btn = document.createElement('button');
+        btn.className = 'show-more-btn';
+        if (panel.dataset.expanded) {
+            btn.textContent = `▲ إخفاء`;
+            btn.onclick = () => {
+                delete panel.dataset.expanded;
+                _rebuildChips(panel, room, screenId);
+            };
+        } else {
+            btn.textContent = `▼ عرض ${extra} لاعبين`;
+            btn.onclick = () => {
+                panel.dataset.expanded = '1';
+                _rebuildChips(panel, room, screenId);
+            };
+        }
+        list.after(btn);
+    }
+}
+
 function _renderOnlineRoundPlayers(room, screenId) {
     const screen = document.getElementById(screenId);
     if (!screen || !room || !room.players) return;
@@ -280,26 +356,49 @@ function _renderOnlineRoundPlayers(room, screenId) {
     const alive = room.players.filter(p=>!p.eliminated);
     const panel = document.createElement('div');
     panel.className = 'online-round-players';
+
+    // ── Voice + figured-out controls row ─────────────────────
+    const isTimerScreen = screenId === 'timer-screen';
+    const myFiguredOut  = _figuredOut.has(_myId);
+    const voiceActive   = typeof _voiceOn !== 'undefined' && _voiceOn;
+
     panel.innerHTML = `
         <div class="online-round-players-title">
             <span>👥 اللاعبين في الروم</span>
             <span class="online-round-count">${alive.length}/${room.players.length}</span>
         </div>
+        <div class="round-actions-bar">
+            <button class="voice-round-btn${voiceActive?' voice-round-active':''}" id="voice-round-btn-${screenId}">
+                ${voiceActive ? '🔴 قطع الصوت' : '🎙️ انضم للصوت'}
+            </button>
+            ${isTimerScreen && !myFiguredOut ? `<button class="figured-btn" id="figured-out-btn">🎯 عرفت الدخيل!</button>` : ''}
+            ${isTimerScreen && myFiguredOut  ? `<div class="figured-announced">✅ أعلنت أنك عرفت الدخيل</div>` : ''}
+        </div>
         <div class="online-round-list"></div>
     `;
-    const list = panel.querySelector('.online-round-list');
-    room.players.forEach(p => {
-        const chip = document.createElement('div');
-        chip.className = 'online-player-chip';
-        if (p.id === _myId) chip.classList.add('is-me');
-        if (p.eliminated) chip.classList.add('is-out');
-        if (p.hasSeenCard) chip.classList.add('has-seen');
-        if (p.vote !== null) chip.classList.add('has-voted');
 
-        const status = p.eliminated ? '🚫' : p.vote !== null ? '🗳️' : p.hasSeenCard ? '✅' : '👤';
-        chip.innerHTML = `${p.isHost ? '👑' : status} <span>${p.name}</span>${p.id===_myId?' <span class="you-tag">أنا</span>':''}`;
-        list.appendChild(chip);
+    // Wire voice button
+    panel.querySelector(`#voice-round-btn-${screenId}`)?.addEventListener('click', () => {
+        if (typeof _voiceOn !== 'undefined' && _voiceOn) {
+            stopVoice();
+        } else {
+            if (_room) initVoice(_room.code);
+        }
+        // Re-render all panels to update button state
+        setTimeout(() => _refreshRoundPlayerPanel(), 100);
     });
+
+    // Wire figured-out button
+    panel.querySelector('#figured-out-btn')?.addEventListener('click', () => {
+        if (_figuredOut.has(_myId)) return;
+        _figuredOut.add(_myId);
+        _channel?.send({ type:'broadcast', event:'figured-out', payload:{ pid:_myId, name:_myName } });
+        _refreshRoundPlayerPanel();
+        showToast('🎯 أعلنت أنك عرفت الدخيل!');
+        if (typeof _sfx !== 'undefined') _sfx.notify();
+    });
+
+    _rebuildChips(panel, room, screenId);
 
     const anchors = {
         'online-card-screen': '#online-card-container',
@@ -339,7 +438,8 @@ async function _startOnlineGame() {
             let hi=0; imps.forEach((p,i)=>{p.customHint=(i===lucky)?(wordObj.hint||''):(wrong[hi++%wrong.length]||'');});
         }
     }
-    try { await _update(_room.code,{state:'reveal',word_obj:wordObj,players,timer_end_at:null,result:null}); }
+    try { await _update(_room.code,{state:'reveal',word_obj:wordObj,players,timer_end_at:null,result:null});
+          _figuredOut.clear(); }  // reset per round
     catch(e) { console.error(e); showToast('خطأ في بدء اللعبة!'); }
 }
 
