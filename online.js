@@ -216,8 +216,7 @@ function _renderLobby(room) {
 
         // ── Settings button ───────────────────────────────
         const cfg = room.config || {};
-        const maxImps = Math.max(1, Math.floor(n / 2));
-        // Seed _pendingConfig once; preserve host edits across re-renders
+        const maxImps = Math.max(1, n - 1);
         if (!_pendingConfig) _pendingConfig = {
             impostors:       Math.min(cfg.impostors || 1, maxImps),
             timer:           cfg.timer || 3,
@@ -227,7 +226,6 @@ function _renderLobby(room) {
             noHints:         !!cfg.noHints,
             allCorrectHints: !!cfg.allCorrectHints
         };
-        // Clamp impostors if player count shrank
         _pendingConfig.impostors = Math.min(_pendingConfig.impostors, maxImps);
         const curImps = _pendingConfig.impostors;
         const curTim  = _pendingConfig.timer;
@@ -305,7 +303,7 @@ function _renderLobby(room) {
         `;
         settBtn.after(panelWrapper);
 
-        // Counter helpers — update display AND persist to _pendingConfig
+        // Counter helpers
         const _readPanel = () => ({
             impostors:       parseInt(document.getElementById('ls-imp-val')?.textContent) || _pendingConfig.impostors,
             timer:           parseInt(document.getElementById('ls-tim-val')?.textContent) || _pendingConfig.timer,
@@ -506,16 +504,13 @@ function _renderOnlineRoundPlayers(room, screenId) {
 
 async function _startOnlineGame() {
     if (!_isHost||!_room) return;
-    // Apply any pending host config edits
-    if (_pendingConfig) {
-        _room.config = { ..._room.config, ..._pendingConfig };
-    }
-    _pendingConfig = null; // reset for next round
+    if (_pendingConfig) { _room.config = { ..._room.config, ..._pendingConfig }; }
+    _pendingConfig = null;
     const config = _room.config, lang = config.lang||'tn';
     const wordList = lang==='x18' ? adultWordsDB : regularWordsDB;
     if (!wordList||wordList.length===0) { showToast('الكلمات مازال ما جاتش، حاول مرة اخرى.'); return; }
     const allP = _room.players;
-    let impCount = config.impostors||1;
+    let impCount = Math.min(config.impostors||1, allP.length - 1);
     if (config.randomImpostors) impCount = Math.floor(Math.random()*Math.floor(allP.length/2))+1;
     const wordObj = wordList[Math.floor(Math.random()*wordList.length)];
     const noHints = config.noHints||lang==='x18';
