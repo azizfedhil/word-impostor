@@ -453,3 +453,267 @@ body.lang-x18 #all-correct-hints-toggle ~ .info-icon {
     }
     .flip-card-inner { transition: transform 0.15s ease; }
 }
+/* ============================================================
+   ONLINE MODE STYLES — append to the end of style.css
+   ============================================================ */
+
+/* ===== ONLINE SETUP SCREEN ===== */
+.online-name-group {
+    text-align: right;
+    margin-bottom: 20px;
+}
+.online-name-group label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 6px;
+    color: var(--text-color);
+}
+.online-name-group input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--input-border);
+    border-radius: 8px;
+    font-size: 16px;
+    background: var(--input-bg);
+    color: var(--input-text);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.online-name-group input:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(196, 124, 30, 0.15);
+}
+
+.online-or-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 8px 0;
+    color: var(--text-color);
+    opacity: 0.5;
+    font-size: 14px;
+}
+.online-or-divider::before,
+.online-or-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--input-border);
+}
+
+.join-room-group {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+    margin-bottom: 4px;
+}
+.join-room-group input {
+    flex: 1;
+    padding: 12px;
+    border: 1px solid var(--input-border);
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    letter-spacing: 4px;
+    background: var(--input-bg);
+    color: var(--input-text);
+    text-transform: uppercase;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.join-room-group input:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(196, 124, 30, 0.15);
+}
+.join-room-group button {
+    width: auto;
+    margin: 0;
+    padding: 12px 20px;
+    font-size: 15px;
+    white-space: nowrap;
+    border-radius: 8px;
+}
+
+/* ===== LOBBY SCREEN ===== */
+.room-code-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: var(--grad-reveal);
+    border: 2px solid var(--reveal-box-border);
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+.room-code-display span {
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--text-color);
+    opacity: 0.7;
+}
+#display-room-code {
+    font-size: 32px;
+    font-weight: bold;
+    letter-spacing: 6px;
+    color: var(--accent-color);
+    font-family: monospace;
+}
+#copy-code-btn,
+#share-code-btn {
+    width: auto;
+    margin: 0;
+    padding: 8px 14px;
+    font-size: 14px;
+    border-radius: 8px;
+}
+#share-code-btn {
+    background: var(--grad-primary);
+}
+
+.lobby-players-list {
+    border: 1px solid var(--input-border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+.lobby-player-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--input-border);
+    font-size: 16px;
+    animation: rowPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.lobby-player-item:last-child { border-bottom: none; }
+
+.player-crown { font-size: 20px; }
+.player-icon  { font-size: 20px; opacity: 0.7; }
+.player-name-lbl { flex: 1; font-weight: bold; color: var(--text-color); }
+
+.you-tag {
+    font-size: 12px;
+    font-weight: bold;
+    background: var(--accent-color);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 999px;
+    opacity: 0.9;
+}
+
+.lobby-wait-msg {
+    font-size: 15px;
+    color: var(--text-color);
+    opacity: 0.75;
+    margin: 8px 0 16px;
+}
+
+/* ===== ONLINE CARD SCREEN ===== */
+.card-done-badge {
+    font-size: 80px;
+    line-height: 1;
+    padding: 30px 0;
+    animation: containerPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.online-waiting-zone {
+    margin-top: 10px;
+    padding: 16px;
+    border: 1px solid var(--input-border);
+    border-radius: 12px;
+    background: var(--grad-card);
+}
+
+.seen-status-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 8px;
+    margin-bottom: 14px;
+}
+.seen-status-item {
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    color: var(--text-color);
+    text-align: center;
+}
+
+.online-waiting-text {
+    font-size: 14px;
+    color: var(--text-color);
+    opacity: 0.7;
+    margin: 8px 0 0;
+}
+
+/* ===== VOTING ENHANCEMENTS for online ===== */
+.vote-btn .vote-count {
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--accent-color);
+}
+.vote-btn.my-vote {
+    border: 3px solid var(--accent-color);
+    opacity: 0.85;
+}
+.vote-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ===== ONLINE BUTTON in setup screen ===== */
+.online-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 4px 0;
+    color: var(--text-color);
+    opacity: 0.4;
+    font-size: 13px;
+}
+.online-divider::before,
+.online-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: currentColor;
+}
+#open-online-btn {
+    background: linear-gradient(145deg, #1a6b7a, #0f4d5e);
+    box-shadow: 0 3px 10px rgba(15, 77, 94, 0.35);
+}
+#open-online-btn:hover {
+    box-shadow: 0 5px 16px rgba(15, 77, 94, 0.45);
+}
+
+/* ===== TOAST NOTIFICATION ===== */
+#online-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(60px);
+    background: #333;
+    color: #fff;
+    padding: 12px 24px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: bold;
+    z-index: 9999;
+    opacity: 0;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s;
+    pointer-events: none;
+    white-space: nowrap;
+    max-width: 90vw;
+    text-align: center;
+}
+#online-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+@media (prefers-color-scheme: dark) {
+    #online-toast { background: #e8eaed; color: #1a1a1a; }
+    #open-online-btn { background: linear-gradient(145deg, #1e8fa3, #157a8e); }
+}
