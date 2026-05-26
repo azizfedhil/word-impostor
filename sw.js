@@ -1,17 +1,20 @@
-const CACHE_NAME = 'dakheel-v4';
+// Bumped to v3: This tells the browser to delete the old cache and download the new files once
+const CACHE_NAME = 'dakheel-v5';
 
+// All files to be cached for offline use
 const ASSETS = [
   './',
   './index.html',
   './style.css',
   './app.js',
   './manifest.json',
-  './icon-192.png',
-  './icon-512.png',
+  './icon192.png',
+  './icon512.png',
   './word list.json',
-  './adult word list.json'
+  './adult_word_list.json'
 ];
 
+// Install: Cache the files
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -20,6 +23,7 @@ self.addEventListener('install', event => {
   );
 });
 
+// Activate: Delete old caches (v1, v2)
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -32,9 +36,9 @@ self.addEventListener('activate', event => {
   );
 });
 
+// Fetch: Network First, then Cache (Prevents aggressive Safari caching of HTML)
 self.addEventListener('fetch', event => {
   event.respondWith(
-    caches.match(event.request)
-      .then(cached => cached || fetch(event.request))
+    fetch(event.request).catch(() => caches.match(event.request))
   );
 });
