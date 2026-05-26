@@ -631,16 +631,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const lobbyList=document.getElementById('lobby-players-list');
     if(lobbyList){let prev=0;new MutationObserver(()=>{const n=lobbyList.children.length;if(n>prev)_sfx.notify();prev=n;}).observe(lobbyList,{childList:true});}
 
-    // VOICE in lobby
-    const lobbyScreen=document.getElementById('online-lobby-screen');
-    if(lobbyScreen){
-        const vcBtn=document.createElement('button');vcBtn.id='join-voice-btn';vcBtn.className='primary-btn';vcBtn.style.marginTop='12px';vcBtn.innerText='🎙️ انضم للصوت';
-        document.getElementById('leave-room-btn').before(vcBtn);
-        vcBtn.addEventListener('click',()=>{
-            if(_voiceOn){stopVoice();}
-            else{const code=document.getElementById('display-room-code')?.innerText;if(!code||code==='------'){showToast('ما لقيناش كود الغرفة');return;}initVoice(code).then(()=>{if(_voiceOn)vcBtn.dataset.active='1';});}
-        });
-    }
+
     document.getElementById('leave-room-btn').addEventListener('click',()=>{if(_voiceOn)stopVoice();},true);
 
     // PWA SERVICE WORKER
