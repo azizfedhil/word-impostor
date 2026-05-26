@@ -224,7 +224,7 @@ input[type="text"]:focus, input[type="password"]:focus { border-color: var(--pri
 
 .figured-badge { font-size: .75rem; margin-inline-start: 2px; }
 
-/* Center-screen figured-out announcement */
+/* Center-screen figured-out announcement — matches game modal UX */
 .figured-center-announce {
     position: fixed;
     inset: 0;
@@ -233,30 +233,54 @@ input[type="text"]:focus, input[type="password"]:focus { border-color: var(--pri
     justify-content: center;
     z-index: 8000;
     pointer-events: none;
-    animation: figuredCenterIn 0.35s cubic-bezier(0.34,1.56,0.64,1) both,
-               figuredCenterOut 0.4s ease-in 2.4s both;
+    background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    opacity: 0;
+    animation: figuredCenterIn 0.3s cubic-bezier(0.16,1,0.3,1) 0s forwards,
+               figuredCenterOut 0.3s ease-in 2.5s forwards;
 }
 .figured-center-announce-inner {
-    background: rgba(20,20,30,0.92);
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
-    border: 2px solid #3498db;
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
-    padding: 22px 32px;
+    padding: 32px 28px 28px;
     text-align: center;
-    box-shadow: 0 0 32px rgba(52,152,219,0.35), 0 8px 40px rgba(0,0,0,0.5);
-    max-width: 78vw;
+    width: 88%;
+    max-width: 320px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    transform: scale(0.9);
+    animation: figuredCardIn 0.3s cubic-bezier(0.16,1,0.3,1) 0s forwards;
 }
-.figured-center-announce-icon { font-size: 2.4rem; display: block; margin-bottom: 6px; }
-.figured-center-announce-name { font-size: 1.15rem; font-weight: 800; color: #fff; display: block; margin-bottom: 2px; }
-.figured-center-announce-sub  { font-size: .9rem; color: #74b9ff; font-weight: 600; }
+.figured-center-announce-icon {
+    font-size: 2.8rem;
+    display: block;
+    margin-bottom: 10px;
+}
+.figured-center-announce-name {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: var(--text-main);
+    display: block;
+    margin-bottom: 4px;
+}
+.figured-center-announce-sub {
+    font-size: 1rem;
+    color: var(--primary-color);
+    font-weight: 700;
+    display: block;
+}
 @keyframes figuredCenterIn {
-    from { opacity: 0; transform: scale(0.7); }
-    to   { opacity: 1; transform: scale(1); }
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+@keyframes figuredCardIn {
+    from { transform: scale(0.9); }
+    to   { transform: scale(1); }
 }
 @keyframes figuredCenterOut {
-    from { opacity: 1; transform: scale(1); }
-    to   { opacity: 0; transform: scale(0.85); }
+    from { opacity: 1; }
+    to   { opacity: 0; }
 }
 
 /* Round actions bar */
