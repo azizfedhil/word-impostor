@@ -315,7 +315,7 @@ button:active { transform: scale(0.97); }
 /* ===== LANGUAGE PILL SELECTOR ===== */
 .lang-pill-wrapper {
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
     margin-bottom: 16px;
 }
 .lang-pill-selector {
@@ -359,6 +359,23 @@ button:active { transform: scale(0.97); }
 body.lang-x18 header h1 {
     color: #c0392b;
     text-shadow: 0 0 10px rgba(192,57,43,0.6), 0 0 22px rgba(192,57,43,0.4);
+}
+/* Grey out hint-related options in +18 mode (hints are always off) */
+body.lang-x18 #no-hints-toggle,
+body.lang-x18 #all-correct-hints-toggle {
+    opacity: 0.28;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+body.lang-x18 #no-hints-toggle + label,
+body.lang-x18 #all-correct-hints-toggle + label {
+    opacity: 0.28;
+    cursor: not-allowed;
+}
+body.lang-x18 #no-hints-toggle ~ .info-icon,
+body.lang-x18 #all-correct-hints-toggle ~ .info-icon {
+    opacity: 0.28;
+    pointer-events: none;
 }
 
 /* ===== PASSWORD MODAL INPUT ===== */
