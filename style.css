@@ -128,11 +128,14 @@ input[type="text"]:focus, input[type="password"]:focus { border-color: var(--pri
 .seen-chip.done { background: rgba(82,140,113,0.15); border-color: var(--primary-color); color: var(--primary-color); }
 
 /* ===== DISCUSSION REACTIONS ===== */
-.reaction-bar { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 20px; }
-.reaction-btn { background: var(--surface-color); border: 1px solid var(--border-color); border-radius: var(--radius-pill);
-                padding: 8px 14px; font-size: 1.3rem; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
-                box-shadow: var(--shadow-soft); width: auto; }
-.reaction-btn:active { transform: scale(0.88); }
+.reaction-bar { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; margin-top: 20px; }
+.reaction-btn { background: var(--surface-color); border: 1px solid var(--border-color); border-radius: var(--radius-md);
+                min-height: 66px; padding: 8px 6px; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+                box-shadow: var(--shadow-soft); width: 100%; color: var(--text-main); flex-direction: column; gap: 2px; }
+.reaction-btn:hover { border-color: var(--primary-color); transform: translateY(-1px); }
+.reaction-btn:active { transform: scale(0.94); }
+.reaction-emoji { font-size: 1.55rem; line-height: 1; }
+.reaction-text { font-size: .82rem; font-weight: 800; line-height: 1.1; white-space: nowrap; }
 .reaction-float { position: fixed; left: 50%; transform: translateX(-50%); font-size: 2.2rem;
                   pointer-events: none; z-index: 9900; white-space: nowrap;
                   animation: floatUp 1.8s ease-out forwards; font-weight: 700; }
@@ -179,6 +182,20 @@ input[type="text"]:focus, input[type="password"]:focus { border-color: var(--pri
 .seen-status-list { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 14px; }
 .seen-status-item { padding: 8px 14px; border-radius: var(--radius-sm); font-size: 0.9rem; font-weight: 700;
                     background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-main); }
+.online-round-players { background: var(--surface-color); border: 1px solid var(--border-color); border-radius: var(--radius-md);
+                        padding: 12px; margin: 16px 0; box-shadow: var(--shadow-soft); text-align: right; }
+.online-round-players-title { display: flex; align-items: center; justify-content: space-between; gap: 8px;
+                              color: var(--primary-color); font-weight: 800; font-size: .96rem; margin-bottom: 10px; }
+.online-round-count { color: var(--text-muted); font-size: .8rem; font-weight: 700; }
+.online-round-list { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.online-player-chip { display: inline-flex; align-items: center; gap: 6px; padding: 8px 10px; border-radius: var(--radius-pill);
+                      background: var(--bg-color); color: var(--text-main); border: 1px solid var(--border-color);
+                      font-size: .9rem; font-weight: 800; max-width: 100%; }
+.online-player-chip.is-me { border-color: var(--primary-color); background: rgba(82,140,113,0.1); }
+.online-player-chip.is-out { opacity: .55; text-decoration: line-through; }
+.online-player-chip.has-voted { border-color: rgba(241,192,81,0.45); }
+.online-player-chip.has-seen { border-color: rgba(82,140,113,0.35); }
+.online-player-chip .you-tag { margin-inline-start: 0; }
 .vote-count { font-size: 0.85rem; font-weight: 700; color: var(--accent-color); }
 .pw-remember-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; font-size: 0.95rem; }
 .pw-remember-row input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--danger-color); cursor: pointer; }

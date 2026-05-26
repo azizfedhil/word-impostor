@@ -47,5 +47,17 @@ const _sfx = (() => {
     function swoosh() { try { const ctx = _getCtx(), d = _master(ctx), t = ctx.currentTime; _ramp('sine',200,600,t,0.1,0.10,ctx,d); _noise(t,0.08,0.06,ctx,d); } catch(e){} }
     function modalOpen() { try { const ctx = _getCtx(), d = _master(ctx), t = ctx.currentTime; _ramp('sine',400,800,t,0.07,0.14,ctx,d); } catch(e){} }
     function modalClose() { try { const ctx = _getCtx(), d = _master(ctx), t = ctx.currentTime; _ramp('sine',700,350,t,0.07,0.12,ctx,d); } catch(e){} }
-    return { tap, cardFlip, gameStart, tick, tickUrgent, timerEnd, vote, win, lose, notify, error, swoosh, modalOpen, modalClose };
+    function reaction(kind) {
+        try {
+            const ctx = _getCtx(), d = _master(ctx), t = ctx.currentTime;
+            if (kind === 'suspect') { _osc('triangle',360,t,0.08,0.16,ctx,d); _ramp('sine',720,420,t+0.04,0.16,0.12,ctx,d); return; }
+            if (kind === 'laugh') { [660,760,690].forEach((f,i)=>_osc('sine',f,t+i*0.055,0.08,0.14,ctx,d)); return; }
+            if (kind === 'hurry') { [1050,1050].forEach((f,i)=>_osc('square',f,t+i*0.11,0.07,0.12,ctx,d)); return; }
+            if (kind === 'caught') { _ramp('sine',420,980,t,0.11,0.18,ctx,d); _osc('triangle',1200,t+0.1,0.1,0.13,ctx,d); return; }
+            if (kind === 'quiet') { _noise(t,0.08,0.05,ctx,d); _ramp('sine',520,260,t,0.18,0.09,ctx,d); return; }
+            if (kind === 'fire') { _noise(t,0.16,0.12,ctx,d); [523,659,784].forEach((f,i)=>_osc('sawtooth',f,t+i*0.055,0.12,0.10,ctx,d)); return; }
+            notify();
+        } catch(e){}
+    }
+    return { tap, cardFlip, gameStart, tick, tickUrgent, timerEnd, vote, win, lose, notify, error, swoosh, modalOpen, modalClose, reaction };
 })();

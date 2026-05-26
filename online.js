@@ -13,6 +13,7 @@ if (!_myId) { _myId = 'p_' + Date.now() + '_' + Math.random().toString(36).slice
 window.onlineMode = false;
 let _room = null, _channel = null, _isHost = false, _myName = '', _onlineTimer = null;
 let _timerSyncTicker = null, _timerSyncState = null, _lastOnlineTimerSecond = null;
+const ONLINE_NAME_KEY = 'dakheel_online_name';
 
 function _genCode() { const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return Array.from({length:6},()=>c[Math.floor(Math.random()*c.length)]).join(''); }
 function _me(room) { return (room.players||[]).find(p=>p.id===_myId)||null; }
@@ -20,6 +21,18 @@ function _err(msg) { const el = document.getElementById('online-setup-error'); i
 function _clearErr() { _err(''); }
 function _getLang(room) { return (room.config&&room.config.lang)||'tn'; }
 function _getTrans(room) { return i18n[_getLang(room)]; }
+function _saveOnlineName(name) {
+    const clean = (name || '').trim();
+    if (!clean) return;
+    try { localStorage.setItem(ONLINE_NAME_KEY, clean); } catch(_) {}
+}
+function _restoreOnlineName() {
+    try {
+        const saved = localStorage.getItem(ONLINE_NAME_KEY);
+        const input = document.getElementById('online-player-name');
+        if (saved && input && !input.value) input.value = saved;
+    } catch(_) {}
+}
 
 async function _update(code, patch) {
     const {data,error} = await _supa.from('rooms').update(patch).eq('code',code).select().single();
@@ -33,6 +46,7 @@ function _subscribe(code) {
             payload => { _room = payload.new; _handleStateChange(payload.new); })
         .on('broadcast', { event: 'reaction' }, ({ payload }) => {
             _showReactionFloat(payload.name + ': ' + payload.msg);
+            if (typeof _playReactionSfx === 'function') _playReactionSfx(payload.sfx);
         })
         .on('broadcast', { event: 'timer-sync' }, ({ payload }) => {
             _handleTimerSync(payload);
@@ -96,6 +110,7 @@ async function _createRoom() {
     _clearErr();
     _myName = (document.getElementById('online-player-name').value||'').trim();
     if (!_myName) { _err('لازم تحط اسمك!'); _sfx.error(); return; }
+    _saveOnlineName(_myName);
     const config = _snapshotConfig(), code = _genCode();
     try {
         const {data,error} = await _supa.from('rooms').insert({
@@ -115,6 +130,7 @@ async function _joinRoom() {
     const code = (document.getElementById('room-code-input').value||'').trim().toUpperCase();
     if (!_myName) { _err('لازم تحط اسمك!'); _sfx.error(); return; }
     if (code.length < 4) { _err('أدخل كود الغرفة!'); _sfx.error(); return; }
+    _saveOnlineName(_myName);
     try {
         const {data:room,error} = await _supa.from('rooms').select().eq('code',code).single();
         if (error||!room) { _err('ما لقيناش الغرفة!'); _sfx.error(); return; }
@@ -122,6 +138,9 @@ async function _joinRoom() {
         const existing = room.players.find(p=>p.id===_myId);
         if (existing) {
             _room = room; _isHost = room.host_id===_myId; _myName = existing.name;
+            _saveOnlineName(_myName);
+            const nameInput = document.getElementById('online-player-name');
+            if (nameInput) nameInput.value = _myName;
             window.onlineMode = true; _subscribe(code); showScreen('online-lobby-screen'); _renderLobby(room); return;
         }
         const updated = await _update(code,{players:[...room.players,_mkPlayer(false)]});
@@ -253,6 +272,46 @@ function _renderLobby(room) {
     }
 }
 
+function _renderOnlineRoundPlayers(room, screenId) {
+    const screen = document.getElementById(screenId);
+    if (!screen || !room || !room.players) return;
+    screen.querySelector('.online-round-players')?.remove();
+
+    const alive = room.players.filter(p=>!p.eliminated);
+    const panel = document.createElement('div');
+    panel.className = 'online-round-players';
+    panel.innerHTML = `
+        <div class="online-round-players-title">
+            <span>👥 اللاعبين في الروم</span>
+            <span class="online-round-count">${alive.length}/${room.players.length}</span>
+        </div>
+        <div class="online-round-list"></div>
+    `;
+    const list = panel.querySelector('.online-round-list');
+    room.players.forEach(p => {
+        const chip = document.createElement('div');
+        chip.className = 'online-player-chip';
+        if (p.id === _myId) chip.classList.add('is-me');
+        if (p.eliminated) chip.classList.add('is-out');
+        if (p.hasSeenCard) chip.classList.add('has-seen');
+        if (p.vote !== null) chip.classList.add('has-voted');
+
+        const status = p.eliminated ? '🚫' : p.vote !== null ? '🗳️' : p.hasSeenCard ? '✅' : '👤';
+        chip.innerHTML = `${p.isHost ? '👑' : status} <span>${p.name}</span>${p.id===_myId?' <span class="you-tag">أنا</span>':''}`;
+        list.appendChild(chip);
+    });
+
+    const anchors = {
+        'online-card-screen': '#online-card-container',
+        'timer-screen': '#reaction-bar',
+        'voting-screen': '#voting-list',
+        'result-screen': '#next-round-btn'
+    };
+    const anchor = screen.querySelector(anchors[screenId] || '');
+    if (anchor) anchor.before(panel);
+    else screen.appendChild(panel);
+}
+
 async function _startOnlineGame() {
     if (!_isHost||!_room) return;
     const config = _room.config, lang = config.lang||'tn';
@@ -288,6 +347,7 @@ function _showMyCard(room) {
     showScreen('online-card-screen');
     const me = _me(room); if (!me) return;
     const lang = _getLang(room), trans = i18n[lang], noHints = room.config.noHints||lang==='x18';
+    _renderOnlineRoundPlayers(room, 'online-card-screen');
     if (me.hasSeenCard) { _renderCardWaiting(room); return; }
     const container = document.getElementById('online-card-container');
     container.innerHTML = '';
@@ -316,6 +376,7 @@ async function _confirmSeen() {
 }
 
 function _renderCardWaiting(room) {
+    _renderOnlineRoundPlayers(room, 'online-card-screen');
     const container = document.getElementById('online-card-container');
     container.innerHTML = '<div class="card-done-badge">✅</div>';
     const zone = document.getElementById('online-waiting-zone'); zone.classList.remove('hidden');
@@ -394,6 +455,7 @@ function _handleTimerSync(payload) {
 function _startClientTimer(room) {
     showScreen('timer-screen');
     document.getElementById('reaction-bar')?.classList.remove('hidden');
+    _renderOnlineRoundPlayers(room, 'timer-screen');
     const trans = i18n[_getLang(room)];
     document.getElementById('starter-player').innerText = `${trans.starter_is}${room.starter_player}`;
     _stopOnlineTimer();
@@ -436,6 +498,7 @@ async function _moveToVoting() {
 function _showOnlineVoting(room) {
     _stopOnlineTimer();
     showScreen('voting-screen');
+    _renderOnlineRoundPlayers(room, 'voting-screen');
     const list = document.getElementById('voting-list'); list.innerHTML = '';
     const me = _me(room), hasVoted = me&&me.vote!==null;
     room.players.filter(p=>!p.eliminated).forEach(player=>{
@@ -489,6 +552,7 @@ async function _processVotes(room) {
 function _showOnlineResult(room) {
     _stopOnlineTimer();
     showScreen('result-screen');
+    _renderOnlineRoundPlayers(room, 'result-screen');
     const trans = _getTrans(room), result = room.result;
     const resultMsg = document.getElementById('result-message');
     const revealBox = document.getElementById('impostors-reveal');
@@ -538,6 +602,7 @@ async function _leaveRoom() {
     } catch(e) { console.error(e); }
     if (_channel) { _supa.removeChannel(_channel); _channel=null; }
     _stopOnlineTimer();
+    document.querySelectorAll('.online-round-players').forEach(el => el.remove());
     _room=null; _isHost=false; window.onlineMode=false;
     showScreen('setup-screen');
 }

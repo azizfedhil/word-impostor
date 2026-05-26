@@ -554,6 +554,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     // Expose for online.js to call
     window._showReactionFloat = _showReactionFloat;
+    window._playReactionSfx = kind => {
+        if (_sfx && typeof _sfx.reaction === 'function') _sfx.reaction(kind);
+        else _sfx.notify();
+    };
 
     // DISCUSSION REACTIONS
     document.getElementById('reaction-bar')?.addEventListener('click', e => {
@@ -561,13 +565,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!btn) return;
         const msg = btn.dataset.msg;
         if (!msg) return;
-        _sfx.tap();
+        const sfx = btn.dataset.sfx || 'notify';
+        window._playReactionSfx(sfx);
         if (window.onlineMode && typeof _channel !== 'undefined' && _channel) {
             // Broadcast to all players in the room
             _channel.send({
                 type: 'broadcast',
                 event: 'reaction',
-                payload: { name: typeof _myName !== 'undefined' ? _myName : '?', msg }
+                payload: { name: typeof _myName !== 'undefined' ? _myName : '?', msg, sfx }
             });
             // Also show locally so sender sees their own reaction
             _showReactionFloat(_myName + ': ' + msg);
@@ -580,6 +585,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('back-to-setup-btn').addEventListener('click',()=>showScreen('setup-screen'));
     document.getElementById('create-room-btn').addEventListener('click',_createRoom);
     document.getElementById('join-room-btn').addEventListener('click',_joinRoom);
+    if (typeof _restoreOnlineName === 'function') _restoreOnlineName();
 
     const codeInput = document.getElementById('room-code-input');
     codeInput.addEventListener('input',e=>{const pos=e.target.selectionStart;e.target.value=e.target.value.toUpperCase();e.target.setSelectionRange(pos,pos);});
@@ -608,6 +614,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // SOUND HOOKS
     document.addEventListener('pointerdown', e => {
         const btn = e.target.closest('button, .toggle-switch, .lang-pill-btn, .vote-item, .counter-btn');
+        if (btn && btn.classList.contains('reaction-btn')) return;
         if (btn) _sfx.tap();
     }, {passive:true});
 
