@@ -417,16 +417,16 @@
     </div>
 
     <!-- PASSWORD MODAL -->
-    <div id="password-modal" class="modal hidden">
+   <div id="password-modal" class="modal hidden">
         <div class="modal-content">
-            <div style="font-size:3rem; margin-bottom:10px;">🔞</div>
-            <h3 style="margin-top:0; font-size:1.5rem; color:var(--danger-color);">محتوى للكبار فقط</h3>
-            <p style="color:var(--text-muted); font-size:1rem; margin-bottom:20px;">أدخل الكلمة السرية باش تكمل</p>
-            <input type="password" id="password-input" placeholder="🔑 الكلمة السرية" style="text-align:center; letter-spacing:4px;" autocomplete="off"/>
-            <p id="password-error">❌ كلمة سرية غلط!</p>
+            <div id="pw-icon-ui" style="font-size:3rem; margin-bottom:10px;"></div>
+            <h3 id="pw-title-ui" style="margin-top:0; font-size:1.5rem; color:var(--danger-color);"></h3>
+            <p id="pw-desc-ui" style="color:var(--text-muted); font-size:1rem; margin-bottom:20px;"></p>
+            <input type="password" id="password-input" style="text-align:center; letter-spacing:4px;" autocomplete="off"/>
+            <p id="password-error"></p>
             <div class="pw-remember-row">
                 <input type="checkbox" id="pw-remember-toggle"/>
-                <label for="pw-remember-toggle">ابقالي فاتح +18</label>
+                <label for="pw-remember-toggle" id="pw-rem-ui"></label>
             </div>
             <button id="password-confirm-btn" class="primary-btn" style="margin-top:20px;">تأكيد</button>
             <button id="password-cancel-btn" class="secondary-btn" style="margin-top:10px; border:none; background:transparent; color:var(--text-muted);">إلغاء</button>
