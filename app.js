@@ -1,4 +1,135 @@
+// ===== TRANSLATIONS DICTIONARY =====
+const i18n = {
+    tn: {
+        title: "🕵️‍♂️ شكونو هو؟",
+        settings_title: "ريڨلاج الطرح",
+        players_label: "👥 اساميكم:",
+        add_player_btn: "➕ زيد واحد اخر",
+        impostors_label: "🎭 قداش من كذاب",
+        timer_label: "⏱️ وقت الطرح",
+        advanced_btn: "🔧 زيد بربش",
+        adv_random: "🎲 كذابين على كيف اللعبة",
+        adv_chaos: "😈 خلوضها",
+        adv_elimination: "⚔️ نقص بالواحد بالواحد",
+        adv_nohint: "🙈 سبورة كحلة مع الكذاب",
+        adv_allhint: "💡 الكذابين الكل ياخذو نفس التلميح",
+        start_btn: "🚀 انافا",
+        reset_btn: "🔄 فسّخ ورجّع كيما كان",
+        reset_confirm: "متأكد تحب تفسّخ الأسامي الكل وترجّع كل شي كيما كان؟",
+        reveal_title: "🃏 شكون شنية",
+        reveal_instructions: "اقعد نازل على الكارتة باش تعرف دورك، كي تسيبها تعاود تدور.",
+        reveal_player_prefix: "دالّتك يا ",
+        discussion_title: "💬 وقت التقطييع والترييش",
+        vote_btn: "🗳️ سكر عليا، عرفنا البلعوط",
+        voting_title: "🗳️ الفرز",
+        who_impostor: "شكونو البلعوط؟",
+        result_title: "🏆 شكون طلع؟",
+        next_round_btn: "🔄 عاود انده",
+        done_btn: "مريڨل",
+        info_title: "ℹ️ معلومة",
+        close_btn: "فهمت",
+        player_placeholder: "اسم اللاعب",
+        card_of: "الكارتة متاع ",
+        pass_to: "هاك عرفت، عدّي للي بعدك ",
+        all_seen: "الناس الكل شافت.. ابدا العداد! 🚦",
+        starter_is: "🗣️ الي يبدا يتكلم هو: ",
+        starter_continue: "🗣️ الي يكمل يتكلم هو: ",
+        impostor_role: "أنت الكذاب 🤫",
+        citizen_role: "جوّك باهي 🤠",
+        hint_label: "التلميح:",
+        word_label: "الكلمة:",
+        edit_impostors_title: "بدّل قداش من كذاب",
+        edit_timer_title: "بدّل وقت الطرح (بالدقيقة)",
+        correct_guess: "يعطيك الصحة! 🎉 {name} طلع هو البلعوط.",
+        wrong_guess: "غالط! ❌ {name} خاطيه مسكين.",
+        impostors_were: "البلعوط (البلعوطين):",
+        word_was: "الكلمة طلعت:",
+        all_impostors_dead: "خرجتو الكذابين الكل! 🎉 المواطنين ربحو!",
+        impostors_win: "الكذابين غلبوكم وسيطرو عالطرح! 😈",
+        eliminated_msg: "طردنا {name} مالطرح!",
+        elimination_cliffhanger: "أما الطرح مازال ما وفاش... زعما طلع هو الكذاب ولا؟ مانا قايلينلكم شي! 🤐",
+        continue_discussion: "⏱️ ارجعو قطعو وريشو (دقيقة بركا)"
+    },
+    x18: {
+        title: "🕵️‍♂️ شبيك تحشي فيه؟",
+        settings_title: "ركّح زبورك للطرح",
+        players_label: "👥 اساميكم:",
+        add_player_btn: "➕ زيد قحبون آخر",
+        impostors_label: "🎭 قداش من بلعوط؟",
+        timer_label: "⏱️ وقت الطرح",
+        advanced_btn: "🔧 زيد بعبص",
+        adv_random: "🎲 اللعبة تنيك روحها أمور كذابين",
+        adv_chaos: "😈 نيك حل فترية",
+        adv_elimination: "⚔️ نيك كل واحد وحدو",
+        adv_nohint: "🙈 الكذاب عصبة ليه",
+        adv_allhint: "💡 الكذابين الكل ياخذو نفس التلميح",
+        start_btn: "🚀 قدّم نيّك",
+        reset_btn: "🔄 فسّخ ورجّع كيما كان",
+        reset_confirm: "متأكد تحب تفسّخ الأسامي الكل وترجّع كل شي كيما كان؟",
+        reveal_title: "🃏 شكون شنية",
+        reveal_instructions: "اقعد بعبص في الكارتة باش تعرف دورك، كي تسيبو يرجع عليك",
+        reveal_player_prefix: "دالّتك يا ",
+        discussion_title: "💬 وقت تنيكلها أمها",
+        vote_btn: "🗳️ سكر على زبي، عرفنا البلعوط",
+        voting_title: "🗳️ الفرز",
+        who_impostor: "شكونو هالزبور؟",
+        result_title: "🏆 شكون طلع؟",
+        next_round_btn: "🔄 عاود انده",
+        done_btn: "عصبة ليك",
+        info_title: "ℹ️ معلومة",
+        close_btn: "عصبة ليك",
+        player_placeholder: "اسم اللاعب",
+        card_of: "الكارتة متاع ",
+        pass_to: "ماك عرفت تحرك، نيك عدي للي بعدك ",
+        all_seen: "الناس الكل شافت.. ابدا العداد! 🚦",
+        starter_is: "🗣️ الي يبدا يتكلم هو: ",
+        starter_continue: "🗣️ الي يكمل يتكلم هو: ",
+        impostor_role: "يعطك عصبة راك كذاب 🤫",
+        citizen_role: "هاك حشيتو 🤠",
+        hint_label: "التلميح:",
+        word_label: "الكلمة:",
+        edit_impostors_title: "بدّل قداش من كذاب",
+        edit_timer_title: "بدّل وقت الطرح (بالدقيقة)",
+        correct_guess: "اوه على الزبي هاك طلعتو! 🎉 {name} طلع هو البلعوط.",
+        wrong_guess: "يعطك عصبة راك غالط! ❌ {name} خاطيه مسكين.",
+        impostors_were: "البلعوط (البلعوطين):",
+        word_was: "الكلمة طلعت:",
+        all_impostors_dead: "خرجتو الكذابين الكل! 🎉 المواطنين ربحو!",
+        impostors_win: "الكذابين غلبوكم وسيطرو عالطرح! 😈",
+        eliminated_msg: "طردنا {name} مالطرح!",
+        elimination_cliffhanger: "أما الطرح مازال ما وفاش... زعما طلع هو الكذاب ولا؟ مانا قايلينلكم شي! 🤐",
+        continue_discussion: "⏱️ ارجعو قطعو وريشو (دقيقة بركا)"
+    }
+};
+
+const infoDescriptions = {
+    random: {
+        tn: "اللعبة باش تختار قداش من كذاب وحدها زهر، من غير ما تاخو بالرقم الي حطيتو (الماكس شطر الملاعبية).",
+        x18: "اللعبة باش تختار قداش من منيكين وحدها زهر، من غير ما تاخو بالرقم الي حطيتو (الماكس شطر الملاعبية)."
+    },
+    chaos: {
+        tn: "فما نسبة صغيرة (حكاية 15%) الي الطرح هذا الناس الكل تطلع كذابة! خلوضة كبيرة.",
+        x18: "فما نسبة صغيرة (حكاية 15%) الي الطرح هذا الناس الكل تطلع كذابة! خلوضة كبيرة."
+    },
+    elimination: {
+        tn: "الي نصوتولو يخرج. كان طلع خاطيه، الطرح يكمل والكرونو يرجع يخدم حتى نخرجو الكذابين الكل ولا يغلبونا.",
+        x18: "الي تنيكو يخرج. كان طلع خاطيه، الطرح يكمل والكرونو يرجع يخدم حتى نخرجو البلعوطين الكل ولا يغلبونا."
+    },
+    nohint: {
+        tn: "الكذاب ما يجيه حتى تلميح في الكارتة متاعو، سبورة كحلة! يلزمو يدبر راسو ويفهم الكلمة من كلام لخرين.",
+        x18: "الكذاب ما ينيك حتى عصبة من اللعبة، لا تلميح لا زبي. يلزمو يدبر راسو ويفهم الكلمة من كلام لخرين."
+    },
+    allhint: {
+        tn: "كان فما برشا كذابين، الكلهم باش يجيهم التلميح الصحيح متاع الكلمة، باش يصعبو الطرح على العاديين.",
+        x18: "كان فما برشا كذابين، الكلهم باش يجيهم التلميح الصحيح متاع الكلمة، باش يصعبو الطرح على العاديين."
+    }
+};
+
+let currentLang = 'tn'; // Default Language
+// ============================================
+
 let wordsDB = [];
+let regularWordsDB = [];
 let adultWordsDB = [];
 let players = [];
 let currentWordObj = null;
@@ -7,374 +138,496 @@ let remainingTime = 0;
 let isEliminationMode = false;
 let noHintsMode = false;
 let currentRevealIndex = 0;
-let currentLang = 'ar'; // 'ar' | 'tn' | 'adult'
+let impostorConfig = 1;
+let timerConfig = 3;
 let playerCount = 0;
 
-// ===== TRANSLATIONS =====
-const T = {
-    ar: {
-        appTitle:           '🕵️‍♂️ من هو الدخيل؟',
-        setupTitle:         'إعدادات الجولة',
-        playerNamesLabel:   '👥 أسماء اللاعبين:',
-        addPlayerBtn:       '➕ إضافة لاعب آخر',
-        impostorCountLabel: '🎭 عدد الدخلاء:',
-        timerLabel:         '⏱️ مدة الجولة (بالدقائق):',
-        randomImpostors:    '🎲 عدد عشوائي من الدخلاء (يتجاهل الرقم المحدد أعلاه)',
-        allImpostors:       '😈 تفعيل فرصة "الجميع دخلاء" عشوائياً',
-        eliminationMode:    '⚔️ وضع الاستبعاد (اللعبة تستمر بعد التصويت الخاطئ)',
-        noHints:            '🙈 إخفاء التلميح عن الدخيل',
-        allCorrectHints:    '💡 منح جميع الدخلاء التلميح الصحيح',
-        startGameBtn:       '🚀 بدء اللعبة',
-        revealTitle:        '🃏 توزيع الأدوار',
-        revealInstructions: 'اضغط مطولاً على البطاقة لمعرفة دورك، عند إفلات الضغط ستختفي البطاقة.',
-        timerTitle:         '💬 وقت النقاش',
-        goVoteBtn:          '🗳️ إنهاء النقاش والتصويت',
-        votingTitle:        '🗳️ التصويت',
-        votingSubtitle:     'من تعتقدون أنه الدخيل؟',
-        resultTitle:        '🏆 النتيجة',
-        nextRound:          '🔄 متابعة / جولة جديدة',
-        currentTurn:        (n) => `الدور الحالي: يا ${n}`,
-        cardFront:          (n) => `بطاقة ${n}`,
-        impostorCard:       (h) => `أنت الدخيل 🤫<br><br><span style="font-size:16px;">التلميح:</span><br>${h}`,
-        impostorCardNoHint: ()  => `أنت الدخيل 🤫`,
-        citizenCard:        (w) => `أنت مواطن 🤠<br><br><span style="font-size:16px;">الكلمة:</span><br>${w}`,
-        nextPlayerBtn:      (n) => `تمت الرؤية.. مرر الهاتف لـ ${n}`,
-        startTimerBtn:      ()  => `الجميع رأى دوره.. ابدأ العداد! 🚦`,
-        correctVote:        (n) => `إجابة صحيحة! 🎉 ${n} كان الدخيل.`,
-        wrongVote:          (n) => `إجابة خاطئة! ❌ ${n} ليس الدخيل.`,
-        impostorsLabel:     'الدخيل (الدخلاء):',
-        wordWas:            (w) => `الكلمة كانت: <strong>${w}</strong>`,
-        newRound:           '🔄 جولة جديدة',
-        continueVoting:     '⏱️ متابعة النقاش والتصويت (دقيقة واحدة)',
-        eliminatedMsg:      (n) => `تم استبعاد ${n}!`,
-        gameNotOver:        'لكن اللعبة لم تنتهِ بعد... هل كان هو الدخيل أم لا؟ لن نخبركم! 🤐',
-        citizensWin:        'لقد قضيتم على جميع الدخلاء! 🎉 فاز المواطنون!',
-        impostorsWin:       'سيطر الدخلاء على اللعبة! 😈 فاز الدخلاء!',
-        voteFor:            (n) => `🗳️ ${n}`,
-        loadingError:       'جاري تحميل الكلمات، يرجى الانتظار والمحاولة مجدداً.',
-        minPlayersError:    'يجب أن يكون هناك 3 لاعبين على الأقل.',
-        impostorCountError: 'عدد الدخلاء يجب أن يكون أقل من عدد اللاعبين.',
-    },
-
-    tn: {
-        appTitle:           '🕵️‍♂️ شكونو هو؟',
-        setupTitle:         'ريقلاج الطرح',
-        playerNamesLabel:   '👥 اساميكم:',
-        addPlayerBtn:       '➕ زيد واحد اخر',
-        impostorCountLabel: 'قداش من كذاب؟',
-        timerLabel:         'وقت الطرح (بالدقايق):',
-        randomImpostors:    '🎲 زيد بربش (زهر، من غير ما تاخو بالرقم الي حطيتو - الماكس شطر الملاعبية)',
-        allImpostors:       '😈 كذابين على كيف اللعبة (فما نسبة صغيرة - 15%)',
-        eliminationMode:    '⚔️ نقص بالواحد بالواحد (الي نصوتولو يخرج، الطرح يكمل)',
-        noHints:            '🙈 سبورة كحلة مع الكذاب (ما يجيه حتى تلميح)',
-        allCorrectHints:    '💡 الكذاب ما يجيه تلميح - يدبر راسو من كلام لخرين',
-        startGameBtn:       'انافا 🚀',
-        revealTitle:        '🃏 توزيع الأدوار',
-        revealInstructions: 'اقعد نازل على الكارتة باش تعرف دورك، كي تسيبها تعاود تدور.',
-        timerTitle:         'وقت التقطييع والترييش 💬',
-        goVoteBtn:          '🗳️ سكر عليا ونصوتو',
-        votingTitle:        'سكر عليا، عرفنا الكذاب',
-        votingSubtitle:     'شكونو البلعوط؟',
-        resultTitle:        '🏆 النتيجة',
-        nextRound:          '🔄 طرح جديد',
-        currentTurn:        (n) => `دالّتك يا ${n}`,
-        cardFront:          (n) => `بطاقة ${n}`,
-        impostorCard:       (h) => `انت الكذاب 🤫<br><br><span style="font-size:16px;">التلميح:</span><br>${h}`,
-        impostorCardNoHint: ()  => `انت الكذاب 🤫`,
-        citizenCard:        (w) => `أنت مواطن 🤠<br><br><span style="font-size:16px;">الكلمة:</span><br>${w}`,
-        nextPlayerBtn:      (n) => `هاك عرفت، عدي للي بعدك: ${n}`,
-        startTimerBtn:      ()  => `هاك عرفت عدي الكل! ابدا العداد 🚦`,
-        correctVote:        (n) => `يعطيك الصحة! 🎉 ${n} كان الكذاب.`,
-        wrongVote:          (n) => `غالط! ❌ ${n} مش هو.`,
-        impostorsLabel:     'الكذاب (الكذابين):',
-        wordWas:            (w) => `الكلمة كانت: <strong>${w}</strong>`,
-        newRound:           '🔄 طرح جديد',
-        continueVoting:     '⏱️ عصبتكم (دقيقة واحدة)',
-        eliminatedMsg:      (n) => `خرج ${n}!`,
-        gameNotOver:        'اللعبة ما كملتش... هل كان هو الكذاب؟ ما نقولكمش! 🤐',
-        citizensWin:        'قضيتو على الكذابين! 🎉 فازو المواطنين!',
-        impostorsWin:       'الكذابين غلبونا! 😈 فازو الكذابين!',
-        voteFor:            (n) => `🗳️ ${n}`,
-        loadingError:       'جاري تحميل الكلمات، إستنو شوية وعاودو.',
-        minPlayersError:    'يلزم على الأقل 3 ملاعبية.',
-        impostorCountError: 'عدد الكذابين يلزم يكون أقل من عدد الملاعبية.',
-    },
-
-    adult: {
-        appTitle:           '🔞 شبيك تحشي فيه؟',
-        setupTitle:         'ركّح زبورم الطرح',
-        playerNamesLabel:   '👥 اساميكم:',
-        addPlayerBtn:       '➕ زيد قحبون آخر',
-        impostorCountLabel: 'قداش من بلعوط؟',
-        timerLabel:         'وقت الطرح (بالدقايق):',
-        randomImpostors:    '🎲 زيد بعبص (زهر، من غير ما تاخو بالرقم الي حطيتو - الماكس شطر الملاعبية)',
-        allImpostors:       '😈 اللعبة تنيك روحها أمور كذابين (فما نسبة صغيرة - 15%)',
-        eliminationMode:    '⚔️ نيك كل واحد وحدو (الي نصوتولو يخرج، الطرح يكمل)',
-        noHints:            '🙈 الكذاب عصبة ليه (سبورة كحلة - ما يجيه حتى تلميح)',
-        allCorrectHints:    '💡 الكلمة تو (الكذاب ما يجيه تلميح - يدبر راسو)',
-        startGameBtn:       'قدّم نيّك 🚀',
-        revealTitle:        '🔞 توزيع الأدوار',
-        revealInstructions: 'اقعد بعبص في الكارتة باش تعرف دورك، كي تسيبو يرجع عليك.',
-        timerTitle:         'وقت تنيكلها أمها 💬',
-        goVoteBtn:          '🗳️ سكر على زبي ونصوتو',
-        votingTitle:        'سكر على زبي، عرفنا البلعوط',
-        votingSubtitle:     'شكونو هالزبور؟',
-        resultTitle:        '🏆 النتيجة',
-        nextRound:          '🔄 طرح جديد',
-        currentTurn:        (n) => `عصبتك يا ${n}`,
-        cardFront:          (n) => `بطاقة ${n}`,
-        impostorCard:       (_) => `يعطك عصبة راك كذاب 🤫<br><br><span style="font-size:14px;opacity:0.75;">سبورة كحلة! دبّر راسك من كلام لخرين.</span>`,
-        impostorCardNoHint: ()  => `يعطك عصبة راك كذاب 🤫`,
-        citizenCard:        (w) => `أنت مواطن 🤠<br><br><span style="font-size:16px;">الكلمة:</span><br>${w}`,
-        nextPlayerBtn:      (n) => `هاك حشيتو.. زيد الهاتف لـ ${n}`,
-        startTimerBtn:      ()  => `ماك عرفت تحرك نيك عدي للي بعدك! 🚦`,
-        correctVote:        (n) => `اوه على الزبي هاك طلعتو! 🎉 ${n} كان البلعوط.`,
-        wrongVote:          (n) => `يعطك عصبة راك غالط! ❌ ${n} مش هو.`,
-        impostorsLabel:     'البلعوط (البلاعيط):',
-        wordWas:            (w) => `الكلمة كانت: <strong>${w}</strong>`,
-        newRound:           '🔄 طرح جديد',
-        continueVoting:     '⏱️ عصبتكم (دقيقة واحدة)',
-        eliminatedMsg:      (n) => `خرج ${n}!`,
-        gameNotOver:        'اللعبة ما كملتش... هل كان هو البلعوط؟ ما نقولكمش! 🤐',
-        citizensWin:        'قضيتو على البلاعيط! 🎉 فازو المواطنين!',
-        impostorsWin:       'الكذابين غلبونا! 😈 فازو البلاعيط!',
-        voteFor:            (n) => `🗳️ ${n}`,
-        loadingError:       'جاري تحميل الكلمات، إستنو شوية وعاودو.',
-        minPlayersError:    'يلزم على الأقل 3 ملاعبية.',
-        impostorCountError: 'عدد الكذابين يلزم يكون أقل من عدد الملاعبية.',
+// ====== LOCAL DB LOGIC (IndexedDB - Strictly Per Device, Prevents Cloud Sync) ======
+const dbPromise = new Promise((resolve, reject) => {
+    try {
+        const request = indexedDB.open('DakheelLocalDB', 1);
+        request.onupgradeneeded = (e) => {
+            e.target.result.createObjectStore('settingsStore');
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => resolve(null); // Fallback gracefully if Private Mode blocks it
+    } catch (e) {
+        resolve(null);
     }
-};
+});
 
-function t(key) {
-    return (T[currentLang] && T[currentLang][key] !== undefined) ? T[currentLang][key] : (T.ar[key] || '');
+async function saveSettings() {
+    const playerInputs = Array.from(document.querySelectorAll('.player-input')).map(input => input.value);
+    const settings = {
+        players: playerInputs,
+        impostors: impostorConfig,
+        timer: timerConfig,
+        lang: currentLang,
+        randomImpostors: document.getElementById('random-impostors-toggle').checked,
+        chaos: document.getElementById('all-impostors-toggle').checked,
+        elimination: document.getElementById('elimination-mode').checked,
+        noHints: document.getElementById('no-hints-toggle').checked,
+        allCorrect: document.getElementById('all-correct-hints-toggle').checked
+    };
+    
+    try {
+        const db = await dbPromise;
+        if (!db) return;
+        const tx = db.transaction('settingsStore', 'readwrite');
+        tx.objectStore('settingsStore').put(settings, 'game_settings');
+    } catch (e) { console.warn("Saving to local device failed", e); }
 }
 
-// ===== APPLY TRANSLATIONS TO DOM =====
+async function loadSettings() {
+    try {
+        const db = await dbPromise;
+        if (!db) return null;
+        return new Promise((resolve) => {
+            const tx = db.transaction('settingsStore', 'readonly');
+            const req = tx.objectStore('settingsStore').get('game_settings');
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => resolve(null);
+        });
+    } catch (e) {
+        return null;
+    }
+}
+
+// Language Toggle Function
 function applyTranslations() {
     document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.dataset.i18n;
-        const val = T[currentLang][key];
-        if (val !== undefined && typeof val !== 'function') el.innerHTML = val;
+        const key = el.getAttribute('data-i18n');
+        if (i18n[currentLang] && i18n[currentLang][key]) el.innerText = i18n[currentLang][key];
+    });
+    
+    document.querySelectorAll('.player-input').forEach(input => {
+        input.placeholder = i18n[currentLang].player_placeholder;
     });
 
-    const noHintsToggle    = document.getElementById('no-hints-toggle');
-    const allCorrectToggle = document.getElementById('all-correct-hints-toggle');
-    const noHintsLabel     = noHintsToggle ? noHintsToggle.nextElementSibling : null;
-    const allCorrectLabel  = allCorrectToggle ? allCorrectToggle.nextElementSibling : null;
+    // Update pill selector active state
+    document.querySelectorAll('.lang-pill-btn').forEach(b => {
+        if (b.getAttribute('data-lang') === currentLang) b.classList.add('active');
+        else b.classList.remove('active');
+    });
 
-    if (currentLang === 'adult') {
-        // Force-lock hint toggles in adult mode
-        if (noHintsToggle) {
-            noHintsToggle.checked  = true;
-            noHintsToggle.disabled = true;
-            noHintsToggle.classList.add('input-disabled');
-            if (noHintsLabel) noHintsLabel.classList.add('label-disabled');
-        }
-        if (allCorrectToggle) {
-            allCorrectToggle.checked  = false;
-            allCorrectToggle.disabled = true;
-            allCorrectToggle.classList.add('input-disabled');
-            if (allCorrectLabel) allCorrectLabel.classList.add('label-disabled');
-        }
-    } else {
-        // Restore hint toggles for ar / tn
-        if (noHintsToggle && !noHintsToggle.checked) {
-            noHintsToggle.disabled = false;
-            noHintsToggle.classList.remove('input-disabled');
-            if (noHintsLabel) noHintsLabel.classList.remove('label-disabled');
-        }
-        if (allCorrectToggle && !noHintsToggle.checked) {
-            allCorrectToggle.disabled = false;
-            allCorrectToggle.classList.remove('input-disabled');
-            if (allCorrectLabel) allCorrectLabel.classList.remove('label-disabled');
-        }
-        // If switching away from adult, uncheck no-hints
-        if (noHintsToggle) {
-            noHintsToggle.checked  = false;
-            noHintsToggle.disabled = false;
-            noHintsToggle.classList.remove('input-disabled');
-            if (noHintsLabel) noHintsLabel.classList.remove('label-disabled');
-        }
-        if (allCorrectToggle) {
-            allCorrectToggle.disabled = false;
-            allCorrectToggle.classList.remove('input-disabled');
-            if (allCorrectLabel) allCorrectLabel.classList.remove('label-disabled');
-        }
+    // Apply +18 body class for theming
+    document.body.classList.toggle('lang-x18', currentLang === 'x18');
+
+    const modalTitle = document.getElementById('modal-title');
+    if (modalTitle && (modalTitle.innerText.includes("تعديل") || modalTitle.innerText.includes("بدّل"))) {
+        modalTitle.innerText = editingWhat === 'impostors' 
+            ? i18n[currentLang].edit_impostors_title 
+            : i18n[currentLang].edit_timer_title;
     }
 }
 
-function setLanguage(lang) {
-    currentLang = lang;
-    document.getElementById('lang-ar-btn').classList.toggle('lang-active', lang === 'ar');
-    document.getElementById('lang-tn-btn').classList.toggle('lang-active', lang === 'tn');
-    document.getElementById('lang-adult-btn').classList.toggle('lang-active', lang === 'adult');
-    applyTranslations();
-}
-
-// ===== PLAYER INPUTS =====
-function addPlayerInput(defaultName = '') {
-    const container = document.getElementById('players-inputs-container');
-    if (!container) return;
+function addPlayerInput(savedName = '') {
+    const playersContainer = document.getElementById('players-inputs-container');
+    if (!playersContainer) return;
     playerCount++;
     const row = document.createElement('div');
     row.className = 'player-input-row';
     const input = document.createElement('input');
     input.type = 'text';
     input.className = 'player-input';
-    input.value = defaultName || `لاعب ${playerCount}`;
-    input.placeholder = 'اسم اللاعب';
+    input.value = savedName; 
+    input.placeholder = i18n[currentLang].player_placeholder;
+    
+    input.addEventListener('input', saveSettings);
+
     const removeBtn = document.createElement('button');
     removeBtn.type = 'button';
     removeBtn.className = 'remove-player-btn danger-btn';
     removeBtn.innerHTML = '✖';
-    removeBtn.addEventListener('click', () => row.remove());
+    removeBtn.addEventListener('click', () => { 
+        row.remove(); 
+        saveSettings(); 
+    });
+    
     row.appendChild(input);
     row.appendChild(removeBtn);
-    container.appendChild(row);
+    playersContainer.appendChild(row);
 }
 
-// ===== DOMContentLoaded =====
-window.addEventListener('DOMContentLoaded', () => {
-    for (let i = 1; i <= 4; i++) addPlayerInput(`لاعب ${i}`);
+let editingWhat = '';
+let tempVal = 1;
 
-    // Advanced panel
-    const advBtn   = document.getElementById('advanced-toggle-btn');
+window.addEventListener('DOMContentLoaded', async () => {
+    
+    // Apply default language first to prevent flashing
+    applyTranslations();
+
+    // 1. Load Settings strictly from the local device hardware
+    const parsed = await loadSettings();
+    
+    if (parsed) {
+        // Never auto-restore +18 — password must be re-entered each session
+        currentLang = (parsed.lang && parsed.lang !== 'x18') ? parsed.lang : 'tn';
+        
+        // Load checkboxes
+        document.getElementById('random-impostors-toggle').checked = !!parsed.randomImpostors;
+        document.getElementById('all-impostors-toggle').checked = !!parsed.chaos;
+        document.getElementById('elimination-mode').checked = !!parsed.elimination;
+        document.getElementById('no-hints-toggle').checked = !!parsed.noHints;
+        document.getElementById('all-correct-hints-toggle').checked = !!parsed.allCorrect;
+
+        // Load configs
+        impostorConfig = parsed.impostors || 1;
+        timerConfig = parsed.timer || 3;
+
+        // Load players
+        if (parsed.players && parsed.players.length > 0) {
+            parsed.players.forEach(name => addPlayerInput(name));
+        } else {
+            for (let i = 1; i <= 4; i++) addPlayerInput();
+        }
+    } else {
+        // If brand new device, add 4 empty inputs
+        for (let i = 1; i <= 4; i++) addPlayerInput();
+    }
+
+    document.getElementById('val-impostors').innerText = impostorConfig;
+    document.getElementById('val-timer').innerText = timerConfig.toString().padStart(2, '0') + ':00';
+
+    applyTranslations(); // Re-apply in case it was loaded as 'ar' from DB
+
+    // Trigger visual UI rules
+    document.getElementById('random-impostors-toggle').dispatchEvent(new Event('change'));
+    document.getElementById('no-hints-toggle').dispatchEvent(new Event('change'));
+    document.getElementById('all-correct-hints-toggle').dispatchEvent(new Event('change'));
+
+    // Listen to Checkbox changes to save them instantly
+    document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        cb.addEventListener('change', saveSettings);
+    });
+
+    // Language Pill Selector Logic
+    document.querySelectorAll('.lang-pill-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const lang = btn.getAttribute('data-lang');
+            if (lang === 'x18') {
+                // Show password modal
+                const pwModal = document.getElementById('password-modal');
+                const pwInput = document.getElementById('password-input');
+                const pwError = document.getElementById('password-error');
+                pwInput.value = '';
+                pwError.style.display = 'none';
+                pwModal.classList.remove('hidden');
+                setTimeout(() => { pwModal.classList.add('active'); pwInput.focus(); }, 10);
+            } else {
+                currentLang = lang;
+                applyTranslations();
+                saveSettings();
+            }
+        });
+    });
+
+    // Password modal logic
+    const pwModal = document.getElementById('password-modal');
+    const pwInput = document.getElementById('password-input');
+    const pwError = document.getElementById('password-error');
+
+    function closePwModal() {
+        pwModal.classList.remove('active');
+        setTimeout(() => pwModal.classList.add('hidden'), 300);
+    }
+
+    document.getElementById('password-confirm-btn').addEventListener('click', () => {
+        if (pwInput.value === 'simba') {
+            currentLang = 'x18';
+            applyTranslations();
+            saveSettings();
+            closePwModal();
+        } else {
+            pwError.style.display = 'block';
+            pwInput.value = '';
+            pwInput.focus();
+            pwInput.classList.add('shake-input');
+            setTimeout(() => pwInput.classList.remove('shake-input'), 400);
+        }
+    });
+
+    document.getElementById('password-cancel-btn').addEventListener('click', closePwModal);
+
+    pwInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') document.getElementById('password-confirm-btn').click();
+    });
+
+    // Reset Default Settings Logic
+    document.getElementById('reset-settings-btn').addEventListener('click', async () => {
+        if (!confirm(i18n[currentLang].reset_confirm)) return;
+
+        // Wipe DB
+        try {
+            const db = await dbPromise;
+            if (db) {
+                const tx = db.transaction('settingsStore', 'readwrite');
+                tx.objectStore('settingsStore').delete('game_settings');
+            }
+        } catch (e) { console.warn("Failed to clear DB", e); }
+
+        // Reset JS Variables
+        impostorConfig = 1;
+        timerConfig = 3;
+
+        // Reset Checkboxes
+        document.getElementById('random-impostors-toggle').checked = false;
+        document.getElementById('all-impostors-toggle').checked = false;
+        document.getElementById('elimination-mode').checked = false;
+        document.getElementById('no-hints-toggle').checked = false;
+        document.getElementById('all-correct-hints-toggle').checked = false;
+
+        // Reset Config Visuals
+        document.getElementById('val-impostors').innerText = '1';
+        document.getElementById('val-timer').innerText = '03:00';
+
+        // Trigger visual UI rules
+        document.getElementById('random-impostors-toggle').dispatchEvent(new Event('change'));
+        document.getElementById('no-hints-toggle').dispatchEvent(new Event('change'));
+
+        // Reset Players
+        const playersContainer = document.getElementById('players-inputs-container');
+        playersContainer.innerHTML = '';
+        playerCount = 0;
+        for (let i = 1; i <= 4; i++) addPlayerInput();
+
+        // Save fresh empty state just in case
+        saveSettings();
+    });
+
+    // Modals
+    const editModal = document.getElementById('edit-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalVal = document.getElementById('modal-val');
+
+    const openImpostorsModal = (e) => {
+        if(e) e.preventDefault();
+        if(document.getElementById('random-impostors-toggle').checked) return;
+        editingWhat = 'impostors';
+        tempVal = impostorConfig;
+        modalTitle.innerText = i18n[currentLang].edit_impostors_title;
+        modalVal.innerText = tempVal;
+        editModal.classList.remove('hidden');
+        setTimeout(() => editModal.classList.add('active'), 10);
+    };
+
+    const openTimerModal = (e) => {
+        if(e) e.preventDefault();
+        editingWhat = 'timer';
+        tempVal = timerConfig;
+        modalTitle.innerText = i18n[currentLang].edit_timer_title;
+        modalVal.innerText = tempVal;
+        editModal.classList.remove('hidden');
+        setTimeout(() => editModal.classList.add('active'), 10);
+    };
+
+    document.getElementById('btn-edit-impostors').addEventListener('click', openImpostorsModal);
+    document.getElementById('btn-edit-impostors').addEventListener('touchstart', openImpostorsModal, { passive: false });
+    document.getElementById('btn-edit-timer').addEventListener('click', openTimerModal);
+    document.getElementById('btn-edit-timer').addEventListener('touchstart', openTimerModal, { passive: false });
+
+    const handleMinus = (e) => { if(e) e.preventDefault(); if (tempVal > 1) tempVal--; modalVal.innerText = tempVal; };
+    const handlePlus = (e) => { if(e) e.preventDefault(); tempVal++; modalVal.innerText = tempVal; };
+    document.getElementById('btn-minus').addEventListener('click', handleMinus);
+    document.getElementById('btn-minus').addEventListener('touchstart', handleMinus, { passive: false });
+    document.getElementById('btn-plus').addEventListener('click', handlePlus);
+    document.getElementById('btn-plus').addEventListener('touchstart', handlePlus, { passive: false });
+
+    const handleConfirm = (e) => {
+        if(e) e.preventDefault();
+        if (editingWhat === 'impostors') {
+            impostorConfig = tempVal;
+            document.getElementById('val-impostors').innerText = impostorConfig;
+        } else {
+            timerConfig = tempVal;
+            document.getElementById('val-timer').innerText = timerConfig.toString().padStart(2, '0') + ':00';
+        }
+        saveSettings(); // Save configs locally
+        editModal.classList.remove('active');
+        setTimeout(() => editModal.classList.add('hidden'), 300);
+    };
+    document.getElementById('btn-confirm').addEventListener('click', handleConfirm);
+    document.getElementById('btn-confirm').addEventListener('touchstart', handleConfirm, { passive: false });
+
+    // Advanced Panel toggle
+    const advBtn = document.getElementById('advanced-toggle-btn');
     const advPanel = document.getElementById('advanced-panel');
-    const chevron  = document.getElementById('advanced-chevron');
+    const chevron = document.getElementById('advanced-chevron');
     advBtn.addEventListener('click', () => {
         const isOpen = advPanel.classList.toggle('open');
         chevron.classList.toggle('open', isOpen);
     });
 
-    // Random impostors toggle
-    const randomToggle  = document.getElementById('random-impostors-toggle');
-    const impostorInput = document.getElementById('impostor-count');
-    const impostorLabel = document.querySelector('label[for="impostor-count"]');
-    randomToggle.addEventListener('change', function () {
-        impostorInput.disabled = this.checked;
-        impostorInput.classList.toggle('input-disabled', this.checked);
-        if (impostorLabel) impostorLabel.classList.toggle('label-disabled', this.checked);
+    // Info Modal Logic
+    const infoModal = document.getElementById('info-modal');
+    const infoText = document.getElementById('info-modal-text');
+    
+    document.querySelectorAll('.info-icon').forEach(icon => {
+        const openInfo = (e) => {
+            if(e) e.preventDefault();
+            const infoKey = e.target.getAttribute('data-info');
+            infoText.innerText = infoDescriptions[infoKey][currentLang];
+            infoModal.classList.remove('hidden');
+            setTimeout(() => infoModal.classList.add('active'), 10);
+        };
+        icon.addEventListener('click', openInfo);
+        icon.addEventListener('touchstart', openInfo, { passive: false });
     });
 
-    // noHints ↔ allCorrectHints mutual exclusion (only in non-adult mode)
-    const noHintsToggle    = document.getElementById('no-hints-toggle');
+    const closeInfo = (e) => {
+        if(e) e.preventDefault();
+        infoModal.classList.remove('active');
+        setTimeout(() => infoModal.classList.add('hidden'), 300);
+    };
+    document.getElementById('close-info-btn').addEventListener('click', closeInfo);
+    document.getElementById('close-info-btn').addEventListener('touchstart', closeInfo, { passive: false });
+
+    // Rules logic
+    const randomToggle = document.getElementById('random-impostors-toggle');
+    const impCard = document.getElementById('btn-edit-impostors');
+    randomToggle.addEventListener('change', function () { impCard.classList.toggle('input-disabled', this.checked); });
+
+    const noHintsToggle = document.getElementById('no-hints-toggle');
     const allCorrectToggle = document.getElementById('all-correct-hints-toggle');
     noHintsToggle.addEventListener('change', function () {
-        if (currentLang === 'adult') return;
-        allCorrectToggle.checked  = false;
-        allCorrectToggle.disabled = this.checked;
-        allCorrectToggle.classList.toggle('input-disabled', this.checked);
-        allCorrectToggle.nextElementSibling.classList.toggle('label-disabled', this.checked);
+        if (this.checked) {
+            allCorrectToggle.checked = false;
+            allCorrectToggle.disabled = true;
+            allCorrectToggle.classList.add('input-disabled');
+            allCorrectToggle.nextElementSibling.classList.add('label-disabled');
+        } else {
+            allCorrectToggle.disabled = false;
+            allCorrectToggle.classList.remove('input-disabled');
+            allCorrectToggle.nextElementSibling.classList.remove('label-disabled');
+        }
     });
     allCorrectToggle.addEventListener('change', function () {
-        if (currentLang === 'adult') return;
-        noHintsToggle.checked  = false;
-        noHintsToggle.disabled = this.checked;
-        noHintsToggle.classList.toggle('input-disabled', this.checked);
-        noHintsToggle.nextElementSibling.classList.toggle('label-disabled', this.checked);
-    });
-
-    // ===== LANGUAGE BUTTONS =====
-    document.getElementById('lang-ar-btn').addEventListener('click', () => setLanguage('ar'));
-    document.getElementById('lang-tn-btn').addEventListener('click', () => setLanguage('tn'));
-    document.getElementById('lang-adult-btn').addEventListener('click', () => {
-        openPasswordModal();
-    });
-
-    // ===== PASSWORD MODAL =====
-    const pwModal  = document.getElementById('pw-modal');
-    const pwInput  = document.getElementById('pw-input');
-    const pwError  = document.getElementById('pw-error');
-    const pwSubmit = document.getElementById('pw-submit');
-    const pwCancel = document.getElementById('pw-cancel');
-
-    function openPasswordModal() {
-        pwInput.value = '';
-        pwError.textContent = '';
-        pwModal.classList.remove('hidden');
-        setTimeout(() => pwInput.focus(), 80);
-    }
-
-    function closePasswordModal() {
-        pwModal.classList.add('hidden');
-    }
-
-    function tryUnlock() {
-        if (pwInput.value === 'simba') {
-            closePasswordModal();
-            setLanguage('adult');
+        if (this.checked) {
+            noHintsToggle.checked = false;
+            noHintsToggle.disabled = true;
+            noHintsToggle.classList.add('input-disabled');
+            noHintsToggle.nextElementSibling.classList.add('label-disabled');
         } else {
-            pwError.textContent = '❌ كلمة السر غلط';
-            pwInput.value = '';
-            pwInput.classList.add('pw-shake');
-            setTimeout(() => pwInput.classList.remove('pw-shake'), 500);
+            noHintsToggle.disabled = false;
+            noHintsToggle.classList.remove('input-disabled');
+            noHintsToggle.nextElementSibling.classList.remove('label-disabled');
         }
-    }
-
-    pwSubmit.addEventListener('click', tryUnlock);
-    pwInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') tryUnlock(); });
-    pwCancel.addEventListener('click', closePasswordModal);
-    pwModal.addEventListener('click', (e) => { if (e.target === pwModal) closePasswordModal(); });
+    });
 });
 
-// Add player button
-document.getElementById('add-player-btn').addEventListener('click', () => addPlayerInput());
+document.getElementById('add-player-btn').addEventListener('click', () => { 
+    addPlayerInput(); 
+    saveSettings(); 
+});
 
-// ===== LOAD WORD LISTS =====
 fetch('word list.json', { cache: 'no-store' })
     .then(r => r.json())
-    .then(data => { wordsDB = data; })
-    .catch(err => console.error('Error loading word list:', err));
+    .then(data => { regularWordsDB = data; })
+    .catch(err => console.error("Error loading regular words:", err));
 
-fetch('adult word list.json', { cache: 'no-store' })
+fetch('adult_word_list.json', { cache: 'no-store' })
     .then(r => r.json())
-    .then(data => {
-        adultWordsDB = data.flat().filter(item => item && typeof item === 'object' && item.word);
-    })
-    .catch(err => console.error('Error loading adult word list:', err));
+    .then(data => { adultWordsDB = data; })
+    .catch(err => console.error("Error loading adult words:", err));
 
-// ===== SCREEN NAV =====
-function showScreen(id) {
+function showScreen(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
+    document.getElementById(screenId).classList.add('active');
 }
 
-// ===== START GAME =====
+function triggerAnimation(type) {
+    const overlay = document.createElement('div');
+
+    if (type === 'win') {
+        overlay.className = 'anim-win-overlay';
+        document.body.appendChild(overlay);
+
+        // Burst particles
+        const winEmojis = ['🎉','🏆','🎊','⭐','✨','🎈','🥳','🌟','💫','🎆','🎇','🏅','🌈','💥'];
+        const count = 14;
+        for (let i = 0; i < count; i++) {
+            const p = document.createElement('div');
+            p.className = 'win-particle';
+            p.innerText = winEmojis[i % winEmojis.length];
+            const angle = (i / count) * 2 * Math.PI + (Math.random() - 0.5) * 0.5;
+            const dist  = 100 + Math.random() * 130;
+            p.style.setProperty('--dx',    (Math.cos(angle) * dist).toFixed(1) + 'px');
+            p.style.setProperty('--dy',    (Math.sin(angle) * dist).toFixed(1) + 'px');
+            p.style.setProperty('--rot',   (Math.random() * 720 - 360).toFixed(0) + 'deg');
+            p.style.setProperty('--delay', (Math.random() * 0.28).toFixed(2) + 's');
+            overlay.appendChild(p);
+        }
+
+        // Big center emoji
+        const center = document.createElement('div');
+        center.className = 'win-center';
+        center.innerText = '🎉';
+        overlay.appendChild(center);
+
+        setTimeout(() => { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 2800);
+
+    } else {
+        overlay.className = 'anim-lose-overlay';
+        document.body.appendChild(overlay);
+
+        // Falling skull
+        const center = document.createElement('div');
+        center.className = 'lose-center';
+        center.innerText = '💀';
+        overlay.appendChild(center);
+
+        // Shake the container
+        const container = document.querySelector('.container');
+        container.classList.add('shake-container');
+        setTimeout(() => container.classList.remove('shake-container'), 600);
+
+        setTimeout(() => { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 2800);
+    }
+}
+
 document.getElementById('start-game-btn').addEventListener('click', () => {
+    saveSettings(); // Ensure settings are saved right before starting
+
     const namesInput = Array.from(document.querySelectorAll('.player-input'))
-                           .map(i => i.value.trim()).filter(n => n !== '');
+                           .map((input, idx) => input.value.trim() || `لاعب ${idx + 1}`);
 
-    let impostorCount        = parseInt(document.getElementById('impostor-count').value);
-    const isRandomImpostors  = document.getElementById('random-impostors-toggle').checked;
+    let impostorCount = impostorConfig;
+    const isRandomImpostors = document.getElementById('random-impostors-toggle').checked;
     const allImpostorsToggle = document.getElementById('all-impostors-toggle').checked;
-    const timeMins           = parseInt(document.getElementById('timer-minutes').value);
-    isEliminationMode        = document.getElementById('elimination-mode').checked;
-    noHintsMode              = document.getElementById('no-hints-toggle').checked;
-    const allCorrectHints    = document.getElementById('all-correct-hints-toggle').checked;
+    const timeMins = timerConfig;
+    
+    isEliminationMode = document.getElementById('elimination-mode').checked;
+    noHintsMode = document.getElementById('no-hints-toggle').checked || currentLang === 'x18';
+    const allCorrectHints = document.getElementById('all-correct-hints-toggle').checked;
 
-    const effectiveNoHints = noHintsMode || currentLang === 'adult';
-    const activeDB         = currentLang === 'adult' ? adultWordsDB : wordsDB;
+    // Pick the right word list
+    wordsDB = currentLang === 'x18' ? adultWordsDB : regularWordsDB;
 
     if (namesInput.length < 3) {
-        document.getElementById('setup-error').innerText = t('minPlayersError'); return;
+        document.getElementById('setup-error').innerText = "يجب أن يكون هناك 3 لاعبين على الأقل.";
+        return;
     }
+
     if (isRandomImpostors) {
-        impostorCount = Math.floor(Math.random() * Math.floor(namesInput.length / 2)) + 1;
-    } else {
-        if (impostorCount >= namesInput.length) {
-            document.getElementById('setup-error').innerText = t('impostorCountError'); return;
-        }
+        const maxImpostors = Math.floor(namesInput.length / 2);
+        impostorCount = Math.floor(Math.random() * maxImpostors) + 1;
+    } else if (impostorCount >= namesInput.length) {
+        document.getElementById('setup-error').innerText = "عدد الدخلاء يجب أن يكون أقل من عدد اللاعبين.";
+        return;
     }
-    if (activeDB.length === 0) {
-        document.getElementById('setup-error').innerText = t('loadingError'); return;
+
+    if (wordsDB.length === 0) {
+        document.getElementById('setup-error').innerText = "جاري تحميل الكلمات، يرجى الانتظار والمحاولة مجدداً.";
+        return;
     }
-    document.getElementById('setup-error').innerText = '';
+
+    document.getElementById('setup-error').innerText = "";
 
     players = namesInput.map(name => ({
-        name, isImpostor: false, customHint: '', eliminated: false, viewedCard: false
+        name, isImpostor: false, customHint: "", eliminated: false, viewedCard: false
     }));
 
-    currentWordObj = activeDB[Math.floor(Math.random() * activeDB.length)];
+    currentWordObj = wordsDB[Math.floor(Math.random() * wordsDB.length)];
 
     const isAllImpostorRound = allImpostorsToggle && Math.random() < 0.15;
     if (isAllImpostorRound) {
@@ -385,57 +638,53 @@ document.getElementById('start-game-btn').addEventListener('click', () => {
     }
 
     const impostorPlayers = players.filter(p => p.isImpostor);
-    if (!effectiveNoHints) {
-        if (allCorrectHints) {
-            impostorPlayers.forEach(p => { p.customHint = currentWordObj.hint; });
-        } else if (impostorPlayers.length <= 1) {
-            if (impostorPlayers.length === 1) impostorPlayers[0].customHint = currentWordObj.hint;
-        } else {
-            const luckyIndex = Math.floor(Math.random() * impostorPlayers.length);
-            const wrongHints = activeDB.filter(w => w.word !== currentWordObj.word)
-                                       .map(w => w.hint).sort(() => 0.5 - Math.random());
-            let hIdx = 0;
-            for (let i = 0; i < impostorPlayers.length; i++) {
-                impostorPlayers[i].customHint = (i === luckyIndex)
-                    ? currentWordObj.hint
-                    : wrongHints[hIdx++ % wrongHints.length];
-            }
+    if (allCorrectHints) {
+        impostorPlayers.forEach(p => { p.customHint = currentWordObj.hint; });
+    } else if (impostorPlayers.length <= 1) {
+        if (impostorPlayers.length === 1) impostorPlayers[0].customHint = currentWordObj.hint;
+    } else {
+        const luckyIndex = Math.floor(Math.random() * impostorPlayers.length);
+        const wrongHints = wordsDB.filter(w => w.word !== currentWordObj.word).map(w => w.hint).sort(() => 0.5 - Math.random());
+        let hIndex = 0;
+        for (let i = 0; i < impostorPlayers.length; i++) {
+            if (i === luckyIndex) impostorPlayers[i].customHint = currentWordObj.hint;
+            else { impostorPlayers[i].customHint = wrongHints[hIndex % wrongHints.length]; hIndex++; }
         }
     }
 
     remainingTime = timeMins * 60;
     currentRevealIndex = 0;
+    
     renderSingleCard();
     showScreen('reveal-screen');
 });
 
-// ===== RENDER PLAYER CARD =====
 function renderSingleCard() {
     const container = document.getElementById('single-card-container');
-    const titleMsg  = document.getElementById('current-player-turn-msg');
-    const nextBtn   = document.getElementById('next-player-btn');
+    const titleMsg = document.getElementById('current-player-turn-msg');
+    const nextBtn = document.getElementById('next-player-btn');
+
     container.innerHTML = '';
     nextBtn.classList.add('hidden');
 
     const player = players[currentRevealIndex];
-    const effectiveNoHints = noHintsMode || currentLang === 'adult';
-
-    titleMsg.innerText = t('currentTurn')(player.name);
-    const instrEl = document.getElementById('reveal-instructions');
-    if (instrEl) instrEl.innerText = t('revealInstructions');
-
-    let roleText;
-    if (player.isImpostor) {
-        roleText = effectiveNoHints ? t('impostorCardNoHint')() : t('impostorCard')(player.customHint);
-    } else {
-        roleText = t('citizenCard')(currentWordObj.word);
-    }
+    titleMsg.innerText = i18n[currentLang].reveal_player_prefix + player.name;
 
     const card = document.createElement('div');
     card.className = 'flip-card';
+
+    let roleText;
+    if (player.isImpostor) {
+        roleText = noHintsMode
+            ? `${i18n[currentLang].impostor_role}`
+            : `${i18n[currentLang].impostor_role}<br><br><span style="font-size:16px;">${i18n[currentLang].hint_label}</span><br>${player.customHint}`;
+    } else {
+        roleText = `${i18n[currentLang].citizen_role}<br><br><span style="font-size:16px;">${i18n[currentLang].word_label}</span><br>${currentWordObj.word}`;
+    }
+
     card.innerHTML = `
         <div class="flip-card-inner">
-            <div class="flip-card-front"><span>${t('cardFront')(player.name)}</span></div>
+            <div class="flip-card-front"><span>${i18n[currentLang].card_of}${player.name}</span></div>
             <div class="flip-card-back"><span>${roleText}</span></div>
         </div>`;
 
@@ -445,17 +694,18 @@ function renderSingleCard() {
         if (!card.classList.contains('flipped')) return;
         card.classList.remove('flipped');
         nextBtn.innerText = currentRevealIndex < players.length - 1
-            ? t('nextPlayerBtn')(players[currentRevealIndex + 1].name)
-            : t('startTimerBtn')();
+            ? `${i18n[currentLang].pass_to}${players[currentRevealIndex + 1].name}`
+            : i18n[currentLang].all_seen;
         nextBtn.classList.remove('hidden');
     };
 
-    card.addEventListener('mousedown',   showCard);
-    card.addEventListener('mouseup',     hideCard);
-    card.addEventListener('mouseleave',  hideCard);
-    card.addEventListener('touchstart',  showCard, { passive: false });
-    card.addEventListener('touchend',    hideCard, { passive: false });
+    card.addEventListener('mousedown', showCard);
+    card.addEventListener('mouseup', hideCard);
+    card.addEventListener('mouseleave', hideCard);
+    card.addEventListener('touchstart', showCard, { passive: false });
+    card.addEventListener('touchend', hideCard, { passive: false });
     card.addEventListener('touchcancel', hideCard, { passive: false });
+
     container.appendChild(card);
 }
 
@@ -464,6 +714,9 @@ document.getElementById('next-player-btn').addEventListener('click', () => {
     if (currentRevealIndex < players.length) {
         renderSingleCard();
     } else {
+        const starterPlayer = players[Math.floor(Math.random() * players.length)];
+        document.getElementById('starter-player').innerText = `${i18n[currentLang].starter_is}${starterPlayer.name}`;
+        
         showScreen('timer-screen');
         updateTimerDisplay();
         timerInterval = setInterval(() => {
@@ -492,7 +745,7 @@ function goToVoting() {
     players.filter(p => !p.eliminated).forEach(player => {
         const btn = document.createElement('button');
         btn.className = 'vote-btn';
-        btn.innerText = t('voteFor')(player.name);
+        btn.innerText = `🗳️ ${player.name}`;
         btn.onclick = () => handleVote(player);
         votingList.appendChild(btn);
     });
@@ -501,39 +754,55 @@ function goToVoting() {
 function handleVote(votedPlayer) {
     const resultMsg = document.getElementById('result-message');
     const revealBox = document.getElementById('impostors-reveal');
-    const nextBtn   = document.getElementById('next-round-btn');
+    const nextBtn = document.getElementById('next-round-btn');
     revealBox.innerHTML = '';
 
+    const trans = i18n[currentLang];
+
     if (!isEliminationMode) {
-        resultMsg.innerText = votedPlayer.isImpostor
-            ? t('correctVote')(votedPlayer.name)
-            : t('wrongVote')(votedPlayer.name);
+        if (votedPlayer.isImpostor) {
+            triggerAnimation('win');
+            resultMsg.innerText = trans.correct_guess.replace('{name}', votedPlayer.name);
+        } else {
+            triggerAnimation('lose');
+            resultMsg.innerText = trans.wrong_guess.replace('{name}', votedPlayer.name);
+        }
+
         const allImpostors = players.filter(p => p.isImpostor).map(p => p.name).join(' و ');
-        revealBox.innerHTML = `${t('impostorsLabel')}<br><strong style="color:var(--accent-color);">${allImpostors}</strong><br><br>${t('wordWas')(currentWordObj.word)}`;
-        nextBtn.innerText = t('newRound');
+        revealBox.innerHTML = `${trans.impostors_were}<br><strong style="color:var(--accent-color);">${allImpostors}</strong><br><br>${trans.word_was} <strong>${currentWordObj.word}</strong>`;
+        nextBtn.innerText = trans.next_round_btn;
         nextBtn.onclick = () => showScreen('setup-screen');
+
     } else {
         votedPlayer.eliminated = true;
-        const remImpostors = players.filter(p => p.isImpostor && !p.eliminated);
-        const remRegulars  = players.filter(p => !p.isImpostor && !p.eliminated);
+        const remainingImpostors = players.filter(p => p.isImpostor && !p.eliminated);
+        const remainingRegulars  = players.filter(p => !p.isImpostor && !p.eliminated);
 
-        if (remImpostors.length === 0) {
-            resultMsg.innerText = t('citizensWin');
-            revealBox.innerHTML = t('wordWas')(currentWordObj.word);
-            nextBtn.innerText = t('newRound');
+        if (remainingImpostors.length === 0) {
+            triggerAnimation('win');
+            resultMsg.innerText = trans.all_impostors_dead;
+            revealBox.innerHTML = `${trans.word_was} <strong>${currentWordObj.word}</strong>`;
+            nextBtn.innerText = trans.next_round_btn;
             nextBtn.onclick = () => showScreen('setup-screen');
-        } else if (remImpostors.length >= remRegulars.length) {
-            resultMsg.innerText = t('impostorsWin');
+        } else if (remainingImpostors.length >= remainingRegulars.length) {
+            triggerAnimation('lose');
+            resultMsg.innerText = trans.impostors_win;
             const allImpostors = players.filter(p => p.isImpostor).map(p => p.name).join(' و ');
-            revealBox.innerHTML = `${t('impostorsLabel')}<br><strong style="color:var(--accent-color);">${allImpostors}</strong><br><br>${t('wordWas')(currentWordObj.word)}`;
-            nextBtn.innerText = t('newRound');
+            revealBox.innerHTML = `${trans.impostors_were}<br><strong style="color:var(--accent-color);">${allImpostors}</strong><br><br>${trans.word_was} <strong>${currentWordObj.word}</strong>`;
+            nextBtn.innerText = trans.next_round_btn;
             nextBtn.onclick = () => showScreen('setup-screen');
         } else {
-            resultMsg.innerText = t('eliminatedMsg')(votedPlayer.name);
-            revealBox.innerHTML = t('gameNotOver');
-            nextBtn.innerText = t('continueVoting');
+            if (!votedPlayer.isImpostor) triggerAnimation('lose');
+            
+            resultMsg.innerText = trans.eliminated_msg.replace('{name}', votedPlayer.name);
+            revealBox.innerHTML = trans.elimination_cliffhanger;
+            nextBtn.innerText = trans.continue_discussion;
             nextBtn.onclick = () => {
                 remainingTime = 60;
+                const alivePlayers = players.filter(p => !p.eliminated);
+                const starterPlayer = alivePlayers[Math.floor(Math.random() * alivePlayers.length)];
+                document.getElementById('starter-player').innerText = `${trans.starter_continue}${starterPlayer.name}`;
+
                 showScreen('timer-screen');
                 updateTimerDisplay();
                 timerInterval = setInterval(() => {
@@ -544,5 +813,6 @@ function handleVote(votedPlayer) {
             };
         }
     }
+
     showScreen('result-screen');
 }
