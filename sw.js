@@ -1,5 +1,5 @@
 // Bumped to v3: This tells the browser to delete the old cache and download the new files once
-const CACHE_NAME = 'dakheel-v5';
+const CACHE_NAME = 'dakheel-v6';
 
 // All files to be cached for offline use
 const ASSETS = [
