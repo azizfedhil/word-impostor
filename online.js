@@ -5,7 +5,7 @@
 //    Dashboard → Settings → API → Project URL / anon public key
 // ============================================================
 
-const SUPABASE_URL      = 'https://rcxaxblhgpauodmcfetb.supabase.co/rest/v1/';
+const SUPABASE_URL      = 'https://rcxaxblhgpauodmcfetb.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_3xg9qkdYGUoaRdflCW58rg_xRdqg6ox';
 
 // ---- Init ----
