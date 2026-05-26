@@ -110,6 +110,9 @@ async function _updateRoomSettings() {
     };
     try {
         await _update(_room.code, { config });
+        document.getElementById('lobby-settings-panel')?.classList.remove('open');
+        document.getElementById('ls-chevron') && (document.getElementById('ls-chevron').textContent = '▼');
+        showToast('✅ تحفظت الإعدادات!');
     } catch(e) { console.error(e); showToast('خطأ في الحفظ'); }
 }
 
@@ -287,17 +290,13 @@ function _renderLobby(room) {
         settBtn.after(panelWrapper);
 
         // Counter helpers — read/write counter-value span directly
-        let _settingsTimer = null;
-        const _autoSave = () => { clearTimeout(_settingsTimer); _settingsTimer = setTimeout(_updateRoomSettings, 400); };
         const _counter = (dispId, minusId, plusId, minV, maxV) => {
             const disp = () => document.getElementById(dispId);
             document.getElementById(minusId)?.addEventListener('click', () => {
                 disp().textContent = Math.max(minV, parseInt(disp().textContent) - 1);
-                _autoSave();
             });
             document.getElementById(plusId)?.addEventListener('click', () => {
                 disp().textContent = Math.min(maxV, parseInt(disp().textContent) + 1);
-                _autoSave();
             });
         };
         _counter('ls-imp-val', 'ls-imp-minus', 'ls-imp-plus', 1, maxImps);
@@ -305,7 +304,7 @@ function _renderLobby(room) {
 
         // Toggle switches
         panel.querySelectorAll('.toggle-switch').forEach(sw => {
-            sw.addEventListener('click', () => { sw.classList.toggle('active'); _autoSave(); });
+            sw.addEventListener('click', () => sw.classList.toggle('active'));
         });
 
         // Advanced section collapse
@@ -477,6 +476,22 @@ function _renderOnlineRoundPlayers(room, screenId) {
 
 async function _startOnlineGame() {
     if (!_isHost||!_room) return;
+    // Snapshot whatever the host left in the settings panel
+    const _on = id => document.getElementById(id)?.classList.contains('active') || false;
+    const _panelImp = parseInt(document.getElementById('ls-imp-val')?.textContent);
+    const _panelTim = parseInt(document.getElementById('ls-tim-val')?.textContent);
+    if (!isNaN(_panelImp) || !isNaN(_panelTim)) {
+        _room.config = {
+            ..._room.config,
+            ...(!isNaN(_panelImp) ? { impostors: _panelImp } : {}),
+            ...(!isNaN(_panelTim) ? { timer:     _panelTim } : {}),
+            randomImpostors: _on('ls-random'),
+            chaos:           _on('ls-chaos'),
+            elimination:     _on('ls-elim'),
+            noHints:         _on('ls-nohint'),
+            allCorrectHints: _on('ls-allhint')
+        };
+    }
     const config = _room.config, lang = config.lang||'tn';
     const wordList = lang==='x18' ? adultWordsDB : regularWordsDB;
     if (!wordList||wordList.length===0) { showToast('الكلمات مازال ما جاتش، حاول مرة اخرى.'); return; }
