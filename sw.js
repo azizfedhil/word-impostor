@@ -1,5 +1,5 @@
 // Bumped to v3: This tells the browser to delete the old cache and download the new files once
-const CACHE_NAME = 'dakheel-v7';
+const CACHE_NAME = 'dakheel-v8';
 
 // All files to be cached for offline use
 const ASSETS = [
@@ -11,8 +11,10 @@ const ASSETS = [
   './icon192.png',
   './icon512.png',
   './word list.json',
-  './adult_words_data.js'
-  './online.js'
+  './adult_words_data.js',
+  './sounds.js',
+  './online.js',
+  './voice.js'
 ];
 
 // Install: Cache the files
