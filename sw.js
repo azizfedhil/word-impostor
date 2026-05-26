@@ -12,6 +12,7 @@ const ASSETS = [
   './icon512.png',
   './word list.json',
   './adult_word_list.json'
+  './online.js'
 ];
 
 // Install: Cache the files
