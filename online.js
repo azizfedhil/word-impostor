@@ -95,21 +95,23 @@ function _snapshotConfig() {
 // Save lobby settings to DB (host only)
 async function _updateRoomSettings() {
     if (!_isHost || !_room) return;
-    const imp = parseInt(document.getElementById('ls-impostors')?.value) || 1;
-    const tim = parseInt(document.getElementById('ls-timer')?.value) || 3;
+    const imp = parseInt(document.getElementById('ls-imp-val')?.textContent) || 1;
+    const tim = parseInt(document.getElementById('ls-tim-val')?.textContent) || 3;
+    const _on = id => document.getElementById(id)?.classList.contains('active') || false;
     const config = {
         ..._room.config,
         impostors:       imp,
         timer:           tim,
-        randomImpostors: document.getElementById('ls-random')?.checked  || false,
-        chaos:           document.getElementById('ls-chaos')?.checked   || false,
-        elimination:     document.getElementById('ls-elim')?.checked    || false,
-        noHints:         document.getElementById('ls-nohint')?.checked  || false,
-        allCorrectHints: document.getElementById('ls-allhint')?.checked || false
+        randomImpostors: _on('ls-random'),
+        chaos:           _on('ls-chaos'),
+        elimination:     _on('ls-elim'),
+        noHints:         _on('ls-nohint'),
+        allCorrectHints: _on('ls-allhint')
     };
     try {
         await _update(_room.code, { config });
-        document.getElementById('lobby-settings-panel')?.classList.add('hidden');
+        document.getElementById('lobby-settings-panel')?.classList.remove('open');
+        document.getElementById('ls-chevron') && (document.getElementById('ls-chevron').textContent = '▼');
         showToast('✅ تحفظت الإعدادات!');
     } catch(e) { console.error(e); showToast('خطأ في الحفظ'); }
 }
@@ -190,6 +192,10 @@ function _renderLobby(room) {
 
         // ── Settings button ───────────────────────────────
         const cfg = room.config || {};
+        const maxImps = Math.max(1, Math.floor(n / 2));
+        const curImps = Math.min(cfg.impostors || 1, maxImps);
+        const curTim  = cfg.timer || 3;
+
         const settBtn = document.createElement('button');
         settBtn.id = 'lobby-settings-btn';
         settBtn.className = 'secondary-btn';
@@ -197,86 +203,104 @@ function _renderLobby(room) {
         settBtn.innerText = '⚙️ عدّل إعدادات الجولة';
         startBtn.after(settBtn);
 
-        // ── Inline settings panel (toggled) ──────────────
+        // ── Settings panel — identical structure to main-menu surface-card + advanced ──
         const panel = document.createElement('div');
         panel.id = 'lobby-settings-panel';
-        panel.className = 'surface-card hidden';
-        panel.style.cssText = 'margin-top:12px; padding:16px; text-align:right;';
+        panel.style.cssText = 'margin-top:12px;';
 
-        const maxImps = Math.max(1, Math.floor(n / 2));
-        const curImps = Math.min(cfg.impostors || 1, maxImps);
-        const curTim  = cfg.timer || 3;
+        const _tog = (id, active) =>
+            `<div class="toggle-switch${active ? ' active' : ''}" id="${id}"><div class="toggle-thumb"></div></div>`;
 
         panel.innerHTML = `
-            <p style="margin:0 0 14px; font-weight:700; font-size:1rem; color:var(--primary-color);">⚙️ إعدادات الجولة</p>
-
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-                <span style="font-size:.95rem;">عدد الدخلاء</span>
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <button type="button" id="ls-imp-minus" class="counter-btn">−</button>
-                    <span id="ls-imp-val" style="min-width:22px; text-align:center; font-weight:700;">${curImps}</span>
-                    <button type="button" id="ls-imp-plus"  class="counter-btn">+</button>
-                    <input type="hidden" id="ls-impostors" value="${curImps}">
+            <div class="surface-card" style="padding:10px 24px;">
+                <div class="setting-row">
+                    <div class="setting-info">
+                        <span class="setting-title">🎭 قداش من كذاب</span>
+                    </div>
+                    <div class="counter-group">
+                        <button class="counter-btn" id="ls-imp-minus">−</button>
+                        <span class="counter-value" id="ls-imp-val">${curImps}</span>
+                        <button class="counter-btn" id="ls-imp-plus">+</button>
+                    </div>
+                </div>
+                <div class="setting-row" style="border-bottom:none;">
+                    <div class="setting-info">
+                        <span class="setting-title">⏱️ وقت الطرح</span>
+                    </div>
+                    <div class="counter-group">
+                        <button class="counter-btn" id="ls-tim-minus">−</button>
+                        <span class="counter-value" id="ls-tim-val">${curTim}</span>
+                        <button class="counter-btn" id="ls-tim-plus">+</button>
+                    </div>
                 </div>
             </div>
-
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-                <span style="font-size:.95rem;">وقت النقاش (دقائق)</span>
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <button type="button" id="ls-tim-minus" class="counter-btn">−</button>
-                    <span id="ls-tim-val" style="min-width:22px; text-align:center; font-weight:700;">${curTim}</span>
-                    <button type="button" id="ls-tim-plus"  class="counter-btn">+</button>
-                    <input type="hidden" id="ls-timer" value="${curTim}">
+            <div class="advanced-header" id="ls-adv-header">
+                <span>🔧 زيد بربش</span>
+                <span id="ls-chevron">▼</span>
+            </div>
+            <div class="advanced-content" id="ls-adv-content">
+                <div class="toggle-row">
+                    <span class="toggle-label">🎲 كذابين على كيف اللعبة</span>
+                    ${_tog('ls-random', cfg.randomImpostors)}
                 </div>
-            </div>
-
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <span style="font-size:.9rem;">دخلاء عشوائيين</span>
-                <input type="checkbox" id="ls-random" style="width:20px;height:20px;accent-color:var(--primary-color);cursor:pointer;" ${cfg.randomImpostors?'checked':''}>
-            </div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <span style="font-size:.9rem;">وضع الفوضى</span>
-                <input type="checkbox" id="ls-chaos" style="width:20px;height:20px;accent-color:var(--primary-color);cursor:pointer;" ${cfg.chaos?'checked':''}>
-            </div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <span style="font-size:.9rem;">وضع الإقصاء</span>
-                <input type="checkbox" id="ls-elim" style="width:20px;height:20px;accent-color:var(--primary-color);cursor:pointer;" ${cfg.elimination?'checked':''}>
-            </div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <span style="font-size:.9rem;">بلا تلميحات</span>
-                <input type="checkbox" id="ls-nohint" style="width:20px;height:20px;accent-color:var(--primary-color);cursor:pointer;" ${cfg.noHints?'checked':''}>
-            </div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-                <span style="font-size:.9rem;">كل التلميحات صحيحة</span>
-                <input type="checkbox" id="ls-allhint" style="width:20px;height:20px;accent-color:var(--primary-color);cursor:pointer;" ${cfg.allCorrectHints?'checked':''}>
-            </div>
-
-            <div style="display:flex; gap:10px;">
-                <button type="button" id="ls-save"   class="primary-btn"   style="flex:1; margin:0; padding:12px;">💾 حفظ</button>
-                <button type="button" id="ls-cancel" class="secondary-btn" style="flex:1; margin:0; padding:12px;">إلغاء</button>
+                <div class="toggle-row">
+                    <span class="toggle-label">😈 خلوضها</span>
+                    ${_tog('ls-chaos', cfg.chaos)}
+                </div>
+                <div class="toggle-row">
+                    <span class="toggle-label">⚔️ نقص بالواحد بالواحد</span>
+                    ${_tog('ls-elim', cfg.elimination)}
+                </div>
+                <div class="toggle-row">
+                    <span class="toggle-label">🙈 سبورة كحلة مع الكذاب</span>
+                    ${_tog('ls-nohint', cfg.noHints)}
+                </div>
+                <div class="toggle-row" style="border-bottom:none;">
+                    <span class="toggle-label">💡 الكذابين الكل ياخذو نفس التلميح</span>
+                    ${_tog('ls-allhint', cfg.allCorrectHints)}
+                </div>
+                <div style="display:flex; gap:10px; padding:16px 16px 8px;">
+                    <button type="button" id="ls-save"   class="primary-btn"   style="flex:1; margin:0; padding:12px;">💾 حفظ</button>
+                    <button type="button" id="ls-cancel" class="secondary-btn" style="flex:1; margin:0; padding:12px;">إلغاء</button>
+                </div>
             </div>
         `;
         settBtn.after(panel);
 
-        // Counter helpers
-        const _counter = (hiddenId, dispId, minusId, plusId, minV, maxV) => {
-            const inp  = () => document.getElementById(hiddenId);
+        // Counter helpers — read/write counter-value span directly
+        const _counter = (dispId, minusId, plusId, minV, maxV) => {
             const disp = () => document.getElementById(dispId);
             document.getElementById(minusId)?.addEventListener('click', () => {
-                const v = Math.max(minV, parseInt(inp().value) - 1);
-                inp().value = v; disp().innerText = v;
+                disp().textContent = Math.max(minV, parseInt(disp().textContent) - 1);
             });
             document.getElementById(plusId)?.addEventListener('click', () => {
-                const v = Math.min(maxV, parseInt(inp().value) + 1);
-                inp().value = v; disp().innerText = v;
+                disp().textContent = Math.min(maxV, parseInt(disp().textContent) + 1);
             });
         };
-        _counter('ls-impostors','ls-imp-val','ls-imp-minus','ls-imp-plus', 1, maxImps);
-        _counter('ls-timer',    'ls-tim-val','ls-tim-minus','ls-tim-plus', 1, 10);
+        _counter('ls-imp-val', 'ls-imp-minus', 'ls-imp-plus', 1, maxImps);
+        _counter('ls-tim-val', 'ls-tim-minus', 'ls-tim-plus', 1, 10);
 
-        settBtn.addEventListener('click',  () => panel.classList.toggle('hidden'));
+        // Toggle switches
+        panel.querySelectorAll('.toggle-switch').forEach(sw => {
+            sw.addEventListener('click', () => sw.classList.toggle('active'));
+        });
+
+        // Advanced section collapse
+        const advContent = panel.querySelector('#ls-adv-content');
+        const chevron    = panel.querySelector('#ls-chevron');
+        panel.querySelector('#ls-adv-header').addEventListener('click', () => {
+            const open = advContent.classList.toggle('open');
+            chevron.textContent = open ? '▲' : '▼';
+        });
+
+        // Outer button: show / hide whole panel
+        panel.style.display = 'none';
+        settBtn.addEventListener('click', () => {
+            panel.style.display = panel.style.display === 'none' ? '' : 'none';
+        });
+
         document.getElementById('ls-save')  ?.addEventListener('click', _updateRoomSettings);
-        document.getElementById('ls-cancel')?.addEventListener('click', () => panel.classList.add('hidden'));
+        document.getElementById('ls-cancel')?.addEventListener('click', () => { panel.style.display = 'none'; });
 
     } else {
         startBtn.classList.add('hidden');
