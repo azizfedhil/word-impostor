@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>📊 Admin — الدخيل</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
@@ -304,6 +307,215 @@
   .table-scroll::-webkit-scrollbar { width: 4px; }
   .table-scroll::-webkit-scrollbar-track { background: var(--bg3); }
   .table-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* Main-game inspired skin */
+  :root {
+    --bg: #faf7f2;
+    --bg2: #fffdf9;
+    --bg3: rgba(82,140,113,0.08);
+    --border: rgba(82,140,113,0.15);
+    --red: #d46b5a;
+    --red-dim: rgba(212,107,90,0.12);
+    --red-glow: rgba(212,107,90,0.24);
+    --green: #528c71;
+    --blue: #4f7fa6;
+    --yellow: #f1c051;
+    --text: #2d2a26;
+    --muted: #8a8782;
+    --mono: 'Baloo Bhaijaan 2', cursive;
+    --display: 'Baloo Bhaijaan 2', cursive;
+    --shadow-soft: 0 12px 30px rgba(82,140,113,0.08);
+    --shadow-btn: 0 8px 20px rgba(82,140,113,0.22);
+    --radius-lg: 32px;
+    --radius-md: 20px;
+    --radius-sm: 12px;
+    --radius-pill: 99px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #151413;
+      --bg2: #1e1d1b;
+      --bg3: rgba(69,120,96,0.18);
+      --border: rgba(69,120,96,0.22);
+      --red: #b85244;
+      --red-dim: rgba(184,82,68,0.14);
+      --red-glow: rgba(184,82,68,0.28);
+      --green: #457860;
+      --blue: #5f8eb5;
+      --yellow: #dcae42;
+      --text: #f5f2eb;
+      --muted: #8c8983;
+      --shadow-soft: 0 12px 35px rgba(0,0,0,0.32);
+      --shadow-btn: 0 8px 20px rgba(69,120,96,0.28);
+    }
+  }
+
+  body {
+    font-family: var(--display);
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  body::before {
+    background: radial-gradient(circle at top right, rgba(82,140,113,0.11), transparent 34%),
+                radial-gradient(circle at bottom left, rgba(241,192,81,0.12), transparent 30%);
+    background-size: auto;
+  }
+
+  #login-screen { background: var(--bg); padding: 24px; }
+
+  .login-card,
+  .chart-card,
+  .table-card,
+  .full-table-card,
+  .stat-card {
+    background: var(--bg2);
+    border-color: var(--border);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .login-card {
+    border-radius: var(--radius-lg);
+    max-width: 420px;
+    padding: 40px 30px;
+  }
+
+  .login-card::before {
+    height: 4px;
+    background: linear-gradient(90deg, var(--green), var(--yellow));
+  }
+
+  .login-logo { font-size: 3rem; }
+  .login-title { font-size: 1.6rem; letter-spacing: 0; }
+  .login-sub, .field label, .stat-label, .stat-sub, .last-updated, .table-count, th, td, .bar-word, .bar-count {
+    font-family: var(--display);
+    letter-spacing: 0;
+  }
+
+  .field input {
+    background: var(--bg);
+    border-color: rgba(45,42,38,0.12);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: var(--display);
+    font-size: 1rem;
+    padding: 13px 14px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .field input { border-color: rgba(245,242,235,0.13); }
+  }
+
+  .field input:focus { border-color: var(--green); }
+
+  .login-btn,
+  .refresh-btn {
+    background: var(--green);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-btn);
+    font-family: var(--display);
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  .logout-btn {
+    background: var(--red-dim);
+    color: var(--red);
+    border-color: var(--red-glow);
+    border-radius: var(--radius-md);
+    font-family: var(--display);
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  .topbar {
+    background: color-mix(in srgb, var(--bg2) 92%, transparent);
+    border-color: var(--border);
+    padding: 18px 24px;
+    box-shadow: 0 8px 22px rgba(82,140,113,0.06);
+  }
+
+  .topbar-title { font-size: 1.45rem; letter-spacing: 0; }
+  .topbar-tag {
+    background: rgba(82,140,113,0.1);
+    color: var(--green);
+    border-color: var(--border);
+    border-radius: var(--radius-pill);
+    font-family: var(--display);
+    letter-spacing: 0;
+    padding: 4px 10px;
+  }
+
+  .main { padding: 28px 22px; }
+
+  .section-label {
+    color: var(--green);
+    border-left-color: var(--green);
+    font-family: var(--display);
+    font-size: .9rem;
+    font-weight: 800;
+    letter-spacing: 0;
+  }
+
+  .stat-card,
+  .chart-card,
+  .table-card,
+  .full-table-card {
+    border-radius: var(--radius-md);
+  }
+
+  .stat-card:hover {
+    border-color: rgba(82,140,113,0.3);
+    box-shadow: 0 14px 34px rgba(82,140,113,0.12);
+  }
+
+  .stat-label { font-size: .85rem; color: var(--muted); }
+  .stat-value { font-size: 2.2rem; letter-spacing: 0; color: var(--text); }
+  .stat-card.accent .stat-value, .stat-card.green .stat-value { color: var(--green); }
+  .stat-card.yellow .stat-value { color: var(--yellow); }
+  .stat-card.blue .stat-value { color: var(--blue); }
+
+  .chart-card .chart-title,
+  .table-header {
+    color: var(--text);
+    font-size: 1rem;
+    letter-spacing: 0;
+  }
+
+  .table-header { padding: 14px 18px; }
+  th { background: var(--bg3); color: var(--muted); font-size: .78rem; }
+  td { color: var(--text); font-size: .92rem; }
+  tr:hover td { background: rgba(82,140,113,0.05); }
+
+  .bar-track { background: var(--bg3); border-radius: var(--radius-pill); }
+  .bar-fill { background: var(--green); border-radius: var(--radius-pill); }
+
+  .pill {
+    border-radius: var(--radius-pill);
+    font-family: var(--display);
+    font-size: .8rem;
+  }
+
+  .loading {
+    color: var(--muted);
+    font-family: var(--display);
+    font-size: 1rem;
+  }
+
+  .spinner {
+    border-color: var(--border);
+    border-top-color: var(--green);
+  }
+
+  @media (max-width: 720px) {
+    .topbar { align-items: flex-start; flex-direction: column; gap: 12px; }
+    .topbar-right { width: 100%; flex-wrap: wrap; gap: 10px; }
+    .refresh-btn, .logout-btn { flex: 1; min-width: 120px; }
+    .main { padding: 20px 14px; }
+  }
 </style>
 </head>
 <body>
@@ -422,6 +634,16 @@ async function fetchAll() {
     supa.from('analytics_online').select('*').gte('created_at', since).order('created_at', { ascending: false }).limit(LIMIT)
   ]);
 
+  const failures = [
+    ['visits', v.error],
+    ['games', g.error],
+    ['online', o.error]
+  ].filter(([, error]) => error);
+
+  if (failures.length) {
+    throw new Error(failures.map(([name, error]) => `${name}: ${error.message}`).join(' | '));
+  }
+
   return {
     visits  : v.data || [],
     games   : g.data || [],
@@ -471,17 +693,17 @@ const CHART_DEFAULTS = {
   scales: {}
 };
 
-const RED   = 'rgba(231,76,60,0.85)';
-const REDF  = 'rgba(231,76,60,0.15)';
-const GREEN = 'rgba(46,204,113,0.85)';
-const BLUE  = 'rgba(52,152,219,0.85)';
-const YELL  = 'rgba(243,156,18,0.85)';
-const PUR   = 'rgba(155,89,182,0.85)';
+const RED   = 'rgba(212,107,90,0.9)';
+const REDF  = 'rgba(82,140,113,0.14)';
+const GREEN = 'rgba(82,140,113,0.9)';
+const BLUE  = 'rgba(79,127,166,0.9)';
+const YELL  = 'rgba(241,192,81,0.9)';
+const PUR   = 'rgba(138,135,130,0.9)';
 
 function lineScale() {
   return {
-    x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.4)', font: { family: 'JetBrains Mono', size: 10 } } },
-    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.4)', font: { family: 'JetBrains Mono', size: 10 } } }
+    x: { grid: { color: 'rgba(82,140,113,0.08)' }, ticks: { color: '#8a8782', font: { family: 'Baloo Bhaijaan 2', size: 12 } } },
+    y: { grid: { color: 'rgba(82,140,113,0.08)' }, ticks: { color: '#8a8782', font: { family: 'Baloo Bhaijaan 2', size: 12 } } }
   };
 }
 
@@ -698,7 +920,7 @@ function renderDeviceChart(visits) {
     options: {
       ...CHART_DEFAULTS,
       plugins: {
-        legend: { display: true, position: 'bottom', labels: { color: 'rgba(255,255,255,0.6)', font: { family: 'JetBrains Mono', size: 11 }, boxWidth: 10, padding: 14 } }
+        legend: { display: true, position: 'bottom', labels: { color: '#8a8782', font: { family: 'Baloo Bhaijaan 2', size: 12 }, boxWidth: 10, padding: 14 } }
       }
     }
   });
@@ -716,7 +938,7 @@ function renderResultsChart(games) {
     options: {
       ...CHART_DEFAULTS,
       plugins: {
-        legend: { display: true, position: 'bottom', labels: { color: 'rgba(255,255,255,0.6)', font: { family: 'JetBrains Mono', size: 11 }, boxWidth: 10, padding: 14 } }
+        legend: { display: true, position: 'bottom', labels: { color: '#8a8782', font: { family: 'Baloo Bhaijaan 2', size: 12 }, boxWidth: 10, padding: 14 } }
       }
     }
   });
@@ -746,7 +968,7 @@ function renderWordListChart(games) {
     options: {
       ...CHART_DEFAULTS,
       plugins: {
-        legend: { display: true, position: 'bottom', labels: { color: 'rgba(255,255,255,0.6)', font: { family: 'JetBrains Mono', size: 11 }, boxWidth: 10, padding: 14 } }
+        legend: { display: true, position: 'bottom', labels: { color: '#8a8782', font: { family: 'Baloo Bhaijaan 2', size: 12 }, boxWidth: 10, padding: 14 } }
       }
     }
   });

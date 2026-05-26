@@ -71,6 +71,7 @@ let timerInterval = null, remainingTime = 0;
 let isEliminationMode = false, noHintsMode = false;
 let currentRevealIndex = 0;
 let impostorConfig = 1, timerConfig = 3, playerCount = 0;
+const X18_REMEMBER_KEY = 'dakheel_x18_unlocked';
 
 // ============================================================
 // INDEXED DB — settings persistence
@@ -107,6 +108,16 @@ async function loadSettings() {
             req.onerror = () => resolve(null);
         });
     } catch(e) { return null; }
+}
+
+function rememberX18Unlock() {
+    try { localStorage.setItem(X18_REMEMBER_KEY, '1'); }
+    catch (_) {}
+}
+
+function hasRememberedX18Unlock() {
+    try { return localStorage.getItem(X18_REMEMBER_KEY) === '1'; }
+    catch (_) { return false; }
 }
 
 function _togActive(id) { return document.getElementById(id).classList.contains('active'); }
@@ -360,13 +371,14 @@ window.updateTimerDisplay = updateTimerDisplay;
 // ============================================================
 document.addEventListener('DOMContentLoaded', async () => {
 
+    currentLang = 'tn';
+    x18Unlocked = hasRememberedX18Unlock();
     applyTranslations();
 
     // Load saved settings
     const parsed = await loadSettings();
     if (parsed) {
-        currentLang = parsed.lang||'tn';
-        if (currentLang==='x18') x18Unlocked = true;
+        currentLang = 'tn';
         _togSet('t-random', parsed.randomImpostors);
         _togSet('t-chaos', parsed.chaos);
         _togSet('t-elimination', parsed.elimination);
@@ -455,10 +467,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const val = document.getElementById('password-input').value;
         if (val==='simba') {
             x18Unlocked=true; currentLang='x18'; applyTranslations();
-            if (!document.getElementById('pw-remember-toggle').checked) {
-                saveSettings();
-                (async()=>{try{const db=await dbPromise;if(!db)return;const tx=db.transaction('settingsStore','readwrite'),store=tx.objectStore('settingsStore'),req=store.get('game_settings');req.onsuccess=()=>{const ex=req.result||{};ex.lang='tn';store.put(ex,'game_settings');};}catch(e){}})();
-            } else { saveSettings(); }
+            if (document.getElementById('pw-remember-toggle').checked) rememberX18Unlock();
+            saveSettings();
             closeModal('password-modal');
         } else {
             document.getElementById('password-error').style.display='block';

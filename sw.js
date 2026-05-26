@@ -1,5 +1,5 @@
-// Bumped to v3: This tells the browser to delete the old cache and download the new files once
-const CACHE_NAME = 'dakheel-v8';
+// Bump this cache name whenever cached app files change.
+const CACHE_NAME = 'dakheel-v11';
 
 // All files to be cached for offline use
 const ASSETS = [
@@ -14,7 +14,8 @@ const ASSETS = [
   './adult_words_data.js',
   './sounds.js',
   './online.js',
-  './voice.js'
+  './voice.js',
+  './analytics.js'
 ];
 
 // Install: Cache the files

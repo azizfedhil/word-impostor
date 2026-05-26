@@ -12,6 +12,7 @@ if (!_myId) { _myId = 'p_' + Date.now() + '_' + Math.random().toString(36).slice
 
 window.onlineMode = false;
 let _room = null, _channel = null, _isHost = false, _myName = '', _onlineTimer = null;
+let _timerSyncTicker = null, _timerSyncState = null, _lastOnlineTimerSecond = null;
 
 function _genCode() { const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return Array.from({length:6},()=>c[Math.floor(Math.random()*c.length)]).join(''); }
 function _me(room) { return (room.players||[]).find(p=>p.id===_myId)||null; }
@@ -32,6 +33,9 @@ function _subscribe(code) {
             payload => { _room = payload.new; _handleStateChange(payload.new); })
         .on('broadcast', { event: 'reaction' }, ({ payload }) => {
             _showReactionFloat(payload.name + ': ' + payload.msg);
+        })
+        .on('broadcast', { event: 'timer-sync' }, ({ payload }) => {
+            _handleTimerSync(payload);
         })
         .subscribe(s => { if(s==='SUBSCRIBED') console.log('[online] subscribed',code); });
 }
@@ -346,25 +350,70 @@ async function _startDiscussion() {
     catch(e) { console.error(e); }
 }
 
+function _timerNow() {
+    return (window.performance && performance.now) ? performance.now() : Date.now();
+}
+
+function _stopOnlineTimer() {
+    if (_onlineTimer) { clearInterval(_onlineTimer); _onlineTimer = null; }
+    if (_timerSyncTicker) { clearInterval(_timerSyncTicker); _timerSyncTicker = null; }
+    _timerSyncState = null;
+    _lastOnlineTimerSecond = null;
+}
+
+function _hostSecondsLeft(room) {
+    const endTime = new Date(room.timer_end_at).getTime();
+    return Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
+}
+
+function _secondsLeftForRoom(room) {
+    if (!_isHost && _timerSyncState && _timerSyncState.timerEndAt === room.timer_end_at) {
+        const elapsed = (_timerNow() - _timerSyncState.receivedAt) / 1000;
+        return Math.max(0, Math.ceil(_timerSyncState.left - elapsed));
+    }
+    return _hostSecondsLeft(room);
+}
+
+function _broadcastTimerSync(room) {
+    if (!_isHost || !_channel || !room || room.state !== 'discussion') return;
+    const payload = { timerEndAt: room.timer_end_at, left: _hostSecondsLeft(room) };
+    const sent = _channel.send({ type:'broadcast', event:'timer-sync', payload });
+    if (sent && typeof sent.catch === 'function') sent.catch(() => {});
+}
+
+function _handleTimerSync(payload) {
+    if (_isHost || !_room || _room.state !== 'discussion' || !payload) return;
+    if (payload.timerEndAt !== _room.timer_end_at) return;
+    _timerSyncState = {
+        timerEndAt: payload.timerEndAt,
+        left: Math.max(0, Number(payload.left) || 0),
+        receivedAt: _timerNow()
+    };
+}
+
 function _startClientTimer(room) {
     showScreen('timer-screen');
     document.getElementById('reaction-bar')?.classList.remove('hidden');
     const trans = i18n[_getLang(room)];
     document.getElementById('starter-player').innerText = `${trans.starter_is}${room.starter_player}`;
-    if (_onlineTimer) clearInterval(_onlineTimer);
+    _stopOnlineTimer();
 
-    // Use absolute end time so every client stays in sync regardless
-    // of when their realtime event arrived.
-    const endTime = new Date(room.timer_end_at).getTime();
+    if (_isHost) {
+        _broadcastTimerSync(room);
+        _timerSyncTicker = setInterval(() => _broadcastTimerSync(room), 1000);
+    }
 
     const tick = () => {
-        const left = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
+        const left = _secondsLeftForRoom(room);
         const m = Math.floor(left/60).toString().padStart(2,'0');
         const s = (left%60).toString().padStart(2,'0');
         document.getElementById('timer-display').innerText = `${m}:${s}`;
-        if (left <= 10 && left > 0) _sfx.tickUrgent(); else if (left > 10) _sfx.tick();
+        if (left !== _lastOnlineTimerSecond) {
+            _lastOnlineTimerSecond = left;
+            if (left <= 10 && left > 0) _sfx.tickUrgent(); else if (left > 10) _sfx.tick();
+        }
         if (left <= 0) {
-            clearInterval(_onlineTimer);
+            _stopOnlineTimer();
             _sfx.timerEnd();
             document.getElementById('reaction-bar')?.classList.add('hidden');
             if (_isHost) _moveToVoting();
@@ -373,7 +422,7 @@ function _startClientTimer(room) {
     tick(); _onlineTimer = setInterval(tick, 500);
     document.getElementById('go-to-vote-btn').onclick = () => {
         if (!_isHost) { showToast('مولى الروم اكهو ينجم يوقف الوقت!'); return; }
-        clearInterval(_onlineTimer);
+        _stopOnlineTimer();
         document.getElementById('reaction-bar')?.classList.add('hidden');
         _moveToVoting();
     };
@@ -385,6 +434,7 @@ async function _moveToVoting() {
 }
 
 function _showOnlineVoting(room) {
+    _stopOnlineTimer();
     showScreen('voting-screen');
     const list = document.getElementById('voting-list'); list.innerHTML = '';
     const me = _me(room), hasVoted = me&&me.vote!==null;
@@ -437,6 +487,7 @@ async function _processVotes(room) {
 }
 
 function _showOnlineResult(room) {
+    _stopOnlineTimer();
     showScreen('result-screen');
     const trans = _getTrans(room), result = room.result;
     const resultMsg = document.getElementById('result-message');
@@ -486,7 +537,7 @@ async function _leaveRoom() {
         else { const players = _room.players.filter(p=>p.id!==_myId); await _supa.from('rooms').update({players}).eq('code',_room.code); }
     } catch(e) { console.error(e); }
     if (_channel) { _supa.removeChannel(_channel); _channel=null; }
-    if (_onlineTimer) { clearInterval(_onlineTimer); _onlineTimer=null; }
+    _stopOnlineTimer();
     _room=null; _isHost=false; window.onlineMode=false;
     showScreen('setup-screen');
 }

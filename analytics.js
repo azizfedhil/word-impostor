@@ -19,10 +19,23 @@ const _analytics = (() => {
     }
 
     // ── Persistent visitor session ID (survives page reloads) ──
-    let _sid = localStorage.getItem('dk_sid');
+    function _readSid() {
+        try { return localStorage.getItem('dk_sid'); }
+        catch (_) { return sessionStorage.getItem('dk_sid') || null; }
+    }
+
+    function _writeSid(value) {
+        try { localStorage.setItem('dk_sid', value); }
+        catch (_) {
+            try { sessionStorage.setItem('dk_sid', value); }
+            catch (_) {}
+        }
+    }
+
+    let _sid = _readSid();
     if (!_sid) {
         _sid = 's_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-        localStorage.setItem('dk_sid', _sid);
+        _writeSid(_sid);
     }
 
     let _pendingGame  = null;
@@ -132,6 +145,7 @@ const _analytics = (() => {
 // ============================================================
 
 document.addEventListener('DOMContentLoaded', () => {
+    const _activeToggle = id => document.getElementById(id)?.classList.contains('active') || false;
 
     // ── 1. Track every page visit ─────────────────────────────
     _analytics.trackVisit();
@@ -149,11 +163,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 wordList       : typeof currentLang     !== 'undefined' ? currentLang : 'tn',
                 word           : typeof currentWordObj  !== 'undefined' ? (currentWordObj?.word || '') : '',
                 timerMins      : typeof timerConfig     !== 'undefined' ? timerConfig : 3,
-                elimination    : document.getElementById('elimination-mode')?.checked,
-                noHints        : document.getElementById('no-hints-toggle')?.checked,
-                randomImpostors: document.getElementById('random-impostors-toggle')?.checked,
-                chaos          : document.getElementById('all-impostors-toggle')?.checked,
-                allHints       : document.getElementById('all-correct-hints-toggle')?.checked
+                elimination    : _activeToggle('t-elimination'),
+                noHints        : _activeToggle('t-nohint'),
+                randomImpostors: _activeToggle('t-random'),
+                chaos          : _activeToggle('t-chaos'),
+                allHints       : _activeToggle('t-allhint')
             });
         }, 250);
     });
