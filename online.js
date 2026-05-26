@@ -18,6 +18,9 @@ const ONLINE_NAME_KEY = 'dakheel_online_name';
 // Figured-out tracking (broadcast-based, per round)
 const _figuredOut = new Set(); // player IDs who announced they figured it out
 
+// Host's in-progress lobby settings (preserved across re-renders)
+let _pendingConfig = null;
+
 function _genCode() { const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return Array.from({length:6},()=>c[Math.floor(Math.random()*c.length)]).join(''); }
 function _me(room) { return (room.players||[]).find(p=>p.id===_myId)||null; }
 function _err(msg) { const el = document.getElementById('online-setup-error'); if(el) el.innerText = msg; }
@@ -214,8 +217,20 @@ function _renderLobby(room) {
         // ── Settings button ───────────────────────────────
         const cfg = room.config || {};
         const maxImps = Math.max(1, Math.floor(n / 2));
-        const curImps = Math.min(cfg.impostors || 1, maxImps);
-        const curTim  = cfg.timer || 3;
+        // Seed _pendingConfig once; preserve host edits across re-renders
+        if (!_pendingConfig) _pendingConfig = {
+            impostors:       Math.min(cfg.impostors || 1, maxImps),
+            timer:           cfg.timer || 3,
+            randomImpostors: !!cfg.randomImpostors,
+            chaos:           !!cfg.chaos,
+            elimination:     !!cfg.elimination,
+            noHints:         !!cfg.noHints,
+            allCorrectHints: !!cfg.allCorrectHints
+        };
+        // Clamp impostors if player count shrank
+        _pendingConfig.impostors = Math.min(_pendingConfig.impostors, maxImps);
+        const curImps = _pendingConfig.impostors;
+        const curTim  = _pendingConfig.timer;
 
         // ── Settings toggle — styled as advanced-header like main menu ──
         const settBtn = document.createElement('div');
@@ -236,6 +251,7 @@ function _renderLobby(room) {
 
         const _tog = (id, active) =>
             `<div class="toggle-switch${active ? ' active' : ''}" id="${id}"><div class="toggle-thumb"></div></div>`;
+        const pc = _pendingConfig;
 
         panel.innerHTML = `
             <div class="surface-card" style="padding:10px 24px;">
@@ -267,36 +283,47 @@ function _renderLobby(room) {
             <div class="advanced-content" id="ls-adv-content">
                 <div class="toggle-row">
                     <span class="toggle-label">🎲 كذابين على كيف اللعبة</span>
-                    ${_tog('ls-random', cfg.randomImpostors)}
+                    ${_tog('ls-random', pc.randomImpostors)}
                 </div>
                 <div class="toggle-row">
                     <span class="toggle-label">😈 خلوضها</span>
-                    ${_tog('ls-chaos', cfg.chaos)}
+                    ${_tog('ls-chaos', pc.chaos)}
                 </div>
                 <div class="toggle-row">
                     <span class="toggle-label">⚔️ نقص بالواحد بالواحد</span>
-                    ${_tog('ls-elim', cfg.elimination)}
+                    ${_tog('ls-elim', pc.elimination)}
                 </div>
                 <div class="toggle-row">
                     <span class="toggle-label">🙈 سبورة كحلة مع الكذاب</span>
-                    ${_tog('ls-nohint', cfg.noHints)}
+                    ${_tog('ls-nohint', pc.noHints)}
                 </div>
                 <div class="toggle-row" style="border-bottom:none;">
                     <span class="toggle-label">💡 الكذابين الكل ياخذو نفس التلميح</span>
-                    ${_tog('ls-allhint', cfg.allCorrectHints)}
+                    ${_tog('ls-allhint', pc.allCorrectHints)}
                 </div>
             </div>
         `;
         settBtn.after(panelWrapper);
 
-        // Counter helpers — read/write counter-value span directly
+        // Counter helpers — update display AND persist to _pendingConfig
+        const _readPanel = () => ({
+            impostors:       parseInt(document.getElementById('ls-imp-val')?.textContent) || _pendingConfig.impostors,
+            timer:           parseInt(document.getElementById('ls-tim-val')?.textContent) || _pendingConfig.timer,
+            randomImpostors: document.getElementById('ls-random')?.classList.contains('active')  || false,
+            chaos:           document.getElementById('ls-chaos')?.classList.contains('active')   || false,
+            elimination:     document.getElementById('ls-elim')?.classList.contains('active')    || false,
+            noHints:         document.getElementById('ls-nohint')?.classList.contains('active')  || false,
+            allCorrectHints: document.getElementById('ls-allhint')?.classList.contains('active') || false
+        });
         const _counter = (dispId, minusId, plusId, minV, maxV) => {
             const disp = () => document.getElementById(dispId);
             document.getElementById(minusId)?.addEventListener('click', () => {
                 disp().textContent = Math.max(minV, parseInt(disp().textContent) - 1);
+                _pendingConfig = { ..._pendingConfig, ..._readPanel() };
             });
             document.getElementById(plusId)?.addEventListener('click', () => {
                 disp().textContent = Math.min(maxV, parseInt(disp().textContent) + 1);
+                _pendingConfig = { ..._pendingConfig, ..._readPanel() };
             });
         };
         _counter('ls-imp-val', 'ls-imp-minus', 'ls-imp-plus', 1, maxImps);
@@ -304,7 +331,10 @@ function _renderLobby(room) {
 
         // Toggle switches
         panel.querySelectorAll('.toggle-switch').forEach(sw => {
-            sw.addEventListener('click', () => sw.classList.toggle('active'));
+            sw.addEventListener('click', () => {
+                sw.classList.toggle('active');
+                _pendingConfig = { ..._pendingConfig, ..._readPanel() };
+            });
         });
 
         // Advanced section collapse
@@ -476,22 +506,11 @@ function _renderOnlineRoundPlayers(room, screenId) {
 
 async function _startOnlineGame() {
     if (!_isHost||!_room) return;
-    // Snapshot whatever the host left in the settings panel
-    const _on = id => document.getElementById(id)?.classList.contains('active') || false;
-    const _panelImp = parseInt(document.getElementById('ls-imp-val')?.textContent);
-    const _panelTim = parseInt(document.getElementById('ls-tim-val')?.textContent);
-    if (!isNaN(_panelImp) || !isNaN(_panelTim)) {
-        _room.config = {
-            ..._room.config,
-            ...(!isNaN(_panelImp) ? { impostors: _panelImp } : {}),
-            ...(!isNaN(_panelTim) ? { timer:     _panelTim } : {}),
-            randomImpostors: _on('ls-random'),
-            chaos:           _on('ls-chaos'),
-            elimination:     _on('ls-elim'),
-            noHints:         _on('ls-nohint'),
-            allCorrectHints: _on('ls-allhint')
-        };
+    // Apply any pending host config edits
+    if (_pendingConfig) {
+        _room.config = { ..._room.config, ..._pendingConfig };
     }
+    _pendingConfig = null; // reset for next round
     const config = _room.config, lang = config.lang||'tn';
     const wordList = lang==='x18' ? adultWordsDB : regularWordsDB;
     if (!wordList||wordList.length===0) { showToast('الكلمات مازال ما جاتش، حاول مرة اخرى.'); return; }
