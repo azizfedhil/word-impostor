@@ -80,6 +80,12 @@ function _subscribe(code) {
                 _handleStateChange(payload.new);
             }
         )
+        .on('broadcast', { event: 'reaction' }, ({ payload }) => {
+            // Show the reaction float on every player's screen
+            if (typeof window._showReactionFloat === 'function') {
+                window._showReactionFloat(payload.name + ': ' + payload.msg);
+            }
+        })
         .subscribe(status => {
             if (status === 'SUBSCRIBED') console.log('[online] subscribed to', code);
         });
@@ -473,6 +479,8 @@ async function _startDiscussion() {
 
 function _startClientTimer(room) {
     showScreen('timer-screen');
+    // Show reaction bar only in online mode
+    document.getElementById('reaction-bar')?.classList.remove('hidden');
 
     const lang  = _getLang(room);
     const trans = i18n[lang];
@@ -492,6 +500,7 @@ function _startClientTimer(room) {
 
         if (left <= 0) {
             clearInterval(_onlineTimer);
+            document.getElementById('reaction-bar')?.classList.add('hidden');
             if (_isHost) _moveToVoting();
         }
     };
@@ -512,6 +521,7 @@ function _startClientTimer(room) {
 
 async function _moveToVoting() {
     if (!_isHost || !_room) return;
+    document.getElementById('reaction-bar')?.classList.add('hidden');
     try {
         await _update(_room.code, { state: 'voting' });
     } catch (e) { console.error(e); }
@@ -762,6 +772,7 @@ async function _leaveRoom() {
 
     if (_channel) { _supa.removeChannel(_channel); _channel = null; }
     if (_onlineTimer) { clearInterval(_onlineTimer); _onlineTimer = null; }
+    document.getElementById('reaction-bar')?.classList.add('hidden');
 
     _room   = null;
     _isHost = false;
