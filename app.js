@@ -261,8 +261,8 @@ window.addEventListener('DOMContentLoaded', async () => {
     const parsed = await loadSettings();
     
     if (parsed) {
-        // Never auto-restore +18 — password must be re-entered each session
-        currentLang = (parsed.lang && parsed.lang !== 'x18') ? parsed.lang : 'tn';
+        // Restore +18 only if user explicitly chose to remember it
+        currentLang = parsed.lang || 'tn';
         
         // Load checkboxes
         document.getElementById('random-impostors-toggle').checked = !!parsed.randomImpostors;
@@ -317,7 +317,7 @@ window.addEventListener('DOMContentLoaded', async () => {
             } else {
                 currentLang = lang;
                 applyTranslations();
-                saveSettings();
+                saveSettings(); // clears any remembered x18
             }
         });
     });
@@ -336,7 +336,28 @@ window.addEventListener('DOMContentLoaded', async () => {
         if (pwInput.value === 'simba') {
             currentLang = 'x18';
             applyTranslations();
-            saveSettings();
+            // Only persist if "remember me" is checked
+            if (document.getElementById('pw-remember-toggle').checked) {
+                saveSettings();
+            } else {
+                // Save everything except the lang (keep previous lang in DB)
+                saveSettings();
+                // Overwrite the lang key back to 'tn' in DB silently
+                (async () => {
+                    try {
+                        const db = await dbPromise;
+                        if (!db) return;
+                        const tx = db.transaction('settingsStore', 'readwrite');
+                        const store = tx.objectStore('settingsStore');
+                        const req = store.get('game_settings');
+                        req.onsuccess = () => {
+                            const existing = req.result || {};
+                            existing.lang = 'tn';
+                            store.put(existing, 'game_settings');
+                        };
+                    } catch(e) {}
+                })();
+            }
             closePwModal();
         } else {
             pwError.style.display = 'block';
