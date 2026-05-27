@@ -518,6 +518,7 @@ function updateTimerDisplay() {
 window.updateTimerDisplay = updateTimerDisplay;
 
 function startThiefOffline() {
+    _cleanupOnlineGameUI();
     saveSettings();
     const namesInput = Array.from(document.querySelectorAll('.player-input'))
         .map((inp,idx)=>inp.value.trim()||`لاعب ${idx+1}`);
@@ -544,6 +545,7 @@ function startThiefOffline() {
 }
 
 function startSpyfallOffline() {
+    _cleanupOnlineGameUI();
     saveSettings();
     const namesInput = Array.from(document.querySelectorAll('.player-input'))
         .map((inp,idx)=>inp.value.trim()||`لاعب ${idx+1}`);
@@ -612,7 +614,15 @@ function _coupPayBank(state, amount) {
 
 function _coupResourceHtml(state = coupState) {
     const bank = Number.isFinite(state?.bankCoins) ? state.bankCoins : '∞';
-    return `<span>🏦 البنك <strong>${bank}</strong></span><span>🂠 الدكّة <strong>${state?.deck?.length || 0}</strong></span>`;
+    const deckCount = state?.deck?.length || 0;
+    const maxDeck = 15;
+    const deckClass = deckCount <= 3 ? 'deck-critical' : deckCount <= 7 ? 'deck-low' : '';
+    // Visual coin count: show 1-5 dots representing approximate wealth
+    const coinDots = Math.max(0, Math.min(5, Math.ceil((typeof bank === 'number' ? bank : 50) / 12)));
+    const coinBar = typeof bank === 'number'
+        ? `<span class="coup-coin-bar">${Array(5).fill(0).map((_,i) => `<span class="${i < coinDots ? 'coin-dot filled' : 'coin-dot'}"></span>`).join('')}</span>`
+        : '';
+    return `<div class="coup-bank-display"><span class="coup-bank-icon">🪙</span><strong class="coup-bank-val">${bank}</strong>${coinBar}</div><div class="coup-deck-display ${deckClass}"><div class="coup-deck-stack-vis"><span class="cds-back2"></span><span class="cds-back1"></span><span class="cds-front">🂠</span></div><strong class="coup-deck-val">${deckCount}</strong><span class="coup-deck-label">/${maxDeck}</span></div>`;
 }
 
 function _coupStatusHtml(state = coupState) {
@@ -909,6 +919,7 @@ function showCoupGuide() {
 }
 
 function startCoupOffline() {
+    _cleanupOnlineGameUI();
     saveSettings();
     const namesInput = Array.from(document.querySelectorAll('.player-input'))
         .map((inp,idx)=>inp.value.trim()||`لاعب ${idx+1}`);
@@ -985,7 +996,9 @@ function renderCoupScreen(state = coupState, myId = null) {
     ];
     const renderPlayerCard = (p, idx) => {
         const isMe = myId ? p.id === myId : idx === state.turnIndex;
-        const visible = isMe || !myId;
+        // In offline mode (no myId), only show the active player's cards face-up.
+        // Other players' live cards stay hidden (🂠) to keep secrets when passing the phone.
+        const visible = isMe;
         const focused = coupFocusedPlayerId === p.id || (!coupFocusedPlayerId && isMe);
         const dimmed = !!coupFocusedPlayerId && coupFocusedPlayerId !== p.id;
         const out = !p.hand.some(c=>!c.lost);
@@ -1474,6 +1487,14 @@ function funWrongAccuser() {
     return ['اكلها في عوضو.','عمل روحو كونان وطلع غلط.','قال تكذب، طلعت هو الي يحلم.','دخل روحو في حيط.'][Math.floor(Math.random()*4)];
 }
 
+// Remove any online-mode UI remnants before starting an offline game
+function _cleanupOnlineGameUI() {
+    document.querySelectorAll('.online-round-players').forEach(el => el.remove());
+    document.getElementById('online-coup-leave-btn')?.remove();
+    document.getElementById('lobby-settings-btn')?.remove();
+    document.getElementById('lobby-settings-panel')?.remove();
+}
+
 
 
 // ============================================================
@@ -1518,6 +1539,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     document.getElementById('back-to-mode-select-btn')?.addEventListener('click', showModeSelect);
     document.getElementById('coup-guide-btn')?.addEventListener('click', showCoupGuide);
+    document.getElementById('coup-guide-from-setup-btn')?.addEventListener('click', showCoupGuide);
     document.getElementById('coup-guide-back-btn')?.addEventListener('click', () => showScreen(coupState ? 'coup-screen' : 'setup-screen'));
     document.getElementById('game-title-btn')?.addEventListener('click', e => {
         e.stopPropagation();
@@ -1618,6 +1640,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (currentGameMode === 'thief') { startThiefOffline(); return; }
         if (currentGameMode === 'spyfall') { startSpyfallOffline(); return; }
         if (currentGameMode === 'coup') { startCoupOffline(); return; }
+        _cleanupOnlineGameUI();
         saveSettings();
         // Fallback names for empty inputs
         const namesInput = Array.from(document.querySelectorAll('.player-input'))
