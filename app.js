@@ -77,7 +77,7 @@ let currentGameMode = 'impostor';
 const gameModes = {
     impostor: { title: '🕵️‍♂️ شكونو هو؟', start: '🚀 انافا', online: '🌐 العب أونلاين مع أصحابك' },
     thief: { title: '🗝️ سارق، حاكم، جلّاد', start: '🚀 وزّع الكوارط', online: '🌐 العب أونلاين مع أصحابك' },
-    spyfall: { title: 'spyfall', start: '🚀 وزّع الكوارط', online: '🌐 العب أونلاين مع أصحابك' },
+    spyfall: { title: 'ماناش هوني', start: '🚀 وزّع الكوارط', online: '🌐 العب أونلاين مع أصحابك' },
     coup: { title: '👑 كول وبوّع', start: '🚀 ابدا الكول', online: '🌐 العب أونلاين مع أصحابك' }
 };
 const thiefRoles = [
@@ -89,9 +89,13 @@ const coupCards = {
     duke: { name:'الشلغمي', icon:'👑', desc:'ياخو 3 فلوس. وينجم يسكّر المعونة.' },
     assassin: { name:'حفار القبور', icon:'🗡️', desc:'يدفع 3 فلوس ويطيّح كارتة من لاعب.' },
     contessa: { name:'البية', icon:'💃', desc:'تسكّر الاغتيال وتنقذ صاحبها.' },
-    ambassador: { name:'السمسار', icon:'🤝', desc:'يبدّل كوارط مع الدكّة.' }
+    ambassador: { name:'السمسار', icon:'🤝', desc:'يبدّل كوارط مع الدكّة وينجم يسكّر سرقة الرايس.' },
+    captain: { name:'الرايس', icon:'⚓', desc:'يسرق زوز فلوس من لاعب، وينجم يسكّر السرقة.' }
 };
 let coupState = null;
+let coupFocusedPlayerId = null;
+let coupTimerInterval = null;
+const COUP_DEFAULT_ACTION_MINUTES = 1;
 
 // ============================================================
 // INDEXED DB — settings persistence
@@ -147,19 +151,44 @@ function _togSet(id, val) { document.getElementById(id).classList.toggle('active
 // UTILITIES
 // ============================================================
 function showScreen(id) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
+    const next = document.getElementById(id);
+    if (!next) return;
+    const current = document.querySelector('.screen.active');
+    if (current === next) return;
+    document.querySelectorAll('.screen.exiting').forEach(s => s.classList.remove('exiting'));
+    if (current) {
+        current.classList.remove('active');
+        current.classList.add('exiting');
+        setTimeout(() => current.classList.remove('exiting'), 260);
+    }
+    requestAnimationFrame(() => next.classList.add('active'));
 }
 
 function setGameMode(mode, goSetup = true) {
     currentGameMode = ['impostor','thief','spyfall','coup'].includes(mode) ? mode : 'impostor';
     try { localStorage.setItem(GAME_MODE_KEY, currentGameMode); } catch(_) {}
     if (currentGameMode !== 'impostor') currentLang = 'tn';
+    if (currentGameMode === 'coup') {
+        timerConfig = COUP_DEFAULT_ACTION_MINUTES;
+        const timerVal = document.getElementById('val-timer');
+        if (timerVal) timerVal.innerText = timerConfig;
+    }
+    document.body.classList.add('game-switching');
+    clearTimeout(document.body._gameSwitchTimer);
+    document.body._gameSwitchTimer = setTimeout(() => document.body.classList.remove('game-switching'), 520);
     updateGameModeUI();
     if (goSetup) showScreen('setup-screen');
 }
 window.setGameMode = setGameMode;
 window.getCurrentGameMode = () => currentGameMode;
+function showModeSelect() {
+    document.getElementById('game-switch-menu')?.classList.add('hidden');
+    document.body.classList.add('game-switching');
+    clearTimeout(document.body._gameSwitchTimer);
+    document.body._gameSwitchTimer = setTimeout(() => document.body.classList.remove('game-switching'), 520);
+    showScreen('mode-select-screen');
+}
+window.showModeSelect = showModeSelect;
 
 function updateGameModeUI() {
     const meta = gameModes[currentGameMode];
@@ -170,7 +199,7 @@ function updateGameModeUI() {
     const title = document.querySelector('header h1');
     if (title) {
         title.innerText = currentGameMode === 'impostor' ? i18n[currentLang].title : meta.title;
-        title.classList.toggle('spyfall-title', currentGameMode === 'spyfall');
+        title.classList.toggle('spyfall-title', false);
     }
     document.querySelectorAll('.game-switch-option').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.gameMode === currentGameMode);
@@ -183,6 +212,8 @@ function updateGameModeUI() {
     if (voteBtn) voteBtn.innerText = currentGameMode === 'thief' ? '⚖️ يا حاكم، احكم' : currentGameMode === 'spyfall' ? '🕶️ عرفنا الspy' : i18n[currentLang].vote_btn;
     const who = document.querySelector('[data-i18n="who_impostor"]');
     if (who) who.innerText = currentGameMode === 'thief' ? 'يا حاكم، شكون السارق؟' : currentGameMode === 'spyfall' ? 'شكون الspy؟' : i18n[currentLang].who_impostor;
+    const timerLabel = document.querySelector('[data-i18n="timer_label"]');
+    if (timerLabel) timerLabel.innerText = currentGameMode === 'coup' ? '⏱️ وقت الدور' : i18n[currentLang].timer_label;
 }
 
 function showToast(msg) {
@@ -505,7 +536,7 @@ function startSpyfallOffline() {
     const namesInput = Array.from(document.querySelectorAll('.player-input'))
         .map((inp,idx)=>inp.value.trim()||`لاعب ${idx+1}`);
     if (namesInput.length < 3) {
-        document.getElementById('setup-error').innerText='يلزم 3 لاعبين على الأقل باش تلعب spyfall.';
+        document.getElementById('setup-error').innerText='يلزم 3 لاعبين على الأقل باش تلعب ماناش هوني.';
         _sfx.error();
         return;
     }
@@ -534,7 +565,7 @@ function startSpyfallOffline() {
 }
 
 function _coupBuildDeck() {
-    const keys = ['duke','assassin','contessa','ambassador'];
+    const keys = ['duke','assassin','contessa','ambassador','captain'];
     return keys.flatMap(k => Array(3).fill(k)).sort(()=>0.5-Math.random());
 }
 
@@ -548,7 +579,7 @@ function _coupNextTurn(state = coupState) {
     let idx = state.turnIndex;
     for (let i=0; i<state.players.length; i++) {
         idx = (idx + 1) % state.players.length;
-        if (state.players[idx].hand.some(c=>!c.lost)) { state.turnIndex = idx; return; }
+        if (state.players[idx].hand.some(c=>!c.lost)) { state.turnIndex = idx; _coupSetTurnDeadline(state); return; }
     }
 }
 
@@ -556,6 +587,100 @@ function _coupPublicCard(player) {
     const live = player.hand.find(c=>!c.lost);
     return live || player.hand[0];
 }
+
+function _escapeHtml(value = '') {
+    return String(value).replace(/[&<>"']/g, ch => ({
+        '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;'
+    }[ch]));
+}
+
+function _coupActionMinutes(state = coupState) {
+    const raw = state?.actionMinutes || timerConfig || COUP_DEFAULT_ACTION_MINUTES;
+    return Math.max(1, Math.min(10, parseInt(raw, 10) || COUP_DEFAULT_ACTION_MINUTES));
+}
+
+function _coupSetTurnDeadline(state = coupState) {
+    if (!state) return;
+    state.turnEndsAt = Date.now() + (_coupActionMinutes(state) * 60000);
+}
+
+function _formatSeconds(totalSeconds) {
+    const safe = Math.max(0, parseInt(totalSeconds, 10) || 0);
+    const m = Math.floor(safe / 60).toString().padStart(2, '0');
+    const s = (safe % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+}
+
+function _renderCoupRoleHelp(cards = coupCards) {
+    const help = document.getElementById('coup-role-help');
+    if (!help) return;
+    help.innerHTML = Object.values(cards).map(c =>
+        `<div class="coup-help-item">${c.icon} <strong>${_escapeHtml(c.name)}</strong><span>${_escapeHtml(c.desc)}</span></div>`
+    ).join('');
+    const toggle = document.getElementById('coup-help-toggle');
+    const chevron = document.getElementById('coup-help-chevron');
+    if (toggle && !toggle.dataset.bound) {
+        toggle.dataset.bound = '1';
+        toggle.addEventListener('click', () => {
+            const open = help.classList.toggle('open');
+            if (chevron) chevron.textContent = open ? '▲' : '▼';
+            _sfx.tap();
+        });
+    }
+}
+
+function _showCoupModal(title, bodyHtml, setup) {
+    document.querySelector('.coup-modal-overlay')?.remove();
+    const overlay = document.createElement('div');
+    overlay.className = 'coup-modal-overlay';
+    overlay.innerHTML = `
+        <div class="coup-modal-card" role="dialog" aria-modal="true">
+            <button class="coup-modal-close" type="button" aria-label="close">×</button>
+            <div class="coup-modal-spark">✦</div>
+            <h3>${_escapeHtml(title)}</h3>
+            <div class="coup-modal-body">${bodyHtml}</div>
+        </div>`;
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add('show'));
+    overlay.querySelector('.coup-modal-close')?.addEventListener('click', () => _closeCoupModal());
+    overlay.addEventListener('click', e => { if (e.target === overlay) _closeCoupModal(); });
+    _sfx.modalOpen();
+    if (typeof setup === 'function') setup(overlay);
+    return overlay;
+}
+
+function _closeCoupModal() {
+    const overlay = document.querySelector('.coup-modal-overlay');
+    if (!overlay) return;
+    overlay.classList.remove('show');
+    _sfx.modalClose();
+    setTimeout(() => overlay.remove(), 220);
+}
+
+function _showCoupCardInfo(type, cards = coupCards) {
+    const meta = cards[type] || cards.duke;
+    _showCoupModal(`${meta.icon} ${meta.name}`, `<p class="coup-card-desc">${_escapeHtml(meta.desc)}</p>`);
+}
+
+function _showCoupEvent(text, kind = 'notice') {
+    if (!text) return;
+    document.querySelector('.coup-event-toast')?.remove();
+    const el = document.createElement('div');
+    el.className = `coup-event-toast ${kind}`;
+    el.innerHTML = `<div class="coup-event-icon">${kind === 'bad' ? '💥' : kind === 'good' ? '✨' : '🎭'}</div><div>${_escapeHtml(text)}</div>`;
+    document.body.appendChild(el);
+    _sfx.reaction(kind === 'bad' ? 'caught' : 'fire');
+    setTimeout(() => el.remove(), 2600);
+}
+window.CoupUI = {
+    escapeHtml: _escapeHtml,
+    formatSeconds: _formatSeconds,
+    renderRoleHelp: _renderCoupRoleHelp,
+    showModal: _showCoupModal,
+    closeModal: _closeCoupModal,
+    showCardInfo: _showCoupCardInfo,
+    showEvent: _showCoupEvent
+};
 
 function startCoupOffline() {
     saveSettings();
@@ -572,6 +697,8 @@ function startCoupOffline() {
         deck,
         turnIndex:0,
         pending:null,
+        actionMinutes:_coupActionMinutes(),
+        turnEndsAt:Date.now() + (_coupActionMinutes() * 60000),
         log:'كل واحد بدا بزوز فلوس وزوز كوارط. بلوف قد ما تحب، أما كان قالولك "تكذب!" حضّر روحك.',
         players:namesInput.map((name, idx) => ({
             id:'local_'+idx,
@@ -586,6 +713,35 @@ function startCoupOffline() {
     _sfx.gameStart();
 }
 
+function startCoupTurnTimer(state = coupState, myId = null) {
+    clearInterval(coupTimerInterval);
+    const timerEl = document.getElementById('coup-action-timer');
+    if (!timerEl || !state) return;
+    const tick = () => {
+        if (!state.turnEndsAt) _coupSetTurnDeadline(state);
+        const left = Math.ceil((state.turnEndsAt - Date.now()) / 1000);
+        timerEl.textContent = _formatSeconds(left);
+        timerEl.classList.toggle('urgent', left <= 10);
+        if (left <= 0 && !state.pending && _coupAlive(state).length > 1) coupHandleTimeout();
+    };
+    tick();
+    coupTimerInterval = setInterval(tick, 1000);
+}
+
+function coupHandleTimeout() {
+    if (!coupState || coupState.pending || coupState._timingOut) return;
+    coupState._timingOut = true;
+    const actor = coupState.players[coupState.turnIndex];
+    if (actor && actor.hand.some(c=>!c.lost)) {
+        actor.coins += 1;
+        coupState.log = `${actor.name} فات الوقت، خذا دخل +1 وعدّى الدور.`;
+        _showCoupEvent('الوقت وفى، تعدّى الدور', 'notice');
+    }
+    _coupNextTurn();
+    coupState._timingOut = false;
+    renderCoupScreen();
+}
+
 function renderCoupScreen(state = coupState, myId = null) {
     if (!state) return;
     const alive = _coupAlive(state);
@@ -597,21 +753,36 @@ function renderCoupScreen(state = coupState, myId = null) {
     const board = document.getElementById('coup-player-board');
     board.innerHTML = '';
     state.players.forEach((p, idx) => {
-        const isMe = !myId || p.id === myId;
+        const isMe = myId ? p.id === myId : idx === state.turnIndex;
+        const visible = isMe || !myId;
+        const focused = coupFocusedPlayerId === p.id || (!coupFocusedPlayerId && isMe);
+        const dimmed = !!coupFocusedPlayerId && coupFocusedPlayerId !== p.id;
         const out = !p.hand.some(c=>!c.lost);
         const div = document.createElement('div');
-        div.className = 'coup-player-card' + (idx===state.turnIndex?' is-turn':'') + (out?' is-out':'');
-        div.innerHTML = `<div class="coup-player-head"><span>${p.name}${isMe && myId?' <span class="you-tag">أنا</span>':''}</span><span class="coup-coins">🪙 ${p.coins}</span></div>
+        div.className = 'coup-player-card' + (idx===state.turnIndex?' is-turn':'') + (isMe?' is-me':'') + (focused?' is-focused':'') + (dimmed?' is-dimmed':'') + (out?' is-out':'');
+        div.dataset.playerId = p.id;
+        div.innerHTML = `<div class="coup-player-head"><span>${_escapeHtml(p.name)}${isMe && myId?' <span class="you-tag">أنا</span>':''}</span><span class="coup-coins">🪙 ${p.coins}</span></div>
             <div class="coup-influence-row">${p.hand.map(c => {
                 const meta = coupCards[c.type] || coupCards.duke;
-                const label = isMe || c.lost ? `${meta.icon} ${meta.name}` : '🂠 مخبية';
-                return `<div class="coup-influence ${c.lost?'lost':''}">${label}</div>`;
+                const label = visible || c.lost ? `${meta.icon} ${meta.name}` : '🂠 مخبية';
+                const info = (visible || c.lost) ? `<button class="coup-card-info" type="button" data-card-type="${c.type}" aria-label="info">ℹ️</button>` : '';
+                return `<div class="coup-influence ${c.lost?'lost':''}"><span>${label}</span>${info}</div>`;
             }).join('')}</div>`;
+        div.addEventListener('click', e => {
+            if (e.target.closest('.coup-card-info')) return;
+            coupFocusedPlayerId = coupFocusedPlayerId === p.id ? null : p.id;
+            renderCoupScreen(state, myId);
+        });
+        div.querySelectorAll('.coup-card-info').forEach(btn => {
+            btn.addEventListener('click', e => {
+                e.stopPropagation();
+                _showCoupCardInfo(btn.dataset.cardType);
+            });
+        });
         board.appendChild(div);
     });
-    document.getElementById('coup-role-help').innerHTML = Object.entries(coupCards).map(([_,c]) =>
-        `<div class="coup-help-item">${c.icon} <strong>${c.name}</strong>: ${c.desc}</div>`
-    ).join('');
+    _renderCoupRoleHelp(coupCards);
+    startCoupTurnTimer(state, myId);
     renderCoupActions(state, myId);
 }
 
@@ -630,87 +801,109 @@ function renderCoupActions(state = coupState, myId = null) {
     const me = myId ? state.players.find(p=>p.id===myId) : state.players[state.turnIndex];
     const isTurn = me && me.id === state.players[state.turnIndex].id;
     if (state.pending) {
-        panel.innerHTML = `<div class="coup-panel-card">${state.log}</div>`;
+        panel.innerHTML = `<div class="coup-panel-card live">${_escapeHtml(state.log)}</div>`;
         return;
     }
+    const current = state.players[state.turnIndex];
     if (!isTurn) {
-        panel.innerHTML = `<div class="coup-panel-card">استنى دورك. تنجم تقول "تكذب!" كي لاعب يعمل أكشن بكارتة.</div>`;
-        return;
+        panel.innerHTML = `<div class="coup-panel-card">استنى دورك. الدور توّة على ${_escapeHtml(current?.name || '')}.</div>`;
     }
-    const mk = (txt, action, cls='') => `<button class="coup-action-btn ${cls}" data-action="${action}">${txt}</button>`;
-    panel.innerHTML = `<div class="coup-action-grid">
-        ${mk('🪙 دخل +1','income')}
-        ${mk('🤲 معونة +2','foreignAid')}
-        ${mk('👑 الشلغمي +3','tax','primary-action')}
-        ${mk('🗡️ اغتيال -3','assassinate','danger-action')}
-        ${mk('🤝 السمسار: بدّل','exchange')}
-        ${mk('💥 Coup -7','coup','danger-action')}
+    const disabled = isTurn ? '' : 'disabled';
+    const mk = (txt, action, cls='', hint='') => `<button class="coup-action-btn ${cls}" data-action="${action}" ${disabled}><strong>${txt}</strong><small>${hint}</small></button>`;
+    panel.innerHTML += `<div class="coup-action-grid ${isTurn?'':'is-disabled'}">
+        ${mk('🪙 دخل +1','income','','مضمون وما يتكذبش')}
+        ${mk('🤲 معونة +2','foreignAid','','ينجم الشلغمي يسكّرها')}
+        ${mk('👑 الشلغمي +3','tax','primary-action','قول عندي الشلغمي')}
+        ${mk('⚓ الرايس: اسرق','steal','primary-action','اسرق زوز فلوس')}
+        ${mk('🗡️ اغتيال -3','assassinate','danger-action','يلزم حفار القبور')}
+        ${mk('🤝 السمسار: بدّل','exchange','','بدّل كوارطك مع الدكّة')}
+        ${mk('💥 Coup -7','coup','danger-action','ضربة ما تتسكرش')}
     </div>`;
     panel.querySelectorAll('[data-action]').forEach(btn => btn.addEventListener('click', () => coupChooseAction(btn.dataset.action)));
 }
 
 function coupChooseAction(action) {
     const actor = coupState.players[coupState.turnIndex];
-    const needsTarget = ['assassinate','coup'].includes(action);
+    const needsTarget = ['assassinate','coup','steal'].includes(action);
     if (action === 'assassinate' && actor.coins < 3) return showToast('يلزمك 3 فلوس للاغتيال.');
     if (action === 'coup' && actor.coins < 7) return showToast('يلزمك 7 فلوس للCoup.');
     if (needsTarget) return coupPickTarget(action);
-    coupStartPending(action, null);
+    const actionName = coupActionName(action);
+    _showCoupModal(actionName, `
+        <p>باش تعمل <strong>${_escapeHtml(actionName)}</strong>. كان فيها بلوف، اللاعبين ينجموا يقولو "تكذب!".</p>
+        <button class="primary-btn" id="coup-confirm-action">كمّل</button>
+    `, overlay => {
+        overlay.querySelector('#coup-confirm-action')?.addEventListener('click', () => {
+            _closeCoupModal();
+            coupStartPending(action, null);
+        });
+    });
 }
 
 function coupPickTarget(action) {
     const actor = coupState.players[coupState.turnIndex];
-    const panel = document.getElementById('coup-action-panel');
-    panel.innerHTML = `<div class="coup-panel-card">اختار شكون تضرب</div><div class="coup-target-grid"></div>`;
-    const grid = panel.querySelector('.coup-target-grid');
-    _coupAlive().filter(p=>p.id!==actor.id).forEach(p => {
-        const btn = document.createElement('button');
-        btn.className = 'coup-target-btn';
-        btn.innerText = p.name;
-        btn.onclick = () => coupStartPending(action, p.id);
-        grid.appendChild(btn);
+    const targets = _coupAlive().filter(p=>p.id!==actor.id);
+    _showCoupModal(action === 'steal' ? 'اختار شكون تسرق' : 'اختار شكون تضرب', `
+        <p>${action === 'steal' ? 'الرايس يسرق حتى زوز فلوس من لاعب.' : action === 'assassinate' ? 'حفار القبور يحتاج هدف واضح.' : 'Coup ضربة مباشرة وما تتسكرش.'}</p>
+        <div class="coup-target-grid">${targets.map(p => `<button class="coup-target-btn" data-target-id="${p.id}">${_escapeHtml(p.name)}</button>`).join('')}</div>
+    `, overlay => {
+        overlay.querySelectorAll('[data-target-id]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                _closeCoupModal();
+                coupStartPending(action, btn.dataset.targetId);
+            });
+        });
     });
 }
 
 function coupStartPending(action, targetId) {
     const actor = coupState.players[coupState.turnIndex];
-    const claims = { tax:'duke', assassinate:'assassin', exchange:'ambassador' };
-    const blockable = action === 'foreignAid' || action === 'assassinate';
+    const claims = { tax:'duke', assassinate:'assassin', exchange:'ambassador', steal:'captain' };
+    const blockRoles = action === 'foreignAid' ? ['duke'] : action === 'assassinate' ? ['contessa'] : action === 'steal' ? ['captain','ambassador'] : [];
+    const blockable = blockRoles.length > 0;
     const claim = claims[action] || null;
     if (!claim && !blockable) return coupResolveAction(action, targetId);
-    coupState.pending = { action, actorId:actor.id, targetId, claim, blockable };
+    coupState.pending = { action, actorId:actor.id, targetId, claim, blockable, blockRoles };
     coupState.log = `${actor.name} قال يعمل ${coupActionName(action)}. تنجمو تقولو "تكذب!"${blockable?' ولا تسكروها.':''}`;
+    _showCoupEvent(`${actor.name} عمل ${coupActionName(action)}`, 'notice');
     renderCoupChallengePanel();
 }
 
 function coupActionName(action) {
-    return {income:'دخل',foreignAid:'معونة',tax:'ضريبة الشلغمي',assassinate:'اغتيال',exchange:'تبديل السمسار',coup:'Coup'}[action] || action;
+    return {income:'دخل',foreignAid:'معونة',tax:'ضريبة الشلغمي',assassinate:'اغتيال',exchange:'تبديل السمسار',steal:'سرقة الرايس',coup:'Coup'}[action] || action;
 }
 
 function renderCoupChallengePanel() {
     renderCoupScreen();
     const p = coupState.pending;
     const actor = coupState.players.find(x=>x.id===p.actorId);
-    const panel = document.getElementById('coup-action-panel');
     const challengers = _coupAlive().filter(x=>x.id!==actor.id);
-    panel.innerHTML = `<div class="coup-panel-card">${coupState.log}</div><div class="coup-target-grid"></div>
-        <button class="primary-btn" id="coup-pass-btn">عدّت، كمّل</button>`;
-    const grid = panel.querySelector('.coup-target-grid');
-    if (p.claim) challengers.forEach(c => {
-        const btn = document.createElement('button'); btn.className='coup-target-btn danger-action'; btn.innerText=`${c.name}: تكذب!`;
-        btn.onclick=()=>coupChallenge(c.id); grid.appendChild(btn);
+    const blockers = p.action === 'foreignAid' ? challengers : challengers.filter(x => x.id === p.targetId);
+    const challengeButtons = p.claim ? challengers.map(c =>
+        `<button class="coup-target-btn danger-action" data-challenge-id="${c.id}">${_escapeHtml(c.name)}: تكذب!</button>`
+    ).join('') : '';
+    const blockButtons = p.blockable ? blockers.map(c =>
+        `<button class="coup-target-btn" data-block-id="${c.id}">${_escapeHtml(c.name)}: نسكّرها</button>`
+    ).join('') : '';
+    _showCoupModal('بوّع ولا صحيح؟', `
+        <p>${_escapeHtml(coupState.log)}</p>
+        <div class="coup-target-grid">${challengeButtons}${blockButtons}</div>
+        <button class="primary-btn" id="coup-pass-btn">عدّت، كمّل</button>
+    `, overlay => {
+        overlay.querySelectorAll('[data-challenge-id]').forEach(btn => btn.addEventListener('click', () => { _closeCoupModal(); coupChallenge(btn.dataset.challengeId); }));
+        overlay.querySelectorAll('[data-block-id]').forEach(btn => btn.addEventListener('click', () => { _closeCoupModal(); coupBlock(btn.dataset.blockId); }));
+        overlay.querySelector('#coup-pass-btn')?.addEventListener('click', () => { _closeCoupModal(); coupResolveAction(p.action, p.targetId); });
     });
-    if (p.blockable) challengers.forEach(c => {
-        const btn = document.createElement('button'); btn.className='coup-target-btn'; btn.innerText=`${c.name}: نسكّرها`;
-        btn.onclick=()=>coupBlock(c.id); grid.appendChild(btn);
-    });
-    document.getElementById('coup-pass-btn').onclick = () => coupResolveAction(p.action, p.targetId);
 }
 
 function coupLoseInfluence(playerId) {
     const p = coupState.players.find(x=>x.id===playerId);
     const card = _coupPublicCard(p);
-    if (card) card.lost = true;
+    if (card) {
+        card.lost = true;
+        const meta = coupCards[card.type] || coupCards.duke;
+        _showCoupEvent(`${p.name} خسر ${meta.name}`, 'bad');
+    }
 }
 
 function coupChallenge(challengerId) {
@@ -721,6 +914,7 @@ function coupChallenge(challengerId) {
     if (hasIt) {
         coupLoseInfluence(challengerId);
         coupState.log = `${challenger.name} طلع غالط! ${actor.name} ورّى الكارتة و${funWrongAccuser()}`;
+        _showCoupEvent(coupState.log, 'bad');
         _sfx.lose();
         coupResolveAction(p.action, p.targetId);
     } else {
@@ -736,17 +930,19 @@ function coupChallenge(challengerId) {
 function coupBlock(blockerId) {
     const p = coupState.pending;
     const blocker = coupState.players.find(x=>x.id===blockerId);
-    const blockRole = p.action === 'assassinate' ? 'contessa' : 'duke';
-    const hasIt = blocker.hand.some(c=>!c.lost && c.type===blockRole);
+    const blockRoles = p.blockRoles || (p.action === 'assassinate' ? ['contessa'] : p.action === 'steal' ? ['captain','ambassador'] : ['duke']);
+    const hasIt = blocker.hand.some(c=>!c.lost && blockRoles.includes(c.type));
     if (hasIt) {
         coupState.log = `${blocker.name} سكّر الأكشن. تعدّت بسلام.`;
         coupState.pending = null;
         _coupNextTurn();
+        _showCoupEvent(coupState.log, 'good');
         _sfx.notify();
         renderCoupScreen();
     } else {
         coupLoseInfluence(blockerId);
         coupState.log = `${blocker.name} حاول يسكّرها وطلع يبوّع! الأكشن يكمل.`;
+        _showCoupEvent(coupState.log, 'bad');
         coupResolveAction(p.action, p.targetId);
     }
 }
@@ -765,8 +961,15 @@ function coupResolveAction(action, targetId) {
         actor.hand = actor.hand.map(c => c.lost ? c : {type:coupState.deck.pop(), lost:false});
         coupState.log = `${actor.name} بدل كوارطو مع الدكّة. السمسار خدم خدمتو.`;
     }
+    if (action === 'steal' && target) {
+        const amount = Math.min(2, target.coins || 0);
+        target.coins -= amount;
+        actor.coins += amount;
+        coupState.log = amount > 0 ? `${actor.name} سرق ${amount} فلوس من ${target.name}. الرايس دخل للمرسى.` : `${actor.name} حاول يسرق ${target.name} أما ما لقى شي.`;
+    }
     if (action === 'assassinate' && target) { actor.coins -= 3; coupLoseInfluence(target.id); coupState.log = `${target.name} تضرّب من حفار القبور وخسر كارتة.`; }
     if (action === 'coup' && target) { actor.coins -= 7; coupLoseInfluence(target.id); coupState.log = `${actor.name} عمل Coup على ${target.name}. ما فيها حتى بلوك.`; }
+    _showCoupEvent(coupState.log, ['assassinate','coup'].includes(action) ? 'bad' : 'good');
     _coupNextTurn();
     renderCoupScreen();
 }
@@ -807,6 +1010,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else {
         for(let i=0;i<4;i++) addPlayerInput();
     }
+    if (currentGameMode === 'coup') timerConfig = COUP_DEFAULT_ACTION_MINUTES;
     document.getElementById('val-impostors').innerText = impostorConfig;
     document.getElementById('val-timer').innerText = timerConfig;
     applyTranslations();
@@ -819,6 +1023,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('game-switch-menu')?.classList.add('hidden');
         });
     });
+    document.getElementById('back-to-mode-select-btn')?.addEventListener('click', showModeSelect);
     document.getElementById('game-title-btn')?.addEventListener('click', e => {
         e.stopPropagation();
         if (document.querySelector('.screen.active')?.id === 'mode-select-screen') return;

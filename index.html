@@ -30,9 +30,10 @@
                 <span class="game-title-chevron">▼</span>
             </button>
             <div id="game-switch-menu" class="game-switch-menu hidden">
+                <button type="button" class="game-switch-option game-switch-home" id="back-to-mode-select-btn">🎲 اختار لعبة أخرى</button>
                 <button type="button" class="game-switch-option" data-game-mode="impostor">🕵️‍♂️ شكونو هو؟</button>
                 <button type="button" class="game-switch-option" data-game-mode="thief">🗝️ سارق، حاكم، جلّاد</button>
-                <button type="button" class="game-switch-option spyfall-title" data-game-mode="spyfall">spyfall</button>
+                <button type="button" class="game-switch-option" data-game-mode="spyfall">🕶️ ماناش هوني</button>
                 <button type="button" class="game-switch-option" data-game-mode="coup">👑 كول وبوّع</button>
             </div>
         </header>
@@ -52,7 +53,7 @@
                 </button>
                 <button type="button" class="mode-choice-card" data-game-mode="spyfall">
                     <span class="mode-choice-icon">🕶️</span>
-                    <span class="mode-choice-title spyfall-title">spyfall</span>
+                    <span class="mode-choice-title">ماناش هوني</span>
                     <span class="mode-choice-sub">بلاصة، أدوار، وspy مخبي</span>
                 </button>
                 <button type="button" class="mode-choice-card" data-game-mode="coup">
@@ -189,9 +190,15 @@
                 </div>
                 <div id="coup-deck-pill" class="coup-deck-pill">🂠 0</div>
             </div>
-            <div id="coup-status" class="coup-status"></div>
+            <div class="coup-status-wrap">
+                <div id="coup-status" class="coup-status"></div>
+                <div id="coup-action-timer" class="coup-action-timer">01:00</div>
+            </div>
             <div id="coup-player-board" class="coup-player-board"></div>
-            <div id="coup-role-help" class="coup-role-help"></div>
+            <button id="coup-help-toggle" class="advanced-header coup-help-toggle" type="button">
+                <span>ℹ️ شنوّة تعمل الكوارط؟</span><span id="coup-help-chevron">▼</span>
+            </button>
+            <div id="coup-role-help" class="coup-role-help advanced-content"></div>
             <div id="coup-action-panel" class="coup-action-panel"></div>
         </div>
 
