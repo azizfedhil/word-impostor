@@ -65,7 +65,7 @@ const infoDescriptions = {
 // ============================================================
 let currentLang = 'tn';
 let x18Unlocked = false;
-let wordsDB = [], regularWordsDB = [], adultWordsDB = [];
+let wordsDB = [], regularWordsDB = [], adultWordsDB = [], spyfallDB = [];
 let players = [], currentWordObj = null;
 let timerInterval = null, remainingTime = 0;
 let isEliminationMode = false, noHintsMode = false;
@@ -76,7 +76,8 @@ const GAME_MODE_KEY = 'dakheel_game_mode';
 let currentGameMode = 'impostor';
 const gameModes = {
     impostor: { title: '🕵️‍♂️ شكونو هو؟', start: '🚀 انافا', online: '🌐 العب أونلاين مع أصحابك' },
-    thief: { title: '🗝️ سارق، حاكم، جلّاد', start: '🚀 وزّع الكوارط', online: '🌐 العب أونلاين مع أصحابك' }
+    thief: { title: '🗝️ سارق، حاكم، جلّاد', start: '🚀 وزّع الكوارط', online: '🌐 العب أونلاين مع أصحابك' },
+    spyfall: { title: 'spyfall', start: '🚀 وزّع الكوارط', online: '🌐 العب أونلاين مع أصحابك' }
 };
 const thiefRoles = [
     { key:'thief', label:'سارق', icon:'🗝️', desc:'إنت السارق. حاول ما يفيقوش بيك.' },
@@ -143,9 +144,9 @@ function showScreen(id) {
 }
 
 function setGameMode(mode, goSetup = true) {
-    currentGameMode = mode === 'thief' ? 'thief' : 'impostor';
+    currentGameMode = ['impostor','thief','spyfall'].includes(mode) ? mode : 'impostor';
     try { localStorage.setItem(GAME_MODE_KEY, currentGameMode); } catch(_) {}
-    if (currentGameMode === 'thief') currentLang = 'tn';
+    if (currentGameMode !== 'impostor') currentLang = 'tn';
     updateGameModeUI();
     if (goSetup) showScreen('setup-screen');
 }
@@ -155,9 +156,13 @@ window.getCurrentGameMode = () => currentGameMode;
 function updateGameModeUI() {
     const meta = gameModes[currentGameMode];
     document.body.classList.toggle('game-thief', currentGameMode === 'thief');
+    document.body.classList.toggle('game-spyfall', currentGameMode === 'spyfall');
     document.body.classList.toggle('game-impostor', currentGameMode === 'impostor');
     const title = document.querySelector('header h1');
-    if (title) title.innerText = currentGameMode === 'impostor' ? i18n[currentLang].title : meta.title;
+    if (title) {
+        title.innerText = currentGameMode === 'impostor' ? i18n[currentLang].title : meta.title;
+        title.classList.toggle('spyfall-title', currentGameMode === 'spyfall');
+    }
     document.querySelectorAll('.game-switch-option').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.gameMode === currentGameMode);
     });
@@ -166,9 +171,9 @@ function updateGameModeUI() {
     const onlineBtn = document.getElementById('open-online-btn');
     if (onlineBtn) onlineBtn.innerText = meta.online;
     const voteBtn = document.getElementById('go-to-vote-btn');
-    if (voteBtn) voteBtn.innerText = currentGameMode === 'thief' ? '⚖️ يا حاكم، احكم' : i18n[currentLang].vote_btn;
+    if (voteBtn) voteBtn.innerText = currentGameMode === 'thief' ? '⚖️ يا حاكم، احكم' : currentGameMode === 'spyfall' ? '🕶️ عرفنا الspy' : i18n[currentLang].vote_btn;
     const who = document.querySelector('[data-i18n="who_impostor"]');
-    if (who) who.innerText = currentGameMode === 'thief' ? 'يا حاكم، شكون السارق؟' : i18n[currentLang].who_impostor;
+    if (who) who.innerText = currentGameMode === 'thief' ? 'يا حاكم، شكون السارق؟' : currentGameMode === 'spyfall' ? 'شكون الspy؟' : i18n[currentLang].who_impostor;
 }
 
 function showToast(msg) {
@@ -290,6 +295,10 @@ fetch('word list.json', { cache: 'no-store' })
     .then(r => r.json()).then(d => { regularWordsDB = d; })
     .catch(() => { regularWordsDB = _embeddedRegular; });
 
+fetch('spyfall_tunisia_100_locations.json', { cache: 'no-store' })
+    .then(r => r.json()).then(d => { spyfallDB = d.spyfall_data || d || []; })
+    .catch(() => { spyfallDB = []; });
+
 // Adult word list is decoded from adult_words_data.js (obfuscated, loaded before this script)
 if (window._adultWordsDecoded && window._adultWordsDecoded.length) {
     adultWordsDB = window._adultWordsDecoded;
@@ -309,6 +318,10 @@ function renderSingleCard() {
     let roleText;
     if (currentGameMode === 'thief') {
         roleText = `<strong style="font-size:1.7rem">${player.roleIcon} ${player.roleLabel}</strong><br><br><span style="font-size:16px;">${player.roleDesc}</span>`;
+    } else if (currentGameMode === 'spyfall') {
+        roleText = player.isSpy
+            ? `<strong style="font-size:1.7rem">🕶️ spy</strong><br><br><span style="font-size:16px;">إنت الspy. حاول تعرف البلاصة من كلامهم.</span>`
+            : `<strong style="font-size:1.45rem">📍 ${player.locationName}</strong><br><br><span style="font-size:16px;">دورك: ${player.locationRole}</span>`;
     } else if (player.isImpostor) {
         roleText = noHintsMode
             ? i18n[currentLang].impostor_role
@@ -347,8 +360,8 @@ window.renderSingleCard = renderSingleCard;
 function goToVoting() {
     showScreen('voting-screen');
     const list = document.getElementById('voting-list'); list.innerHTML = '';
-    document.querySelector('[data-i18n="voting_title"]').innerText = currentGameMode === 'thief' ? '⚖️ حكم الحاكم' : i18n[currentLang].voting_title;
-    document.querySelector('[data-i18n="who_impostor"]').innerText = currentGameMode === 'thief' ? 'يا حاكم، شكون السارق؟' : i18n[currentLang].who_impostor;
+    document.querySelector('[data-i18n="voting_title"]').innerText = currentGameMode === 'thief' ? '⚖️ حكم الحاكم' : currentGameMode === 'spyfall' ? '🕶️ التصويت على الspy' : i18n[currentLang].voting_title;
+    document.querySelector('[data-i18n="who_impostor"]').innerText = currentGameMode === 'thief' ? 'يا حاكم، شكون السارق؟' : currentGameMode === 'spyfall' ? 'شكون الspy؟' : i18n[currentLang].who_impostor;
     players.filter(p=>!p.eliminated).forEach(player => {
         if (currentGameMode === 'thief' && player.role === 'judge') return;
         const btn = document.createElement('button'); btn.className = 'vote-item';
@@ -360,6 +373,7 @@ function goToVoting() {
 
 function handleVote(votedPlayer) {
     if (currentGameMode === 'thief') { handleThiefJudgement(votedPlayer); return; }
+    if (currentGameMode === 'spyfall') { handleSpyfallVote(votedPlayer); return; }
     const resultMsg = document.getElementById('result-message');
     const revealBox = document.getElementById('impostors-reveal');
     const nextBtn = document.getElementById('next-round-btn');
@@ -398,6 +412,25 @@ function handleVote(votedPlayer) {
             };
         }
     }
+    showScreen('result-screen');
+}
+
+function handleSpyfallVote(votedPlayer) {
+    const resultMsg = document.getElementById('result-message');
+    const revealBox = document.getElementById('impostors-reveal');
+    const nextBtn = document.getElementById('next-round-btn');
+    const spy = players.find(p => p.isSpy);
+    const caught = votedPlayer.isSpy;
+    if (caught) {
+        triggerAnimation('win');
+        resultMsg.innerText = `براڨو! ${votedPlayer.name} هو الspy.`;
+    } else {
+        triggerAnimation('lose');
+        resultMsg.innerText = `غلط! الspy هرب. ${votedPlayer.name} خاطيه.`;
+    }
+    revealBox.innerHTML = `الspy: <strong style="color:var(--primary-color)">${spy?.name || '?'}</strong><br>البلاصة: <strong>${spy?.locationName || '?'}</strong>`;
+    nextBtn.innerText = '🔄 عاود انده';
+    nextBtn.onclick = () => showScreen('setup-screen');
     showScreen('result-screen');
 }
 
@@ -458,6 +491,39 @@ function startThiefOffline() {
     _sfx.gameStart();
 }
 
+function startSpyfallOffline() {
+    saveSettings();
+    const namesInput = Array.from(document.querySelectorAll('.player-input'))
+        .map((inp,idx)=>inp.value.trim()||`لاعب ${idx+1}`);
+    if (namesInput.length < 3) {
+        document.getElementById('setup-error').innerText='يلزم 3 لاعبين على الأقل باش تلعب spyfall.';
+        _sfx.error();
+        return;
+    }
+    if (!spyfallDB.length) {
+        document.getElementById('setup-error').innerText='قائمة البلايص مازال ما تحملتش، جرب بعد شوية.';
+        _sfx.error();
+        return;
+    }
+    document.getElementById('setup-error').innerText='';
+    const location = spyfallDB[Math.floor(Math.random() * spyfallDB.length)];
+    const roles = [...(location.roles_tn || [])].sort(()=>0.5-Math.random());
+    const spyIndex = Math.floor(Math.random() * namesInput.length);
+    players = namesInput.map((name, idx) => ({
+        name,
+        isSpy: idx === spyIndex,
+        locationName: location.location_tn,
+        locationRole: roles[idx % Math.max(1, roles.length)] || 'حريف',
+        eliminated:false,
+        viewedCard:false
+    }));
+    remainingTime = timerConfig * 60;
+    currentRevealIndex = 0;
+    renderSingleCard();
+    showScreen('reveal-screen');
+    _sfx.gameStart();
+}
+
 
 
 // ============================================================
@@ -466,7 +532,7 @@ function startThiefOffline() {
 document.addEventListener('DOMContentLoaded', async () => {
 
     try { currentGameMode = localStorage.getItem(GAME_MODE_KEY) || 'impostor'; } catch(_) { currentGameMode = 'impostor'; }
-    if (!['impostor','thief'].includes(currentGameMode)) currentGameMode = 'impostor';
+    if (!['impostor','thief','spyfall'].includes(currentGameMode)) currentGameMode = 'impostor';
     currentLang = 'tn';
     x18Unlocked = hasRememberedX18Unlock();
     applyTranslations();
@@ -596,6 +662,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // START OFFLINE GAME
     document.getElementById('start-game-btn').addEventListener('click',()=>{
         if (currentGameMode === 'thief') { startThiefOffline(); return; }
+        if (currentGameMode === 'spyfall') { startSpyfallOffline(); return; }
         saveSettings();
         // Fallback names for empty inputs
         const namesInput = Array.from(document.querySelectorAll('.player-input'))

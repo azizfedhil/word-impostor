@@ -53,6 +53,31 @@ const QUESTION_CHALLENGES = [
     'كان الكلمة ممنوعة، علاش تتمنع؟'
 ];
 
+const SPYFALL_QUESTIONS = [
+    'شنوة أكثر حاجة تتسمع في البلاصة هاذي؟',
+    'شنوة أول حاجة تعملها كي توصل غادي؟',
+    'في البلاصة هاذي، الناس يقعدو والا يتحركو برشة؟',
+    'شنوة حاجة تنجم تشريها ولا تستعملها غادي؟',
+    'كان تمشي غادي وحدك، عادي ولا غريب؟',
+    'شنوة اللبسة الي تناسب البلاصة هاذي؟',
+    'البلاصة هاذي فيها ريحة معيّنة؟ كيفاش؟',
+    'شنوة نوع الناس الي تلقاهم غادي أكثر؟',
+    'في أي وقت من النهار البلاصة هاذي تعيش أكثر؟',
+    'كان صار مشكل غادي، شكون أول واحد يتدخل؟',
+    'شنوة حاجة ممنوعة تعملها في البلاصة هاذي؟',
+    'البلاصة هاذي تقعد فيها شوية والا برشة؟',
+    'شنوة صوت يفضح البلاصة هاذي؟',
+    'كان باش تصور سيلفي غادي، شنوة يبان وراك؟',
+    'شنوة أكثر كلمة تتقال في البلاصة هاذي؟'
+];
+
+let _spyfallDB = [];
+
+fetch('spyfall_tunisia_100_locations.json', { cache:'no-store' })
+    .then(r => r.json())
+    .then(d => { _spyfallDB = d.spyfall_data || d || []; })
+    .catch(() => { _spyfallDB = []; });
+
 // Host's in-progress lobby settings (preserved across re-renders)
 let _pendingConfig = null;
 
@@ -62,8 +87,9 @@ function _err(msg) { const el = document.getElementById('online-setup-error'); i
 function _clearErr() { _err(''); }
 function _getLang(room) { return (room.config&&room.config.lang)||'tn'; }
 function _getTrans(room) { return i18n[_getLang(room)]; }
-function _getRoomGameMode(room) { return (room?.config?.gameMode === 'thief') ? 'thief' : 'impostor'; }
+function _getRoomGameMode(room) { return ['thief','spyfall'].includes(room?.config?.gameMode) ? room.config.gameMode : 'impostor'; }
 function _isThiefRoom(room) { return _getRoomGameMode(room) === 'thief'; }
+function _isSpyfallRoom(room) { return _getRoomGameMode(room) === 'spyfall'; }
 function _thiefRoleMeta(role) {
     return {
         thief: { label:'سارق', icon:'🗝️', desc:'إنت السارق. حاول ما يفيقوش بيك.' },
@@ -188,7 +214,8 @@ function _canAskQuestion(room) {
 }
 
 function _randomQuestion() {
-    return QUESTION_CHALLENGES[Math.floor(Math.random() * QUESTION_CHALLENGES.length)];
+    const list = _room && _isSpyfallRoom(_room) ? SPYFALL_QUESTIONS : QUESTION_CHALLENGES;
+    return list[Math.floor(Math.random() * list.length)];
 }
 
 function _subscribe(code) {
@@ -215,9 +242,9 @@ function _subscribe(code) {
             if (payload && payload.pid) {
                 _figuredOut.add(payload.pid);
                 _refreshRoundPlayerPanel();
-                if (_room && _room.state === 'discussion' && _figuredThresholdMet(_room)) _moveToVoting('figured');
+                if (_room && _room.state === 'discussion' && !_isThiefRoom(_room) && _figuredThresholdMet(_room)) _moveToVoting('figured');
                 const name = payload.name || '???';
-                _showFiguredOutAnnounce(name);
+                _showFiguredOutAnnounce(name, _isSpyfallRoom(_room) ? 'عرف الspy!' : 'عرف الكذاب!');
                 if (typeof _sfx !== 'undefined') _sfx.notify();
             }
         })
@@ -410,8 +437,11 @@ function _renderLobby(room) {
         startBtn.classList.remove('hidden');
         if (n < 3) { startBtn.disabled = true; startBtn.style.opacity = '0.5'; waitMsg.innerText = `⏳ نستنا لاعبين... (${n}/3 على الأقل)`; }
         else { startBtn.disabled = false; startBtn.style.opacity = ''; waitMsg.innerText = `✅ ${n} لاعبين — يمكن تبدأ!`; }
-        startBtn.innerText = _isThiefRoom(room) ? '🚀 وزّع كوارط سارق حاكم جلاد' : '🚀 ابدأ اللعبة';
-        if (_isThiefRoom(room)) return;
+        startBtn.innerText = _isThiefRoom(room) ? '🚀 وزّع كوارط سارق حاكم جلاد' : _isSpyfallRoom(room) ? '🚀 وزّع كوارط spyfall' : '🚀 ابدأ اللعبة';
+        if (_isThiefRoom(room) || _isSpyfallRoom(room)) {
+            _renderSimpleLobbyTimerSettings(startBtn, room);
+            return;
+        }
 
         // ── Settings button ───────────────────────────────
         const cfg = room.config || {};
@@ -557,7 +587,44 @@ function _renderLobby(room) {
     }
 }
 
-function _showFiguredOutAnnounce(name) {
+function _renderSimpleLobbyTimerSettings(anchorBtn, room) {
+    const cfg = room.config || {};
+    if (!_pendingConfig) _pendingConfig = { timer: cfg.timer || timerConfig || 3 };
+    const wrap = document.createElement('div');
+    wrap.id = 'lobby-settings-panel';
+    wrap.className = 'advanced-content open simple-lobby-settings';
+    wrap.innerHTML = `
+        <div class="surface-card" style="padding:10px 24px;">
+            <div class="setting-row" style="border-bottom:none;">
+                <div class="setting-info"><span class="setting-title">⏱️ وقت الطرح</span></div>
+                <div class="counter-group">
+                    <button class="counter-btn" id="ls-tim-minus">−</button>
+                    <span class="counter-value" id="ls-tim-val">${_pendingConfig.timer || 3}</span>
+                    <button class="counter-btn" id="ls-tim-plus">+</button>
+                </div>
+            </div>
+        </div>
+    `;
+    anchorBtn.after(wrap);
+    const read = () => parseInt(document.getElementById('ls-tim-val')?.textContent) || _pendingConfig.timer || 3;
+    const commit = async val => {
+        _pendingConfig = {..._pendingConfig, timer:val};
+        try { await _update(room.code, { config:{...(room.config||{}), timer:val} }); }
+        catch(e) { console.error(e); }
+    };
+    document.getElementById('ls-tim-minus')?.addEventListener('click', () => {
+        const val = Math.max(1, read() - 1);
+        document.getElementById('ls-tim-val').textContent = val;
+        commit(val);
+    });
+    document.getElementById('ls-tim-plus')?.addEventListener('click', () => {
+        const val = Math.min(20, read() + 1);
+        document.getElementById('ls-tim-val').textContent = val;
+        commit(val);
+    });
+}
+
+function _showFiguredOutAnnounce(name, subtitle = 'عرف الكذاب!') {
     // Remove any existing announcement
     document.querySelector('.figured-center-announce')?.remove();
     const el = document.createElement('div');
@@ -566,7 +633,7 @@ function _showFiguredOutAnnounce(name) {
         <div class="figured-center-announce-inner">
             <span class="figured-center-announce-icon">🎯</span>
             <span class="figured-center-announce-name">${name}</span>
-            <span class="figured-center-announce-sub">عرف الكذاب!</span>
+            <span class="figured-center-announce-sub">${subtitle}</span>
         </div>
     `;
     document.body.appendChild(el);
@@ -668,6 +735,7 @@ function _renderOnlineRoundPlayers(room, screenId) {
     // ── Voice + figured-out controls row ─────────────────────
     const isTimerScreen = screenId === 'timer-screen';
     const isThiefGame = _isThiefRoom(room);
+    const isSpyfallGame = _isSpyfallRoom(room);
     const myFiguredOut  = _playerFigured(_me(room) || { id:_myId });
     const canAskQuestion = isTimerScreen && !isThiefGame && _canAskQuestion(room);
     const voiceActive   = typeof _voiceOn !== 'undefined' && _voiceOn;
@@ -683,8 +751,8 @@ function _renderOnlineRoundPlayers(room, screenId) {
             </button>
             ${canAskQuestion ? `<button class="ask-question-btn" id="ask-question-btn">❓ اسأل لاعب</button>` : ''}
             ${isTimerScreen && !canAskQuestion && _me(room)?.askedQuestion ? `<div class="question-used">✅ سألت سؤال</div>` : ''}
-            ${isTimerScreen && !isThiefGame && !myFiguredOut ? `<button class="figured-btn" id="figured-out-btn">🎯 عرفت الكذاب!</button>` : ''}
-            ${isTimerScreen && !isThiefGame && myFiguredOut  ? `<div class="figured-announced">✅ أعلنت أنك عرفت الكذاب</div>` : ''}
+            ${isTimerScreen && !isThiefGame && !myFiguredOut ? `<button class="figured-btn" id="figured-out-btn">🎯 ${isSpyfallGame ? 'عرفت الspy!' : 'عرفت الكذاب!'}</button>` : ''}
+            ${isTimerScreen && !isThiefGame && myFiguredOut  ? `<div class="figured-announced">✅ ${isSpyfallGame ? 'أعلنت أنك عرفت الspy' : 'أعلنت أنك عرفت الكذاب'}</div>` : ''}
         </div>
         <div class="online-round-list"></div>
     `;
@@ -711,7 +779,7 @@ function _renderOnlineRoundPlayers(room, screenId) {
         _localPlayerDesired = {..._localPlayerDesired, figuredOut:true};
         _channel?.send({ type:'broadcast', event:'figured-out', payload:{ pid:_myId, name:_myName } });
         _refreshRoundPlayerPanel();
-        _showFiguredOutAnnounce(_myName);
+        _showFiguredOutAnnounce(_myName, isSpyfallGame ? 'عرف الspy!' : 'عرف الكذاب!');
         if (typeof _sfx !== 'undefined') _sfx.notify();
         try {
             const updated = await _commitMyPlayerPatch({figuredOut:true});
@@ -831,6 +899,7 @@ function _animateQuestionText(el, finalText) {
 async function _startOnlineGame() {
     if (!_isHost||!_room) return;
     if (_isThiefRoom(_room)) { await _startOnlineThiefGame(); return; }
+    if (_isSpyfallRoom(_room)) { await _startOnlineSpyfallGame(); return; }
     if (_pendingConfig) { _room.config = { ..._room.config, ..._pendingConfig }; }
     _pendingConfig = null;
     const config = _room.config, lang = config.lang||'tn';
@@ -886,6 +955,35 @@ async function _startOnlineThiefGame() {
     } catch(e) { console.error(e); showToast('خطأ في بدء اللعبة!'); }
 }
 
+async function _startOnlineSpyfallGame() {
+    if (!_isHost||!_room) return;
+    if (!_spyfallDB.length) { showToast('قائمة البلايص مازال ما تحملتش، جرب بعد شوية.'); return; }
+    const config = { ...(_room.config || {}), gameMode:'spyfall', lang:'tn', currentVoteReason:null };
+    const allP = _room.players || [];
+    if (allP.length < 3) { showToast('يلزم 3 لاعبين على الأقل.'); return; }
+    const location = _spyfallDB[Math.floor(Math.random() * _spyfallDB.length)];
+    const roles = [...(location.roles_tn || [])].sort(()=>0.5-Math.random());
+    const spyIndex = Math.floor(Math.random() * allP.length);
+    const players = allP.map((p, idx)=>({
+        ...p,
+        isSpy: idx === spyIndex,
+        locationName: location.location_tn,
+        locationRole: roles[idx % Math.max(1, roles.length)] || 'حريف',
+        role: idx === spyIndex ? 'spy' : 'player',
+        isImpostor: idx === spyIndex,
+        customHint:'',
+        eliminated:false,
+        hasSeenCard:false,
+        vote:null,
+        figuredOut:false,
+        askedQuestion:false
+    }));
+    try {
+        await _update(_room.code,{state:'reveal',config,word_obj:location,players,timer_end_at:null,result:null});
+        _figuredOut.clear();
+    } catch(e) { console.error(e); showToast('خطأ في بدء اللعبة!'); }
+}
+
 function _showMyCard(room) {
     showScreen('online-card-screen');
     const me = _me(room); if (!me) return;
@@ -903,6 +1001,10 @@ function _showMyCard(room) {
     if (_isThiefRoom(room)) {
         const meta = _thiefRoleMeta(me.role);
         roleText = `<strong style="font-size:1.7rem">${meta.icon} ${meta.label}</strong><br><br><span style="font-size:16px;">${meta.desc}</span>`;
+    } else if (_isSpyfallRoom(room)) {
+        roleText = me.isSpy
+            ? `<strong style="font-size:1.7rem">🕶️ spy</strong><br><br><span style="font-size:16px;">إنت الspy. حاول تعرف البلاصة من كلامهم.</span>`
+            : `<strong style="font-size:1.45rem">📍 ${me.locationName}</strong><br><br><span style="font-size:16px;">دورك: ${me.locationRole || 'حريف'}</span>`;
     } else {
         roleText = me.isImpostor
             ? (noHints ? trans.impostor_role : `${trans.impostor_role}<br><br><span style="font-size:16px;">${trans.hint_label}</span><br>${me.customHint}`)
@@ -1117,7 +1219,7 @@ function _startClientTimer(room) {
             document.getElementById('reaction-bar')?.classList.add('hidden');
             _moveToVoting('timer');
         }
-        if (_figuredThresholdMet(_room || room)) _moveToVoting('figured');
+        if (!_isThiefRoom(_room || room) && _figuredThresholdMet(_room || room)) _moveToVoting('figured');
     };
     tick(); _onlineTimer = setInterval(tick, 500);
     document.getElementById('go-to-vote-btn').onclick = () => {
@@ -1155,13 +1257,13 @@ function _showOnlineVoting(room) {
     _startVotingTimer(room);
     const list = document.getElementById('voting-list'); list.innerHTML = '';
     const me = _me(room), hasVoted = me&&me.vote!==null;
-    document.querySelector('[data-i18n="voting_title"]').innerText = _isThiefRoom(room) ? '⚖️ حكم الحاكم' : _getTrans(room).voting_title;
-    document.querySelector('[data-i18n="who_impostor"]').innerText = _isThiefRoom(room) ? 'يا حاكم، شكون السارق؟' : _getTrans(room).who_impostor;
+    document.querySelector('[data-i18n="voting_title"]').innerText = _isThiefRoom(room) ? '⚖️ حكم الحاكم' : _isSpyfallRoom(room) ? '🕶️ التصويت على الspy' : _getTrans(room).voting_title;
+    document.querySelector('[data-i18n="who_impostor"]').innerText = _isThiefRoom(room) ? 'يا حاكم، شكون السارق؟' : _isSpyfallRoom(room) ? 'شكون الspy؟' : _getTrans(room).who_impostor;
     room.players.filter(p=>!p.eliminated).forEach(player=>{
         if (_isThiefRoom(room) && player.role === 'judge') return;
         const btn = document.createElement('button'); btn.className = 'vote-item';
         const vc = room.players.filter(p=>p.vote===player.id).length;
-        btn.innerHTML = (_isThiefRoom(room) ? '⚖️ ' : '🗳️ ')+player.name+(vc>0?` <span class="vote-count">(${vc})</span>`:'');
+        btn.innerHTML = (_isThiefRoom(room) ? '⚖️ ' : _isSpyfallRoom(room) ? '🕶️ ' : '🗳️ ')+player.name+(vc>0?` <span class="vote-count">(${vc})</span>`:'');
         if (_isThiefRoom(room) && me?.role !== 'judge') { btn.disabled = true; btn.title = 'نستناو الحاكم يحكم'; }
         else if (hasVoted) { btn.disabled=true; if(me.vote===player.id) btn.classList.add('my-vote'); }
         else if (player.id===_myId) { btn.disabled=true; btn.title='ما تنجمش تصوت على روحك'; }
@@ -1214,6 +1316,29 @@ async function _processVotes(room) {
             thiefId: thief.id,
             judgeId: judge?.id || null,
             executionerId: executioner?.id || null
+        };
+        const {data,error} = await _supa.from('rooms')
+            .update({state:'result',result,timer_end_at:null,config:{...(room.config||{}),currentVoteReason:null}})
+            .eq('code',room.code)
+            .eq('state','voting')
+            .select()
+            .maybeSingle();
+        if (error) throw error;
+        if (data) { _room = data; _handleStateChange(data); }
+        return;
+    }
+    if (_isSpyfallRoom(room)) {
+        const tally = {}; alive.forEach(p=>{if(p.vote) tally[p.vote]=(tally[p.vote]||0)+1;});
+        let maxV=-1, votedId=alive[0].id;
+        Object.entries(tally).forEach(([id,count])=>{if(count>maxV){maxV=count;votedId=id;}});
+        const votedPlayer = room.players.find(p=>p.id===votedId);
+        const spy = room.players.find(p=>p.isSpy);
+        if (!votedPlayer || !spy) return;
+        const result = {
+            votedPlayerId:votedId,
+            outcome: votedPlayer.isSpy ? 'spy_caught' : 'spy_escaped',
+            spyId: spy.id,
+            locationName: spy.locationName || room.word_obj?.location_tn || '?'
         };
         const {data,error} = await _supa.from('rooms')
             .update({state:'result',result,timer_end_at:null,config:{...(room.config||{}),currentVoteReason:null}})
@@ -1283,6 +1408,21 @@ function _showOnlineResult(room) {
         else { nextBtn.innerText='⏳ نستناو مولى الروم...'; nextBtn.disabled=true; }
         return;
     }
+    if (_isSpyfallRoom(room)) {
+        const voted = room.players.find(p=>p.id===result.votedPlayerId);
+        const spy = room.players.find(p=>p.id===result.spyId) || room.players.find(p=>p.isSpy);
+        if (result.outcome === 'spy_caught') {
+            triggerAnimation('win');
+            resultMsg.innerText = `براڨو! ${voted?.name || '?'} هو الspy.`;
+        } else {
+            triggerAnimation('lose');
+            resultMsg.innerText = `غلط! الspy هرب. ${voted?.name || '?'} خاطيه.`;
+        }
+        revealBox.innerHTML = `الspy: <strong style="color:var(--primary-color)">${spy?.name || '?'}</strong><br>البلاصة: <strong>${result.locationName || spy?.locationName || '?'}</strong>`;
+        if (_isHost) { nextBtn.innerText='🔄 عاود انده'; nextBtn.disabled=false; nextBtn.onclick=()=>_resetToLobby(); }
+        else { nextBtn.innerText='⏳ نستناو مولى الروم...'; nextBtn.disabled=true; }
+        return;
+    }
     const voted = room.players.find(p=>p.id===result.votedPlayerId);
     const name = voted?voted.name:'?';
     const allImps = room.players.filter(p=>p.isImpostor).map(p=>p.name).join(' و ');
@@ -1315,7 +1455,7 @@ async function _continueDiscussion(room) {
 
 async function _resetToLobby() {
     if (!_isHost||!_room) return;
-    const players = _room.players.map(p=>({...p,isImpostor:false,customHint:'',eliminated:false,hasSeenCard:false,vote:null,figuredOut:false,askedQuestion:false}));
+    const players = _room.players.map(p=>({...p,isImpostor:false,isSpy:false,role:null,locationName:null,locationRole:null,customHint:'',eliminated:false,hasSeenCard:false,vote:null,figuredOut:false,askedQuestion:false}));
     try { await _update(_room.code,{state:'lobby',config:{...(_room.config||{}),currentVoteReason:null},word_obj:null,players,starter_player:null,timer_end_at:null,result:null}); }
     catch(e) { console.error(e); }
 }
