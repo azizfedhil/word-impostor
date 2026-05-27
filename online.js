@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 // ============================================================
 // SUPABASE ONLINE — init
@@ -7,13 +7,29 @@ const SUPABASE_URL      = 'https://rcxaxblhgpauodmcfetb.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_3xg9qkdYGUoaRdflCW58rg_xRdqg6ox';
 const _supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-let _myId = sessionStorage.getItem('dakheel_pid');
-if (!_myId) { _myId = 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8); sessionStorage.setItem('dakheel_pid', _myId); }
+const ONLINE_PLAYER_ID_KEY = 'dakheel_pid';
+const ONLINE_NAME_KEY = 'dakheel_online_name';
+const ONLINE_LAST_ROOM_KEY = 'dakheel_last_room';
+
+let _myId = null;
+try { _myId = localStorage.getItem(ONLINE_PLAYER_ID_KEY) || sessionStorage.getItem(ONLINE_PLAYER_ID_KEY); } catch(_) {}
+if (!_myId) _myId = 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+function _storeMyId(id) {
+    _myId = id;
+    try { sessionStorage.setItem(ONLINE_PLAYER_ID_KEY, id); } catch(_) {}
+    try { localStorage.setItem(ONLINE_PLAYER_ID_KEY, id); } catch(_) {}
+}
+_storeMyId(_myId);
 
 window.onlineMode = false;
 let _room = null, _channel = null, _isHost = false, _myName = '', _onlineTimer = null;
 let _timerSyncTicker = null, _timerSyncState = null, _lastOnlineTimerSecond = null;
-const ONLINE_NAME_KEY = 'dakheel_online_name';
+let _votingTimer = null, _lastVotingTimerSecond = null;
+let _onlinePresenceIds = new Set();
+let _localPlayerDesired = {};
+let _lastHandledState = null;
+let _movingToVoting = false, _processingVotes = false;
+let _localCardRevealed = false;
 
 // Figured-out tracking (broadcast-based, per round)
 const _figuredOut = new Set(); // player IDs who announced they figured it out
@@ -32,12 +48,27 @@ function _saveOnlineName(name) {
     if (!clean) return;
     try { localStorage.setItem(ONLINE_NAME_KEY, clean); } catch(_) {}
 }
+function _rememberLastRoom(code) {
+    if (!code) return;
+    try { localStorage.setItem(ONLINE_LAST_ROOM_KEY, code); } catch(_) {}
+}
 function _restoreOnlineName() {
     try {
         const saved = localStorage.getItem(ONLINE_NAME_KEY);
         const input = document.getElementById('online-player-name');
         if (saved && input && !input.value) input.value = saved;
+        const code = localStorage.getItem(ONLINE_LAST_ROOM_KEY);
+        const codeInput = document.getElementById('room-code-input');
+        if (code && codeInput && !codeInput.value) codeInput.value = code;
     } catch(_) {}
+}
+
+function _sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+async function _fetchRoom(code) {
+    const {data,error} = await _supa.from('rooms').select().eq('code',code).single();
+    if (error) throw error;
+    return data;
 }
 
 async function _update(code, patch) {
@@ -45,11 +76,93 @@ async function _update(code, patch) {
     if (error) throw error; _room = data; return data;
 }
 
+function _playerHasPatch(room, pid, patch) {
+    const player = (room?.players || []).find(p => p.id === pid);
+    return !!player && Object.entries(patch).every(([key, value]) => player[key] === value);
+}
+
+function _applyLocalPlayerOverrides(room) {
+    if (!room || !room.players || !Object.keys(_localPlayerDesired).length) return room;
+    if ((room.state === 'reveal' || room.state === 'lobby') && _lastHandledState !== room.state) return room;
+    const me = room.players.find(p => p.id === _myId);
+    if (!me) return room;
+
+    Object.keys(_localPlayerDesired).forEach(key => {
+        if (me[key] === _localPlayerDesired[key]) delete _localPlayerDesired[key];
+    });
+    if (!Object.keys(_localPlayerDesired).length) return room;
+
+    return {
+        ...room,
+        players: room.players.map(p => p.id === _myId ? {...p, ..._localPlayerDesired} : p)
+    };
+}
+
+async function _mutatePlayers(code, mutate, verify, extraPatch) {
+    let lastRoom = null;
+    for (let attempt = 0; attempt < 5; attempt++) {
+        const fresh = await _fetchRoom(code);
+        const players = (fresh.players || []).map(p => ({...p}));
+        const nextPlayers = mutate(players, fresh);
+        if (!nextPlayers) {
+            _room = _applyLocalPlayerOverrides(fresh);
+            return _room;
+        }
+
+        const patch = { players: nextPlayers, ...(typeof extraPatch === 'function' ? extraPatch(fresh, nextPlayers) : (extraPatch || {})) };
+        const {data,error} = await _supa.from('rooms').update(patch).eq('code',code).select().single();
+        if (error) throw error;
+        lastRoom = data;
+
+        await _sleep(140 + attempt * 120);
+        const confirmed = await _fetchRoom(code);
+        if (!verify || verify(confirmed)) {
+            _room = _applyLocalPlayerOverrides(confirmed);
+            return _room;
+        }
+    }
+    _room = _applyLocalPlayerOverrides(lastRoom || _room);
+    return _room;
+}
+
+async function _commitMyPlayerPatch(patch) {
+    if (!_room) return null;
+    _localPlayerDesired = {..._localPlayerDesired, ...patch};
+    const code = _room.code;
+    return _mutatePlayers(
+        code,
+        players => players.some(p => p.id === _myId)
+            ? players.map(p => p.id === _myId ? {...p, ...patch} : p)
+            : null,
+        room => _playerHasPatch(room, _myId, patch)
+    );
+}
+
+function _playerOnline(player) {
+    return player.id === _myId || _onlinePresenceIds.has(player.id);
+}
+
+function _playerFigured(player) {
+    return !!(player?.figuredOut || _figuredOut.has(player.id));
+}
+
+function _figuredThresholdMet(room) {
+    const alive = (room?.players || []).filter(p => !p.eliminated);
+    if (!alive.length) return false;
+    const needed = Math.ceil(alive.length * 0.75);
+    return alive.filter(_playerFigured).length >= needed;
+}
+
 function _subscribe(code) {
     if (_channel) _supa.removeChannel(_channel);
-    _channel = _supa.channel('room:'+code)
+    _channel = _supa.channel('room:'+code, { config: { presence: { key: _myId } } })
         .on('postgres_changes',{event:'UPDATE',schema:'public',table:'rooms',filter:'code=eq.'+code},
-            payload => { _room = payload.new; _handleStateChange(payload.new); })
+            payload => { _room = _applyLocalPlayerOverrides(payload.new); _handleStateChange(_room); })
+        .on('presence', { event: 'sync' }, () => {
+            const state = _channel?.presenceState?.() || {};
+            _onlinePresenceIds = new Set(Object.keys(state));
+            _refreshPresenceViews();
+        })
         .on('broadcast', { event: 'reaction' }, ({ payload }) => {
             _showReactionFloat(payload.name + ': ' + payload.msg);
             if (typeof _playReactionSfx === 'function') _playReactionSfx(payload.sfx);
@@ -61,15 +174,39 @@ function _subscribe(code) {
             if (payload && payload.pid) {
                 _figuredOut.add(payload.pid);
                 _refreshRoundPlayerPanel();
+                if (_room && _room.state === 'discussion' && _figuredThresholdMet(_room)) _moveToVoting();
                 const name = payload.name || '???';
                 _showFiguredOutAnnounce(name);
                 if (typeof _sfx !== 'undefined') _sfx.notify();
             }
         })
-        .subscribe(s => { if(s==='SUBSCRIBED') console.log('[online] subscribed',code); });
+        .subscribe(async s => {
+            if(s==='SUBSCRIBED') {
+                console.log('[online] subscribed',code);
+                try { await _channel.track({ id:_myId, name:_myName, at:new Date().toISOString() }); } catch(_) {}
+            }
+        });
+}
+
+function _refreshPresenceViews() {
+    if (!_room) return;
+    const active = document.querySelector('.screen.active')?.id;
+    if (active === 'online-lobby-screen') _renderLobby(_room);
+    else _refreshRoundPlayerPanel();
 }
 
 function _handleStateChange(room) {
+    if (_lastHandledState !== room.state) {
+        if (room.state === 'reveal' || room.state === 'lobby') {
+            _figuredOut.clear();
+            _localPlayerDesired = {};
+            _localCardRevealed = false;
+        }
+        if (room.state !== 'voting') delete _localPlayerDesired.vote;
+        _lastHandledState = room.state;
+    }
+    if (room.state !== 'voting') _stopVotingTimer();
+
     // Sync language for all players (non-host gets host's chosen language)
     const roomLang = _getLang(room);
     if (roomLang && roomLang !== currentLang && i18n[roomLang]) {
@@ -136,6 +273,7 @@ async function _createRoom() {
         }).select().single();
         if (error) throw error;
         _room = data; _isHost = true; window.onlineMode = true;
+        _rememberLastRoom(code);
         _subscribe(code); showScreen('online-lobby-screen'); _renderLobby(data);
         _sfx.notify();
     } catch(e) { console.error(e); _err('خطأ في إنشاء الغرفة — جرب مجدداً'); _sfx.error(); }
@@ -150,18 +288,31 @@ async function _joinRoom() {
     _saveOnlineName(_myName);
     try {
         const {data:room,error} = await _supa.from('rooms').select().eq('code',code).single();
+        let existing = room?.players?.find(p=>p.id===_myId);
+        if (!existing && room?.players) {
+            const matches = room.players.filter(p => (p.name || '').trim().toLowerCase() === _myName.toLowerCase());
+            if (matches.length === 1) {
+                existing = matches[0];
+                _storeMyId(existing.id);
+            }
+        }
         if (error||!room) { _err('ما لقيناش الغرفة!'); _sfx.error(); return; }
-        if (room.state!=='lobby') { _err('اللعبة ديجا بدات'); _sfx.error(); return; }
-        const existing = room.players.find(p=>p.id===_myId);
+        if (!existing && room.state!=='lobby') { _err('اللعبة ديجا بدات'); _sfx.error(); return; }
         if (existing) {
             _room = room; _isHost = room.host_id===_myId; _myName = existing.name;
             _saveOnlineName(_myName);
             const nameInput = document.getElementById('online-player-name');
             if (nameInput) nameInput.value = _myName;
-            window.onlineMode = true; _subscribe(code); showScreen('online-lobby-screen'); _renderLobby(room); return;
+            _rememberLastRoom(code);
+            window.onlineMode = true; _subscribe(code); showScreen('online-lobby-screen'); _handleStateChange(room); return;
         }
-        const updated = await _update(code,{players:[...room.players,_mkPlayer(false)]});
+        const updated = await _mutatePlayers(
+            code,
+            players => players.some(p=>p.id===_myId) ? null : [...players,_mkPlayer(false)],
+            updatedRoom => updatedRoom.players.some(p=>p.id===_myId)
+        );
         _room = updated; _isHost = false; window.onlineMode = true;
+        _rememberLastRoom(code);
         _subscribe(code); showScreen('online-lobby-screen'); _renderLobby(updated); _sfx.notify();
     } catch(e) { console.error(e); _err('خطأ في الانضمام — جرب مجدداً'); _sfx.error(); }
 }
@@ -175,10 +326,13 @@ function _renderLobby(room) {
     const list = document.getElementById('lobby-players-list');
     list.innerHTML = '';
     room.players.forEach(p => {
-        const div = document.createElement('div'); div.className = 'lobby-item';
+        const online = _playerOnline(p);
+        const div = document.createElement('div');
+        div.className = 'lobby-item' + (online ? '' : ' player-offline');
         const isMe = p.id === _myId;
         div.innerHTML = (p.isHost ? '👑 ' : '👤 ') + p.name +
-            (isMe ? ' <span class="you-tag">أنا</span>' : '');
+            (isMe ? ' <span class="you-tag">أنا</span>' : '') +
+            ` <span class="player-status ${online ? 'online' : 'offline'}" title="${online ? 'online' : 'offline'}">${online ? '●' : '○'}</span>`;
         if (isMe) {
             const voiceActive = typeof _voiceOn !== 'undefined' && _voiceOn;
             const vBtn = document.createElement('button');
@@ -384,7 +538,7 @@ function _refreshRoundPlayerPanel() {
     });
 }
 
-const CHIPS_COLLAPSE = 4; // max chips shown before "show more"
+const CHIP_VISIBLE_ROWS = 2;
 
 function _rebuildChips(panel, room, screenId) {
     const list = panel.querySelector('.online-round-list');
@@ -393,48 +547,66 @@ function _rebuildChips(panel, room, screenId) {
 
     // Sort: figured-out first, then rest
     const sorted = [...room.players].sort((a, b) => {
-        const aF = _figuredOut.has(a.id) ? 0 : 1;
-        const bF = _figuredOut.has(b.id) ? 0 : 1;
+        const aF = _playerFigured(a) ? 0 : 1;
+        const bF = _playerFigured(b) ? 0 : 1;
         return aF - bF;
     });
 
-    sorted.forEach((p, idx) => {
+    sorted.forEach(p => {
         const chip = document.createElement('div');
         chip.className = 'online-player-chip';
         if (p.id === _myId)   chip.classList.add('is-me');
         if (p.eliminated)     chip.classList.add('is-out');
         if (p.hasSeenCard)    chip.classList.add('has-seen');
         if (p.vote !== null)  chip.classList.add('has-voted');
-        if (_figuredOut.has(p.id)) chip.classList.add('figured-out');
+        if (!_playerOnline(p)) chip.classList.add('is-offline');
+        if (_playerFigured(p)) chip.classList.add('figured-out');
 
-        // Hide extras past collapse threshold
-        if (idx >= CHIPS_COLLAPSE && !panel.dataset.expanded) chip.classList.add('chip-hidden');
-
-        const status = p.eliminated ? '🚫' : p.vote !== null ? '🗳️' : p.hasSeenCard ? '✅' : '👤';
-        chip.innerHTML = `${p.isHost ? '👑' : status} <span>${p.name}</span>${p.id===_myId?' <span class="you-tag">أنا</span>':''}${_figuredOut.has(p.id)?'<span class="figured-badge">🎯</span>':''}`;
+        const status = !_playerOnline(p) ? '○' : p.eliminated ? '🚫' : p.vote !== null ? '🗳️' : p.hasSeenCard ? '✅' : '👤';
+        chip.innerHTML = `${p.isHost ? '👑' : status} <span>${p.name}</span>${p.id===_myId?' <span class="you-tag">أنا</span>':''}${_playerFigured(p)?'<span class="figured-badge">🎯</span>':''}`;
         list.appendChild(chip);
     });
 
     // Remove old show-more btn
     panel.querySelector('.show-more-btn')?.remove();
 
-    const extra = room.players.length - CHIPS_COLLAPSE;
+    const chips = [...list.querySelectorAll('.online-player-chip')];
+    chips.forEach(chip => chip.classList.remove('chip-hidden'));
+    const rowTops = [];
+    chips.forEach(chip => {
+        const top = chip.offsetTop;
+        if (!rowTops.some(rowTop => Math.abs(rowTop - top) < 4)) rowTops.push(top);
+    });
+    const hasExtraRows = rowTops.length > CHIP_VISIBLE_ROWS;
+    let extra = 0;
+    if (hasExtraRows && !panel.dataset.expanded) {
+        const visibleRows = rowTops.slice(0, CHIP_VISIBLE_ROWS);
+        chips.forEach(chip => {
+            const inVisibleRow = visibleRows.some(rowTop => Math.abs(rowTop - chip.offsetTop) < 4);
+            if (!inVisibleRow) {
+                chip.classList.add('chip-hidden');
+                extra++;
+            }
+        });
+    }
+
     if (extra > 0) {
         const btn = document.createElement('button');
         btn.className = 'show-more-btn';
-        if (panel.dataset.expanded) {
-            btn.textContent = `▲ إخفاء`;
-            btn.onclick = () => {
-                delete panel.dataset.expanded;
-                _rebuildChips(panel, room, screenId);
-            };
-        } else {
-            btn.textContent = `▼ عرض ${extra} لاعبين`;
-            btn.onclick = () => {
-                panel.dataset.expanded = '1';
-                _rebuildChips(panel, room, screenId);
-            };
-        }
+        btn.textContent = `▼ عرض ${extra} لاعبين`;
+        btn.onclick = () => {
+            panel.dataset.expanded = '1';
+            _rebuildChips(panel, room, screenId);
+        };
+        list.after(btn);
+    } else if (hasExtraRows && panel.dataset.expanded) {
+        const btn = document.createElement('button');
+        btn.className = 'show-more-btn';
+        btn.textContent = `▲ إخفاء`;
+        btn.onclick = () => {
+            delete panel.dataset.expanded;
+            _rebuildChips(panel, room, screenId);
+        };
         list.after(btn);
     }
 }
@@ -450,7 +622,7 @@ function _renderOnlineRoundPlayers(room, screenId) {
 
     // ── Voice + figured-out controls row ─────────────────────
     const isTimerScreen = screenId === 'timer-screen';
-    const myFiguredOut  = _figuredOut.has(_myId);
+    const myFiguredOut  = _playerFigured(_me(room) || { id:_myId });
     const voiceActive   = typeof _voiceOn !== 'undefined' && _voiceOn;
 
     panel.innerHTML = `
@@ -480,13 +652,18 @@ function _renderOnlineRoundPlayers(room, screenId) {
     });
 
     // Wire figured-out button
-    panel.querySelector('#figured-out-btn')?.addEventListener('click', () => {
-        if (_figuredOut.has(_myId)) return;
+    panel.querySelector('#figured-out-btn')?.addEventListener('click', async () => {
+        if (_playerFigured(_me(_room) || { id:_myId })) return;
         _figuredOut.add(_myId);
+        _localPlayerDesired = {..._localPlayerDesired, figuredOut:true};
         _channel?.send({ type:'broadcast', event:'figured-out', payload:{ pid:_myId, name:_myName } });
         _refreshRoundPlayerPanel();
         _showFiguredOutAnnounce(_myName);
         if (typeof _sfx !== 'undefined') _sfx.notify();
+        try {
+            const updated = await _commitMyPlayerPatch({figuredOut:true});
+            if (updated && _figuredThresholdMet(updated)) _moveToVoting();
+        } catch(e) { console.error(e); }
     });
 
     _rebuildChips(panel, room, screenId);
@@ -514,7 +691,7 @@ async function _startOnlineGame() {
     if (config.randomImpostors) impCount = Math.floor(Math.random()*Math.floor(allP.length/2))+1;
     const wordObj = wordList[Math.floor(Math.random()*wordList.length)];
     const noHints = config.noHints||lang==='x18';
-    let players = allP.map(p=>({...p,isImpostor:false,customHint:'',eliminated:false,hasSeenCard:false,vote:null}));
+    let players = allP.map(p=>({...p,isImpostor:false,customHint:'',eliminated:false,hasSeenCard:false,vote:null,figuredOut:false}));
     const isChaosRound = config.chaos && Math.random()<0.15;
     if (isChaosRound) { players.forEach(p=>{p.isImpostor=true;}); }
     else {
@@ -531,7 +708,7 @@ async function _startOnlineGame() {
             let hi=0; imps.forEach((p,i)=>{p.customHint=(i===lucky)?(wordObj.hint||''):(wrong[hi++%wrong.length]||'');});
         }
     }
-    try { await _update(_room.code,{state:'reveal',word_obj:wordObj,players,timer_end_at:null,result:null});
+    try { await _update(_room.code,{state:'reveal',config,word_obj:wordObj,players,timer_end_at:null,result:null});
           _figuredOut.clear(); }  // reset per round
     catch(e) { console.error(e); showToast('خطأ في بدء اللعبة!'); }
 }
@@ -544,8 +721,11 @@ function _showMyCard(room) {
     if (me.hasSeenCard) { _renderCardWaiting(room); return; }
     const container = document.getElementById('online-card-container');
     container.innerHTML = '';
+    container.classList.remove('online-card-done-compact');
     document.getElementById('online-seen-btn').classList.add('hidden');
-    document.getElementById('online-waiting-zone').classList.add('hidden');
+    const waitingZone = document.getElementById('online-waiting-zone');
+    waitingZone.classList.add('hidden');
+    waitingZone.classList.remove('all-seen-ready');
     let roleText = me.isImpostor
         ? (noHints ? trans.impostor_role : `${trans.impostor_role}<br><br><span style="font-size:16px;">${trans.hint_label}</span><br>${me.customHint}`)
         : `${trans.citizen_role}<br><br><span style="font-size:16px;">${trans.word_label}</span><br>${room.word_obj.word}`;
@@ -554,29 +734,40 @@ function _showMyCard(room) {
                       <div class="card-face card-back"><span>${roleText}</span></div>`;
     const seenBtn = document.getElementById('online-seen-btn');
     const showCard = e => { e.preventDefault(); card.classList.add('flipped'); _sfx.cardFlip(); };
-    const hideCard = e => { e.preventDefault(); if(!card.classList.contains('flipped')) return; card.classList.remove('flipped'); seenBtn.classList.remove('hidden'); };
+    const hideCard = e => { e.preventDefault(); if(!card.classList.contains('flipped')) return; card.classList.remove('flipped'); _localCardRevealed = true; seenBtn.classList.remove('hidden'); };
     card.addEventListener('mousedown',showCard); card.addEventListener('mouseup',hideCard); card.addEventListener('mouseleave',hideCard);
     card.addEventListener('touchstart',showCard,{passive:false}); card.addEventListener('touchend',hideCard,{passive:false}); card.addEventListener('touchcancel',hideCard,{passive:false});
     container.appendChild(card);
+    if (_localCardRevealed) seenBtn.classList.remove('hidden');
 }
 
 async function _confirmSeen() {
     if (!_room) return;
-    const players = _room.players.map(p=>p.id===_myId?{...p,hasSeenCard:true}:p);
+    if (_me(_room)?.hasSeenCard || _localPlayerDesired.hasSeenCard) return;
+    _localPlayerDesired = {..._localPlayerDesired, hasSeenCard:true};
+    _localCardRevealed = false;
     document.getElementById('online-seen-btn').classList.add('hidden');
-    try { const updated = await _update(_room.code,{players}); _renderCardWaiting(updated); _checkAllSeen(updated); }
+    const optimistic = _applyLocalPlayerOverrides(_room);
+    _renderCardWaiting(optimistic);
+    try {
+        const updated = await _commitMyPlayerPatch({hasSeenCard:true});
+        _renderCardWaiting(updated);
+        _checkAllSeen(updated);
+    }
     catch(e) { console.error(e); }
 }
 
 function _renderCardWaiting(room) {
     _renderOnlineRoundPlayers(room, 'online-card-screen');
     const container = document.getElementById('online-card-container');
+    container.classList.add('online-card-done-compact');
     container.innerHTML = '<div class="card-done-badge">✅</div>';
     const zone = document.getElementById('online-waiting-zone'); zone.classList.remove('hidden');
     const statusEl = document.getElementById('online-seen-status'); statusEl.innerHTML = '';
     room.players.filter(p=>!p.eliminated).forEach(p=>{
-        const div = document.createElement('div'); div.className = 'seen-status-item';
-        div.innerHTML = (p.hasSeenCard?'✅ ':'⏳ ')+p.name; statusEl.appendChild(div);
+        const online = _playerOnline(p);
+        const div = document.createElement('div'); div.className = 'seen-status-item' + (online ? '' : ' player-offline');
+        div.innerHTML = (online ? (p.hasSeenCard?'✅ ':'⏳ ') : '○ ')+p.name; statusEl.appendChild(div);
     });
     _checkAllSeen(room);
 }
@@ -585,8 +776,11 @@ function _checkAllSeen(room) {
     const alive = room.players.filter(p=>!p.eliminated);
     const allSeen = alive.every(p=>p.hasSeenCard);
     const discBtn = document.getElementById('start-discussion-btn');
+    const zone = document.getElementById('online-waiting-zone');
+    zone?.classList.toggle('all-seen-ready', allSeen);
     if (_isHost) {
         discBtn.classList.toggle('hidden',!allSeen);
+        if (allSeen && zone && zone.firstElementChild !== discBtn) zone.prepend(discBtn);
         document.getElementById('online-waiting-text').innerText = allSeen?'✅ الناس الكل شافت كوارتها!':'⏳ نستنا الكل يشوف كارطتو...';
     } else {
         discBtn.classList.add('hidden');
@@ -615,8 +809,48 @@ function _stopOnlineTimer() {
     _lastOnlineTimerSecond = null;
 }
 
+function _stopVotingTimer() {
+    if (_votingTimer) { clearInterval(_votingTimer); _votingTimer = null; }
+    _lastVotingTimerSecond = null;
+}
+
+function _ensureVotingTimerEl() {
+    let el = document.getElementById('voting-timer-display');
+    if (el) return el;
+    el = document.createElement('div');
+    el.id = 'voting-timer-display';
+    el.className = 'voting-timer-display';
+    const list = document.getElementById('voting-list');
+    list?.before(el);
+    return el;
+}
+
+function _startVotingTimer(room) {
+    _stopVotingTimer();
+    const timerEl = _ensureVotingTimerEl();
+    let endAt = new Date(room.timer_end_at || Date.now()+60000).getTime();
+    if (!Number.isFinite(endAt)) endAt = Date.now()+60000;
+    const tick = () => {
+        const left = Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
+        const m = Math.floor(left/60).toString().padStart(2,'0');
+        const s = (left%60).toString().padStart(2,'0');
+        timerEl.innerText = `${m}:${s}`;
+        if (left !== _lastVotingTimerSecond) {
+            _lastVotingTimerSecond = left;
+            if (left <= 10 && left > 0) _sfx.tickUrgent();
+        }
+        if (left <= 0) {
+            _stopVotingTimer();
+            _processVotes(_room || room);
+        }
+    };
+    tick();
+    _votingTimer = setInterval(tick, 500);
+}
+
 function _hostSecondsLeft(room) {
     const endTime = new Date(room.timer_end_at).getTime();
+    if (!Number.isFinite(endTime)) return 0;
     return Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
 }
 
@@ -671,8 +905,9 @@ function _startClientTimer(room) {
             _stopOnlineTimer();
             _sfx.timerEnd();
             document.getElementById('reaction-bar')?.classList.add('hidden');
-            if (_isHost) _moveToVoting();
+            _moveToVoting();
         }
+        if (_figuredThresholdMet(_room || room)) _moveToVoting();
     };
     tick(); _onlineTimer = setInterval(tick, 500);
     document.getElementById('go-to-vote-btn').onclick = () => {
@@ -684,14 +919,29 @@ function _startClientTimer(room) {
 }
 
 async function _moveToVoting() {
-    if (!_isHost||!_room) return;
-    try { await _update(_room.code,{state:'voting'}); } catch(e) { console.error(e); }
+    if (!_room || _movingToVoting) return;
+    _movingToVoting = true;
+    try {
+        const fresh = await _fetchRoom(_room.code);
+        if (!fresh || fresh.state !== 'discussion') return;
+        const votingEndAt = new Date(Date.now()+60*1000).toISOString();
+        const {data,error} = await _supa.from('rooms')
+            .update({state:'voting',timer_end_at:votingEndAt})
+            .eq('code',fresh.code)
+            .eq('state','discussion')
+            .select()
+            .maybeSingle();
+        if (error) throw error;
+        if (data) { _room = data; _handleStateChange(data); }
+    } catch(e) { console.error(e); }
+    finally { _movingToVoting = false; }
 }
 
 function _showOnlineVoting(room) {
     _stopOnlineTimer();
     showScreen('voting-screen');
     _renderOnlineRoundPlayers(room, 'voting-screen');
+    _startVotingTimer(room);
     const list = document.getElementById('voting-list'); list.innerHTML = '';
     const me = _me(room), hasVoted = me&&me.vote!==null;
     room.players.filter(p=>!p.eliminated).forEach(player=>{
@@ -705,27 +955,33 @@ function _showOnlineVoting(room) {
     });
     const alive = room.players.filter(p=>!p.eliminated);
     const allVoted = alive.length>0&&alive.every(p=>p.vote!==null);
-    if (allVoted&&_isHost) setTimeout(()=>_processVotes(room),800);
+    if (allVoted) setTimeout(()=>_processVotes(room),800);
 }
 
 async function _castVote(targetId) {
-    if (!_room) return; _sfx.vote();
-    const players = _room.players.map(p=>p.id===_myId?{...p,vote:targetId}:p);
+    if (!_room || _localPlayerDesired.vote) return; _sfx.vote();
+    _localPlayerDesired = {..._localPlayerDesired, vote:targetId};
+    _showOnlineVoting(_applyLocalPlayerOverrides(_room));
     try {
-        const updated = await _update(_room.code,{players});
+        const updated = await _commitMyPlayerPatch({vote:targetId});
         _showOnlineVoting(updated);
         const alive = updated.players.filter(p=>!p.eliminated);
-        if (alive.length>0&&alive.every(p=>p.vote!==null)&&_isHost) setTimeout(()=>_processVotes(updated),800);
+        if (alive.length>0&&alive.every(p=>p.vote!==null)) setTimeout(()=>_processVotes(updated),800);
     } catch(e) { console.error(e); }
 }
 
 async function _processVotes(room) {
-    if (!_isHost) return;
+    if (_processingVotes) return;
+    _processingVotes = true;
+    try {
+    const fresh = await _fetchRoom(room?.code || _room?.code);
+    if (!fresh || fresh.state !== 'voting') return;
+    room = fresh;
     const alive = room.players.filter(p=>!p.eliminated);
+    if (!alive.length) return;
     const tally = {}; alive.forEach(p=>{if(p.vote) tally[p.vote]=(tally[p.vote]||0)+1;});
-    let maxV=0, votedId=null;
+    let maxV=-1, votedId=alive[0].id;
     Object.entries(tally).forEach(([id,count])=>{if(count>maxV){maxV=count;votedId=id;}});
-    if (!votedId) return;
     const votedPlayer = room.players.find(p=>p.id===votedId); if (!votedPlayer) return;
     const isElim = room.config.elimination;
     let outcome;
@@ -738,12 +994,21 @@ async function _processVotes(room) {
         else if (rI.length>=rR.length) outcome='impostors_win';
         else outcome='continue';
     }
-    try { await _update(room.code,{state:'result',players,result:{votedPlayerId:votedId,outcome}}); }
-    catch(e) { console.error(e); }
+    const {data,error} = await _supa.from('rooms')
+        .update({state:'result',players,result:{votedPlayerId:votedId,outcome},timer_end_at:null})
+        .eq('code',room.code)
+        .eq('state','voting')
+        .select()
+        .maybeSingle();
+    if (error) throw error;
+    if (data) { _room = data; _handleStateChange(data); }
+    } catch(e) { console.error(e); }
+    finally { _processingVotes = false; }
 }
 
 function _showOnlineResult(room) {
     _stopOnlineTimer();
+    _stopVotingTimer();
     showScreen('result-screen');
     _renderOnlineRoundPlayers(room, 'result-screen');
     const trans = _getTrans(room), result = room.result;
@@ -775,14 +1040,15 @@ async function _continueDiscussion(room) {
     const seconds = 60, timerEndAt = new Date(Date.now()+seconds*1000).toISOString();
     const alive = room.players.filter(p=>!p.eliminated);
     const starter = alive[Math.floor(Math.random()*alive.length)];
-    const players = room.players.map(p=>({...p,vote:null}));
+    const players = room.players.map(p=>({...p,vote:null,figuredOut:false}));
+    _figuredOut.clear();
     try { await _update(room.code,{state:'discussion',starter_player:starter.name,timer_end_at:timerEndAt,players}); }
     catch(e) { console.error(e); }
 }
 
 async function _resetToLobby() {
     if (!_isHost||!_room) return;
-    const players = _room.players.map(p=>({...p,isImpostor:false,customHint:'',eliminated:false,hasSeenCard:false,vote:null}));
+    const players = _room.players.map(p=>({...p,isImpostor:false,customHint:'',eliminated:false,hasSeenCard:false,vote:null,figuredOut:false}));
     try { await _update(_room.code,{state:'lobby',word_obj:null,players,starter_player:null,timer_end_at:null,result:null}); }
     catch(e) { console.error(e); }
 }
@@ -790,8 +1056,15 @@ async function _resetToLobby() {
 async function _leaveRoom() {
     if (!_room) { window.onlineMode=false; showScreen('setup-screen'); return; }
     try {
+        if (_channel) { try { await _channel.untrack(); } catch(_) {} }
         if (_isHost) { await _supa.from('rooms').delete().eq('code',_room.code); }
-        else { const players = _room.players.filter(p=>p.id!==_myId); await _supa.from('rooms').update({players}).eq('code',_room.code); }
+        else {
+            await _mutatePlayers(
+                _room.code,
+                players => players.filter(p=>p.id!==_myId),
+                room => !room.players.some(p=>p.id===_myId)
+            );
+        }
     } catch(e) { console.error(e); }
     if (_channel) { _supa.removeChannel(_channel); _channel=null; }
     _stopOnlineTimer();
@@ -799,3 +1072,4 @@ async function _leaveRoom() {
     _room=null; _isHost=false; window.onlineMode=false;
     showScreen('setup-screen');
 }
+

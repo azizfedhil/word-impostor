@@ -156,6 +156,9 @@ input[type="text"]:focus, input[type="password"]:focus { border-color: var(--pri
               display: flex; align-items: center; font-weight: 700; font-size: 1.05rem; gap: 8px;
               animation: fluidEntry 0.3s ease forwards; }
 .lobby-item:last-child { border-bottom: none; }
+.lobby-item.player-offline { opacity: .62; }
+.player-status { margin-inline-start: 8px; font-size: .9rem; color: var(--primary-color); }
+.player-status.offline { color: var(--text-muted); }
 .you-tag { font-size: 11px; font-weight: 700; background: var(--primary-color); color: #fff;
            padding: 2px 8px; border-radius: var(--radius-pill); margin-right: auto; }
 
@@ -231,6 +234,12 @@ input[type="text"]:focus, input[type="password"]:focus { border-color: var(--pri
 
 /* ===== ONLINE EXTRAS ===== */
 .card-done-badge { font-size: 80px; line-height: 1; padding: 30px 0; text-align: center; animation: fluidEntry 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+.card-container.online-card-done-compact { height: auto; min-height: 0; margin: 8px 0 10px; }
+.card-container.online-card-done-compact .card-done-badge { font-size: 54px; padding: 8px 0 4px; }
+#online-waiting-zone.all-seen-ready { margin-top: 8px !important; padding: 12px !important; }
+#online-waiting-zone.all-seen-ready #start-discussion-btn { margin-bottom: 12px; }
+#online-waiting-zone.all-seen-ready #online-seen-status { margin-bottom: 8px; }
+#online-waiting-zone.all-seen-ready #online-waiting-text { margin-bottom: 0; }
 .seen-status-list { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 14px; }
 .seen-status-item { padding: 8px 14px; border-radius: var(--radius-sm); font-size: 0.9rem; font-weight: 700;
                     background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-main); }
@@ -245,6 +254,7 @@ input[type="text"]:focus, input[type="password"]:focus { border-color: var(--pri
                       font-size: .9rem; font-weight: 800; max-width: 100%; }
 .online-player-chip.is-me { border-color: var(--primary-color); background: rgba(82,140,113,0.1); }
 .online-player-chip.is-out { opacity: .55; text-decoration: line-through; }
+.online-player-chip.is-offline { opacity: .62; border-style: dashed; }
 .online-player-chip.has-voted { border-color: rgba(241,192,81,0.45); }
 .online-player-chip.has-seen { border-color: rgba(82,140,113,0.35); }
 .online-player-chip .you-tag { margin-inline-start: 0; }
@@ -410,6 +420,10 @@ input[type="text"]:focus, input[type="password"]:focus { border-color: var(--pri
     transition: all .2s;
 }
 .show-more-btn:hover { border-color: var(--primary-color); color: var(--primary-color); }
+.voting-timer-display { width: fit-content; min-width: 96px; margin: 6px auto 16px; padding: 7px 14px;
+                        border-radius: var(--radius-pill); background: var(--surface-color);
+                        border: 1px solid var(--border-color); color: var(--danger-color);
+                        font-size: 1.15rem; font-weight: 800; text-align: center; }
 .vote-count { font-size: 0.85rem; font-weight: 700; color: var(--accent-color); }
 .pw-remember-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; font-size: 0.95rem; }
 .pw-remember-row input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--danger-color); cursor: pointer; }
