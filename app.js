@@ -86,7 +86,7 @@ const thiefRoles = [
     { key:'executioner', label:'جلّاد', icon:'🪓', desc:'إنت الجلّاد. تستنى حكم الحاكم.' }
 ];
 const coupCards = {
-    duke: { name:'الشلغمي', icon:'👑', img:'assets/coup/duke.png', img512:'assets/coup/duke512.png', attack:'هجوم: ياخو 3 فلوس من البنك.', defense:'دفاع: يسكّر المعونة +2 متاع أي لاعب.' },
+    duke: { name:'الشلغمي', icon:'👑', img:'assets/coup/duke.png', img512:'assets/coup/duke512.png', attack:'هجوم: ياخو 3 فلوس من البنك.', defense:'دفاع: يسكّر اعانة +2 متاع أي لاعب.' },
     assassin: { name:'حفار القبور', icon:'🗡️', img:'assets/coup/assassin.png', img512:'assets/coup/assassin512.png', attack:'هجوم: يدفع 3 فلوس ويخلي لاعب يختار كارتة يخسرها.', defense:'دفاع: ما عندوش دفاع، أما claim متاعو ينجم يتكذّب.' },
     contessa: { name:'البية', icon:'💃', img:'assets/coup/contessa.png', img512:'assets/coup/contessa512.png', attack:'هجوم: ما عندهاش هجوم.', defense:'دفاع: تسكّر الاغتيال متاع حفار القبور.' },
     ambassador: { name:'السمسار', icon:'🤝', img:'assets/coup/ambassador.png', img512:'assets/coup/ambassador512.png', attack:'هجوم: يبدّل كوارطو الحيّة مع الدكّة، أو يعمل روحو بدّل.', defense:'دفاع: يسكّر سرقة الرايس.' },
@@ -101,10 +101,10 @@ let coupResponseInterval = null;
 let coupOtherDecksCollapsed = false;
 let coupOfflineReveal = false;
 const coupActionHelp = {
-    income: { title:'دخل +1', text:'تاخو 1 فلوس من البنك. ما تتسكرش وما حد ينجم يقولك تكذب خاطرها أكشن مفتوحة.' },
-    foreignAid: { title:'معونة +2', text:'تاخو 2 فلوس من البنك. أي لاعب ينجم يقول عندو الشلغمي ويسكّرها. بعد البلوك، أي لاعب ينجم يتهمه بالبلوف.' },
+    income: { title:'شهرية +1', text:'تاخو 1 فلوس من البنك. ما تتسكرش وما حد ينجم يقولك تكذب خاطرها أكشن مفتوحة.' },
+    foreignAid: { title:'اعانة +2', text:'تاخو 2 فلوس من البنك. أي لاعب ينجم يقول عندو الشلغمي ويسكّرها. بعد البلوك، أي لاعب ينجم يتهمه بالتبلعيط.' },
     tax: { title:'الشلغمي +3', text:'تقول عندي الشلغمي وتاخو 3 فلوس من البنك. أي لاعب ينجم يقولك تكذب.' },
-    steal: { title:'الرايس: اسرق', text:'تقول عندي الرايس وتسرق حتى زوز فلوس من لاعب. الهدف ينجم يسكّر بالرايس أو السمسار، وأي لاعب ينجم يتهم أي claim بالبلوف.' },
+    steal: { title:'الرايس: اسرق', text:'تقول عندي الرايس وتسرق حتى زوز فلوس من لاعب. الهدف ينجم يسكّر بالرايس أو السمسار، وأي لاعب ينجم يتهم أي claim بالتبلعيط.' },
     assassinate: { title:'اغتيال -3', text:'تدفع 3 فلوس وتقول عندي حفار القبور باش تطيّح كارتة من لاعب. الهدف ينجم يسكّر بالبية، وأي لاعب ينجم يقول تكذب.' },
     exchange: { title:'السمسار: بدّل', text:'تقول عندي السمسار وتبدّل كوارطك الحيين مع الدكّة. أي لاعب ينجم يقولك تكذب.' },
     coup: { title:'Coup -7', text:'تدفع 7 فلوس وتطيّح كارتة من لاعب. ما تتسكرش وما فيهاش تكذيب.' }
@@ -878,8 +878,8 @@ const coupGuideSections = [
         key:'turn',
         title:'دورتك',
         icon:'🎲',
-        body:'في دورتك تختار أكشن واحدة: دخل، معونة، Coup، ولا claim بكارتة. تنجم تكذب، أما أي لاعب ينجم يقولك تكذب.',
-        tips:['الدخل +1 ما يتسكرش وما يتكذّبش.', 'المعونة +2 تتسكر بالشلغمي.', 'كان عندك 10 فلوس ولا أكثر لازم تعمل Coup.']
+        body:'في دورتك تختار أكشن واحدة: شهرية، اعانة، Coup، ولا claim بكارتة. تنجم تكذب، أما أي لاعب ينجم يقولك تكذب.',
+        tips:['الشهرية +1 ما يتسكرش وما يتكذّبش.', 'اعانة +2 تتسكر بالشلغمي.', 'كان عندك 10 فلوس ولا أكثر لازم تعمل Coup.']
     },
     {
         key:'cards',
@@ -892,7 +892,7 @@ const coupGuideSections = [
         title:'التكذيب والبلوك',
         icon:'🔥',
         body:'أي claim بكارتة ينجم يتكذّب. كان صاحب الclaim عندو الكارتة، يوريها، يرجّعها للدكّة ويجبد وحدة جديدة، والمتّهم يخسر كارتة. كان ما عندوش، هو يخسر كارتة.',
-        tips:['بعد claim صحيح متاع حفار القبور ولا الرايس، البلوك مازال ينجم يصير.', 'كان البلوك تبلوف، يتكذّب زادة: الغالط هو الي يخسر كارتة.']
+        tips:['بعد claim صحيح متاع حفار القبور ولا الرايس، البلوك مازال ينجم يصير.', 'كان البلوك تتبلعيط، يتكذّب زادة: الغالط هو الي يخسر كارتة.']
     },
     {
         key:'money',
@@ -960,7 +960,7 @@ function startCoupOffline() {
         actionMinutes:_coupActionMinutes(),
         turnEndsAt:Date.now() + (_coupActionMinutes() * 60000),
         bankCoins:50 - (namesInput.length * 2),
-        log:'كل واحد بدا بزوز فلوس وزوز كوارط. بلوف قد ما تحب، أما كان قالولك "تكذب!" حضّر روحك.',
+        log:'كل واحد بدا بزوز فلوس وزوز كوارط. تبلعيط قد ما تحب، أما كان قالولك "تكذب!" حضّر روحك.',
         players:namesInput.map((name, idx) => ({
             id:'local_'+idx,
             name,
@@ -998,7 +998,7 @@ function coupHandleTimeout() {
     if (actor && actor.hand.some(c=>!c.lost)) {
         actor.coins += 1;
         _coupTakeFromBank(coupState, 1);
-        coupState.log = `${actor.name} فات الوقت، خذا دخل +1 وعدّى الدور.`;
+        coupState.log = `${actor.name} فات الوقت، خذا شهرية +1 وعدّى الدور.`;
         _showCoupEvent('الوقت وفى، تعدّى الدور', 'notice');
     }
     _coupNextTurn();
@@ -1118,8 +1118,8 @@ function renderCoupActions(state = coupState, myId = null) {
         return `<button class="coup-action-btn ${cls} ${disabled}" data-action="${action}" aria-disabled="${actionLocked ? 'true' : 'false'}"><strong>${txt}<span class="coup-action-info" data-action-info="${action}">ℹ️</span></strong><small>${finalHint}</small></button>`;
     };
     panel.innerHTML += `<div class="coup-action-grid ${isTurn?'':'is-disabled'}">
-        ${mk('🪙 دخل +1','income','','مضمون وما يتكذبش')}
-        ${mk('🤲 معونة +2','foreignAid','','ينجم الشلغمي يسكّرها')}
+        ${mk('🪙 شهرية +1','income','','مضمون وما يتكذبش')}
+        ${mk('🤲 اعانة +2','foreignAid','','ينجم الشلغمي يسكّرها')}
         ${mk(`${_coupCardLabelHtml(coupCards.duke)} +3`,'tax','primary-action','قول عندي الشلغمي')}
         ${mk(`${_coupCardLabelHtml(coupCards.captain)}: اسرق`,'steal','primary-action','اسرق زوز فلوس')}
         ${mk(`${_coupCardLabelHtml(coupCards.assassin)} -3`,'assassinate','danger-action','يلزم حفار القبور')}
@@ -1184,7 +1184,7 @@ function coupChooseAction(action) {
     if (needsTarget) return coupPickTarget(action);
     const actionName = coupActionName(action);
     _showCoupModal(actionName, `
-        <p>باش تعمل <strong>${_escapeHtml(actionName)}</strong>. كان فيها بلوف، اللاعبين ينجموا يقولو "تكذب!".</p>
+        <p>باش تعمل <strong>${_escapeHtml(actionName)}</strong>. كان فيها تبلعيط، اللاعبين ينجموا يقولو "تكذب!".</p>
         <button class="primary-btn" id="coup-confirm-action">كمّل</button>
     `, overlay => {
         overlay.querySelector('#coup-confirm-action')?.addEventListener('click', () => {
@@ -1225,7 +1225,7 @@ function coupStartPending(action, targetId) {
 }
 
 function coupActionName(action) {
-    return {income:'دخل',foreignAid:'معونة',tax:'ضريبة الشلغمي',assassinate:'اغتيال',exchange:'تبديل السمسار',steal:'سرقة الرايس',coup:'Coup'}[action] || action;
+    return {income:'شهرية',foreignAid:'اعانة',tax:'ضريبة الشلغمي',assassinate:'اغتيال',exchange:'تبديل السمسار',steal:'سرقة الرايس',coup:'Coup'}[action] || action;
 }
 
 function _coupStartResponseTimer(onExpire) {
@@ -1422,7 +1422,7 @@ function renderCoupBlockChallengePanel() {
     ).join('');
     _showCoupModal('سكّرها، أما صحيح؟', `
         <p>${_escapeHtml(coupState.log)}</p>
-        <p class="coup-decision-hint">أي لاعب غير ${_escapeHtml(blocker?.name || '')} ينجم يتهم البلوك بالبلوف، ولا يعمل ما عندي حتى اعتراض.</p>
+        <p class="coup-decision-hint">أي لاعب غير ${_escapeHtml(blocker?.name || '')} ينجم يتهم البلوك بالتبلعيط، ولا يعمل ما عندي حتى اعتراض.</p>
         ${_coupPendingTimerHtml(p)}
         <div class="coup-pass-progress">${_coupPassCount(coupState, p)}/${_coupPendingResponders(coupState, p).length} قالو ما عندهم حتى اعتراض</div>
         <div class="coup-target-grid">${challengeButtons}${passButtons}</div>
@@ -1462,7 +1462,7 @@ function coupChallengeBlock(challengerId = null) {
     } else {
         coupState.log = `${blocker.name} حاول يسكّرها وطلع يبوّع! الأكشن يكمل.`;
         _showCoupEvent(coupState.log, 'bad');
-        coupLoseInfluence(blocker.id, () => coupResolveAction(p.action, p.targetId), 'البلوك كان بلوف. اختار كارتة تكشفها.');
+        coupLoseInfluence(blocker.id, () => coupResolveAction(p.action, p.targetId), 'البلوك كان تبلعيط. اختار كارتة تكشفها.');
     }
 }
 
@@ -1471,7 +1471,7 @@ function coupResolveAction(action, targetId) {
     const target = coupState.players.find(p=>p.id===targetId);
     coupState.pending = null;
     if (action === 'income') { actor.coins += 1; _coupTakeFromBank(coupState, 1); coupState.log = `${actor.name} خذا دينار. رزق بارد.`; }
-    if (action === 'foreignAid') { actor.coins += 2; _coupTakeFromBank(coupState, 2); coupState.log = `${actor.name} خذا معونة. ما فماش شلغمي سكّرها.`; }
+    if (action === 'foreignAid') { actor.coins += 2; _coupTakeFromBank(coupState, 2); coupState.log = `${actor.name} خذا اعانة. ما فماش شلغمي سكّرها.`; }
     if (action === 'tax') { actor.coins += 3; _coupTakeFromBank(coupState, 3); coupState.log = `${actor.name} كول بالشلغمي وخذا 3 فلوس.`; }
     if (action === 'exchange') {
         coupState.log = `${actor.name} يشوف زوز كوارط من الدكّة ويختار شنوّة يخلي.`;

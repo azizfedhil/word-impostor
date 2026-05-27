@@ -653,7 +653,7 @@ body:not(.game-coup) .coup-only-btn { display: none !important; }
 .coup-action-timer span { color: var(--text-muted); font-size: .72rem; font-weight: 850; }
 .coup-action-timer strong { direction: ltr; font-size: 1.1rem; }
 .coup-action-timer.urgent { color: var(--danger-color); animation: coupTimerPulse .8s ease-in-out infinite; }
-.coup-player-board { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; margin-bottom: 12px; align-items: start; }
+.coup-player-board { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; margin-bottom: 12px; align-items: start; padding: 4px; }
 .coup-my-deck-label { grid-column: 1 / -1; width: 100%; display: grid; grid-template-columns: 1fr auto 1fr;
                       align-items: center; gap: 9px; margin: 4px 0; padding: 5px 0; color: var(--primary-color); font-size: .95rem; }
 .coup-my-deck-label span { height: 1px; background: rgba(82,140,113,.38); }
@@ -664,13 +664,13 @@ body:not(.game-coup) .coup-only-btn { display: none !important; }
 .coup-other-divider span { height: 1px; background: var(--border-color); }
 .coup-other-divider strong { white-space: nowrap; font-weight: 850; }
 .coup-other-divider em { font-style: normal; color: var(--primary-color); font-weight: 900; }
-.coup-other-decks { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; overflow: hidden; }
+.coup-other-decks { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr; gap: 10px; }
 .coup-other-decks.collapsed { display: none; }
 .coup-player-card { background: var(--surface-color); border: 1px solid var(--border-color); border-radius: var(--radius-md);
                     box-shadow: var(--shadow-soft); padding: 12px; transition: transform .22s ease, opacity .2s ease, border-color .2s ease, grid-column .2s ease; cursor: pointer; }
 .coup-player-card.is-turn { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(82,140,113,0.12); }
-.coup-player-card.is-me { grid-column: 1 / -1; padding: 16px; }
-.coup-player-card.is-focused { grid-column: 1 / -1; transform: scale(1.01); border-color: var(--primary-color); }
+.coup-player-card.is-me { grid-column: 1 / -1; padding: 20px; transform: scale(1.03); }
+.coup-player-card.is-focused { border-color: var(--primary-color); }
 .coup-player-card.is-dimmed { opacity: .48; transform: scale(.98); }
 .coup-player-card.is-out { opacity: .55; }
 .coup-player-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: 900; }
@@ -698,7 +698,7 @@ body:not(.game-coup) .coup-only-btn { display: none !important; }
 .coup-action-btn, .coup-target-btn { width: 100%; padding: 12px 10px; border-radius: var(--radius-md); background: var(--surface-color);
                                      color: var(--text-main); border: 1px solid var(--border-color); box-shadow: var(--shadow-soft);
                                      font-size: 1rem; }
-.coup-action-btn { display: grid; gap: 4px; min-height: 74px; align-content: center; }
+.coup-action-btn { display: grid; gap: 4px; min-height: 86px; padding: 14px 10px; align-content: center; }
 .coup-action-btn[data-action="coup"], .coup-action-btn[data-coup-action="coup"] { grid-column: 1 / -1; min-height: 86px; }
 .coup-action-btn strong { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 .coup-action-info { width: 24px; height: 24px; display: inline-grid; place-items: center; border-radius: 50%;
