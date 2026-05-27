@@ -39,10 +39,10 @@ const ONLINE_COUP_RESPONSE_SECONDS = 45;
 let _onlineCoupOtherDecksCollapsed = false;
 let _onlineCoupResponseSync = null, _onlineCoupTurnSync = null;
 const _onlineCoupActionHelp = {
-    income: { title:'دخل +1', text:'تاخو 1 فلوس من البنك. ما تتسكرش وما حد ينجم يقولك تكذب خاطرها أكشن مفتوحة.' },
-    foreignAid: { title:'معونة +2', text:'تاخو 2 فلوس من البنك. أي لاعب ينجم يقول عندو الشلغمي ويسكّرها. بعد البلوك، أي لاعب ينجم يتهمه بالبلوف.' },
+    income: { title:'شهرية +1', text:'تاخو 1 فلوس من البنك. ما تتسكرش وما حد ينجم يقولك تكذب خاطرها أكشن مفتوحة.' },
+    foreignAid: { title:'اعانة +2', text:'تاخو 2 فلوس من البنك. أي لاعب ينجم يقول عندو الشلغمي ويسكّرها. بعد البلوك، أي لاعب ينجم يتهمه بالتبلعيط.' },
     tax: { title:'الشلغمي +3', text:'تقول عندي الشلغمي وتاخو 3 فلوس من البنك. أي لاعب ينجم يقولك تكذب.' },
-    steal: { title:'الرايس: اسرق', text:'تقول عندي الرايس وتسرق حتى زوز فلوس من لاعب. الهدف ينجم يسكّر بالرايس أو السمسار، وأي لاعب ينجم يتهم أي claim بالبلوف.' },
+    steal: { title:'الرايس: اسرق', text:'تقول عندي الرايس وتسرق حتى زوز فلوس من لاعب. الهدف ينجم يسكّر بالرايس أو السمسار، وأي لاعب ينجم يتهم أي claim بالتبلعيط.' },
     assassinate: { title:'اغتيال -3', text:'تدفع 3 فلوس وتقول عندي حفار القبور باش تطيّح كارتة من لاعب. الهدف ينجم يسكّر بالبية، وأي لاعب ينجم يقول تكذب.' },
     exchange: { title:'السمسار: بدّل', text:'تقول عندي السمسار وتبدّل كوارطك الحيين مع الدكّة. أي لاعب ينجم يقولك تكذب.' },
     coup: { title:'Coup -7', text:'تدفع 7 فلوس وتطيّح كارتة من لاعب. ما تتسكرش وما فيهاش تكذيب.' }
@@ -111,7 +111,7 @@ function _isThiefRoom(room) { return _getRoomGameMode(room) === 'thief'; }
 function _isSpyfallRoom(room) { return _getRoomGameMode(room) === 'spyfall'; }
 function _isCoupRoom(room) { return _getRoomGameMode(room) === 'coup'; }
 const _coupCards = {
-    duke: { name:'الشلغمي', icon:'👑', img:'assets/coup/duke.png', img512:'assets/coup/duke512.png', attack:'هجوم: ياخو 3 فلوس من البنك.', defense:'دفاع: يسكّر المعونة +2 متاع أي لاعب.' },
+    duke: { name:'الشلغمي', icon:'👑', img:'assets/coup/duke.png', img512:'assets/coup/duke512.png', attack:'هجوم: ياخو 3 فلوس من البنك.', defense:'دفاع: يسكّر اعانة +2 متاع أي لاعب.' },
     assassin: { name:'حفار القبور', icon:'🗡️', img:'assets/coup/assassin.png', img512:'assets/coup/assassin512.png', attack:'هجوم: يدفع 3 فلوس ويخلي لاعب يختار كارتة يخسرها.', defense:'دفاع: ما عندوش دفاع، أما claim متاعو ينجم يتكذّب.' },
     contessa: { name:'البية', icon:'💃', img:'assets/coup/contessa.png', img512:'assets/coup/contessa512.png', attack:'هجوم: ما عندهاش هجوم.', defense:'دفاع: تسكّر الاغتيال متاع حفار القبور.' },
     ambassador: { name:'السمسار', icon:'🤝', img:'assets/coup/ambassador.png', img512:'assets/coup/ambassador512.png', attack:'هجوم: يبدّل كوارطو الحيّة مع الدكّة، أو يعمل روحو بدّل.', defense:'دفاع: يسكّر سرقة الرايس.' },
@@ -1154,7 +1154,7 @@ async function _startOnlineCoupGame() {
         actionMinutes,
         turnEndsAt:Date.now() + actionMinutes * 60000,
         bankCoins:50 - (allP.length * 2),
-        log:'كل واحد بدا بزوز فلوس وزوز كوارط. البلوف محلول، أما "تكذب!" تستنى.',
+        log:'كل واحد بدا بزوز فلوس وزوز كوارط. التبلعيط محلول، أما "تكذب!" تستنى.',
         players: allP.map(p=>({
             id:p.id,
             name:p.name,
@@ -1905,7 +1905,7 @@ function _onlineCoupRequestExchange(state, playerId) {
 }
 
 function _onlineCoupActionName(action) {
-    return {income:'دخل',foreignAid:'معونة',tax:'ضريبة الشلغمي',assassinate:'اغتيال',exchange:'تبديل السمسار',steal:'سرقة الرايس',coup:'Coup'}[action] || action;
+    return {income:'شهرية',foreignAid:'اعانة',tax:'ضريبة الشلغمي',assassinate:'اغتيال',exchange:'تبديل السمسار',steal:'سرقة الرايس',coup:'Coup'}[action] || action;
 }
 
 function _startOnlineCoupTimer(state) {
@@ -1967,7 +1967,7 @@ async function _onlineCoupTimeout() {
             if (actor?.hand?.some(c=>!c.lost)) {
                 actor.coins += 1;
                 _onlineCoupTakeFromBank(state, 1);
-                state.log = `${actor.name} فات الوقت، خذا دخل +1 وعدّى الدور.`;
+                state.log = `${actor.name} فات الوقت، خذا شهرية +1 وعدّى الدور.`;
                 _onlineCoupEvent(state, 'الوقت وفى، تعدّى الدور', 'notice');
             }
             _onlineCoupNextTurn(state);
@@ -2217,7 +2217,7 @@ function _renderOnlineCoupActions(room, state, me) {
         return;
     }
     if (!me || !me.hand.some(c=>!c.lost)) {
-        panel.innerHTML = '<div class="coup-panel-card">إنت خارج من الطرح. تنجم تتفرج وتضحك عالبلوف.</div>';
+        panel.innerHTML = '<div class="coup-panel-card">إنت خارج من الطرح. تنجم تتفرج وتضحك عالتبلعيط.</div>';
         return;
     }
     if (state.pendingLoss) {
@@ -2321,7 +2321,7 @@ function _renderOnlineCoupActions(room, state, me) {
             const esc = window.CoupUI?.escapeHtml || (x => x);
             const blockButtons = canBlock ? _onlineCoupBlockOptions(p).map(opt => `<button class="coup-target-btn" data-popup-block="${opt.role}">نسكّرها ب${opt.label}</button>`).join('') : '';
             const blockStageButtons = `${canChallengeBlock ? '<button class="coup-target-btn danger-action" data-popup-challenge-block="1">تكذب على البلوك!</button>' : ''}`;
-            const targetLine = target && !isBlockStage ? `<p class="coup-decision-hint">${esc(target.name)}، اختياراتك واضحة: سكّر بالكارتة المناسبة، ولا اتهمه بالبلوف.</p>` : '';
+            const targetLine = target && !isBlockStage ? `<p class="coup-decision-hint">${esc(target.name)}، اختياراتك واضحة: سكّر بالكارتة المناسبة، ولا اتهمه بالتبلعيط.</p>` : '';
             const passButton = canPass ? '<button class="coup-target-btn quiet-action" data-popup-pass="1">ما عندي حتى اعتراض</button>' : '';
             const buttons = `${canChallenge ? '<button class="coup-target-btn danger-action" data-popup-challenge="1">تكذب!</button>' : ''}${blockButtons}${blockStageButtons}${passButton}`;
             if (buttons) window.CoupUI?.showModal?.(isBlockStage ? 'البلوك صحيح؟' : 'شنوة تعمل؟', `<p>${esc(state.log)}</p>${targetLine}${_onlineCoupPendingTimerHtml(p)}<div class="coup-target-grid">${buttons}</div>`, overlay => {
@@ -2347,8 +2347,8 @@ function _renderOnlineCoupActions(room, state, me) {
         return `<button class="coup-action-btn ${cls} ${actionLocked ? 'is-action-disabled' : ''}" data-coup-action="${action}" aria-disabled="${actionLocked ? 'true' : 'false'}"><strong>${txt}<span class="coup-action-info" data-action-info="${action}">ℹ️</span></strong><small>${finalHint}</small></button>`;
     };
     panel.innerHTML += `<div class="coup-action-grid ${isTurn?'':'is-disabled'}">
-        ${mk('🪙 دخل +1','income','','مضمون وما يتكذبش')}
-        ${mk('🤲 معونة +2','foreignAid','','ينجم الشلغمي يسكّرها')}
+        ${mk('🪙 شهرية +1','income','','مضمون وما يتكذبش')}
+        ${mk('🤲 اعانة +2','foreignAid','','ينجم الشلغمي يسكّرها')}
         ${mk(`${window.CoupUI?.cardLabelHtml?.(_coupCards.duke) || '👑 الشلغمي'} +3`,'tax','primary-action','قول عندي الشلغمي')}
         ${mk(`${window.CoupUI?.cardLabelHtml?.(_coupCards.captain) || '⚓ الرايس'}: اسرق`,'steal','primary-action','اسرق زوز فلوس')}
         ${mk(`${window.CoupUI?.cardLabelHtml?.(_coupCards.assassin) || '🗡️ حفار القبور'} -3`,'assassinate','danger-action','يلزم حفار القبور')}
@@ -2455,7 +2455,7 @@ function _onlineCoupChoose(action) {
     const actionName = _onlineCoupActionName(action);
     const esc = window.CoupUI?.escapeHtml || (x => x);
     window.CoupUI?.showModal?.(actionName, `
-        <p>باش تعمل <strong>${esc(actionName)}</strong>. كان فيها بلوف، اللاعبين ينجموا يقولو "تكذب!".</p>
+        <p>باش تعمل <strong>${esc(actionName)}</strong>. كان فيها تبلعيط، اللاعبين ينجموا يقولو "تكذب!".</p>
         <button class="primary-btn" id="online-coup-confirm-action">كمّل</button>
     `, overlay => {
         overlay.querySelector('#online-coup-confirm-action')?.addEventListener('click', () => {
@@ -2605,7 +2605,7 @@ async function _onlineCoupChallengeBlock(challengerId = _myId, pendingId = null)
         } else {
             state.log = `${blocker.name} حاول يسكّر وطلع يبوّع. الأكشن يكمل.`;
             _onlineCoupEvent(state, state.log, 'bad');
-            _onlineCoupRequestLoss(state, blocker.id, 'البلوك كان بلوف. اختار كارتة تكشفها.', { type:'applyAction', action:p.action, targetId:p.targetId });
+            _onlineCoupRequestLoss(state, blocker.id, 'البلوك كان تبلعيط. اختار كارتة تكشفها.', { type:'applyAction', action:p.action, targetId:p.targetId });
         }
         return state;
     });
@@ -2628,7 +2628,7 @@ function _onlineCoupApplyActionLocal(state, action, targetId) {
     const target = state.players.find(p=>p.id===targetId);
     state.pending = null;
     if (action === 'income') { actor.coins += 1; _onlineCoupTakeFromBank(state, 1); state.log = `${actor.name} خذا دينار. رزق بارد.`; }
-    if (action === 'foreignAid') { actor.coins += 2; _onlineCoupTakeFromBank(state, 2); state.log = `${actor.name} خذا معونة. ما تسكّرتش.`; }
+    if (action === 'foreignAid') { actor.coins += 2; _onlineCoupTakeFromBank(state, 2); state.log = `${actor.name} خذا اعانة. ما تسكّرتش.`; }
     if (action === 'tax') { actor.coins += 3; _onlineCoupTakeFromBank(state, 3); state.log = `${actor.name} كول بالشلغمي وخذا 3 فلوس.`; }
     if (action === 'exchange') {
         _onlineCoupRequestExchange(state, actor.id);
@@ -2716,4 +2716,3 @@ async function _leaveRoom() {
     _room=null; _isHost=false; window.onlineMode=false;
     showScreen('setup-screen');
 }
-
