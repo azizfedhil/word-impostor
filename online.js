@@ -25,6 +25,7 @@ window.onlineMode = false;
 let _room = null, _channel = null, _isHost = false, _myName = '', _onlineTimer = null;
 let _timerSyncTicker = null, _timerSyncState = null, _lastOnlineTimerSecond = null;
 let _votingTimer = null, _lastVotingTimerSecond = null;
+let _votingSyncTicker = null, _votingSyncState = null;
 let _onlinePresenceIds = new Set();
 let _localPlayerDesired = {};
 let _lastHandledState = null;
@@ -33,6 +34,24 @@ let _localCardRevealed = false;
 
 // Figured-out tracking (broadcast-based, per round)
 const _figuredOut = new Set(); // player IDs who announced they figured it out
+
+const QUESTION_CHALLENGES = [
+    'كان الكلمة بلاصة في تونس، شنوة أول حاجة تلقاها غادي؟',
+    'قولنا ثلاثة كلمات يوصفو الكلمة من غير ما تقولها.',
+    'كان الكلمة تتباع في السوق، شنية الصنعة متاعها؟',
+    'شنوة أكثر حاجة تنجم تعملها بالكلمة هاذي؟',
+    'كان الكلمة إنسان، شكون من اللاعبين تشبه؟ وعلاش؟',
+    'عطينا موقف يصير فيه الشي هذا في نهار عادي.',
+    'كان الكلمة عندها ريحة، كيفاش توصفها؟',
+    'شنية حاجة قريبة للكلمة أما موش هي بالضبط؟',
+    'كان باش ترسم الكلمة في خمس ثواني، شنوة ترسم؟',
+    'في أي بلاصة تلقى الكلمة هاذي أكثر شي؟',
+    'شنوة عكس الكلمة هاذي ولا أبعد حاجة عليها؟',
+    'كان الكلمة صوت، شنوة الصوت الي تعملو؟',
+    'علاش واحد ينجم يحتاج الكلمة هاذي؟',
+    'شنية أول ذكرى جاتك في بالك مع الكلمة؟',
+    'كان الكلمة ممنوعة، علاش تتمنع؟'
+];
 
 // Host's in-progress lobby settings (preserved across re-renders)
 let _pendingConfig = null;
@@ -153,6 +172,15 @@ function _figuredThresholdMet(room) {
     return alive.filter(_playerFigured).length >= needed;
 }
 
+function _canAskQuestion(room) {
+    const me = _me(room);
+    return room?.state === 'discussion' && me && !me.eliminated && !me.askedQuestion;
+}
+
+function _randomQuestion() {
+    return QUESTION_CHALLENGES[Math.floor(Math.random() * QUESTION_CHALLENGES.length)];
+}
+
 function _subscribe(code) {
     if (_channel) _supa.removeChannel(_channel);
     _channel = _supa.channel('room:'+code, { config: { presence: { key: _myId } } })
@@ -170,11 +198,14 @@ function _subscribe(code) {
         .on('broadcast', { event: 'timer-sync' }, ({ payload }) => {
             _handleTimerSync(payload);
         })
+        .on('broadcast', { event: 'question-challenge' }, ({ payload }) => {
+            if (payload && payload.question) _showQuestionChallenge(payload);
+        })
         .on('broadcast', { event: 'figured-out' }, ({ payload }) => {
             if (payload && payload.pid) {
                 _figuredOut.add(payload.pid);
                 _refreshRoundPlayerPanel();
-                if (_room && _room.state === 'discussion' && _figuredThresholdMet(_room)) _moveToVoting();
+                if (_room && _room.state === 'discussion' && _figuredThresholdMet(_room)) _moveToVoting('figured');
                 const name = payload.name || '???';
                 _showFiguredOutAnnounce(name);
                 if (typeof _sfx !== 'undefined') _sfx.notify();
@@ -623,6 +654,7 @@ function _renderOnlineRoundPlayers(room, screenId) {
     // ── Voice + figured-out controls row ─────────────────────
     const isTimerScreen = screenId === 'timer-screen';
     const myFiguredOut  = _playerFigured(_me(room) || { id:_myId });
+    const canAskQuestion = isTimerScreen && _canAskQuestion(room);
     const voiceActive   = typeof _voiceOn !== 'undefined' && _voiceOn;
 
     panel.innerHTML = `
@@ -634,6 +666,8 @@ function _renderOnlineRoundPlayers(room, screenId) {
             <button class="voice-round-btn${voiceActive?' voice-round-active':''}" id="voice-round-btn-${screenId}">
                 ${voiceActive ? '🔴 قطع الصوت' : '🎙️ انضم للصوت'}
             </button>
+            ${canAskQuestion ? `<button class="ask-question-btn" id="ask-question-btn">❓ اسأل لاعب</button>` : ''}
+            ${isTimerScreen && !canAskQuestion && _me(room)?.askedQuestion ? `<div class="question-used">✅ سألت سؤال</div>` : ''}
             ${isTimerScreen && !myFiguredOut ? `<button class="figured-btn" id="figured-out-btn">🎯 عرفت الكذاب!</button>` : ''}
             ${isTimerScreen && myFiguredOut  ? `<div class="figured-announced">✅ أعلنت أنك عرفت الكذاب</div>` : ''}
         </div>
@@ -651,6 +685,10 @@ function _renderOnlineRoundPlayers(room, screenId) {
         setTimeout(() => _refreshRoundPlayerPanel(), 100);
     });
 
+    panel.querySelector('#ask-question-btn')?.addEventListener('click', () => {
+        _openQuestionTargetPicker(_room || room);
+    });
+
     // Wire figured-out button
     panel.querySelector('#figured-out-btn')?.addEventListener('click', async () => {
         if (_playerFigured(_me(_room) || { id:_myId })) return;
@@ -662,7 +700,7 @@ function _renderOnlineRoundPlayers(room, screenId) {
         if (typeof _sfx !== 'undefined') _sfx.notify();
         try {
             const updated = await _commitMyPlayerPatch({figuredOut:true});
-            if (updated && _figuredThresholdMet(updated)) _moveToVoting();
+            if (updated && _figuredThresholdMet(updated)) _moveToVoting('figured');
         } catch(e) { console.error(e); }
     });
 
@@ -679,6 +717,102 @@ function _renderOnlineRoundPlayers(room, screenId) {
     else screen.appendChild(panel);
 }
 
+function _openQuestionTargetPicker(room) {
+    if (!_canAskQuestion(room)) return;
+    document.querySelector('.question-picker-overlay')?.remove();
+    const me = _me(room);
+    const targets = room.players.filter(p => !p.eliminated && p.id !== _myId);
+    const overlay = document.createElement('div');
+    overlay.className = 'question-picker-overlay';
+    overlay.innerHTML = `
+        <div class="question-picker-card">
+            <button class="question-picker-close" type="button">×</button>
+            <div class="question-picker-title">اختار شكون تسأل</div>
+            <div class="question-picker-list"></div>
+        </div>
+    `;
+    const list = overlay.querySelector('.question-picker-list');
+    targets.forEach(player => {
+        const btn = document.createElement('button');
+        btn.className = 'question-target-btn';
+        btn.type = 'button';
+        btn.textContent = player.name;
+        btn.addEventListener('click', () => {
+            overlay.remove();
+            _askPlayerQuestion(player.id);
+        });
+        list.appendChild(btn);
+    });
+    overlay.querySelector('.question-picker-close').addEventListener('click', () => overlay.remove());
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+    document.body.appendChild(overlay);
+}
+
+async function _askPlayerQuestion(targetId) {
+    if (!_room || !_canAskQuestion(_room)) return;
+    const target = _room.players.find(p => p.id === targetId && !p.eliminated);
+    const me = _me(_room);
+    if (!target || !me) return;
+    const question = _randomQuestion();
+    const payload = {
+        fromId: _myId,
+        fromName: me.name,
+        toId: target.id,
+        toName: target.name,
+        question
+    };
+
+    _localPlayerDesired = {..._localPlayerDesired, askedQuestion:true};
+    if (document.querySelector('.screen.active')?.id === 'timer-screen') {
+        _renderOnlineRoundPlayers(_applyLocalPlayerOverrides(_room), 'timer-screen');
+    }
+    _showQuestionChallenge(payload);
+    _channel?.send({ type:'broadcast', event:'question-challenge', payload });
+    try {
+        const updated = await _commitMyPlayerPatch({askedQuestion:true});
+        _refreshRoundPlayerPanel();
+        if (updated) _room = updated;
+    } catch(e) { console.error(e); }
+}
+
+function _showQuestionChallenge(payload) {
+    document.querySelector('.question-challenge-overlay')?.remove();
+    const overlay = document.createElement('div');
+    overlay.className = 'question-challenge-overlay';
+    overlay.innerHTML = `
+        <div class="question-challenge-card">
+            <div class="question-challenge-meta"></div>
+            <div class="question-challenge-text"></div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.querySelector('.question-challenge-meta').textContent = `${payload.fromName} يسأل ${payload.toName}`;
+    const textEl = overlay.querySelector('.question-challenge-text');
+    _animateQuestionText(textEl, payload.question);
+    if (typeof _sfx !== 'undefined') _sfx.notify();
+    setTimeout(() => overlay.classList.add('leaving'), 6200);
+    setTimeout(() => overlay.remove(), 6800);
+}
+
+function _animateQuestionText(el, finalText) {
+    const glyphs = 'ابتثجحخدذرزسشصضطظعغفقكلمنهوي؟!#@$%';
+    const chars = [...finalText];
+    let step = 0;
+    const maxSteps = 28;
+    const ticker = setInterval(() => {
+        step++;
+        const locked = Math.floor((step / maxSteps) * chars.length);
+        el.textContent = chars.map((ch, idx) => {
+            if (ch === ' ' || idx < locked) return ch;
+            return glyphs[Math.floor(Math.random() * glyphs.length)];
+        }).join('');
+        if (step >= maxSteps) {
+            clearInterval(ticker);
+            el.textContent = finalText;
+        }
+    }, 45);
+}
+
 async function _startOnlineGame() {
     if (!_isHost||!_room) return;
     if (_pendingConfig) { _room.config = { ..._room.config, ..._pendingConfig }; }
@@ -691,7 +825,7 @@ async function _startOnlineGame() {
     if (config.randomImpostors) impCount = Math.floor(Math.random()*Math.floor(allP.length/2))+1;
     const wordObj = wordList[Math.floor(Math.random()*wordList.length)];
     const noHints = config.noHints||lang==='x18';
-    let players = allP.map(p=>({...p,isImpostor:false,customHint:'',eliminated:false,hasSeenCard:false,vote:null,figuredOut:false}));
+    let players = allP.map(p=>({...p,isImpostor:false,customHint:'',eliminated:false,hasSeenCard:false,vote:null,figuredOut:false,askedQuestion:false}));
     const isChaosRound = config.chaos && Math.random()<0.15;
     if (isChaosRound) { players.forEach(p=>{p.isImpostor=true;}); }
     else {
@@ -708,7 +842,7 @@ async function _startOnlineGame() {
             let hi=0; imps.forEach((p,i)=>{p.customHint=(i===lucky)?(wordObj.hint||''):(wrong[hi++%wrong.length]||'');});
         }
     }
-    try { await _update(_room.code,{state:'reveal',config,word_obj:wordObj,players,timer_end_at:null,result:null});
+    try { await _update(_room.code,{state:'reveal',config:{...config,currentVoteReason:null},word_obj:wordObj,players,timer_end_at:null,result:null});
           _figuredOut.clear(); }  // reset per round
     catch(e) { console.error(e); showToast('خطأ في بدء اللعبة!'); }
 }
@@ -811,6 +945,8 @@ function _stopOnlineTimer() {
 
 function _stopVotingTimer() {
     if (_votingTimer) { clearInterval(_votingTimer); _votingTimer = null; }
+    if (_votingSyncTicker) { clearInterval(_votingSyncTicker); _votingSyncTicker = null; }
+    _votingSyncState = null;
     _lastVotingTimerSecond = null;
 }
 
@@ -828,10 +964,12 @@ function _ensureVotingTimerEl() {
 function _startVotingTimer(room) {
     _stopVotingTimer();
     const timerEl = _ensureVotingTimerEl();
-    let endAt = new Date(room.timer_end_at || Date.now()+60000).getTime();
-    if (!Number.isFinite(endAt)) endAt = Date.now()+60000;
+    if (_isHost) {
+        _broadcastVotingTimerSync(room);
+        _votingSyncTicker = setInterval(() => _broadcastVotingTimerSync(room), 1000);
+    }
     const tick = () => {
-        const left = Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
+        const left = _votingSecondsLeftForRoom(room);
         const m = Math.floor(left/60).toString().padStart(2,'0');
         const s = (left%60).toString().padStart(2,'0');
         timerEl.innerText = `${m}:${s}`;
@@ -846,6 +984,23 @@ function _startVotingTimer(room) {
     };
     tick();
     _votingTimer = setInterval(tick, 500);
+}
+
+function _votingSecondsLeftForRoom(room) {
+    if (!_isHost && _votingSyncState && _votingSyncState.timerEndAt === room.timer_end_at) {
+        const elapsed = (_timerNow() - _votingSyncState.receivedAt) / 1000;
+        return Math.max(0, Math.ceil(_votingSyncState.left - elapsed));
+    }
+    const endAt = new Date(room.timer_end_at || Date.now()+60000).getTime();
+    if (!Number.isFinite(endAt)) return 60;
+    return Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
+}
+
+function _broadcastVotingTimerSync(room) {
+    if (!_isHost || !_channel || !room || room.state !== 'voting') return;
+    const payload = { phase:'voting', timerEndAt: room.timer_end_at, left: _votingSecondsLeftForRoom(room) };
+    const sent = _channel.send({ type:'broadcast', event:'timer-sync', payload });
+    if (sent && typeof sent.catch === 'function') sent.catch(() => {});
 }
 
 function _hostSecondsLeft(room) {
@@ -864,14 +1019,24 @@ function _secondsLeftForRoom(room) {
 
 function _broadcastTimerSync(room) {
     if (!_isHost || !_channel || !room || room.state !== 'discussion') return;
-    const payload = { timerEndAt: room.timer_end_at, left: _hostSecondsLeft(room) };
+    const payload = { phase:'discussion', timerEndAt: room.timer_end_at, left: _hostSecondsLeft(room) };
     const sent = _channel.send({ type:'broadcast', event:'timer-sync', payload });
     if (sent && typeof sent.catch === 'function') sent.catch(() => {});
 }
 
 function _handleTimerSync(payload) {
-    if (_isHost || !_room || _room.state !== 'discussion' || !payload) return;
+    if (_isHost || !_room || !payload) return;
     if (payload.timerEndAt !== _room.timer_end_at) return;
+    if (payload.phase === 'voting') {
+        if (_room.state !== 'voting') return;
+        _votingSyncState = {
+            timerEndAt: payload.timerEndAt,
+            left: Math.max(0, Number(payload.left) || 0),
+            receivedAt: _timerNow()
+        };
+        return;
+    }
+    if (_room.state !== 'discussion') return;
     _timerSyncState = {
         timerEndAt: payload.timerEndAt,
         left: Math.max(0, Number(payload.left) || 0),
@@ -905,28 +1070,29 @@ function _startClientTimer(room) {
             _stopOnlineTimer();
             _sfx.timerEnd();
             document.getElementById('reaction-bar')?.classList.add('hidden');
-            _moveToVoting();
+            _moveToVoting('timer');
         }
-        if (_figuredThresholdMet(_room || room)) _moveToVoting();
+        if (_figuredThresholdMet(_room || room)) _moveToVoting('figured');
     };
     tick(); _onlineTimer = setInterval(tick, 500);
     document.getElementById('go-to-vote-btn').onclick = () => {
         if (!_isHost) { showToast('مولى الروم اكهو ينجم يوقف الوقت!'); return; }
         _stopOnlineTimer();
         document.getElementById('reaction-bar')?.classList.add('hidden');
-        _moveToVoting();
+        _moveToVoting('manual');
     };
 }
 
-async function _moveToVoting() {
+async function _moveToVoting(reason = 'timer') {
     if (!_room || _movingToVoting) return;
     _movingToVoting = true;
     try {
         const fresh = await _fetchRoom(_room.code);
         if (!fresh || fresh.state !== 'discussion') return;
         const votingEndAt = new Date(Date.now()+60*1000).toISOString();
+        const config = {...(fresh.config || {}), currentVoteReason: reason};
         const {data,error} = await _supa.from('rooms')
-            .update({state:'voting',timer_end_at:votingEndAt})
+            .update({state:'voting',timer_end_at:votingEndAt,config})
             .eq('code',fresh.code)
             .eq('state','discussion')
             .select()
@@ -984,9 +1150,13 @@ async function _processVotes(room) {
     Object.entries(tally).forEach(([id,count])=>{if(count>maxV){maxV=count;votedId=id;}});
     const votedPlayer = room.players.find(p=>p.id===votedId); if (!votedPlayer) return;
     const isElim = room.config.elimination;
+    const isFiguredVote = room.config.currentVoteReason === 'figured';
     let outcome;
-    let players = room.players.map(p=>p.id===votedId?{...p,eliminated:isElim?true:p.eliminated}:p);
-    if (!isElim) { outcome = votedPlayer.isImpostor?'correct_guess':'wrong_guess'; }
+    let players = room.players.map(p=>p.id===votedId?{...p,eliminated:(isElim || (isFiguredVote && !votedPlayer.isImpostor))?true:p.eliminated}:p);
+    if (!isElim) {
+        if (isFiguredVote && !votedPlayer.isImpostor) outcome = 'continue';
+        else outcome = votedPlayer.isImpostor?'correct_guess':'wrong_guess';
+    }
     else {
         const rI = players.filter(p=>p.isImpostor&&!p.eliminated);
         const rR = players.filter(p=>!p.isImpostor&&!p.eliminated);
@@ -995,7 +1165,7 @@ async function _processVotes(room) {
         else outcome='continue';
     }
     const {data,error} = await _supa.from('rooms')
-        .update({state:'result',players,result:{votedPlayerId:votedId,outcome},timer_end_at:null})
+        .update({state:'result',players,result:{votedPlayerId:votedId,outcome},timer_end_at:null,config:{...(room.config||{}),currentVoteReason:null}})
         .eq('code',room.code)
         .eq('state','voting')
         .select()
@@ -1042,14 +1212,14 @@ async function _continueDiscussion(room) {
     const starter = alive[Math.floor(Math.random()*alive.length)];
     const players = room.players.map(p=>({...p,vote:null,figuredOut:false}));
     _figuredOut.clear();
-    try { await _update(room.code,{state:'discussion',starter_player:starter.name,timer_end_at:timerEndAt,players}); }
+    try { await _update(room.code,{state:'discussion',config:{...(room.config||{}),currentVoteReason:null},starter_player:starter.name,timer_end_at:timerEndAt,players}); }
     catch(e) { console.error(e); }
 }
 
 async function _resetToLobby() {
     if (!_isHost||!_room) return;
-    const players = _room.players.map(p=>({...p,isImpostor:false,customHint:'',eliminated:false,hasSeenCard:false,vote:null,figuredOut:false}));
-    try { await _update(_room.code,{state:'lobby',word_obj:null,players,starter_player:null,timer_end_at:null,result:null}); }
+    const players = _room.players.map(p=>({...p,isImpostor:false,customHint:'',eliminated:false,hasSeenCard:false,vote:null,figuredOut:false,askedQuestion:false}));
+    try { await _update(_room.code,{state:'lobby',config:{...(_room.config||{}),currentVoteReason:null},word_obj:null,players,starter_player:null,timer_end_at:null,result:null}); }
     catch(e) { console.error(e); }
 }
 
