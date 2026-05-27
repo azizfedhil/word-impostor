@@ -592,22 +592,24 @@ input[type="text"]:focus, input[type="password"]:focus { border-color: var(--pri
                   box-shadow: var(--shadow-soft); display: grid; gap: 4px; line-height: 1.1; }
 .coup-deck-pill span { display: block; white-space: nowrap; }
 .coup-deck-pill strong { color: var(--accent-color); }
-.coup-status-wrap { display: grid; grid-template-columns: 1fr auto; align-items: stretch; gap: 8px; margin-bottom: 12px; }
+.coup-status-wrap { display: grid; grid-template-columns: minmax(86px, .27fr) minmax(0, .73fr); grid-template-areas: "timer status";
+                    align-items: stretch; gap: 8px; margin-bottom: 12px; direction: ltr; }
 .coup-status { padding: 12px 14px; border-radius: var(--radius-md); background: rgba(82,140,113,0.1);
                border: 1px solid rgba(82,140,113,0.2); color: var(--text-main); font-weight: 800; text-align: center;
-               display: grid; gap: 5px; place-items: center; line-height: 1.55; }
+               display: grid; gap: 5px; place-items: center; line-height: 1.55; grid-area: status; min-width: 0; direction: rtl; }
 .coup-status-line { display: block; width: 100%; }
 .coup-status bdi { unicode-bidi: isolate; direction: auto; }
 .coup-action-timer { min-width: 76px; display: grid; place-items: center; padding: 10px 12px; border-radius: var(--radius-md);
                      background: var(--surface-color); border: 1px solid var(--border-color); color: var(--primary-color);
-                     font-size: 1.08rem; font-weight: 950; box-shadow: var(--shadow-soft); direction: rtl; gap: 1px; }
+                     font-size: 1.08rem; font-weight: 950; box-shadow: var(--shadow-soft); direction: rtl; gap: 1px; grid-area: timer; }
 .coup-action-timer span { color: var(--text-muted); font-size: .72rem; font-weight: 850; }
 .coup-action-timer strong { direction: ltr; font-size: 1.1rem; }
 .coup-action-timer.urgent { color: var(--danger-color); animation: coupTimerPulse .8s ease-in-out infinite; }
 .coup-player-board { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; margin-bottom: 12px; align-items: start; }
-.coup-my-deck-label { grid-column: 1 / -1; width: fit-content; margin: 0 auto -2px; padding: 5px 14px;
-                      border-radius: var(--radius-pill); background: rgba(82,140,113,.13); color: var(--primary-color);
-                      border: 1px solid rgba(82,140,113,.22); font-weight: 950; }
+.coup-my-deck-label { grid-column: 1 / -1; width: 100%; display: grid; grid-template-columns: 1fr auto 1fr;
+                      align-items: center; gap: 9px; margin: 4px 0; padding: 5px 0; color: var(--primary-color); font-size: .95rem; }
+.coup-my-deck-label span { height: 1px; background: rgba(82,140,113,.38); }
+.coup-my-deck-label strong { white-space: nowrap; font-weight: 950; }
 .coup-other-divider { grid-column: 1 / -1; width: 100%; display: grid; grid-template-columns: 1fr auto 1fr auto;
                       align-items: center; gap: 9px; margin: 4px 0; padding: 5px 0; background: transparent;
                       color: var(--text-muted); box-shadow: none; border-radius: 0; font-size: .9rem; }
@@ -629,6 +631,8 @@ input[type="text"]:focus, input[type="password"]:focus { border-color: var(--pri
 .coup-influence { flex: 1; min-width: 110px; padding: 9px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);
                   background: var(--bg-color); color: var(--text-main); text-align: center; font-weight: 800; display: flex;
                   align-items: center; justify-content: center; gap: 7px; min-height: 44px; }
+.coup-influence > span, .coup-target-btn, .coup-help-head { display: inline-flex; align-items: center; justify-content: center; gap: 7px; flex-wrap: wrap; }
+.coup-card-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; flex: 0 0 auto; }
 .is-me .coup-influence { min-height: 76px; font-size: 1.18rem; }
 .is-focused .coup-influence { min-height: 62px; font-size: 1.08rem; }
 .coup-influence.lost { opacity: .45; text-decoration: line-through; }
@@ -638,6 +642,9 @@ input[type="text"]:focus, input[type="password"]:focus { border-color: var(--pri
 .coup-role-help { display: grid; gap: 8px; margin-bottom: 12px; }
 .coup-help-item { padding: 10px 12px; border-radius: var(--radius-sm); background: var(--surface-color);
                   border: 1px solid var(--border-color); font-weight: 700; font-size: .92rem; display: grid; gap: 2px; }
+.coup-help-head { justify-content: flex-start; font-weight: 950; }
+.coup-guide-btn { width: 100%; margin: 0 0 12px; padding: 12px; border-radius: var(--radius-md); border: 1px solid rgba(82,140,113,.28);
+                  background: rgba(82,140,113,.12); color: var(--primary-color); font-weight: 950; box-shadow: var(--shadow-soft); }
 .coup-action-panel { display: grid; gap: 10px; margin-bottom: 24px; }
 .coup-action-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
 .coup-action-btn, .coup-target-btn { width: 100%; padding: 12px 10px; border-radius: var(--radius-md); background: var(--surface-color);
@@ -662,6 +669,10 @@ input[type="text"]:focus, input[type="password"]:focus { border-color: var(--pri
 .coup-panel-card.live { border-color: rgba(212,107,90,0.35); animation: coupPanelGlow 1.4s ease-in-out infinite; }
 .coup-target-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin-top: 10px; }
 .coup-target-btn.quiet-action { background: rgba(138,135,130,.09); color: var(--text-muted); border-style: dashed; }
+.coup-target-btn.selected { border-color: var(--primary-color); background: rgba(82,140,113,.16); box-shadow: 0 0 0 3px rgba(82,140,113,.12); }
+.coup-target-btn small { display: block; width: 100%; color: var(--text-muted); font-weight: 750; font-size: .78rem; }
+.coup-exchange-count { width: fit-content; margin: 0 auto; padding: 6px 12px; border-radius: var(--radius-pill);
+                       background: rgba(82,140,113,.13); color: var(--primary-color); font-weight: 950; }
 .coup-pending-banner { grid-column: 1 / -1; display: grid; gap: 8px; padding: 12px;
                        border-radius: var(--radius-md); background: rgba(241,192,81,.12);
                        border: 1px solid rgba(241,192,81,.32); box-shadow: var(--shadow-soft); text-align: center; }
@@ -691,6 +702,8 @@ input[type="text"]:focus, input[type="password"]:focus { border-color: var(--pri
                     background: rgba(82,140,113,.14); color: var(--primary-color); animation: coupSpark 1.3s ease-in-out infinite; }
 .coup-card-desc { margin: 0; font-weight: 800; line-height: 1.6; display: grid; gap: 6px; }
 .coup-card-desc-line { display: block; }
+.coup-modal-card-info { display: grid; gap: 12px; justify-items: center; }
+.coup-card-portrait { width: min(180px, 52vw); aspect-ratio: 1; object-fit: contain; border-radius: 22px; }
 .coup-event-toast { position: fixed; z-index: 10030; left: 50%; top: 18%; transform: translateX(-50%);
                     width: min(440px, calc(100vw - 28px)); padding: 14px 16px; border-radius: var(--radius-lg);
                     background: var(--surface-color); border: 1px solid var(--border-color); box-shadow: 0 18px 52px rgba(0,0,0,.3);
@@ -706,7 +719,7 @@ input[type="text"]:focus, input[type="password"]:focus { border-color: var(--pri
 .coup-loss-card-face { width: 100%; height: 100%; border-radius: 14px; background: var(--surface-color); border: 2px solid rgba(212,107,90,.55);
                        box-shadow: 0 28px 80px rgba(0,0,0,.48); display: grid; place-items: center; align-content: center; gap: 10px;
                        color: var(--text-main); font-weight: 950; text-align: center; padding: 18px; }
-.coup-loss-icon { font-size: 3.2rem; }
+.coup-loss-icon { width: 92px; height: 92px; object-fit: contain; font-size: 3.2rem; }
 .coup-loss-cut { position: absolute; left: -10%; top: 48%; width: 120%; height: 5px; border-radius: 999px;
                  background: var(--danger-color); box-shadow: 0 0 18px rgba(212,107,90,.7); transform: rotate(-18deg) scaleX(0);
                  animation: coupLossCut .75s ease .9s forwards; }
@@ -735,14 +748,38 @@ input[type="text"]:focus, input[type="password"]:focus { border-color: var(--pri
 }
 @keyframes coupLossCut { to { transform: rotate(-18deg) scaleX(1); } }
 @keyframes coupLossText { 0%, 18% { opacity: 0; transform: translate(-50%, 12px); } 30%, 82% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, 10px); } }
+.coup-guide-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.coup-guide-top h2 { margin: 0; }
+.coup-guide-back { width: fit-content; padding: 10px 14px; border-radius: var(--radius-pill); background: var(--surface-color);
+                   border: 1px solid var(--border-color); color: var(--primary-color); font-weight: 950; }
+.coup-guide-tabs { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 8px; margin-bottom: 12px; }
+.coup-guide-tab { min-height: 62px; padding: 8px 6px; border-radius: var(--radius-md); background: var(--surface-color);
+                  border: 1px solid var(--border-color); color: var(--text-muted); font-weight: 900; box-shadow: var(--shadow-soft);
+                  display: grid; place-items: center; gap: 2px; font-size: .82rem; }
+.coup-guide-tab.active { color: var(--primary-color); border-color: rgba(82,140,113,.42); background: rgba(82,140,113,.13); }
+.coup-guide-content { display: grid; gap: 12px; margin-bottom: 26px; }
+.coup-guide-box, .coup-guide-role-card { background: var(--surface-color); border: 1px solid var(--border-color); border-radius: var(--radius-md);
+                                          box-shadow: var(--shadow-soft); padding: 14px; text-align: center; }
+.coup-guide-big-icon { font-size: 2rem; }
+.coup-guide-box h3 { margin: 4px 0; }
+.coup-guide-box p { margin: 0; color: var(--text-main); font-weight: 800; line-height: 1.7; }
+.coup-guide-tip-grid { display: grid; gap: 8px; margin-top: 12px; }
+.coup-guide-tip { padding: 10px; border-radius: var(--radius-sm); background: var(--bg-color); border: 1px solid var(--border-color);
+                  color: var(--text-main); font-weight: 800; }
+.coup-guide-card-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+.coup-guide-role-card { display: grid; gap: 8px; justify-items: center; color: var(--text-main); }
+.coup-guide-role-card .coup-card-portrait { width: min(128px, 36vw); }
+.coup-guide-role-card span { display: block; color: var(--text-muted); font-size: .86rem; line-height: 1.45; }
 @media (max-width: 560px) {
-    .coup-status-wrap { grid-template-columns: 1fr; }
-    .coup-action-timer { width: fit-content; min-width: 92px; justify-self: center; }
+    .coup-status-wrap { grid-template-columns: minmax(82px, .29fr) minmax(0, .71fr); }
+    .coup-action-timer { min-width: 0; justify-self: stretch; padding: 9px 8px; }
     .coup-player-board { grid-template-columns: 1fr; }
     .coup-other-decks { grid-template-columns: 1fr; }
     .coup-pending-actions { grid-template-columns: 1fr; }
     .coup-player-card.is-me { transform: scale(1.015); }
     .is-me .coup-influence { min-height: 86px; font-size: 1.22rem; }
+    .coup-guide-tabs { grid-template-columns: repeat(3,minmax(0,1fr)); }
+    .coup-guide-card-grid { grid-template-columns: 1fr; }
 }
 .pw-remember-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; font-size: 0.95rem; }
 .pw-remember-row input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--danger-color); cursor: pointer; }

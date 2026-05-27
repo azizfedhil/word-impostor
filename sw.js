@@ -1,5 +1,5 @@
 // Bump this cache name whenever cached app files change.
-const CACHE_NAME = 'dakheel-v26';
+const CACHE_NAME = 'dakheel-v27';
 
 // All files to be cached for offline use
 const ASSETS = [
@@ -16,7 +16,18 @@ const ASSETS = [
   './sounds.js',
   './online.js',
   './voice.js',
-  './analytics.js'
+  './analytics.js',
+  './assets/coup/duke.png',
+  './assets/coup/duke512.png',
+  './assets/coup/assassin.png',
+  './assets/coup/assassin512.png',
+  './assets/coup/contessa.png',
+  './assets/coup/contessa512.png',
+  './assets/coup/ambassador.png',
+  './assets/coup/ambassador512.png',
+  './assets/coup/captain.png',
+  './assets/coup/captain512.png',
+  './assets/coup/how-to-play.txt'
 ];
 
 // Install: Cache the files

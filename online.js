@@ -106,11 +106,11 @@ function _isThiefRoom(room) { return _getRoomGameMode(room) === 'thief'; }
 function _isSpyfallRoom(room) { return _getRoomGameMode(room) === 'spyfall'; }
 function _isCoupRoom(room) { return _getRoomGameMode(room) === 'coup'; }
 const _coupCards = {
-    duke: { name:'الشلغمي', icon:'👑', attack:'هجوم: ياخو 3 فلوس من البنك.', defense:'دفاع: يسكّر المعونة +2 متاع أي لاعب.' },
-    assassin: { name:'حفار القبور', icon:'🗡️', attack:'هجوم: يدفع 3 فلوس ويخلي لاعب يختار كارتة يخسرها.', defense:'دفاع: ما عندوش دفاع، أما claim متاعو ينجم يتكذّب.' },
-    contessa: { name:'البية', icon:'💃', attack:'هجوم: ما عندهاش هجوم.', defense:'دفاع: تسكّر الاغتيال متاع حفار القبور.' },
-    ambassador: { name:'السمسار', icon:'🤝', attack:'هجوم: يبدّل كوارطو الحيّة مع الدكّة، أو يعمل روحو بدّل.', defense:'دفاع: يسكّر سرقة الرايس.' },
-    captain: { name:'الرايس', icon:'⚓', attack:'هجوم: يسرق حتى زوز فلوس من لاعب آخر.', defense:'دفاع: يسكّر سرقة الرايس.' }
+    duke: { name:'الشلغمي', icon:'👑', img:'assets/coup/duke.png', img512:'assets/coup/duke512.png', attack:'هجوم: ياخو 3 فلوس من البنك.', defense:'دفاع: يسكّر المعونة +2 متاع أي لاعب.' },
+    assassin: { name:'حفار القبور', icon:'🗡️', img:'assets/coup/assassin.png', img512:'assets/coup/assassin512.png', attack:'هجوم: يدفع 3 فلوس ويخلي لاعب يختار كارتة يخسرها.', defense:'دفاع: ما عندوش دفاع، أما claim متاعو ينجم يتكذّب.' },
+    contessa: { name:'البية', icon:'💃', img:'assets/coup/contessa.png', img512:'assets/coup/contessa512.png', attack:'هجوم: ما عندهاش هجوم.', defense:'دفاع: تسكّر الاغتيال متاع حفار القبور.' },
+    ambassador: { name:'السمسار', icon:'🤝', img:'assets/coup/ambassador.png', img512:'assets/coup/ambassador512.png', attack:'هجوم: يبدّل كوارطو الحيّة مع الدكّة، أو يعمل روحو بدّل.', defense:'دفاع: يسكّر سرقة الرايس.' },
+    captain: { name:'الرايس', icon:'⚓', img:'assets/coup/captain.png', img512:'assets/coup/captain512.png', attack:'هجوم: يسرق حتى زوز فلوس من لاعب آخر.', defense:'دفاع: يسكّر سرقة الرايس.' }
 };
 function _thiefRoleMeta(role) {
     return {
@@ -1587,6 +1587,14 @@ function _onlineCoupProveAndReplace(state, player, role) {
     player.hand[idx] = { type: state.deck.pop() || role, lost:false };
 }
 
+function _onlineCoupResumeBlockNext(pending, actorName) {
+    return {
+        type:'resumeBlock',
+        pending:{...pending, claim:null, challengeClosed:true, passes:[], hostSynced:false},
+        log:`${actorName} ورّى الكارتة الصحيحة. مازال تنجم تتسكر كان عندكم الكارتة المناسبة.`
+    };
+}
+
 function _onlineCoupSetResponseDeadline(pending) {
     pending.expiresAt = Date.now() + ONLINE_COUP_RESPONSE_SECONDS * 1000;
 }
@@ -1667,7 +1675,7 @@ function _handleCoupTurnSync(payload) {
 }
 
 function _broadcastCoupTurnSync(state) {
-    if (!_isHost || !_channel || !state || state.pendingLoss) return;
+    if (!_isHost || !_channel || !state || state.pendingLoss || state.pendingExchange) return;
     const left = Math.max(0, ((state.turnEndsAt || Date.now()) - Date.now()) / 1000);
     _channel.send({ type:'broadcast', event:'coup-turn-sync', payload:{ id:_onlineCoupTurnId(state), left } }).catch(()=>{});
 }
@@ -1714,6 +1722,23 @@ function _onlineCoupMarkLoss(state, playerId, cardIndex) {
     return true;
 }
 
+function _onlineCoupRequestExchange(state, playerId) {
+    const player = state.players.find(x => x.id === playerId);
+    const live = player?.hand?.map((card, index) => ({card, index})).filter(x => !x.card.lost) || [];
+    if (!player || !live.length) return false;
+    const drawn = [state.deck.pop(), state.deck.pop()].filter(Boolean).map(type => ({ type, drawn:true }));
+    state.pending = null;
+    state.pendingExchange = {
+        id:`ex_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
+        playerId,
+        keep:live.length,
+        pool:[...live.map(x => ({ type:x.card.type, handIndex:x.index })), ...drawn]
+    };
+    state.log = `${player.name} يشوف زوز كوارط من الدكّة ويختار شنوّة يخلي.`;
+    _onlineCoupEvent(state, state.log, 'notice');
+    return true;
+}
+
 function _onlineCoupActionName(action) {
     return {income:'دخل',foreignAid:'معونة',tax:'ضريبة الشلغمي',assassinate:'اغتيال',exchange:'تبديل السمسار',steal:'سرقة الرايس',coup:'Coup'}[action] || action;
 }
@@ -1728,7 +1753,7 @@ function _startOnlineCoupTimer(state) {
         timerEl.innerHTML = _onlineCoupTimerHtml(left);
         timerEl.classList.toggle('urgent', left <= 10);
         if (_isHost) _broadcastCoupTurnSync(state);
-        if (left <= 0 && !state.pending && !state.pendingLoss && !_onlineCoupTimingOut && _onlineCoupAlive(state).length > 1 && _isHost) {
+        if (left <= 0 && !state.pending && !state.pendingLoss && !state.pendingExchange && !_onlineCoupTimingOut && _onlineCoupAlive(state).length > 1 && _isHost) {
             _onlineCoupTimeout();
         }
     };
@@ -1772,7 +1797,7 @@ async function _onlineCoupTimeout() {
     _onlineCoupTimingOut = true;
     try {
         const state = structuredClone(_room.word_obj);
-        if (state.pending || state.pendingLoss || Math.ceil(((state.turnEndsAt || Date.now()) - Date.now()) / 1000) > 0) return;
+        if (state.pending || state.pendingLoss || state.pendingExchange || Math.ceil(((state.turnEndsAt || Date.now()) - Date.now()) / 1000) > 0) return;
         const actor = state.players[state.turnIndex || 0];
         if (actor?.hand?.some(c=>!c.lost)) {
             actor.coins += 1;
@@ -1799,7 +1824,7 @@ function _showOnlineCoup(room) {
         _onlineCoupSave(normalized);
         return;
     }
-    if (!state.pending && !state.pendingLoss) window.CoupUI?.closeModal?.();
+    if (!state.pending && !state.pendingLoss && !state.pendingExchange) window.CoupUI?.closeModal?.();
     const alive = _onlineCoupAlive(state);
     const current = state.players[state.turnIndex || 0];
     const me = state.players.find(p=>p.id===_myId);
@@ -1834,7 +1859,7 @@ function _showOnlineCoup(room) {
         div.innerHTML = `<div class="coup-player-head"><span>${window.CoupUI?.escapeHtml?.(p.name) || p.name}${isMe?' <span class="you-tag">أنا</span>':''}</span><span class="coup-coins">🪙 ${p.coins}</span></div>
             <div class="coup-influence-row">${p.hand.map(c => {
                 const meta = _coupCards[c.type] || _coupCards.duke;
-                const label = isMe || c.lost ? `${meta.icon} ${meta.name}` : '🂠 مخبية';
+                const label = isMe || c.lost ? (window.CoupUI?.cardLabelHtml?.(meta) || `${meta.icon} ${meta.name}`) : '<span>🂠 مخبية</span>';
                 const info = (isMe || c.lost) ? `<button class="coup-card-info" type="button" data-card-type="${c.type}" aria-label="info">ℹ️</button>` : '';
                 return `<div class="coup-influence ${c.lost?'lost':''}"><span>${label}</span>${info}</div>`;
             }).join('')}</div>`;
@@ -1852,12 +1877,13 @@ function _showOnlineCoup(room) {
         return div;
     };
     if (state.pendingLoss) board.appendChild(_renderOnlineCoupLossBanner(state, me));
+    else if (state.pendingExchange) board.appendChild(_renderOnlineCoupExchangeBanner(state, me));
     else if (state.pending) board.appendChild(_renderOnlineCoupPendingBanner(state, me));
     const mine = orderedPlayers[0];
     if (mine) {
         const label = document.createElement('div');
         label.className = 'coup-my-deck-label';
-        label.textContent = 'كوارطي';
+        label.innerHTML = '<span></span><strong>كوارطي</strong><span></span>';
         board.appendChild(label);
         board.appendChild(renderCoupPlayerCard(mine.p, mine.idx));
     }
@@ -1908,13 +1934,27 @@ function _renderOnlineCoupLossBanner(state, me) {
         <div class="coup-pending-actions">
             ${isMe ? cards.map(({card, index}) => {
                 const meta = _coupCards[card.type] || _coupCards.duke;
-                return `<button class="coup-target-btn danger-action" data-online-lose-card="${index}">${meta.icon} ${esc(meta.name)}</button>`;
+                return `<button class="coup-target-btn danger-action" data-online-lose-card="${index}">${window.CoupUI?.cardLabelHtml?.(meta) || `${meta.icon} ${esc(meta.name)}`}</button>`;
             }).join('') : `<div class="coup-waiting-note">نستناو ${esc(player?.name || '')} يختار الكارتة.</div>`}
         </div>
     `;
     wrap.querySelectorAll('[data-online-lose-card]').forEach(btn => {
         btn.addEventListener('click', () => _onlineCoupChooseLoss(parseInt(btn.dataset.onlineLoseCard, 10)));
     });
+    return wrap;
+}
+
+function _renderOnlineCoupExchangeBanner(state, me) {
+    const exchange = state.pendingExchange;
+    const player = state.players.find(p => p.id === exchange?.playerId);
+    const esc = window.CoupUI?.escapeHtml || (x => x);
+    const wrap = document.createElement('div');
+    wrap.className = 'coup-pending-banner';
+    wrap.innerHTML = `
+        <div class="coup-pending-title">تبديل السمسار</div>
+        <strong>${esc(player?.name || '')} يختار كوارطو</strong>
+        <p>${me?.id === player?.id ? `اختار ${exchange.keep} كارتة باش تخليها.` : `نستناو ${esc(player?.name || '')} يكمل التبديل.`}</p>
+    `;
     return wrap;
 }
 
@@ -2001,11 +2041,42 @@ function _renderOnlineCoupActions(room, state, me) {
             panel.innerHTML = `<div class="coup-panel-card live">${esc(loss.reason || 'اختار كارتة تخسرها.')}</div>
                 <div class="coup-target-grid">${live.map(({card, index}) => {
                     const meta = _coupCards[card.type] || _coupCards.duke;
-                    return `<button class="coup-target-btn danger-action" data-online-lose-card="${index}">${meta.icon} ${esc(meta.name)}</button>`;
+                    return `<button class="coup-target-btn danger-action" data-online-lose-card="${index}">${window.CoupUI?.cardLabelHtml?.(meta) || `${meta.icon} ${esc(meta.name)}`}</button>`;
                 }).join('')}</div>`;
             panel.querySelectorAll('[data-online-lose-card]').forEach(btn => btn.addEventListener('click', () => _onlineCoupChooseLoss(parseInt(btn.dataset.onlineLoseCard, 10))));
         } else {
             panel.innerHTML = `<div class="coup-panel-card">نستناو ${esc(loser?.name || '')} يختار الكارتة الي يخسرها.</div>`;
+        }
+        return;
+    }
+    if (state.pendingExchange) {
+        const exchange = state.pendingExchange;
+        const esc = window.CoupUI?.escapeHtml || (x => x);
+        if (me.id === exchange.playerId) {
+            panel.innerHTML = `<div class="coup-panel-card live">اختار ${exchange.keep} كارتة باش تخليها.</div>
+                <div class="coup-exchange-count" id="online-coup-exchange-count">0/${exchange.keep}</div>
+                <div class="coup-target-grid coup-exchange-grid">${exchange.pool.map((item, index) => {
+                    const meta = _coupCards[item.type] || _coupCards.duke;
+                    return `<button class="coup-target-btn" data-online-exchange-pick="${index}">${window.CoupUI?.cardLabelHtml?.(meta) || `${meta.icon} ${esc(meta.name)}`}<small>${item.drawn ? 'من الدكّة' : 'من كوارطك'}</small></button>`;
+                }).join('')}</div>
+                <button id="online-coup-confirm-exchange" class="primary-btn" type="button" disabled>ثبّت الاختيار</button>`;
+            const selected = new Set();
+            const refresh = () => {
+                panel.querySelectorAll('[data-online-exchange-pick]').forEach(btn => btn.classList.toggle('selected', selected.has(parseInt(btn.dataset.onlineExchangePick, 10))));
+                panel.querySelector('#online-coup-exchange-count').textContent = `${selected.size}/${exchange.keep}`;
+                panel.querySelector('#online-coup-confirm-exchange').disabled = selected.size !== exchange.keep;
+            };
+            panel.querySelectorAll('[data-online-exchange-pick]').forEach(btn => btn.addEventListener('click', () => {
+                const idx = parseInt(btn.dataset.onlineExchangePick, 10);
+                if (selected.has(idx)) selected.delete(idx);
+                else if (selected.size < exchange.keep) selected.add(idx);
+                refresh();
+            }));
+            panel.querySelector('#online-coup-confirm-exchange').addEventListener('click', () => _onlineCoupChooseExchange(Array.from(selected)));
+            refresh();
+        } else {
+            const player = state.players.find(p => p.id === exchange.playerId);
+            panel.innerHTML = `<div class="coup-panel-card">نستناو ${esc(player?.name || '')} يختار كوارط السمسار.</div>`;
         }
         return;
     }
@@ -2084,10 +2155,10 @@ function _renderOnlineCoupActions(room, state, me) {
     panel.innerHTML += `<div class="coup-action-grid ${isTurn?'':'is-disabled'}">
         ${mk('🪙 دخل +1','income','','مضمون وما يتكذبش')}
         ${mk('🤲 معونة +2','foreignAid','','ينجم الشلغمي يسكّرها')}
-        ${mk('👑 الشلغمي +3','tax','primary-action','قول عندي الشلغمي')}
-        ${mk('⚓ الرايس: اسرق','steal','primary-action','اسرق زوز فلوس')}
-        ${mk('🗡️ اغتيال -3','assassinate','danger-action','يلزم حفار القبور')}
-        ${mk('🤝 السمسار: بدّل','exchange','','بدّل كوارطك مع الدكّة')}
+        ${mk(`${window.CoupUI?.cardLabelHtml?.(_coupCards.duke) || '👑 الشلغمي'} +3`,'tax','primary-action','قول عندي الشلغمي')}
+        ${mk(`${window.CoupUI?.cardLabelHtml?.(_coupCards.captain) || '⚓ الرايس'}: اسرق`,'steal','primary-action','اسرق زوز فلوس')}
+        ${mk(`${window.CoupUI?.cardLabelHtml?.(_coupCards.assassin) || '🗡️ حفار القبور'} -3`,'assassinate','danger-action','يلزم حفار القبور')}
+        ${mk(`${window.CoupUI?.cardLabelHtml?.(_coupCards.ambassador) || '🤝 السمسار'}: بدّل`,'exchange','','بدّل كوارطك مع الدكّة')}
         ${mk('💥 Coup -7','coup','danger-action','ضربة ما تتسكرش')}
     </div>`;
     panel.querySelectorAll('.coup-action-info').forEach(info => info.addEventListener('click', e => {
@@ -2131,9 +2202,40 @@ async function _onlineCoupChooseLoss(cardIndex) {
         state.pendingLoss = null;
         if (next.type === 'applyAction') {
             _onlineCoupApplyActionLocal(state, next.action, next.targetId);
+        } else if (next.type === 'resumeBlock') {
+            state.pending = {
+                ...(next.pending || {}),
+                id:`p_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
+                passes:[]
+            };
+            _onlineCoupSetResponseDeadline(state.pending);
+            state.log = next.log || 'مازال تنجم تتسكر الأكشن.';
+            _onlineCoupEvent(state, state.log, 'notice');
         } else if (next.type === 'nextTurn') {
             _onlineCoupNextTurn(state);
         }
+        return state;
+    });
+}
+
+async function _onlineCoupChooseExchange(indices) {
+    await _onlineCoupMutateState(async state => {
+        const exchange = state.pendingExchange;
+        if (!exchange || exchange.playerId !== _myId) return null;
+        const chosen = Array.from(new Set(indices.map(n => parseInt(n, 10)).filter(n => Number.isInteger(n))));
+        if (chosen.length !== exchange.keep) return null;
+        const player = state.players.find(p => p.id === exchange.playerId);
+        const liveSlots = player.hand.map((card, index) => ({card, index})).filter(x => !x.card.lost);
+        const chosenSet = new Set(chosen);
+        const kept = chosen.map(idx => exchange.pool[idx]).filter(Boolean);
+        if (kept.length !== exchange.keep) return null;
+        liveSlots.forEach((slot, idx) => { slot.card.type = kept[idx].type; slot.card.lost = false; });
+        exchange.pool.filter((_, idx) => !chosenSet.has(idx)).forEach(item => state.deck.unshift(item.type));
+        state.deck.sort(()=>0.5-Math.random());
+        state.pendingExchange = null;
+        state.log = `${player.name} بدّل كوارطو مع الدكّة.`;
+        _onlineCoupEvent(state, state.log, 'good');
+        _onlineCoupNextTurn(state);
         return state;
     });
 }
@@ -2202,7 +2304,8 @@ async function _onlineCoupChallenge(challengerId) {
         _onlineCoupProveAndReplace(state, actor, p.claim);
         state.log = `${challenger.name} طلع غالط! ${actor.name} عندو الكارتة. ${_onlineCoupWrong()}`;
         _onlineCoupEvent(state, state.log, 'bad');
-        _onlineCoupRequestLoss(state, challengerId, 'طلعت غالط في التكذيب. اختار كارتة تخسرها.', { type:'applyAction', action:p.action, targetId:p.targetId });
+        const next = p.blockable ? _onlineCoupResumeBlockNext(p, actor.name) : { type:'applyAction', action:p.action, targetId:p.targetId };
+        _onlineCoupRequestLoss(state, challengerId, 'طلعت غالط في التكذيب. اختار كارتة تخسرها.', next);
         await _onlineCoupSave(state);
     } else {
         state.log = `${actor.name} تڨبض يبوّع! ${_onlineCoupCaught()}`;
@@ -2296,10 +2399,8 @@ function _onlineCoupApplyActionLocal(state, action, targetId) {
     if (action === 'foreignAid') { actor.coins += 2; _onlineCoupTakeFromBank(state, 2); state.log = `${actor.name} خذا معونة. ما تسكّرتش.`; }
     if (action === 'tax') { actor.coins += 3; _onlineCoupTakeFromBank(state, 3); state.log = `${actor.name} كول بالشلغمي وخذا 3 فلوس.`; }
     if (action === 'exchange') {
-        actor.hand.forEach(c => { if (!c.lost) state.deck.unshift(c.type); });
-        state.deck.sort(()=>0.5-Math.random());
-        actor.hand = actor.hand.map(c => c.lost ? c : {type:state.deck.pop(), lost:false});
-        state.log = `${actor.name} بدّل كوارطو مع الدكّة.`;
+        _onlineCoupRequestExchange(state, actor.id);
+        return state;
     }
     if (action === 'steal' && target) {
         const amount = Math.min(2, target.coins || 0);
