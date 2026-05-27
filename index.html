@@ -33,6 +33,7 @@
                 <button type="button" class="game-switch-option" data-game-mode="impostor">🕵️‍♂️ شكونو هو؟</button>
                 <button type="button" class="game-switch-option" data-game-mode="thief">🗝️ سارق، حاكم، جلّاد</button>
                 <button type="button" class="game-switch-option spyfall-title" data-game-mode="spyfall">spyfall</button>
+                <button type="button" class="game-switch-option" data-game-mode="coup">👑 كول وبوّع</button>
             </div>
         </header>
 
@@ -53,6 +54,11 @@
                     <span class="mode-choice-icon">🕶️</span>
                     <span class="mode-choice-title spyfall-title">spyfall</span>
                     <span class="mode-choice-sub">بلاصة، أدوار، وspy مخبي</span>
+                </button>
+                <button type="button" class="mode-choice-card" data-game-mode="coup">
+                    <span class="mode-choice-icon">👑</span>
+                    <span class="mode-choice-title">كول وبوّع</span>
+                    <span class="mode-choice-sub">فلوس، بلوف، و"تكذب!"</span>
                 </button>
             </div>
         </div>
@@ -172,6 +178,21 @@
             <h3 id="result-message" style="text-align:center;"></h3>
             <div id="impostors-reveal" class="result-box"></div>
             <button id="next-round-btn" class="primary-btn" data-i18n="next_round_btn">🔄 عاود انده</button>
+        </div>
+
+        <!-- COUP SCREEN -->
+        <div id="coup-screen" class="screen">
+            <div class="coup-topline">
+                <div>
+                    <h2 id="coup-title">👑 كول وبوّع</h2>
+                    <p id="coup-subtitle">استنى دورك، كول، وبوّع كان تنجم.</p>
+                </div>
+                <div id="coup-deck-pill" class="coup-deck-pill">🂠 0</div>
+            </div>
+            <div id="coup-status" class="coup-status"></div>
+            <div id="coup-player-board" class="coup-player-board"></div>
+            <div id="coup-role-help" class="coup-role-help"></div>
+            <div id="coup-action-panel" class="coup-action-panel"></div>
         </div>
 
         <!-- ONLINE SETUP SCREEN -->

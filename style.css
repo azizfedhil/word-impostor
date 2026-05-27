@@ -49,7 +49,8 @@ h1 { font-size: 2.2rem; font-weight: 800; margin: 0; color: var(--text-main);
 .mode-choice-sub { color: var(--text-muted); font-size: .98rem; font-weight: 700; }
 .spyfall-title { font-family: 'Baloo Bhaijaan 2', system-ui, sans-serif; direction: ltr; text-transform: lowercase; letter-spacing: 0; }
 body.game-thief .impostor-only, body.game-spyfall .impostor-only { display: none !important; }
-body.game-thief .lang-pill-selector, body.game-spyfall .lang-pill-selector { display: none; }
+body.game-thief .lang-pill-selector, body.game-spyfall .lang-pill-selector, body.game-coup .lang-pill-selector { display: none; }
+body.game-coup .impostor-only { display: none !important; }
 h2 { font-size: 1.6rem; margin-bottom: 12px; font-weight: 700; }
 h3 { font-size: 1.3rem; margin: 0 0 12px 0; }
 p { color: var(--text-muted); font-size: 1.05rem; line-height: 1.5; margin-top: 0; }
@@ -563,6 +564,47 @@ input[type="text"]:focus, input[type="password"]:focus { border-color: var(--pri
                         border: 1px solid var(--border-color); color: var(--danger-color);
                         font-size: 1.15rem; font-weight: 800; text-align: center; }
 .vote-count { font-size: 0.85rem; font-weight: 700; color: var(--accent-color); }
+
+/* ===== COUP / KOL W BAWAA ===== */
+.coup-topline { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+#coup-title { margin: 0 0 2px; }
+#coup-subtitle { margin: 0; font-size: .96rem; }
+.coup-deck-pill { min-width: 72px; padding: 10px 14px; border-radius: var(--radius-pill); background: var(--surface-color);
+                  border: 1px solid var(--border-color); color: var(--primary-color); font-weight: 900; text-align: center;
+                  box-shadow: var(--shadow-soft); }
+.coup-status { padding: 12px 14px; border-radius: var(--radius-md); background: rgba(82,140,113,0.1);
+               border: 1px solid rgba(82,140,113,0.2); color: var(--text-main); font-weight: 800; text-align: center; margin-bottom: 12px; }
+.coup-player-board { display: grid; gap: 10px; margin-bottom: 12px; }
+.coup-player-card { background: var(--surface-color); border: 1px solid var(--border-color); border-radius: var(--radius-md);
+                    box-shadow: var(--shadow-soft); padding: 12px; }
+.coup-player-card.is-turn { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(82,140,113,0.12); }
+.coup-player-card.is-out { opacity: .55; }
+.coup-player-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: 900; }
+.coup-coins { color: var(--accent-color); white-space: nowrap; }
+.coup-influence-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.coup-influence { flex: 1; min-width: 110px; padding: 9px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);
+                  background: var(--bg-color); color: var(--text-main); text-align: center; font-weight: 800; }
+.coup-influence.lost { opacity: .45; text-decoration: line-through; }
+.coup-role-help { display: grid; gap: 8px; margin-bottom: 12px; }
+.coup-help-item { padding: 10px 12px; border-radius: var(--radius-sm); background: var(--surface-color);
+                  border: 1px solid var(--border-color); font-weight: 700; font-size: .92rem; }
+.coup-action-panel { display: grid; gap: 10px; margin-bottom: 24px; }
+.coup-action-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+.coup-action-btn, .coup-target-btn { width: 100%; padding: 12px 10px; border-radius: var(--radius-md); background: var(--surface-color);
+                                     color: var(--text-main); border: 1px solid var(--border-color); box-shadow: var(--shadow-soft);
+                                     font-size: 1rem; }
+.coup-action-btn.primary-action { background: var(--primary-color); color: #fff; }
+.coup-action-btn.danger-action { background: rgba(212,107,90,0.14); color: var(--danger-color); border-color: rgba(212,107,90,0.35); }
+.coup-action-btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+.coup-panel-card { background: var(--surface-color); border: 1px solid var(--border-color); border-radius: var(--radius-md);
+                   padding: 12px; box-shadow: var(--shadow-soft); text-align: center; }
+.coup-target-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin-top: 10px; }
+.coup-flash { animation: coupFlash .7s cubic-bezier(0.16,1,0.3,1); }
+@keyframes coupFlash {
+    0% { transform: scale(.96); filter: brightness(1.2); }
+    55% { transform: scale(1.03); }
+    100% { transform: scale(1); filter: brightness(1); }
+}
 .pw-remember-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; font-size: 0.95rem; }
 .pw-remember-row input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--danger-color); cursor: pointer; }
 .pw-remember-row label { cursor: pointer; font-weight: 600; }
