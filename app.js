@@ -96,6 +96,9 @@ let coupState = null;
 let coupFocusedPlayerId = null;
 let coupTimerInterval = null;
 const COUP_DEFAULT_ACTION_MINUTES = 1;
+const COUP_RESPONSE_SECONDS = 30;
+let coupResponseInterval = null;
+let coupOtherDecksCollapsed = false;
 
 // ============================================================
 // INDEXED DB — settings persistence
@@ -604,6 +607,19 @@ function _coupSetTurnDeadline(state = coupState) {
     state.turnEndsAt = Date.now() + (_coupActionMinutes(state) * 60000);
 }
 
+function _coupSetResponseDeadline(pending) {
+    pending.expiresAt = Date.now() + COUP_RESPONSE_SECONDS * 1000;
+}
+
+function _coupBlockRoleLabel(role) {
+    const meta = coupCards[role] || coupCards.duke;
+    return `${meta.icon} ${meta.name}`;
+}
+
+function _coupBlockOptions(pending) {
+    return (pending?.blockRoles || []).map(role => ({ role, label:_coupBlockRoleLabel(role) }));
+}
+
 function _formatSeconds(totalSeconds) {
     const safe = Math.max(0, parseInt(totalSeconds, 10) || 0);
     const m = Math.floor(safe / 60).toString().padStart(2, '0');
@@ -646,7 +662,20 @@ function _showCoupModal(title, bodyHtml, setup) {
     overlay.addEventListener('click', e => { if (e.target === overlay) _closeCoupModal(); });
     _sfx.modalOpen();
     if (typeof setup === 'function') setup(overlay);
+    _wireCoupModalCountdown(overlay);
     return overlay;
+}
+
+function _wireCoupModalCountdown(root = document) {
+    const nodes = root.querySelectorAll?.('.coup-pending-countdown') || [];
+    nodes.forEach(node => {
+        const tick = () => {
+            const left = Math.max(0, Math.ceil((parseInt(node.dataset.deadline, 10) - Date.now()) / 1000));
+            node.textContent = `${left}s`;
+            node.classList.toggle('urgent', left <= 10);
+        };
+        tick();
+    });
 }
 
 function _closeCoupModal() {
@@ -752,7 +781,12 @@ function renderCoupScreen(state = coupState, myId = null) {
         : (state.pending ? state.log : `الدور على ${current.name}. ${state.log || ''}`);
     const board = document.getElementById('coup-player-board');
     board.innerHTML = '';
-    state.players.forEach((p, idx) => {
+    const myIndex = myId ? state.players.findIndex(p => p.id === myId) : state.turnIndex;
+    const orderedPlayers = [
+        ...state.players.map((p, idx) => ({p, idx})).filter(x => x.idx === myIndex),
+        ...state.players.map((p, idx) => ({p, idx})).filter(x => x.idx !== myIndex)
+    ];
+    const renderPlayerCard = (p, idx) => {
         const isMe = myId ? p.id === myId : idx === state.turnIndex;
         const visible = isMe || !myId;
         const focused = coupFocusedPlayerId === p.id || (!coupFocusedPlayerId && isMe);
@@ -779,8 +813,31 @@ function renderCoupScreen(state = coupState, myId = null) {
                 _showCoupCardInfo(btn.dataset.cardType);
             });
         });
-        board.appendChild(div);
+        return div;
+    };
+    const mine = orderedPlayers[0];
+    if (mine) {
+        const label = document.createElement('div');
+        label.className = 'coup-my-deck-label';
+        label.textContent = 'كوارطي';
+        board.appendChild(label);
+        board.appendChild(renderPlayerCard(mine.p, mine.idx));
+    }
+    const othersHeader = document.createElement('button');
+    othersHeader.type = 'button';
+    othersHeader.className = 'coup-other-divider';
+    othersHeader.innerHTML = `<span></span><strong>كوارط اللاعبين الأخرين</strong><span></span><em>${coupOtherDecksCollapsed ? '▼' : '▲'}</em>`;
+    othersHeader.addEventListener('click', () => {
+        coupOtherDecksCollapsed = !coupOtherDecksCollapsed;
+        renderCoupScreen(state, myId);
     });
+    board.appendChild(othersHeader);
+    const othersWrap = document.createElement('div');
+    othersWrap.className = 'coup-other-decks' + (coupOtherDecksCollapsed ? ' collapsed' : '');
+    orderedPlayers.slice(1).forEach(({p, idx}) => {
+        othersWrap.appendChild(renderPlayerCard(p, idx));
+    });
+    board.appendChild(othersWrap);
     _renderCoupRoleHelp(coupCards);
     startCoupTurnTimer(state, myId);
     renderCoupActions(state, myId);
@@ -864,6 +921,7 @@ function coupStartPending(action, targetId) {
     const claim = claims[action] || null;
     if (!claim && !blockable) return coupResolveAction(action, targetId);
     coupState.pending = { action, actorId:actor.id, targetId, claim, blockable, blockRoles };
+    _coupSetResponseDeadline(coupState.pending);
     coupState.log = `${actor.name} قال يعمل ${coupActionName(action)}. تنجمو تقولو "تكذب!"${blockable?' ولا تسكروها.':''}`;
     _showCoupEvent(`${actor.name} عمل ${coupActionName(action)}`, 'notice');
     renderCoupChallengePanel();
@@ -873,27 +931,51 @@ function coupActionName(action) {
     return {income:'دخل',foreignAid:'معونة',tax:'ضريبة الشلغمي',assassinate:'اغتيال',exchange:'تبديل السمسار',steal:'سرقة الرايس',coup:'Coup'}[action] || action;
 }
 
+function _coupStartResponseTimer(onExpire) {
+    clearInterval(coupResponseInterval);
+    const tick = () => {
+        _wireCoupModalCountdown(document);
+        const p = coupState?.pending;
+        if (!p?.expiresAt) return;
+        if (Date.now() >= p.expiresAt) {
+            clearInterval(coupResponseInterval);
+            coupResponseInterval = null;
+            _closeCoupModal();
+            onExpire?.();
+        }
+    };
+    tick();
+    coupResponseInterval = setInterval(tick, 500);
+}
+
+function _coupPendingTimerHtml(p) {
+    return `<div class="coup-decision-timer">وقت القرار <strong class="coup-pending-countdown" data-deadline="${p.expiresAt}">${COUP_RESPONSE_SECONDS}s</strong></div>`;
+}
+
 function renderCoupChallengePanel() {
     renderCoupScreen();
     const p = coupState.pending;
     const actor = coupState.players.find(x=>x.id===p.actorId);
+    const target = coupState.players.find(x=>x.id===p.targetId);
     const challengers = _coupAlive().filter(x=>x.id!==actor.id);
     const blockers = p.action === 'foreignAid' ? challengers : challengers.filter(x => x.id === p.targetId);
     const challengeButtons = p.claim ? challengers.map(c =>
         `<button class="coup-target-btn danger-action" data-challenge-id="${c.id}">${_escapeHtml(c.name)}: تكذب!</button>`
     ).join('') : '';
-    const blockButtons = p.blockable ? blockers.map(c =>
-        `<button class="coup-target-btn" data-block-id="${c.id}">${_escapeHtml(c.name)}: نسكّرها</button>`
-    ).join('') : '';
+    const blockButtons = p.blockable ? blockers.map(c => _coupBlockOptions(p).map(opt =>
+        `<button class="coup-target-btn" data-block-id="${c.id}" data-block-role="${opt.role}">${_escapeHtml(c.name)}: نسكّرها ب${opt.label}</button>`
+    ).join('')).join('') : '';
+    const targetLine = target ? `<p class="coup-decision-hint">${_escapeHtml(target.name)}، تنجم تسكّر الأكشن كان عندك الكارتة المناسبة، ولا تقول للّي هاجمك "تكذب!".</p>` : '';
     _showCoupModal('بوّع ولا صحيح؟', `
         <p>${_escapeHtml(coupState.log)}</p>
+        ${targetLine}
+        ${_coupPendingTimerHtml(p)}
         <div class="coup-target-grid">${challengeButtons}${blockButtons}</div>
-        <button class="primary-btn" id="coup-pass-btn">عدّت، كمّل</button>
     `, overlay => {
         overlay.querySelectorAll('[data-challenge-id]').forEach(btn => btn.addEventListener('click', () => { _closeCoupModal(); coupChallenge(btn.dataset.challengeId); }));
-        overlay.querySelectorAll('[data-block-id]').forEach(btn => btn.addEventListener('click', () => { _closeCoupModal(); coupBlock(btn.dataset.blockId); }));
-        overlay.querySelector('#coup-pass-btn')?.addEventListener('click', () => { _closeCoupModal(); coupResolveAction(p.action, p.targetId); });
+        overlay.querySelectorAll('[data-block-id]').forEach(btn => btn.addEventListener('click', () => { _closeCoupModal(); coupBlock(btn.dataset.blockId, btn.dataset.blockRole); }));
     });
+    _coupStartResponseTimer(() => coupResolveAction(p.action, p.targetId));
 }
 
 function coupLoseInfluence(playerId) {
@@ -927,20 +1009,62 @@ function coupChallenge(challengerId) {
     }
 }
 
-function coupBlock(blockerId) {
+function coupBlock(blockerId, blockRole = null) {
     const p = coupState.pending;
     const blocker = coupState.players.find(x=>x.id===blockerId);
     const blockRoles = p.blockRoles || (p.action === 'assassinate' ? ['contessa'] : p.action === 'steal' ? ['captain','ambassador'] : ['duke']);
-    const hasIt = blocker.hand.some(c=>!c.lost && blockRoles.includes(c.type));
+    const role = blockRole && blockRoles.includes(blockRole) ? blockRole : blockRoles[0];
+    coupState.pending = {...p, stage:'block', blockerId, blockRole:role};
+    _coupSetResponseDeadline(coupState.pending);
+    coupState.log = `${blocker.name} قال يسكّرها ب${_coupBlockRoleLabel(role)}. ${coupState.players.find(x=>x.id===p.actorId)?.name || ''} ينجم يقوللو "تكذب!".`;
+    renderCoupBlockChallengePanel();
+}
+
+function renderCoupBlockChallengePanel() {
+    renderCoupScreen();
+    const p = coupState.pending;
+    const actor = coupState.players.find(x=>x.id===p.actorId);
+    const blocker = coupState.players.find(x=>x.id===p.blockerId);
+    _showCoupModal('سكّرها، أما صحيح؟', `
+        <p>${_escapeHtml(coupState.log)}</p>
+        <p class="coup-decision-hint">${_escapeHtml(actor?.name || '')}، تنجم تقبل البلوك ولا تتهم ${_escapeHtml(blocker?.name || '')} بالبلوف.</p>
+        ${_coupPendingTimerHtml(p)}
+        <div class="coup-target-grid">
+            <button class="coup-target-btn danger-action" id="coup-challenge-block">تكذب!</button>
+            <button class="coup-target-btn" id="coup-accept-block">نقبل البلوك</button>
+        </div>
+    `, overlay => {
+        overlay.querySelector('#coup-challenge-block')?.addEventListener('click', () => { _closeCoupModal(); coupChallengeBlock(); });
+        overlay.querySelector('#coup-accept-block')?.addEventListener('click', () => { _closeCoupModal(); coupAcceptBlock(); });
+    });
+    _coupStartResponseTimer(coupAcceptBlock);
+}
+
+function coupAcceptBlock() {
+    const p = coupState.pending;
+    const blocker = coupState.players.find(x=>x.id===p?.blockerId);
+    coupState.log = `${blocker?.name || ''} سكّر الأكشن. تعدّت بسلام.`;
+    coupState.pending = null;
+    _coupNextTurn();
+    _showCoupEvent(coupState.log, 'good');
+    _sfx.notify();
+    renderCoupScreen();
+}
+
+function coupChallengeBlock() {
+    const p = coupState.pending;
+    const actor = coupState.players.find(x=>x.id===p.actorId);
+    const blocker = coupState.players.find(x=>x.id===p.blockerId);
+    const hasIt = blocker.hand.some(c=>!c.lost && c.type===p.blockRole);
     if (hasIt) {
-        coupState.log = `${blocker.name} سكّر الأكشن. تعدّت بسلام.`;
+        coupLoseInfluence(actor.id);
+        coupState.log = `${actor.name} اتهم البلوك وطلع غالط. ${blocker.name} عندو ${_coupBlockRoleLabel(p.blockRole)}.`;
         coupState.pending = null;
         _coupNextTurn();
-        _showCoupEvent(coupState.log, 'good');
-        _sfx.notify();
+        _showCoupEvent(coupState.log, 'bad');
         renderCoupScreen();
     } else {
-        coupLoseInfluence(blockerId);
+        coupLoseInfluence(blocker.id);
         coupState.log = `${blocker.name} حاول يسكّرها وطلع يبوّع! الأكشن يكمل.`;
         _showCoupEvent(coupState.log, 'bad');
         coupResolveAction(p.action, p.targetId);

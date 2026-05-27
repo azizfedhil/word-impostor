@@ -598,10 +598,21 @@ input[type="text"]:focus, input[type="password"]:focus { border-color: var(--pri
                      font-size: 1.08rem; font-weight: 950; box-shadow: var(--shadow-soft); direction: ltr; }
 .coup-action-timer.urgent { color: var(--danger-color); animation: coupTimerPulse .8s ease-in-out infinite; }
 .coup-player-board { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; margin-bottom: 12px; align-items: start; }
+.coup-my-deck-label { grid-column: 1 / -1; width: fit-content; margin: 0 auto -2px; padding: 5px 14px;
+                      border-radius: var(--radius-pill); background: rgba(82,140,113,.13); color: var(--primary-color);
+                      border: 1px solid rgba(82,140,113,.22); font-weight: 950; }
+.coup-other-divider { grid-column: 1 / -1; width: 100%; display: grid; grid-template-columns: 1fr auto 1fr auto;
+                      align-items: center; gap: 9px; margin: 4px 0; padding: 5px 0; background: transparent;
+                      color: var(--text-muted); box-shadow: none; border-radius: 0; font-size: .9rem; }
+.coup-other-divider span { height: 1px; background: var(--border-color); }
+.coup-other-divider strong { white-space: nowrap; font-weight: 850; }
+.coup-other-divider em { font-style: normal; color: var(--primary-color); font-weight: 900; }
+.coup-other-decks { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; overflow: hidden; }
+.coup-other-decks.collapsed { display: none; }
 .coup-player-card { background: var(--surface-color); border: 1px solid var(--border-color); border-radius: var(--radius-md);
                     box-shadow: var(--shadow-soft); padding: 12px; transition: transform .22s ease, opacity .2s ease, border-color .2s ease, grid-column .2s ease; cursor: pointer; }
 .coup-player-card.is-turn { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(82,140,113,0.12); }
-.coup-player-card.is-me { grid-column: 1 / -1; }
+.coup-player-card.is-me { grid-column: 1 / -1; padding: 16px; }
 .coup-player-card.is-focused { grid-column: 1 / -1; transform: scale(1.01); border-color: var(--primary-color); }
 .coup-player-card.is-dimmed { opacity: .48; transform: scale(.98); }
 .coup-player-card.is-out { opacity: .55; }
@@ -611,11 +622,12 @@ input[type="text"]:focus, input[type="password"]:focus { border-color: var(--pri
 .coup-influence { flex: 1; min-width: 110px; padding: 9px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);
                   background: var(--bg-color); color: var(--text-main); text-align: center; font-weight: 800; display: flex;
                   align-items: center; justify-content: center; gap: 7px; min-height: 44px; }
-.is-me .coup-influence, .is-focused .coup-influence { min-height: 58px; font-size: 1.06rem; }
+.is-me .coup-influence { min-height: 76px; font-size: 1.18rem; }
+.is-focused .coup-influence { min-height: 62px; font-size: 1.08rem; }
 .coup-influence.lost { opacity: .45; text-decoration: line-through; }
 .coup-card-info { all: unset; width: 25px; height: 25px; border-radius: 50%; display: inline-grid; place-items: center;
                   background: rgba(82,140,113,0.14); color: var(--primary-color); cursor: pointer; font-size: .78rem; }
-.coup-help-toggle { margin-bottom: 8px; }
+.coup-help-toggle { width: 100%; margin-bottom: 8px; }
 .coup-role-help { display: grid; gap: 8px; margin-bottom: 12px; }
 .coup-help-item { padding: 10px 12px; border-radius: var(--radius-sm); background: var(--surface-color);
                   border: 1px solid var(--border-color); font-weight: 700; font-size: .92rem; display: grid; gap: 2px; }
@@ -635,6 +647,12 @@ input[type="text"]:focus, input[type="password"]:focus { border-color: var(--pri
                    padding: 12px; box-shadow: var(--shadow-soft); text-align: center; }
 .coup-panel-card.live { border-color: rgba(212,107,90,0.35); animation: coupPanelGlow 1.4s ease-in-out infinite; }
 .coup-target-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin-top: 10px; }
+.coup-decision-timer { width: fit-content; margin: 0 auto; padding: 7px 12px; border-radius: var(--radius-pill);
+                       background: rgba(241,192,81,.13); border: 1px solid rgba(241,192,81,.28);
+                       color: var(--text-main); font-weight: 850; direction: rtl; }
+.coup-pending-countdown { color: var(--primary-color); direction: ltr; display: inline-block; min-width: 34px; }
+.coup-pending-countdown.urgent { color: var(--danger-color); animation: coupTimerPulse .8s ease-in-out infinite; }
+.coup-decision-hint { margin: -2px 0 2px; color: var(--text-main); font-weight: 750; font-size: .96rem; }
 .coup-modal-overlay { position: fixed; inset: 0; z-index: 10020; display: grid; place-items: center; padding: 18px;
                       background: rgba(0,0,0,.48); opacity: 0; pointer-events: none; transition: opacity .2s ease; }
 .coup-modal-overlay.show { opacity: 1; pointer-events: auto; }
@@ -675,6 +693,9 @@ input[type="text"]:focus, input[type="password"]:focus { border-color: var(--pri
     .coup-status-wrap { grid-template-columns: 1fr; }
     .coup-action-timer { width: fit-content; min-width: 92px; justify-self: center; }
     .coup-player-board { grid-template-columns: 1fr; }
+    .coup-other-decks { grid-template-columns: 1fr; }
+    .coup-player-card.is-me { transform: scale(1.015); }
+    .is-me .coup-influence { min-height: 86px; font-size: 1.22rem; }
 }
 .pw-remember-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; font-size: 0.95rem; }
 .pw-remember-row input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--danger-color); cursor: pointer; }
