@@ -167,6 +167,11 @@ function showScreen(id) {
     if (!next) return;
     const current = document.querySelector('.screen.active');
     if (current === next) return;
+    document.querySelectorAll('.screen').forEach(screen => {
+        const isNext = screen === next;
+        screen.toggleAttribute('aria-hidden', !isNext);
+        try { screen.inert = !isNext; } catch(_) {}
+    });
     document.querySelectorAll('.screen.exiting').forEach(s => s.classList.remove('exiting'));
     if (current) {
         current.classList.remove('active');
@@ -827,7 +832,7 @@ function _showCoupLossAnimation(playerName, cardMeta, out = false) {
     `;
     document.body.appendChild(el);
     _sfx.lose();
-    setTimeout(() => el.remove(), 3100);
+    setTimeout(() => el.remove(), 2000);
 }
 window.CoupUI = {
     escapeHtml: _escapeHtml,
