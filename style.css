@@ -19,7 +19,8 @@
         --shadow-btn: 0 8px 20px rgba(69,120,96,0.28);
     }
 }
-* { box-sizing: border-box; font-family: 'Baloo Bhaijaan 2', cursive; -webkit-tap-highlight-color: transparent; }
+* { box-sizing: border-box; font-family: 'Baloo Bhaijaan 2', cursive; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+input, textarea { user-select: auto; -webkit-user-select: auto; }
 html { scroll-behavior: smooth; }
 body { background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 0;
        display: flex; justify-content: center; min-height: 100vh;
