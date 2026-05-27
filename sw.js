@@ -1,5 +1,5 @@
 // Bump this cache name whenever cached app files change.
-const CACHE_NAME = 'dakheel-v24';
+const CACHE_NAME = 'dakheel-v25';
 
 // All files to be cached for offline use
 const ASSETS = [

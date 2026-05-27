@@ -96,9 +96,18 @@ let coupState = null;
 let coupFocusedPlayerId = null;
 let coupTimerInterval = null;
 const COUP_DEFAULT_ACTION_MINUTES = 1;
-const COUP_RESPONSE_SECONDS = 30;
+const COUP_RESPONSE_SECONDS = 45;
 let coupResponseInterval = null;
 let coupOtherDecksCollapsed = false;
+const coupActionHelp = {
+    income: { title:'دخل +1', text:'تاخو 1 فلوس من البنك. ما تتسكرش وما حد ينجم يقولك تكذب خاطرها أكشن مفتوحة.' },
+    foreignAid: { title:'معونة +2', text:'تاخو 2 فلوس من البنك. أي لاعب ينجم يقول عندو الشلغمي ويسكّرها. بعد البلوك، أي لاعب ينجم يتهمه بالبلوف.' },
+    tax: { title:'الشلغمي +3', text:'تقول عندي الشلغمي وتاخو 3 فلوس من البنك. أي لاعب ينجم يقولك تكذب.' },
+    steal: { title:'الرايس: اسرق', text:'تقول عندي الرايس وتسرق حتى زوز فلوس من لاعب. الهدف ينجم يسكّر بالرايس أو السمسار، وأي لاعب ينجم يتهم أي claim بالبلوف.' },
+    assassinate: { title:'اغتيال -3', text:'تدفع 3 فلوس وتقول عندي حفار القبور باش تطيّح كارتة من لاعب. الهدف ينجم يسكّر بالبية، وأي لاعب ينجم يقول تكذب.' },
+    exchange: { title:'السمسار: بدّل', text:'تقول عندي السمسار وتبدّل كوارطك الحيين مع الدكّة. أي لاعب ينجم يقولك تكذب.' },
+    coup: { title:'Coup -7', text:'تدفع 7 فلوس وتطيّح كارتة من لاعب. ما تتسكرش وما فيهاش تكذيب.' }
+};
 
 // ============================================================
 // INDEXED DB — settings persistence
@@ -620,6 +629,25 @@ function _coupBlockOptions(pending) {
     return (pending?.blockRoles || []).map(role => ({ role, label:_coupBlockRoleLabel(role) }));
 }
 
+function _coupPendingClaimantId(pending) {
+    return pending?.stage === 'block' ? pending.blockerId : pending?.actorId;
+}
+
+function _coupPendingResponders(state = coupState, pending = state?.pending) {
+    const claimantId = _coupPendingClaimantId(pending);
+    return _coupAlive(state).filter(p => p.id !== claimantId);
+}
+
+function _coupPassCount(state = coupState, pending = state?.pending) {
+    const passes = new Set(pending?.passes || []);
+    return _coupPendingResponders(state, pending).filter(p => passes.has(p.id)).length;
+}
+
+function _coupAllPassed(state = coupState, pending = state?.pending) {
+    const responders = _coupPendingResponders(state, pending);
+    return responders.length > 0 && _coupPassCount(state, pending) >= responders.length;
+}
+
 function _formatSeconds(totalSeconds) {
     const safe = Math.max(0, parseInt(totalSeconds, 10) || 0);
     const m = Math.floor(safe / 60).toString().padStart(2, '0');
@@ -815,6 +843,7 @@ function renderCoupScreen(state = coupState, myId = null) {
         });
         return div;
     };
+    if (state.pending) board.appendChild(_renderCoupPendingBanner(state));
     const mine = orderedPlayers[0];
     if (mine) {
         const label = document.createElement('div');
@@ -865,8 +894,8 @@ function renderCoupActions(state = coupState, myId = null) {
     if (!isTurn) {
         panel.innerHTML = `<div class="coup-panel-card">استنى دورك. الدور توّة على ${_escapeHtml(current?.name || '')}.</div>`;
     }
-    const disabled = isTurn ? '' : 'disabled';
-    const mk = (txt, action, cls='', hint='') => `<button class="coup-action-btn ${cls}" data-action="${action}" ${disabled}><strong>${txt}</strong><small>${hint}</small></button>`;
+    const disabled = isTurn ? '' : 'is-action-disabled';
+    const mk = (txt, action, cls='', hint='') => `<button class="coup-action-btn ${cls} ${disabled}" data-action="${action}" aria-disabled="${isTurn ? 'false' : 'true'}"><strong>${txt}<span class="coup-action-info" data-action-info="${action}">ℹ️</span></strong><small>${hint}</small></button>`;
     panel.innerHTML += `<div class="coup-action-grid ${isTurn?'':'is-disabled'}">
         ${mk('🪙 دخل +1','income','','مضمون وما يتكذبش')}
         ${mk('🤲 معونة +2','foreignAid','','ينجم الشلغمي يسكّرها')}
@@ -876,7 +905,53 @@ function renderCoupActions(state = coupState, myId = null) {
         ${mk('🤝 السمسار: بدّل','exchange','','بدّل كوارطك مع الدكّة')}
         ${mk('💥 Coup -7','coup','danger-action','ضربة ما تتسكرش')}
     </div>`;
-    panel.querySelectorAll('[data-action]').forEach(btn => btn.addEventListener('click', () => coupChooseAction(btn.dataset.action)));
+    panel.querySelectorAll('.coup-action-info').forEach(info => info.addEventListener('click', e => {
+        e.stopPropagation();
+        const meta = coupActionHelp[info.dataset.actionInfo];
+        if (meta) _showCoupModal(meta.title, `<p class="coup-card-desc">${_escapeHtml(meta.text)}</p>`);
+    }));
+    panel.querySelectorAll('[data-action]').forEach(btn => btn.addEventListener('click', e => {
+        if (e.target.closest('.coup-action-info')) return;
+        if (btn.getAttribute('aria-disabled') === 'true') return;
+        coupChooseAction(btn.dataset.action);
+    }));
+}
+
+function _renderCoupPendingBanner(state = coupState) {
+    const p = state.pending;
+    const claimantId = _coupPendingClaimantId(p);
+    const isBlockStage = p.stage === 'block';
+    const actor = state.players.find(x=>x.id===p.actorId);
+    const blocker = state.players.find(x=>x.id===p.blockerId);
+    const target = state.players.find(x=>x.id===p.targetId);
+    const wrap = document.createElement('div');
+    wrap.className = 'coup-pending-banner';
+    const responders = _coupPendingResponders(state, p);
+    const challengeButtons = responders.map(player =>
+        `<button class="coup-target-btn danger-action" data-banner-challenge="${player.id}">${_escapeHtml(player.name)}: تكذب!</button>`
+    ).join('');
+    const passButtons = responders.filter(player => !(p.passes || []).includes(player.id)).map(player =>
+        `<button class="coup-target-btn quiet-action" data-banner-pass="${player.id}">${_escapeHtml(player.name)}: ما عندي حتى اعتراض</button>`
+    ).join('');
+    const blockButtons = !isBlockStage && p.blockable
+        ? (p.action === 'foreignAid' ? responders : responders.filter(x => x.id === p.targetId)).map(player =>
+            _coupBlockOptions(p).map(opt => `<button class="coup-target-btn" data-banner-block="${player.id}" data-block-role="${opt.role}">${_escapeHtml(player.name)}: نسكّرها ب${opt.label}</button>`).join('')
+        ).join('')
+        : '';
+    wrap.innerHTML = `
+        <div class="coup-pending-title">قرار مباشر</div>
+        <strong>${_escapeHtml(state.log || '')}</strong>
+        <p>${isBlockStage ? `${_escapeHtml(blocker?.name || '')} قال يسكّر. أي لاعب ينجم يقول تكذب.` : `${target ? `${_escapeHtml(target.name)} مستهدف. ` : ''}أي لاعب ينجم يقول تكذب أو ما عنديش اعتراض.`}</p>
+        ${_coupPendingTimerHtml(p)}
+        <div class="coup-pass-progress">${_coupPassCount(state, p)}/${responders.length} قالو ما عندهم حتى اعتراض</div>
+        <div class="coup-pending-actions">${challengeButtons}${blockButtons}${passButtons}</div>
+    `;
+    wrap.querySelectorAll('[data-banner-challenge]').forEach(btn => btn.addEventListener('click', () => {
+        isBlockStage ? coupChallengeBlock(btn.dataset.bannerChallenge) : coupChallenge(btn.dataset.bannerChallenge);
+    }));
+    wrap.querySelectorAll('[data-banner-block]').forEach(btn => btn.addEventListener('click', () => coupBlock(btn.dataset.bannerBlock, btn.dataset.blockRole)));
+    wrap.querySelectorAll('[data-banner-pass]').forEach(btn => btn.addEventListener('click', () => coupPassPending(btn.dataset.bannerPass)));
+    return wrap;
 }
 
 function coupChooseAction(action) {
@@ -920,7 +995,7 @@ function coupStartPending(action, targetId) {
     const blockable = blockRoles.length > 0;
     const claim = claims[action] || null;
     if (!claim && !blockable) return coupResolveAction(action, targetId);
-    coupState.pending = { action, actorId:actor.id, targetId, claim, blockable, blockRoles };
+    coupState.pending = { id:`p_${Date.now()}_${Math.random().toString(36).slice(2,6)}`, action, actorId:actor.id, targetId, claim, blockable, blockRoles, passes:[] };
     _coupSetResponseDeadline(coupState.pending);
     coupState.log = `${actor.name} قال يعمل ${coupActionName(action)}. تنجمو تقولو "تكذب!"${blockable?' ولا تسكروها.':''}`;
     _showCoupEvent(`${actor.name} عمل ${coupActionName(action)}`, 'notice');
@@ -962,6 +1037,9 @@ function renderCoupChallengePanel() {
     const challengeButtons = p.claim ? challengers.map(c =>
         `<button class="coup-target-btn danger-action" data-challenge-id="${c.id}">${_escapeHtml(c.name)}: تكذب!</button>`
     ).join('') : '';
+    const passButtons = _coupPendingResponders(coupState, p).filter(c => !(p.passes || []).includes(c.id)).map(c =>
+        `<button class="coup-target-btn quiet-action" data-pass-id="${c.id}">${_escapeHtml(c.name)}: ما عندي حتى اعتراض</button>`
+    ).join('');
     const blockButtons = p.blockable ? blockers.map(c => _coupBlockOptions(p).map(opt =>
         `<button class="coup-target-btn" data-block-id="${c.id}" data-block-role="${opt.role}">${_escapeHtml(c.name)}: نسكّرها ب${opt.label}</button>`
     ).join('')).join('') : '';
@@ -970,10 +1048,12 @@ function renderCoupChallengePanel() {
         <p>${_escapeHtml(coupState.log)}</p>
         ${targetLine}
         ${_coupPendingTimerHtml(p)}
-        <div class="coup-target-grid">${challengeButtons}${blockButtons}</div>
+        <div class="coup-pass-progress">${_coupPassCount(coupState, p)}/${_coupPendingResponders(coupState, p).length} قالو ما عندهم حتى اعتراض</div>
+        <div class="coup-target-grid">${challengeButtons}${blockButtons}${passButtons}</div>
     `, overlay => {
         overlay.querySelectorAll('[data-challenge-id]').forEach(btn => btn.addEventListener('click', () => { _closeCoupModal(); coupChallenge(btn.dataset.challengeId); }));
         overlay.querySelectorAll('[data-block-id]').forEach(btn => btn.addEventListener('click', () => { _closeCoupModal(); coupBlock(btn.dataset.blockId, btn.dataset.blockRole); }));
+        overlay.querySelectorAll('[data-pass-id]').forEach(btn => btn.addEventListener('click', () => { _closeCoupModal(); coupPassPending(btn.dataset.passId); }));
     });
     _coupStartResponseTimer(() => coupResolveAction(p.action, p.targetId));
 }
@@ -1009,12 +1089,29 @@ function coupChallenge(challengerId) {
     }
 }
 
+function coupPassPending(playerId) {
+    const p = coupState.pending;
+    if (!p) return;
+    const claimantId = _coupPendingClaimantId(p);
+    if (playerId === claimantId) return;
+    p.passes = Array.from(new Set([...(p.passes || []), playerId]));
+    if (_coupAllPassed(coupState, p)) {
+        _closeCoupModal();
+        if (p.stage === 'block') coupAcceptBlock();
+        else coupResolveAction(p.action, p.targetId);
+    } else {
+        renderCoupScreen();
+        if (p.stage === 'block') renderCoupBlockChallengePanel();
+        else renderCoupChallengePanel();
+    }
+}
+
 function coupBlock(blockerId, blockRole = null) {
     const p = coupState.pending;
     const blocker = coupState.players.find(x=>x.id===blockerId);
     const blockRoles = p.blockRoles || (p.action === 'assassinate' ? ['contessa'] : p.action === 'steal' ? ['captain','ambassador'] : ['duke']);
     const role = blockRole && blockRoles.includes(blockRole) ? blockRole : blockRoles[0];
-    coupState.pending = {...p, stage:'block', blockerId, blockRole:role};
+    coupState.pending = {...p, id:`p_${Date.now()}_${Math.random().toString(36).slice(2,6)}`, stage:'block', blockerId, blockRole:role, passes:[]};
     _coupSetResponseDeadline(coupState.pending);
     coupState.log = `${blocker.name} قال يسكّرها ب${_coupBlockRoleLabel(role)}. ${coupState.players.find(x=>x.id===p.actorId)?.name || ''} ينجم يقوللو "تكذب!".`;
     renderCoupBlockChallengePanel();
@@ -1025,17 +1122,21 @@ function renderCoupBlockChallengePanel() {
     const p = coupState.pending;
     const actor = coupState.players.find(x=>x.id===p.actorId);
     const blocker = coupState.players.find(x=>x.id===p.blockerId);
+    const challengeButtons = _coupPendingResponders(coupState, p).map(c =>
+        `<button class="coup-target-btn danger-action" data-challenge-block-id="${c.id}">${_escapeHtml(c.name)}: تكذب على البلوك!</button>`
+    ).join('');
+    const passButtons = _coupPendingResponders(coupState, p).filter(c => !(p.passes || []).includes(c.id)).map(c =>
+        `<button class="coup-target-btn quiet-action" data-pass-id="${c.id}">${_escapeHtml(c.name)}: ما عندي حتى اعتراض</button>`
+    ).join('');
     _showCoupModal('سكّرها، أما صحيح؟', `
         <p>${_escapeHtml(coupState.log)}</p>
-        <p class="coup-decision-hint">${_escapeHtml(actor?.name || '')}، تنجم تقبل البلوك ولا تتهم ${_escapeHtml(blocker?.name || '')} بالبلوف.</p>
+        <p class="coup-decision-hint">أي لاعب غير ${_escapeHtml(blocker?.name || '')} ينجم يتهم البلوك بالبلوف، ولا يعمل ما عندي حتى اعتراض.</p>
         ${_coupPendingTimerHtml(p)}
-        <div class="coup-target-grid">
-            <button class="coup-target-btn danger-action" id="coup-challenge-block">تكذب!</button>
-            <button class="coup-target-btn" id="coup-accept-block">نقبل البلوك</button>
-        </div>
+        <div class="coup-pass-progress">${_coupPassCount(coupState, p)}/${_coupPendingResponders(coupState, p).length} قالو ما عندهم حتى اعتراض</div>
+        <div class="coup-target-grid">${challengeButtons}${passButtons}</div>
     `, overlay => {
-        overlay.querySelector('#coup-challenge-block')?.addEventListener('click', () => { _closeCoupModal(); coupChallengeBlock(); });
-        overlay.querySelector('#coup-accept-block')?.addEventListener('click', () => { _closeCoupModal(); coupAcceptBlock(); });
+        overlay.querySelectorAll('[data-challenge-block-id]').forEach(btn => btn.addEventListener('click', () => { _closeCoupModal(); coupChallengeBlock(btn.dataset.challengeBlockId); }));
+        overlay.querySelectorAll('[data-pass-id]').forEach(btn => btn.addEventListener('click', () => { _closeCoupModal(); coupPassPending(btn.dataset.passId); }));
     });
     _coupStartResponseTimer(coupAcceptBlock);
 }
@@ -1051,14 +1152,15 @@ function coupAcceptBlock() {
     renderCoupScreen();
 }
 
-function coupChallengeBlock() {
+function coupChallengeBlock(challengerId = null) {
     const p = coupState.pending;
     const actor = coupState.players.find(x=>x.id===p.actorId);
+    const challenger = coupState.players.find(x=>x.id===challengerId) || actor;
     const blocker = coupState.players.find(x=>x.id===p.blockerId);
     const hasIt = blocker.hand.some(c=>!c.lost && c.type===p.blockRole);
     if (hasIt) {
-        coupLoseInfluence(actor.id);
-        coupState.log = `${actor.name} اتهم البلوك وطلع غالط. ${blocker.name} عندو ${_coupBlockRoleLabel(p.blockRole)}.`;
+        coupLoseInfluence(challenger.id);
+        coupState.log = `${challenger.name} اتهم البلوك وطلع غالط. ${blocker.name} عندو ${_coupBlockRoleLabel(p.blockRole)}.`;
         coupState.pending = null;
         _coupNextTurn();
         _showCoupEvent(coupState.log, 'bad');

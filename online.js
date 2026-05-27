@@ -33,8 +33,18 @@ let _movingToVoting = false, _processingVotes = false;
 let _localCardRevealed = false;
 let _onlineCoupTimer = null, _onlineCoupTimingOut = false;
 let _onlineCoupFocusedPlayerId = null, _lastCoupEventId = null, _lastCoupPendingKey = null, _onlineCoupResponseTimer = null;
-const ONLINE_COUP_RESPONSE_SECONDS = 30;
+const ONLINE_COUP_RESPONSE_SECONDS = 45;
 let _onlineCoupOtherDecksCollapsed = false;
+let _onlineCoupResponseSync = null, _onlineCoupResponseSyncTicker = null;
+const _onlineCoupActionHelp = {
+    income: { title:'دخل +1', text:'تاخو 1 فلوس من البنك. ما تتسكرش وما حد ينجم يقولك تكذب خاطرها أكشن مفتوحة.' },
+    foreignAid: { title:'معونة +2', text:'تاخو 2 فلوس من البنك. أي لاعب ينجم يقول عندو الشلغمي ويسكّرها. بعد البلوك، أي لاعب ينجم يتهمه بالبلوف.' },
+    tax: { title:'الشلغمي +3', text:'تقول عندي الشلغمي وتاخو 3 فلوس من البنك. أي لاعب ينجم يقولك تكذب.' },
+    steal: { title:'الرايس: اسرق', text:'تقول عندي الرايس وتسرق حتى زوز فلوس من لاعب. الهدف ينجم يسكّر بالرايس أو السمسار، وأي لاعب ينجم يتهم أي claim بالبلوف.' },
+    assassinate: { title:'اغتيال -3', text:'تدفع 3 فلوس وتقول عندي حفار القبور باش تطيّح كارتة من لاعب. الهدف ينجم يسكّر بالبية، وأي لاعب ينجم يقول تكذب.' },
+    exchange: { title:'السمسار: بدّل', text:'تقول عندي السمسار وتبدّل كوارطك الحيين مع الدكّة. أي لاعب ينجم يقولك تكذب.' },
+    coup: { title:'Coup -7', text:'تدفع 7 فلوس وتطيّح كارتة من لاعب. ما تتسكرش وما فيهاش تكذيب.' }
+};
 
 // Figured-out tracking (broadcast-based, per round)
 const _figuredOut = new Set(); // player IDs who announced they figured it out
@@ -246,6 +256,9 @@ function _subscribe(code) {
         })
         .on('broadcast', { event: 'timer-sync' }, ({ payload }) => {
             _handleTimerSync(payload);
+        })
+        .on('broadcast', { event: 'coup-response-sync' }, ({ payload }) => {
+            _handleCoupResponseSync(payload);
         })
         .on('broadcast', { event: 'question-challenge' }, ({ payload }) => {
             if (payload && payload.question) _showQuestionChallenge(payload);
@@ -1544,16 +1557,53 @@ function _onlineCoupBlockOptions(pending) {
     return (pending?.blockRoles || []).map(role => ({ role, label:_onlineCoupBlockRoleLabel(role) }));
 }
 
+function _onlineCoupPendingClaimantId(pending) {
+    return pending?.stage === 'block' ? pending.blockerId : pending?.actorId;
+}
+
+function _onlineCoupPendingResponders(state, pending = state?.pending) {
+    const claimantId = _onlineCoupPendingClaimantId(pending);
+    return _onlineCoupAlive(state).filter(p => p.id !== claimantId);
+}
+
+function _onlineCoupPassCount(state, pending = state?.pending) {
+    const passes = new Set(pending?.passes || []);
+    return _onlineCoupPendingResponders(state, pending).filter(p => passes.has(p.id)).length;
+}
+
+function _onlineCoupAllPassed(state, pending = state?.pending) {
+    const responders = _onlineCoupPendingResponders(state, pending);
+    return responders.length > 0 && _onlineCoupPassCount(state, pending) >= responders.length;
+}
+
 function _onlineCoupPendingTimerHtml(p) {
-    return `<div class="coup-decision-timer">وقت القرار <strong class="coup-pending-countdown" data-deadline="${p.expiresAt}">${ONLINE_COUP_RESPONSE_SECONDS}s</strong></div>`;
+    return `<div class="coup-decision-timer">وقت القرار <strong class="coup-pending-countdown" data-deadline="${p.expiresAt || 0}" data-pending-id="${p.id || ''}">${ONLINE_COUP_RESPONSE_SECONDS}s</strong></div>`;
 }
 
 function _onlineCoupTickResponseCountdown() {
     document.querySelectorAll('.coup-pending-countdown').forEach(node => {
-        const left = Math.max(0, Math.ceil((parseInt(node.dataset.deadline, 10) - Date.now()) / 1000));
+        const pendingId = node.dataset.pendingId || '';
+        let left;
+        if (!_isHost && _onlineCoupResponseSync && _onlineCoupResponseSync.id === pendingId) {
+            left = Math.max(0, Math.ceil(_onlineCoupResponseSync.left - ((_timerNow() - _onlineCoupResponseSync.receivedAt) / 1000)));
+        } else {
+            left = Math.max(0, Math.ceil((parseInt(node.dataset.deadline, 10) - Date.now()) / 1000));
+        }
         node.textContent = `${left}s`;
         node.classList.toggle('urgent', left <= 10);
     });
+}
+
+function _handleCoupResponseSync(payload) {
+    if (_isHost || !payload?.id) return;
+    _onlineCoupResponseSync = {...payload, receivedAt:_timerNow()};
+    _onlineCoupTickResponseCountdown();
+}
+
+function _broadcastCoupResponseSync(state) {
+    if (!_isHost || !_channel || state?.state !== undefined || !state?.pending?.id) return;
+    const left = Math.max(0, ((state.pending.expiresAt || Date.now()) - Date.now()) / 1000);
+    _channel.send({ type:'broadcast', event:'coup-response-sync', payload:{ id:state.pending.id, left } }).catch(()=>{});
 }
 
 function _onlineCoupEvent(state, text, kind = 'notice') {
@@ -1603,10 +1653,9 @@ function _startOnlineCoupTimer(state) {
     if (state.pending?.expiresAt) {
         const responseTick = () => {
             _onlineCoupTickResponseCountdown();
+            if (_isHost) _broadcastCoupResponseSync(state);
             if (Date.now() < state.pending.expiresAt || _onlineCoupTimingOut) return;
-            const current = state.players?.[state.turnIndex || 0];
-            const shouldResolve = _isHost || current?.id === _myId;
-            if (shouldResolve) _onlineCoupPendingTimeout();
+            if (_isHost) _onlineCoupPendingTimeout();
         };
         responseTick();
         _onlineCoupResponseTimer = setInterval(responseTick, 500);
@@ -1658,6 +1707,13 @@ function _showOnlineCoup(room) {
     showScreen('coup-screen');
     const state = room.word_obj;
     if (!state) return;
+    if (_isHost && state.pending && !state.pending.hostSynced) {
+        const normalized = structuredClone(state);
+        normalized.pending.hostSynced = true;
+        normalized.pending.expiresAt = Date.now() + ONLINE_COUP_RESPONSE_SECONDS * 1000;
+        _onlineCoupSave(normalized);
+        return;
+    }
     if (!state.pending) window.CoupUI?.closeModal?.();
     const alive = _onlineCoupAlive(state);
     const current = state.players[state.turnIndex || 0];
@@ -1707,6 +1763,7 @@ function _showOnlineCoup(room) {
         });
         return div;
     };
+    if (state.pending) board.appendChild(_renderOnlineCoupPendingBanner(state, me));
     const mine = orderedPlayers[0];
     if (mine) {
         const label = document.createElement('div');
@@ -1747,6 +1804,62 @@ function _renderOnlineCoupLeaveButton(room) {
     panel.after(btn);
 }
 
+function _renderOnlineCoupPendingBanner(state, me) {
+    const p = state.pending;
+    const actor = state.players.find(x=>x.id===p.actorId);
+    const target = state.players.find(x=>x.id===p.targetId);
+    const claimantId = _onlineCoupPendingClaimantId(p);
+    const isClaimant = me?.id === claimantId;
+    const isBlockStage = p.stage === 'block';
+    const canChallenge = me && !isClaimant && me.hand.some(c=>!c.lost);
+    const canBlock = me && !isBlockStage && p.blockable && me.id !== actor?.id && me.hand.some(c=>!c.lost) && (p.action === 'foreignAid' || p.targetId === me.id);
+    const canPass = me && !isClaimant && !(p.passes || []).includes(me.id);
+    const passCount = _onlineCoupPassCount(state, p);
+    const total = _onlineCoupPendingResponders(state, p).length;
+    const esc = window.CoupUI?.escapeHtml || (x => x);
+    const wrap = document.createElement('div');
+    wrap.className = 'coup-pending-banner';
+    const blockerLine = isBlockStage
+        ? `<p>${esc(state.players.find(x=>x.id===p.blockerId)?.name || '')} قال يسكّر ب${_onlineCoupBlockRoleLabel(p.blockRole)}. أي لاعب ينجم يقول "تكذب".</p>`
+        : `<p>${target ? `${esc(target.name)} مستهدف. ` : ''}أي لاعب ينجم يقول "تكذب"${canBlock ? '، وإنت تنجم تسكّر بالكارتة المناسبة' : ''}.</p>`;
+    wrap.innerHTML = `
+        <div class="coup-pending-title">قرار مباشر</div>
+        <strong>${esc(state.log || '')}</strong>
+        ${blockerLine}
+        ${_onlineCoupPendingTimerHtml(p)}
+        <div class="coup-pass-progress">${passCount}/${total} قالو ما عندهم حتى اعتراض</div>
+        <div class="coup-pending-actions"></div>
+    `;
+    const actions = wrap.querySelector('.coup-pending-actions');
+    if (canChallenge) {
+        const btn = document.createElement('button');
+        btn.className = 'coup-target-btn danger-action';
+        btn.textContent = 'تكذب!';
+        btn.onclick = () => isBlockStage ? _onlineCoupChallengeBlock(me.id) : _onlineCoupChallenge(me.id);
+        actions.appendChild(btn);
+    }
+    if (canBlock) {
+        _onlineCoupBlockOptions(p).forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'coup-target-btn';
+            btn.textContent = `نسكّرها ب${opt.label}`;
+            btn.onclick = () => _onlineCoupBlock(me.id, opt.role);
+            actions.appendChild(btn);
+        });
+    }
+    if (canPass) {
+        const btn = document.createElement('button');
+        btn.className = 'coup-target-btn quiet-action';
+        btn.textContent = 'ما عندي حتى اعتراض';
+        btn.onclick = () => _onlineCoupPass(me.id);
+        actions.appendChild(btn);
+    }
+    if (!actions.children.length) {
+        actions.innerHTML = `<div class="coup-waiting-note">${isClaimant ? 'نستناو ردّ اللاعبين الآخرين.' : 'ردّك تسجّل، نستناو الباقي.'}</div>`;
+    }
+    return wrap;
+}
+
 function _renderOnlineCoupActions(room, state, me) {
     const panel = document.getElementById('coup-action-panel');
     panel.innerHTML = '';
@@ -1772,8 +1885,8 @@ function _renderOnlineCoupActions(room, state, me) {
         const isBlockStage = p.stage === 'block';
         const canChallenge = !isBlockStage && p.claim && me.id !== actor?.id && me.hand.some(c=>!c.lost);
         const canBlock = !isBlockStage && p.blockable && me.id !== actor?.id && me.hand.some(c=>!c.lost) && (p.action === 'foreignAid' || p.targetId === me.id);
-        const canChallengeBlock = isBlockStage && me.id === actor?.id && me.hand.some(c=>!c.lost);
-        const canAcceptBlock = isBlockStage && me.id === actor?.id;
+        const canChallengeBlock = isBlockStage && me.id !== p.blockerId && me.hand.some(c=>!c.lost);
+        const canPass = me.id !== _onlineCoupPendingClaimantId(p) && !(p.passes || []).includes(me.id);
         panel.innerHTML = `<div class="coup-panel-card live">${window.CoupUI?.escapeHtml?.(state.log) || state.log}<br>${_onlineCoupPendingTimerHtml(p)}</div><div class="coup-target-grid"></div>`;
         const grid = panel.querySelector('.coup-target-grid');
         if (canChallenge) {
@@ -1799,27 +1912,29 @@ function _renderOnlineCoupActions(room, state, me) {
             btn.onclick = () => _onlineCoupChallengeBlock(me.id);
             grid.appendChild(btn);
         }
-        if (canAcceptBlock) {
+        if (canPass) {
             const btn = document.createElement('button');
-            btn.className = 'coup-target-btn';
-            btn.innerText = 'نقبل البلوك';
-            btn.onclick = () => _onlineCoupAcceptBlock();
+            btn.className = 'coup-target-btn quiet-action';
+            btn.innerText = 'ما عندي حتى اعتراض';
+            btn.onclick = () => _onlineCoupPass(me.id);
             grid.appendChild(btn);
         }
-        const pendingKey = `${p.actorId}:${p.action}:${p.targetId || ''}:${p.stage || 'action'}:${p.blockerId || ''}`;
+        const pendingKey = `${p.actorId}:${p.action}:${p.targetId || ''}:${p.stage || 'action'}:${p.blockerId || ''}:${(p.passes || []).join(',')}`;
         if (_lastCoupPendingKey !== pendingKey) {
             _lastCoupPendingKey = pendingKey;
             const esc = window.CoupUI?.escapeHtml || (x => x);
             const blockButtons = canBlock ? _onlineCoupBlockOptions(p).map(opt => `<button class="coup-target-btn" data-popup-block="${opt.role}">نسكّرها ب${opt.label}</button>`).join('') : '';
-            const blockStageButtons = `${canChallengeBlock ? '<button class="coup-target-btn danger-action" data-popup-challenge-block="1">تكذب على البلوك!</button>' : ''}${canAcceptBlock ? '<button class="coup-target-btn" data-popup-accept-block="1">نقبل البلوك</button>' : ''}`;
+            const blockStageButtons = `${canChallengeBlock ? '<button class="coup-target-btn danger-action" data-popup-challenge-block="1">تكذب على البلوك!</button>' : ''}`;
             const targetLine = target && !isBlockStage ? `<p class="coup-decision-hint">${esc(target.name)}، اختياراتك واضحة: سكّر بالكارتة المناسبة، ولا اتهمه بالبلوف.</p>` : '';
-            const buttons = `${canChallenge ? '<button class="coup-target-btn danger-action" data-popup-challenge="1">تكذب!</button>' : ''}${blockButtons}${blockStageButtons}`;
+            const passButton = canPass ? '<button class="coup-target-btn quiet-action" data-popup-pass="1">ما عندي حتى اعتراض</button>' : '';
+            const buttons = `${canChallenge ? '<button class="coup-target-btn danger-action" data-popup-challenge="1">تكذب!</button>' : ''}${blockButtons}${blockStageButtons}${passButton}`;
             if (buttons) window.CoupUI?.showModal?.(isBlockStage ? 'البلوك صحيح؟' : 'شنوة تعمل؟', `<p>${esc(state.log)}</p>${targetLine}${_onlineCoupPendingTimerHtml(p)}<div class="coup-target-grid">${buttons}</div>`, overlay => {
                 overlay.querySelector('[data-popup-challenge]')?.addEventListener('click', () => { window.CoupUI.closeModal(); _onlineCoupChallenge(me.id); });
                 overlay.querySelectorAll('[data-popup-block]').forEach(btn => btn.addEventListener('click', () => { window.CoupUI.closeModal(); _onlineCoupBlock(me.id, btn.dataset.popupBlock); }));
                 overlay.querySelector('[data-popup-challenge-block]')?.addEventListener('click', () => { window.CoupUI.closeModal(); _onlineCoupChallengeBlock(me.id); });
-                overlay.querySelector('[data-popup-accept-block]')?.addEventListener('click', () => { window.CoupUI.closeModal(); _onlineCoupAcceptBlock(); });
+                overlay.querySelector('[data-popup-pass]')?.addEventListener('click', () => { window.CoupUI.closeModal(); _onlineCoupPass(me.id); });
             });
+            else window.CoupUI?.closeModal?.();
         }
         return;
     }
@@ -1829,8 +1944,8 @@ function _renderOnlineCoupActions(room, state, me) {
         panel.innerHTML = `<div class="coup-panel-card">استنى دورك. الدور توّة على ${window.CoupUI?.escapeHtml?.(current?.name || '') || current?.name || ''}.</div>`;
     }
     const isTurn = me.id === current?.id;
-    const disabled = isTurn ? '' : 'disabled';
-    const mk = (txt, action, cls='', hint='') => `<button class="coup-action-btn ${cls}" data-coup-action="${action}" ${disabled}><strong>${txt}</strong><small>${hint}</small></button>`;
+    const disabled = isTurn ? '' : 'is-action-disabled';
+    const mk = (txt, action, cls='', hint='') => `<button class="coup-action-btn ${cls} ${disabled}" data-coup-action="${action}" aria-disabled="${isTurn ? 'false' : 'true'}"><strong>${txt}<span class="coup-action-info" data-action-info="${action}">ℹ️</span></strong><small>${hint}</small></button>`;
     panel.innerHTML += `<div class="coup-action-grid ${isTurn?'':'is-disabled'}">
         ${mk('🪙 دخل +1','income','','مضمون وما يتكذبش')}
         ${mk('🤲 معونة +2','foreignAid','','ينجم الشلغمي يسكّرها')}
@@ -1840,13 +1955,36 @@ function _renderOnlineCoupActions(room, state, me) {
         ${mk('🤝 السمسار: بدّل','exchange','','بدّل كوارطك مع الدكّة')}
         ${mk('💥 Coup -7','coup','danger-action','ضربة ما تتسكرش')}
     </div>`;
-    panel.querySelectorAll('[data-coup-action]').forEach(btn => btn.addEventListener('click', () => _onlineCoupChoose(btn.dataset.coupAction)));
+    panel.querySelectorAll('.coup-action-info').forEach(info => info.addEventListener('click', e => {
+        e.stopPropagation();
+        const meta = _onlineCoupActionHelp[info.dataset.actionInfo];
+        if (meta) window.CoupUI?.showModal?.(meta.title, `<p class="coup-card-desc">${window.CoupUI.escapeHtml(meta.text)}</p>`);
+    }));
+    panel.querySelectorAll('[data-coup-action]').forEach(btn => btn.addEventListener('click', e => {
+        if (e.target.closest('.coup-action-info')) return;
+        if (btn.getAttribute('aria-disabled') === 'true') return;
+        _onlineCoupChoose(btn.dataset.coupAction);
+    }));
 }
 
 async function _onlineCoupSave(state) {
     if (!_room) return;
     const updated = await _update(_room.code, { word_obj: state });
     _showOnlineCoup(updated);
+}
+
+async function _onlineCoupMutateState(mutator) {
+    if (!_room) return null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+        const latestRoom = await _fetchRoom(_room.code);
+        const state = structuredClone(latestRoom.word_obj);
+        const next = await mutator(state, latestRoom);
+        if (!next) return latestRoom;
+        const updated = await _update(latestRoom.code, { word_obj: next });
+        _showOnlineCoup(updated);
+        return updated;
+    }
+    return null;
 }
 
 function _onlineCoupChoose(action) {
@@ -1895,7 +2033,7 @@ async function _onlineCoupStartPending(action, targetId) {
     const blockable = blockRoles.length > 0;
     const claim = claims[action] || null;
     if (!claim && !blockable) return _onlineCoupResolve(action, targetId);
-    state.pending = { action, actorId:actor.id, targetId, claim, blockable, blockRoles };
+    state.pending = { id:`p_${Date.now()}_${Math.random().toString(36).slice(2,6)}`, action, actorId:actor.id, targetId, claim, blockable, blockRoles, passes:[] };
     _onlineCoupSetResponseDeadline(state.pending);
     state.log = `${actor.name} قال يعمل ${_onlineCoupActionName(action)}. قولولو "تكذب!" كان شاكين.`;
     _onlineCoupEvent(state, `${actor.name} عمل ${_onlineCoupActionName(action)}`, 'notice');
@@ -1924,13 +2062,33 @@ async function _onlineCoupChallenge(challengerId) {
     }
 }
 
+async function _onlineCoupPass(playerId = _myId) {
+    await _onlineCoupMutateState(async state => {
+        const p = state.pending; if (!p) return null;
+        const claimantId = _onlineCoupPendingClaimantId(p);
+        if (playerId === claimantId) return null;
+        p.passes = Array.from(new Set([...(p.passes || []), playerId]));
+        if (_onlineCoupAllPassed(state, p)) {
+            if (p.stage === 'block') {
+                state.log = `${state.players.find(x=>x.id===p.blockerId)?.name || ''} سكّرها. الأكشن مات غادي.`;
+                _onlineCoupEvent(state, state.log, 'good');
+                state.pending = null;
+                _onlineCoupNextTurn(state);
+            } else {
+                return _onlineCoupApplyActionLocal(state, p.action, p.targetId);
+            }
+        }
+        return state;
+    });
+}
+
 async function _onlineCoupBlock(blockerId, blockRole = null) {
     const state = structuredClone(_room.word_obj);
     const p = state.pending; if (!p) return;
     const blocker = state.players.find(x=>x.id===blockerId);
     const blockRoles = p.blockRoles || (p.action === 'assassinate' ? ['contessa'] : p.action === 'steal' ? ['captain','ambassador'] : ['duke']);
     const role = blockRole && blockRoles.includes(blockRole) ? blockRole : blockRoles[0];
-    state.pending = {...p, stage:'block', blockerId, blockRole:role};
+    state.pending = {...p, id:`p_${Date.now()}_${Math.random().toString(36).slice(2,6)}`, stage:'block', blockerId, blockRole:role, passes:[]};
     _onlineCoupSetResponseDeadline(state.pending);
     state.log = `${blocker.name} قال يسكّرها ب${_onlineCoupBlockRoleLabel(role)}. ${state.players.find(x=>x.id===p.actorId)?.name || ''} ينجم يقوللو "تكذب!".`;
     _onlineCoupEvent(state, state.log, 'notice');
@@ -1952,11 +2110,12 @@ async function _onlineCoupChallengeBlock() {
     const state = structuredClone(_room.word_obj);
     const p = state.pending; if (!p) return;
     const actor = state.players.find(x=>x.id===p.actorId);
+    const challenger = state.players.find(x=>x.id===_myId) || actor;
     const blocker = state.players.find(x=>x.id===p.blockerId);
     const hasIt = blocker.hand.some(c=>!c.lost && c.type===p.blockRole);
     if (hasIt) {
-        _onlineCoupLose(state, actor.id);
-        state.log = `${actor.name} اتهم البلوك وطلع غالط. ${blocker.name} عندو ${_onlineCoupBlockRoleLabel(p.blockRole)}.`;
+        _onlineCoupLose(state, challenger.id);
+        state.log = `${challenger.name} اتهم البلوك وطلع غالط. ${blocker.name} عندو ${_onlineCoupBlockRoleLabel(p.blockRole)}.`;
         _onlineCoupEvent(state, state.log, 'bad');
         state.pending = null;
         _onlineCoupNextTurn(state);
@@ -1977,8 +2136,14 @@ async function _onlineCoupResolve(action, targetId) {
 }
 
 async function _onlineCoupApplyAction(state, action, targetId) {
+    _onlineCoupApplyActionLocal(state, action, targetId);
+    await _onlineCoupSave(state);
+}
+
+function _onlineCoupApplyActionLocal(state, action, targetId) {
     const actor = state.players[state.turnIndex || 0];
     const target = state.players.find(p=>p.id===targetId);
+    state.pending = null;
     if (action === 'income') { actor.coins += 1; state.log = `${actor.name} خذا دينار. رزق بارد.`; }
     if (action === 'foreignAid') { actor.coins += 2; state.log = `${actor.name} خذا معونة. ما تسكّرتش.`; }
     if (action === 'tax') { actor.coins += 3; state.log = `${actor.name} كول بالشلغمي وخذا 3 فلوس.`; }
@@ -1998,7 +2163,7 @@ async function _onlineCoupApplyAction(state, action, targetId) {
     if (action === 'coup' && target) { actor.coins -= 7; _onlineCoupLose(state, target.id); state.log = `${actor.name} عمل Coup على ${target.name}.`; }
     _onlineCoupEvent(state, state.log, ['assassinate','coup'].includes(action) ? 'bad' : 'good');
     _onlineCoupNextTurn(state);
-    await _onlineCoupSave(state);
+    return state;
 }
 
 function _onlineCoupCaught() {

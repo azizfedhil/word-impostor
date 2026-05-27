@@ -637,16 +637,31 @@ input[type="text"]:focus, input[type="password"]:focus { border-color: var(--pri
                                      color: var(--text-main); border: 1px solid var(--border-color); box-shadow: var(--shadow-soft);
                                      font-size: 1rem; }
 .coup-action-btn { display: grid; gap: 4px; min-height: 74px; align-content: center; }
+.coup-action-btn strong { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.coup-action-info { width: 24px; height: 24px; display: inline-grid; place-items: center; border-radius: 50%;
+                    background: rgba(255,255,255,.22); border: 1px solid rgba(82,140,113,.22);
+                    font-size: .72rem; flex: 0 0 auto; }
 .coup-action-btn small { display: block; color: var(--text-muted); font-size: .78rem; font-weight: 700; line-height: 1.25; }
 .coup-action-btn.primary-action { background: var(--primary-color); color: #fff; }
 .coup-action-btn.primary-action small { color: rgba(255,255,255,.82); }
 .coup-action-btn.danger-action { background: rgba(212,107,90,0.14); color: var(--danger-color); border-color: rgba(212,107,90,0.35); }
 .coup-action-grid.is-disabled .coup-action-btn,
+.coup-action-btn.is-action-disabled,
 .coup-action-btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+.coup-action-btn.is-action-disabled .coup-action-info { cursor: pointer; opacity: 1; }
 .coup-panel-card { background: var(--surface-color); border: 1px solid var(--border-color); border-radius: var(--radius-md);
                    padding: 12px; box-shadow: var(--shadow-soft); text-align: center; }
 .coup-panel-card.live { border-color: rgba(212,107,90,0.35); animation: coupPanelGlow 1.4s ease-in-out infinite; }
 .coup-target-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin-top: 10px; }
+.coup-target-btn.quiet-action { background: rgba(138,135,130,.09); color: var(--text-muted); border-style: dashed; }
+.coup-pending-banner { grid-column: 1 / -1; display: grid; gap: 8px; padding: 12px;
+                       border-radius: var(--radius-md); background: rgba(241,192,81,.12);
+                       border: 1px solid rgba(241,192,81,.32); box-shadow: var(--shadow-soft); text-align: center; }
+.coup-pending-banner p { margin: 0; font-size: .95rem; color: var(--text-main); }
+.coup-pending-title { width: fit-content; margin: 0 auto; padding: 4px 10px; border-radius: var(--radius-pill);
+                      background: var(--surface-color); color: var(--accent-color); font-weight: 950; font-size: .86rem; }
+.coup-pending-actions { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+.coup-pass-progress, .coup-waiting-note { color: var(--text-muted); font-weight: 800; font-size: .86rem; }
 .coup-decision-timer { width: fit-content; margin: 0 auto; padding: 7px 12px; border-radius: var(--radius-pill);
                        background: rgba(241,192,81,.13); border: 1px solid rgba(241,192,81,.28);
                        color: var(--text-main); font-weight: 850; direction: rtl; }
@@ -694,6 +709,7 @@ input[type="text"]:focus, input[type="password"]:focus { border-color: var(--pri
     .coup-action-timer { width: fit-content; min-width: 92px; justify-self: center; }
     .coup-player-board { grid-template-columns: 1fr; }
     .coup-other-decks { grid-template-columns: 1fr; }
+    .coup-pending-actions { grid-template-columns: 1fr; }
     .coup-player-card.is-me { transform: scale(1.015); }
     .is-me .coup-influence { min-height: 86px; font-size: 1.22rem; }
 }
