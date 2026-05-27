@@ -166,17 +166,27 @@ function showScreen(id) {
     const next = document.getElementById(id);
     if (!next) return;
     const current = document.querySelector('.screen.active');
-    if (current === next) return;
+    if (current === next) {
+        next.hidden = false;
+        next.removeAttribute('aria-hidden');
+        try { next.inert = false; } catch(_) {}
+        return;
+    }
     document.querySelectorAll('.screen').forEach(screen => {
         const isNext = screen === next;
-        screen.toggleAttribute('aria-hidden', !isNext);
+        if (isNext) screen.removeAttribute('aria-hidden');
+        else screen.setAttribute('aria-hidden', 'true');
         try { screen.inert = !isNext; } catch(_) {}
+        if (isNext) screen.hidden = false;
     });
     document.querySelectorAll('.screen.exiting').forEach(s => s.classList.remove('exiting'));
     if (current) {
         current.classList.remove('active');
         current.classList.add('exiting');
-        setTimeout(() => current.classList.remove('exiting'), 260);
+        setTimeout(() => {
+            current.classList.remove('exiting');
+            if (!current.classList.contains('active')) current.hidden = true;
+        }, 260);
     }
     requestAnimationFrame(() => next.classList.add('active'));
 }
@@ -307,7 +317,7 @@ function addPlayerInput(savedName = '') {
     playerCount++;
     const row = document.createElement('div');
     row.className = 'player-row';
-    row.innerHTML = `<input type="text" class="player-input" value="${savedName.replace(/"/g,'&quot;')}" placeholder="${i18n[currentLang].player_placeholder}">
+    row.innerHTML = `<input type="text" class="player-input" value="${_escapeHtml(savedName)}" placeholder="${_escapeHtml(i18n[currentLang].player_placeholder)}">
                      <button class="remove-btn" type="button">✖</button>`;
     row.querySelector('.remove-btn').addEventListener('click', () => { row.remove(); saveSettings(); });
     row.querySelector('.player-input').addEventListener('input', saveSettings);
@@ -378,16 +388,16 @@ function renderSingleCard() {
     } else if (currentGameMode === 'spyfall') {
         roleText = player.isSpy
             ? `<strong style="font-size:1.7rem">🕶️ spy</strong><br><br><span style="font-size:16px;">إنت الspy. حاول تعرف البلاصة من كلامهم.</span>`
-            : `<strong style="font-size:1.45rem">📍 ${player.locationName}</strong><br><br><span style="font-size:16px;">دورك: ${player.locationRole}</span>`;
+            : `<strong style="font-size:1.45rem">📍 ${_escapeHtml(player.locationName)}</strong><br><br><span style="font-size:16px;">دورك: ${_escapeHtml(player.locationRole)}</span>`;
     } else if (player.isImpostor) {
         roleText = noHintsMode
             ? i18n[currentLang].impostor_role
-            : `${i18n[currentLang].impostor_role}<br><br><span style="font-size:16px;">${i18n[currentLang].hint_label}</span><br>${player.customHint}`;
+            : `${i18n[currentLang].impostor_role}<br><br><span style="font-size:16px;">${i18n[currentLang].hint_label}</span><br>${_escapeHtml(player.customHint)}`;
     } else {
-        roleText = `${i18n[currentLang].citizen_role}<br><br><span style="font-size:16px;">${i18n[currentLang].word_label}</span><br>${currentWordObj.word}`;
+        roleText = `${i18n[currentLang].citizen_role}<br><br><span style="font-size:16px;">${i18n[currentLang].word_label}</span><br>${_escapeHtml(currentWordObj.word)}`;
     }
     const card = document.createElement('div'); card.className = 'flip-card';
-    card.innerHTML = `<div class="card-face card-front"><span>${i18n[currentLang].card_of}${player.name}</span></div>
+    card.innerHTML = `<div class="card-face card-front"><span>${i18n[currentLang].card_of}${_escapeHtml(player.name)}</span></div>
                       <div class="card-face card-back"><span>${roleText}</span></div>`;
     const showCard = e => { e.preventDefault(); card.classList.add('flipped'); _sfx.cardFlip(); };
     const hideCard = e => {
@@ -400,8 +410,10 @@ function renderSingleCard() {
             : i18n[currentLang].all_seen;
         nextBtn.classList.remove('hidden');
     };
-    card.addEventListener('mousedown',showCard); card.addEventListener('mouseup',hideCard); card.addEventListener('mouseleave',hideCard);
-    card.addEventListener('touchstart',showCard,{passive:false}); card.addEventListener('touchend',hideCard,{passive:false}); card.addEventListener('touchcancel',hideCard,{passive:false});
+    card.addEventListener('pointerdown', showCard);
+    card.addEventListener('pointerup', hideCard);
+    card.addEventListener('pointerleave', hideCard);
+    card.addEventListener('pointercancel', hideCard);
     container.appendChild(card);
     _updateSeenPanel();
 }
@@ -409,7 +421,7 @@ function _updateSeenPanel() {
     const panel = document.getElementById('reveal-seen-panel');
     if (!panel) return;
     panel.innerHTML = players.map(p =>
-        `<span class="seen-chip ${p.viewedCard ? 'done' : ''}">${p.viewedCard ? '✅' : '⏳'} ${p.name}</span>`
+        `<span class="seen-chip ${p.viewedCard ? 'done' : ''}">${p.viewedCard ? '✅' : '⏳'} ${_escapeHtml(p.name)}</span>`
     ).join('');
 }
 window.renderSingleCard = renderSingleCard;
@@ -439,8 +451,8 @@ function handleVote(votedPlayer) {
     if (!isEliminationMode) {
         if (votedPlayer.isImpostor) { triggerAnimation('win'); resultMsg.innerText = trans.correct_guess.replace('{name}',votedPlayer.name); }
         else { triggerAnimation('lose'); resultMsg.innerText = trans.wrong_guess.replace('{name}',votedPlayer.name); }
-        const allImps = players.filter(p=>p.isImpostor).map(p=>p.name).join(' و ');
-        revealBox.innerHTML = `${trans.impostors_were}<br><strong style="color:var(--primary-color);">${allImps}</strong><br><br>${trans.word_was} <strong>${currentWordObj.word}</strong>`;
+        const allImps = players.filter(p=>p.isImpostor).map(p=>_escapeHtml(p.name)).join(' و ');
+        revealBox.innerHTML = `${trans.impostors_were}<br><strong style="color:var(--primary-color);">${allImps}</strong><br><br>${trans.word_was} <strong>${_escapeHtml(currentWordObj.word)}</strong>`;
         nextBtn.innerText = trans.next_round_btn; nextBtn.onclick = () => showScreen('setup-screen');
     } else {
         votedPlayer.eliminated = true;
@@ -448,12 +460,12 @@ function handleVote(votedPlayer) {
         const rR = players.filter(p=>!p.isImpostor&&!p.eliminated);
         if (rI.length===0) {
             triggerAnimation('win'); resultMsg.innerText = trans.all_impostors_dead;
-            revealBox.innerHTML = `${trans.word_was} <strong>${currentWordObj.word}</strong>`;
+            revealBox.innerHTML = `${trans.word_was} <strong>${_escapeHtml(currentWordObj.word)}</strong>`;
             nextBtn.innerText = trans.next_round_btn; nextBtn.onclick = () => showScreen('setup-screen');
         } else if (rI.length>=rR.length) {
             triggerAnimation('lose'); resultMsg.innerText = trans.impostors_win;
-            const allImps = players.filter(p=>p.isImpostor).map(p=>p.name).join(' و ');
-            revealBox.innerHTML = `${trans.impostors_were}<br><strong style="color:var(--primary-color);">${allImps}</strong><br><br>${trans.word_was} <strong>${currentWordObj.word}</strong>`;
+            const allImps = players.filter(p=>p.isImpostor).map(p=>_escapeHtml(p.name)).join(' و ');
+            revealBox.innerHTML = `${trans.impostors_were}<br><strong style="color:var(--primary-color);">${allImps}</strong><br><br>${trans.word_was} <strong>${_escapeHtml(currentWordObj.word)}</strong>`;
             nextBtn.innerText = trans.next_round_btn; nextBtn.onclick = () => showScreen('setup-screen');
         } else {
             if (!votedPlayer.isImpostor) triggerAnimation('lose');
@@ -485,7 +497,7 @@ function handleSpyfallVote(votedPlayer) {
         triggerAnimation('lose');
         resultMsg.innerText = `غلط! الspy هرب. ${votedPlayer.name} خاطيه.`;
     }
-    revealBox.innerHTML = `الspy: <strong style="color:var(--primary-color)">${spy?.name || '?'}</strong><br>البلاصة: <strong>${spy?.locationName || '?'}</strong>`;
+    revealBox.innerHTML = `الspy: <strong style="color:var(--primary-color)">${_escapeHtml(spy?.name || '?')}</strong><br>البلاصة: <strong>${_escapeHtml(spy?.locationName || '?')}</strong>`;
     nextBtn.innerText = '🔄 عاود انده';
     nextBtn.onclick = () => showScreen('setup-screen');
     showScreen('result-screen');
@@ -506,7 +518,7 @@ function handleThiefJudgement(votedPlayer) {
         triggerAnimation('lose');
         resultMsg.innerText = `السارق هرب! ${votedPlayer.name} طلع خاطيه.`;
     }
-    revealBox.innerHTML = `السارق: <strong>${thief?.name || '?'}</strong><br>الحاكم: <strong>${judge?.name || '?'}</strong><br>الجلّاد: <strong>${executioner?.name || '?'}</strong>`;
+    revealBox.innerHTML = `السارق: <strong>${_escapeHtml(thief?.name || '?')}</strong><br>الحاكم: <strong>${_escapeHtml(judge?.name || '?')}</strong><br>الجلّاد: <strong>${_escapeHtml(executioner?.name || '?')}</strong>`;
     nextBtn.innerText = '🔄 عاود انده';
     nextBtn.onclick = () => showScreen('setup-screen');
     showScreen('result-screen');
@@ -1780,9 +1792,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (btn && btn.classList.contains('reaction-btn')) return;
         if (btn) _sfx.tap();
     }, {passive:true});
-
-    document.addEventListener('mousedown', e=>{if(e.target.closest('.flip-card'))_sfx.cardFlip();},{passive:true});
-    document.addEventListener('touchstart', e=>{if(e.target.closest('.flip-card'))_sfx.cardFlip();},{passive:true});
 
     document.getElementById('start-game-btn').addEventListener('click',()=>setTimeout(_sfx.gameStart,80));
     document.getElementById('online-start-btn').addEventListener('click',()=>setTimeout(_sfx.gameStart,80));

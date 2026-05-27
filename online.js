@@ -28,9 +28,11 @@ let _votingTimer = null, _lastVotingTimerSecond = null;
 let _votingSyncTicker = null, _votingSyncState = null;
 let _onlinePresenceIds = new Set();
 let _localPlayerDesired = {};
+let _playerPatchReconcileTimers = {};
 let _lastHandledState = null;
 let _movingToVoting = false, _processingVotes = false;
 let _localCardRevealed = false;
+let _startingOnlineGame = false;
 let _onlineCoupTimer = null, _onlineCoupTimingOut = false;
 let _onlineCoupFocusedPlayerId = null, _lastCoupEventId = null, _lastCoupLossEventId = null, _lastCoupPendingKey = null, _lastCoupPromptId = null, _onlineCoupResponseTimer = null;
 const ONLINE_COUP_RESPONSE_SECONDS = 45;
@@ -97,6 +99,9 @@ let _pendingConfig = null;
 
 function _genCode() { const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return Array.from({length:6},()=>c[Math.floor(Math.random()*c.length)]).join(''); }
 function _me(room) { return (room.players||[]).find(p=>p.id===_myId)||null; }
+function _esc(value) {
+    return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
 function _err(msg) { const el = document.getElementById('online-setup-error'); if(el) el.innerText = msg; }
 function _clearErr() { _err(''); }
 function _getLang(room) { return (room.config&&room.config.lang)||'tn'; }
@@ -206,13 +211,45 @@ async function _commitMyPlayerPatch(patch) {
     if (!_room) return null;
     _localPlayerDesired = {..._localPlayerDesired, ...patch};
     const code = _room.code;
-    return _mutatePlayers(
+    const updated = await _mutatePlayers(
         code,
         players => players.some(p => p.id === _myId)
             ? players.map(p => p.id === _myId ? {...p, ...patch} : p)
             : null,
         room => _playerHasPatch(room, _myId, patch)
     );
+    _schedulePlayerPatchReconcile(code, patch);
+    return updated;
+}
+
+function _schedulePlayerPatchReconcile(code, patch) {
+    const key = Object.keys(patch).sort().map(k => `${k}:${patch[k]}`).join('|');
+    clearTimeout(_playerPatchReconcileTimers[key]);
+    _playerPatchReconcileTimers[key] = setTimeout(async () => {
+        try {
+            if (!_room || _room.code !== code) return;
+            const fresh = await _fetchRoom(code);
+            if (!fresh || ['result'].includes(fresh.state)) return;
+            if (_playerHasPatch(fresh, _myId, patch)) return;
+            const repaired = await _mutatePlayers(
+                code,
+                players => players.some(p => p.id === _myId)
+                    ? players.map(p => p.id === _myId ? {...p, ...patch} : p)
+                    : null,
+                room => _playerHasPatch(room, _myId, patch)
+            );
+            if (repaired) _handleStateChange(repaired);
+        } catch(e) {
+            console.error(e);
+        } finally {
+            delete _playerPatchReconcileTimers[key];
+        }
+    }, 850);
+}
+
+function _clearPlayerPatchReconciles() {
+    Object.values(_playerPatchReconcileTimers).forEach(timer => clearTimeout(timer));
+    _playerPatchReconcileTimers = {};
 }
 
 function _playerOnline(player) {
@@ -302,6 +339,7 @@ async function _handleKickedFromLobby(room) {
     } catch(e) { console.error(e); }
     _stopOnlineTimer();
     _stopVotingTimer();
+    _clearPlayerPatchReconciles();
     _room = null;
     _isHost = false;
     window.onlineMode = false;
@@ -467,12 +505,13 @@ function _renderLobby(room) {
     document.getElementById('display-room-code').innerText = room.code;
     const list = document.getElementById('lobby-players-list');
     list.innerHTML = '';
+    const frag = document.createDocumentFragment();
     room.players.forEach(p => {
         const online = _playerOnline(p);
         const div = document.createElement('div');
         div.className = 'lobby-item' + (online ? '' : ' player-offline');
         const isMe = p.id === _myId;
-        div.innerHTML = (p.isHost ? '👑 ' : '👤 ') + p.name +
+        div.innerHTML = (p.isHost ? '👑 ' : '👤 ') + _esc(p.name) +
             (isMe ? ' <span class="you-tag">أنا</span>' : '') +
             ` <span class="player-status ${online ? 'online' : 'offline'}" title="${online ? 'online' : 'offline'}">${online ? '●' : '○'}</span>`;
         if (isMe) {
@@ -506,8 +545,9 @@ function _renderLobby(room) {
             });
             div.appendChild(kickBtn);
         }
-        list.appendChild(div);
+        frag.appendChild(div);
     });
+    list.appendChild(frag);
     const n = room.players.length;
     const startBtn = document.getElementById('online-start-btn');
     const waitMsg  = document.getElementById('lobby-wait-msg');
@@ -756,6 +796,7 @@ function _rebuildChips(panel, room, screenId) {
         return aF - bF;
     });
 
+    const frag = document.createDocumentFragment();
     sorted.forEach(p => {
         const chip = document.createElement('div');
         chip.className = 'online-player-chip';
@@ -767,9 +808,10 @@ function _rebuildChips(panel, room, screenId) {
         if (_playerFigured(p)) chip.classList.add('figured-out');
 
         const status = !_playerOnline(p) ? '○' : p.eliminated ? '🚫' : p.vote !== null ? '🗳️' : p.hasSeenCard ? '✅' : '👤';
-        chip.innerHTML = `${p.isHost ? '👑' : status} <span>${p.name}</span>${p.id===_myId?' <span class="you-tag">أنا</span>':''}${_playerFigured(p)?'<span class="figured-badge">🎯</span>':''}`;
-        list.appendChild(chip);
+        chip.innerHTML = `${p.isHost ? '👑' : status} <span>${_esc(p.name)}</span>${p.id===_myId?' <span class="you-tag">أنا</span>':''}${_playerFigured(p)?'<span class="figured-badge">🎯</span>':''}`;
+        frag.appendChild(chip);
     });
+    list.appendChild(frag);
 
     // Remove old show-more btn
     panel.querySelector('.show-more-btn')?.remove();
@@ -952,7 +994,11 @@ async function _askPlayerQuestion(targetId) {
         const updated = await _commitMyPlayerPatch({askedQuestion:true});
         _refreshRoundPlayerPanel();
         if (updated) _room = updated;
-    } catch(e) { console.error(e); }
+    } catch(e) {
+        console.error(e);
+        delete _localPlayerDesired.askedQuestion;
+        showToast('السؤال ما تسجّلش، تنجم تعاود.');
+    }
 }
 
 function _showQuestionChallenge(payload) {
@@ -994,7 +1040,11 @@ function _animateQuestionText(el, finalText) {
 }
 
 async function _startOnlineGame() {
-    if (!_isHost||!_room) return;
+    if (!_isHost||!_room || _startingOnlineGame) return;
+    _startingOnlineGame = true;
+    const startBtn = document.getElementById('online-start-btn');
+    if (startBtn) startBtn.disabled = true;
+    try {
     if (_isCoupRoom(_room)) { await _startOnlineCoupGame(); return; }
     if (_isThiefRoom(_room)) { await _startOnlineThiefGame(); return; }
     if (_isSpyfallRoom(_room)) { await _startOnlineSpyfallGame(); return; }
@@ -1028,6 +1078,10 @@ async function _startOnlineGame() {
     try { await _update(_room.code,{state:'reveal',config:{...config,currentVoteReason:null},word_obj:wordObj,players,timer_end_at:null,result:null});
           _figuredOut.clear(); }  // reset per round
     catch(e) { console.error(e); showToast('خطأ في بدء اللعبة!'); }
+    } finally {
+        _startingOnlineGame = false;
+        if (startBtn) startBtn.disabled = false;
+    }
 }
 
 async function _startOnlineThiefGame() {
@@ -1133,20 +1187,22 @@ function _showMyCard(room) {
     } else if (_isSpyfallRoom(room)) {
         roleText = me.isSpy
             ? `<strong style="font-size:1.7rem">🕶️ spy</strong><br><br><span style="font-size:16px;">إنت الspy. حاول تعرف البلاصة من كلامهم.</span>`
-            : `<strong style="font-size:1.45rem">📍 ${me.locationName}</strong><br><br><span style="font-size:16px;">دورك: ${me.locationRole || 'حريف'}</span>`;
+            : `<strong style="font-size:1.45rem">📍 ${_esc(me.locationName)}</strong><br><br><span style="font-size:16px;">دورك: ${_esc(me.locationRole || 'حريف')}</span>`;
     } else {
         roleText = me.isImpostor
-            ? (noHints ? trans.impostor_role : `${trans.impostor_role}<br><br><span style="font-size:16px;">${trans.hint_label}</span><br>${me.customHint}`)
-            : `${trans.citizen_role}<br><br><span style="font-size:16px;">${trans.word_label}</span><br>${room.word_obj.word}`;
+            ? (noHints ? trans.impostor_role : `${trans.impostor_role}<br><br><span style="font-size:16px;">${trans.hint_label}</span><br>${_esc(me.customHint)}`)
+            : `${trans.citizen_role}<br><br><span style="font-size:16px;">${trans.word_label}</span><br>${_esc(room.word_obj.word)}`;
     }
     const card = document.createElement('div'); card.className = 'flip-card';
-    card.innerHTML = `<div class="card-face card-front"><span>${trans.card_of}${me.name}</span></div>
+    card.innerHTML = `<div class="card-face card-front"><span>${trans.card_of}${_esc(me.name)}</span></div>
                       <div class="card-face card-back"><span>${roleText}</span></div>`;
     const seenBtn = document.getElementById('online-seen-btn');
     const showCard = e => { e.preventDefault(); card.classList.add('flipped'); _sfx.cardFlip(); };
     const hideCard = e => { e.preventDefault(); if(!card.classList.contains('flipped')) return; card.classList.remove('flipped'); _localCardRevealed = true; seenBtn.classList.remove('hidden'); };
-    card.addEventListener('mousedown',showCard); card.addEventListener('mouseup',hideCard); card.addEventListener('mouseleave',hideCard);
-    card.addEventListener('touchstart',showCard,{passive:false}); card.addEventListener('touchend',hideCard,{passive:false}); card.addEventListener('touchcancel',hideCard,{passive:false});
+    card.addEventListener('pointerdown', showCard);
+    card.addEventListener('pointerup', hideCard);
+    card.addEventListener('pointerleave', hideCard);
+    card.addEventListener('pointercancel', hideCard);
     container.appendChild(card);
     if (_localCardRevealed) seenBtn.classList.remove('hidden');
 }
@@ -1164,7 +1220,12 @@ async function _confirmSeen() {
         _renderCardWaiting(updated);
         _checkAllSeen(updated);
     }
-    catch(e) { console.error(e); }
+    catch(e) {
+        console.error(e);
+        delete _localPlayerDesired.hasSeenCard;
+        document.getElementById('online-seen-btn')?.classList.remove('hidden');
+        showToast('ما تسجّلش، عاود اضغط شفت كارطتي.');
+    }
 }
 
 function _renderCardWaiting(room) {
@@ -1174,11 +1235,14 @@ function _renderCardWaiting(room) {
     container.innerHTML = '<div class="card-done-badge">✅</div>';
     const zone = document.getElementById('online-waiting-zone'); zone.classList.remove('hidden');
     const statusEl = document.getElementById('online-seen-status'); statusEl.innerHTML = '';
+    const frag = document.createDocumentFragment();
     room.players.filter(p=>!p.eliminated).forEach(p=>{
         const online = _playerOnline(p);
         const div = document.createElement('div'); div.className = 'seen-status-item' + (online ? '' : ' player-offline');
-        div.innerHTML = (online ? (p.hasSeenCard?'✅ ':'⏳ ') : '○ ')+p.name; statusEl.appendChild(div);
+        div.textContent = (online ? (p.hasSeenCard?'✅ ':'⏳ ') : '○ ') + (p.name || '');
+        frag.appendChild(div);
     });
+    statusEl.appendChild(frag);
     _checkAllSeen(room);
 }
 
@@ -1388,17 +1452,19 @@ function _showOnlineVoting(room) {
     const me = _me(room), hasVoted = me&&me.vote!==null;
     document.querySelector('[data-i18n="voting_title"]').innerText = _isThiefRoom(room) ? '⚖️ حكم الحاكم' : _isSpyfallRoom(room) ? '🕶️ التصويت على الspy' : _getTrans(room).voting_title;
     document.querySelector('[data-i18n="who_impostor"]').innerText = _isThiefRoom(room) ? 'يا حاكم، شكون السارق؟' : _isSpyfallRoom(room) ? 'شكون الspy؟' : _getTrans(room).who_impostor;
+    const frag = document.createDocumentFragment();
     room.players.filter(p=>!p.eliminated).forEach(player=>{
         if (_isThiefRoom(room) && player.role === 'judge') return;
         const btn = document.createElement('button'); btn.className = 'vote-item';
         const vc = room.players.filter(p=>p.vote===player.id).length;
-        btn.innerHTML = (_isThiefRoom(room) ? '⚖️ ' : _isSpyfallRoom(room) ? '🕶️ ' : '🗳️ ')+player.name+(vc>0?` <span class="vote-count">(${vc})</span>`:'');
+        btn.innerHTML = (_isThiefRoom(room) ? '⚖️ ' : _isSpyfallRoom(room) ? '🕶️ ' : '🗳️ ') + _esc(player.name) + (vc>0?` <span class="vote-count">(${vc})</span>`:'');
         if (_isThiefRoom(room) && me?.role !== 'judge') { btn.disabled = true; btn.title = 'نستناو الحاكم يحكم'; }
         else if (hasVoted) { btn.disabled=true; if(me.vote===player.id) btn.classList.add('my-vote'); }
         else if (player.id===_myId) { btn.disabled=true; btn.title='ما تنجمش تصوت على روحك'; }
         else { btn.addEventListener('click',()=>_castVote(player.id)); }
-        list.appendChild(btn);
+        frag.appendChild(btn);
     });
+    list.appendChild(frag);
     const alive = room.players.filter(p=>!p.eliminated);
     const allVoted = _isThiefRoom(room)
         ? !!room.players.find(p=>p.role==='judge' && p.vote!==null)
@@ -1419,7 +1485,12 @@ async function _castVote(targetId) {
             ? !!updated.players.find(p=>p.role==='judge' && p.vote!==null)
             : alive.length>0&&alive.every(p=>p.vote!==null);
         if (done) setTimeout(()=>_processVotes(updated),800);
-    } catch(e) { console.error(e); }
+    } catch(e) {
+        console.error(e);
+        delete _localPlayerDesired.vote;
+        showToast('التصويت ما تسجّلش، عاود جرّب.');
+        if (_room) _showOnlineVoting(_room);
+    }
 }
 
 async function _processVotes(room) {
@@ -1532,7 +1603,7 @@ function _showOnlineResult(room) {
             triggerAnimation('lose');
             resultMsg.innerText = `السارق هرب! ${voted?.name || '?'} طلع خاطيه.`;
         }
-        revealBox.innerHTML = `السارق: <strong style="color:var(--primary-color)">${thief?.name || '?'}</strong><br>الحاكم: <strong>${judge?.name || '?'}</strong><br>الجلّاد: <strong>${executioner?.name || '?'}</strong>`;
+        revealBox.innerHTML = `السارق: <strong style="color:var(--primary-color)">${_esc(thief?.name || '?')}</strong><br>الحاكم: <strong>${_esc(judge?.name || '?')}</strong><br>الجلّاد: <strong>${_esc(executioner?.name || '?')}</strong>`;
         if (_isHost) { nextBtn.innerText='🔄 عاود انده'; nextBtn.disabled=false; nextBtn.onclick=()=>_resetToLobby(); }
         else { nextBtn.innerText='⏳ نستناو مولى الروم...'; nextBtn.disabled=true; }
         return;
@@ -1547,15 +1618,15 @@ function _showOnlineResult(room) {
             triggerAnimation('lose');
             resultMsg.innerText = `غلط! الspy هرب. ${voted?.name || '?'} خاطيه.`;
         }
-        revealBox.innerHTML = `الspy: <strong style="color:var(--primary-color)">${spy?.name || '?'}</strong><br>البلاصة: <strong>${result.locationName || spy?.locationName || '?'}</strong>`;
+        revealBox.innerHTML = `الspy: <strong style="color:var(--primary-color)">${_esc(spy?.name || '?')}</strong><br>البلاصة: <strong>${_esc(result.locationName || spy?.locationName || '?')}</strong>`;
         if (_isHost) { nextBtn.innerText='🔄 عاود انده'; nextBtn.disabled=false; nextBtn.onclick=()=>_resetToLobby(); }
         else { nextBtn.innerText='⏳ نستناو مولى الروم...'; nextBtn.disabled=true; }
         return;
     }
     const voted = room.players.find(p=>p.id===result.votedPlayerId);
     const name = voted?voted.name:'?';
-    const allImps = room.players.filter(p=>p.isImpostor).map(p=>p.name).join(' و ');
-    const wordLine = `${trans.word_was} <strong>${room.word_obj?room.word_obj.word:'?'}</strong>`;
+    const allImps = room.players.filter(p=>p.isImpostor).map(p=>_esc(p.name)).join(' و ');
+    const wordLine = `${trans.word_was} <strong>${room.word_obj?_esc(room.word_obj.word):'?'}</strong>`;
     switch(result.outcome) {
         case 'correct_guess': triggerAnimation('win'); resultMsg.innerText=trans.correct_guess.replace('{name}',name); revealBox.innerHTML=`${trans.impostors_were}<br><strong style="color:var(--primary-color)">${allImps}</strong><br><br>${wordLine}`; break;
         case 'wrong_guess': triggerAnimation('lose'); resultMsg.innerText=trans.wrong_guess.replace('{name}',name); revealBox.innerHTML=`${trans.impostors_were}<br><strong style="color:var(--primary-color)">${allImps}</strong><br><br>${wordLine}`; break;
@@ -2611,6 +2682,7 @@ async function _disconnectForReconnect() {
     } catch(e) { console.error(e); }
     _stopOnlineTimer();
     _stopVotingTimer();
+    _clearPlayerPatchReconciles();
     document.querySelectorAll('.online-round-players').forEach(el => el.remove());
     document.getElementById('online-coup-leave-btn')?.remove();
     const codeInput = document.getElementById('room-code-input');
@@ -2638,6 +2710,8 @@ async function _leaveRoom() {
     } catch(e) { console.error(e); }
     if (_channel) { _supa.removeChannel(_channel); _channel=null; }
     _stopOnlineTimer();
+    _stopVotingTimer();
+    _clearPlayerPatchReconciles();
     document.querySelectorAll('.online-round-players').forEach(el => el.remove());
     _room=null; _isHost=false; window.onlineMode=false;
     showScreen('setup-screen');

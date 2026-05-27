@@ -13,33 +13,33 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="شكونو هو؟">
-    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon192.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="bg-orb orb-1"></div>
     <div class="bg-orb orb-2"></div>
-    <div class="container">
+    <main class="container" id="app-shell">
         <header class="app-header">
             <button id="game-title-btn" class="game-title-btn" type="button">
                 <h1 data-i18n="title">🕵️‍♂️ شكونو هو؟</h1>
                 <span class="game-title-chevron">▼</span>
             </button>
-            <div id="game-switch-menu" class="game-switch-menu hidden">
+            <nav id="game-switch-menu" class="game-switch-menu hidden" aria-label="Game switcher">
                 <button type="button" class="game-switch-option game-switch-home" id="back-to-mode-select-btn">🎲 اختار لعبة أخرى</button>
                 <button type="button" class="game-switch-option" data-game-mode="impostor">🕵️‍♂️ شكونو هو؟</button>
                 <button type="button" class="game-switch-option" data-game-mode="thief">🗝️ سارق، حاكم، جلّاد</button>
                 <button type="button" class="game-switch-option" data-game-mode="spyfall">🕶️ ماناش هوني</button>
                 <button type="button" class="game-switch-option" data-game-mode="coup">👑 كول وبوّع</button>
-            </div>
+            </nav>
         </header>
 
         <!-- GAME PICKER -->
-        <div id="mode-select-screen" class="screen active">
+        <section id="mode-select-screen" class="screen active" aria-label="اختيار اللعبة">
             <div class="mode-choice-grid">
                 <button type="button" class="mode-choice-card" data-game-mode="impostor">
                     <span class="mode-choice-icon">🕵️‍♂️</span>
@@ -62,10 +62,10 @@
                     <span class="mode-choice-sub">فلوس، بلوف، و"تكذب!"</span>
                 </button>
             </div>
-        </div>
+        </section>
 
         <!-- SETUP SCREEN -->
-        <div id="setup-screen" class="screen">
+        <section id="setup-screen" class="screen" aria-label="إعدادات اللعبة" hidden aria-hidden="true">
             <div class="lang-pill-selector">
                 <button class="lang-pill-btn active" data-lang="tn">🇹🇳 تونسي</button>
                 <button class="lang-pill-btn x18-btn" data-lang="x18">🔞 +18</button>
@@ -127,20 +127,20 @@
             <div class="divider">أو</div>
             <button id="open-online-btn" class="secondary-btn">🌐 العب أونلاين مع أصحابك</button>
             <p id="setup-error" style="color:var(--danger-color); font-weight:700; margin-top:10px; text-align:center;"></p>
-        </div>
+        </section>
 
         <!-- REVEAL SCREEN -->
-        <div id="reveal-screen" class="screen">
+        <section id="reveal-screen" class="screen" aria-label="كشف الكوارط" hidden aria-hidden="true">
             <h2 data-i18n="reveal_title" style="text-align:center;">🃏 شكون شنية</h2>
             <h3 id="current-player-turn-msg" style="color:var(--primary-color); text-align:center;"></h3>
             <p id="reveal-instructions" data-i18n="reveal_instructions" style="text-align:center;">اقعد نازل على الكارتة باش تعرف دورك، كي تسيبها تعاود تدور.</p>
             <div class="card-container" id="single-card-container"></div>
             <div id="reveal-seen-panel" class="seen-panel" style="margin-bottom:8px;"></div>
             <button id="next-player-btn" class="primary-btn hidden"></button>
-        </div>
+        </section>
 
         <!-- TIMER SCREEN -->
-        <div id="timer-screen" class="screen" style="text-align:center;">
+        <section id="timer-screen" class="screen" style="text-align:center;" aria-label="وقت النقاش" hidden aria-hidden="true">
             <h2 data-i18n="discussion_title">💬 وقت التقطييع والترييش</h2>
             <div id="starter-player" class="starter-badge"></div>
             <div id="timer-display" class="timer-display">03:00</div>
@@ -165,25 +165,25 @@
                 </button>
             </div>
             <button id="go-to-vote-btn" class="danger-btn" style="margin-top:16px;" data-i18n="vote_btn">🗳️ سكر عليا، عرفنا البلعوط</button>
-        </div>
+        </section>
 
         <!-- VOTING SCREEN -->
-        <div id="voting-screen" class="screen">
+        <section id="voting-screen" class="screen" aria-label="التصويت" hidden aria-hidden="true">
             <h2 data-i18n="voting_title" style="text-align:center;">🗳️ الفرز</h2>
             <p data-i18n="who_impostor" style="text-align:center;">شكونو البلعوط؟</p>
             <div id="voting-list" class="voting-grid"></div>
-        </div>
+        </section>
 
         <!-- RESULT SCREEN -->
-        <div id="result-screen" class="screen">
+        <section id="result-screen" class="screen" aria-label="النتيجة" hidden aria-hidden="true">
             <h2 data-i18n="result_title" style="text-align:center;">🏆 شكون طلع؟</h2>
             <h3 id="result-message" style="text-align:center;"></h3>
             <div id="impostors-reveal" class="result-box"></div>
             <button id="next-round-btn" class="primary-btn" data-i18n="next_round_btn">🔄 عاود انده</button>
-        </div>
+        </section>
 
         <!-- COUP SCREEN -->
-        <div id="coup-screen" class="screen">
+        <section id="coup-screen" class="screen" aria-label="كول وبوع" hidden aria-hidden="true">
             <div class="coup-topline">
                 <div>
                     <h2 id="coup-title">👑 كول وبوّع</h2>
@@ -202,20 +202,20 @@
             </button>
             <div id="coup-role-help" class="coup-role-help advanced-content"></div>
             <div id="coup-action-panel" class="coup-action-panel"></div>
-        </div>
+        </section>
 
         <!-- COUP GUIDE SCREEN -->
-        <div id="coup-guide-screen" class="screen">
+        <section id="coup-guide-screen" class="screen" aria-label="دليل كول وبوع" hidden aria-hidden="true">
             <div class="coup-guide-top">
                 <button id="coup-guide-back-btn" class="coup-guide-back" type="button">↩ ارجع</button>
                 <h2>دليل كول وبوّع</h2>
             </div>
             <div id="coup-guide-tabs" class="coup-guide-tabs"></div>
             <div id="coup-guide-content" class="coup-guide-content"></div>
-        </div>
+        </section>
 
         <!-- ONLINE SETUP SCREEN -->
-        <div id="online-setup-screen" class="screen">
+        <section id="online-setup-screen" class="screen" aria-label="إعدادات الأونلاين" hidden aria-hidden="true">
             <h2>🌐 العب أونلاين</h2>
             <p style="margin-bottom:24px;">كل واحد يلعب من تلفونو 📱</p>
             <div style="margin-bottom:20px;">
@@ -230,10 +230,10 @@
             </div>
             <button id="back-to-setup-btn" class="danger-btn" style="margin-top:24px; background:transparent; color:var(--danger-color); border:none; box-shadow:none;">↩️ ارجع للإعدادات</button>
             <p id="online-setup-error" style="color:var(--danger-color); font-weight:700; margin-top:10px; text-align:center;"></p>
-        </div>
+        </section>
 
         <!-- ONLINE LOBBY SCREEN -->
-        <div id="online-lobby-screen" class="screen">
+        <section id="online-lobby-screen" class="screen" aria-label="لوبي الأونلاين" hidden aria-hidden="true">
             <h2>🕹️ الغرفة</h2>
             <div class="room-code-box">
                 <span style="color:var(--text-muted); font-weight:700;">كود الروم:</span>
@@ -247,10 +247,10 @@
             <p id="lobby-wait-msg" style="text-align:center; font-weight:700;">⏳ نستنا لاعبين...</p>
             <button id="online-start-btn" class="primary-btn hidden">🚀 ابدأ اللعبة</button>
             <button id="leave-room-btn" class="danger-btn" style="margin-top:16px;">🚪 اخرج من الغرفة</button>
-        </div>
+        </section>
 
         <!-- ONLINE CARD SCREEN -->
-        <div id="online-card-screen" class="screen" style="text-align:center;">
+        <section id="online-card-screen" class="screen" style="text-align:center;" aria-label="كارتة الأونلاين" hidden aria-hidden="true">
             <h2>🃏 كارطتك</h2>
             <p style="margin-top:-8px; margin-bottom:0;">اقعد نازل على الكارطة باش تشوف دورك</p>
             <div id="online-card-container" class="card-container"></div>
@@ -260,8 +260,8 @@
                 <p id="online-waiting-text">⏳ نستناو الناس الكل يشوفو كوارطهم...</p>
                 <button id="start-discussion-btn" class="primary-btn hidden">💬 ابدأ النقاش</button>
             </div>
-        </div>
-    </div><!-- end .container -->
+        </section>
+    </main><!-- end .container -->
 
     <!-- INFO MODAL -->
     <div id="info-modal" class="modal hidden">
@@ -292,11 +292,11 @@
     <div id="toast-msg" class="toast"></div>
 
     <!-- Adult word list: base64-obfuscated, decoded into window._adultWordsDecoded -->
-    <script src="adult_words_data.js"></script>
-    <script src="sounds.js"></script>
-    <script src="app.js"></script>
-    <script src="online.js"></script>
-    <script src="voice.js"></script>
-    <script src="analytics.js"></script>
+    <script defer src="adult_words_data.js"></script>
+    <script defer src="sounds.js"></script>
+    <script defer src="app.js"></script>
+    <script defer src="online.js"></script>
+    <script defer src="voice.js"></script>
+    <script defer src="analytics.js"></script>
 </body>
 </html>

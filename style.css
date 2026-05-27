@@ -20,6 +20,7 @@
     }
 }
 * { box-sizing: border-box; font-family: 'Baloo Bhaijaan 2', cursive; -webkit-tap-highlight-color: transparent; }
+html { scroll-behavior: smooth; }
 body { background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 0;
        display: flex; justify-content: center; min-height: 100vh;
        transition: background-color 0.4s ease, color 0.4s ease; overflow-x: hidden; }
@@ -47,6 +48,7 @@ h1 { font-size: 2.2rem; font-weight: 800; margin: 0; color: var(--text-main);
                     align-items: center; justify-content: center; padding: 22px 18px; background: var(--surface-color);
                     border: 1px solid var(--border-color); border-radius: var(--radius-lg); box-shadow: var(--shadow-soft);
                     color: var(--text-main); text-align: center; }
+.mode-choice-card:hover, .mode-choice-card:focus-visible { transform: translateY(-2px); border-color: rgba(82,140,113,.32); }
 .mode-choice-icon { font-size: 2.4rem; line-height: 1; }
 .mode-choice-title { font-size: 1.45rem; font-weight: 800; }
 .mode-choice-sub { color: var(--text-muted); font-size: .98rem; font-weight: 700; }
@@ -57,9 +59,10 @@ body.game-coup .impostor-only { display: none !important; }
 h2 { font-size: 1.6rem; margin-bottom: 12px; font-weight: 700; }
 h3 { font-size: 1.3rem; margin: 0 0 12px 0; }
 p { color: var(--text-muted); font-size: 1.05rem; line-height: 1.5; margin-top: 0; }
-.screen { display: none; opacity: 0; transform: translateY(15px) scale(0.99); }
-.screen.active { display: block; animation: fluidEntry 0.4s cubic-bezier(0.16,1,0.3,1) forwards; }
-.screen.exiting { display: block; position: absolute; inset: 0 24px auto 24px; pointer-events: none; animation: screenExit .24s cubic-bezier(.7,0,.84,0) forwards; }
+.screen { display: none; opacity: 0; transform: translateY(15px) scale(0.99); contain: layout paint style; }
+.screen[hidden] { display: none !important; }
+.screen.active { display: block; animation: fluidEntry 0.32s cubic-bezier(0.16,1,0.3,1) forwards; }
+.screen.exiting { display: block; position: absolute; inset: 0 24px auto 24px; pointer-events: none; animation: screenExit .18s cubic-bezier(.7,0,.84,0) forwards; }
 @keyframes fluidEntry { to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes screenExit { to { opacity: 0; transform: translateY(-18px) scale(.98); filter: blur(3px); } }
 @keyframes switchMenuIn {
@@ -71,13 +74,22 @@ p { color: var(--text-muted); font-size: 1.05rem; line-height: 1.5; margin-top: 
     55% { opacity: 1; transform: translateY(2px) scale(1.03); }
     100% { opacity: 1; transform: translateY(0) scale(1); }
 }
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: .001ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: .001ms !important;
+    }
+}
 .surface-card { background: var(--surface-color); border-radius: var(--radius-lg); padding: 24px;
                  box-shadow: var(--shadow-soft); border: 1px solid var(--border-color);
                  margin-bottom: 20px; position: relative; overflow: hidden;
                  transition: background 0.4s ease, border-color 0.4s ease; }
 button { border: none; outline: none; cursor: pointer; font-size: 1.15rem; font-weight: 700;
          border-radius: var(--radius-md); transition: all 0.25s cubic-bezier(0.16,1,0.3,1);
-         display: flex; justify-content: center; align-items: center; gap: 8px; }
+         display: flex; justify-content: center; align-items: center; gap: 8px; touch-action: manipulation; }
+button:disabled { cursor: not-allowed; filter: saturate(.72); }
 button:active { transform: scale(0.97); }
 .primary-btn { background: var(--primary-color); color: #fff; padding: 15px 24px; width: 100%; box-shadow: var(--shadow-btn); }
 .primary-btn:hover { background: var(--primary-hover); transform: translateY(-1px); }
@@ -135,7 +147,7 @@ input[type="text"]:focus, input[type="password"]:focus { border-color: var(--pri
 .divider:not(:empty)::after { margin-right: 10px; }
 .card-container { perspective: 1000px; width: 100%; height: 300px; margin: 24px 0; }
 .flip-card { width: 100%; height: 100%; position: relative; transition: transform 0.55s cubic-bezier(0.16,1,0.3,1);
-             transform-style: preserve-3d; cursor: pointer; }
+             transform-style: preserve-3d; cursor: pointer; touch-action: none; will-change: transform; }
 .flip-card.flipped { transform: rotateY(180deg); }
 .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: var(--radius-lg);
              display: flex; flex-direction: column; justify-content: center; align-items: center;
