@@ -24,10 +24,35 @@
     <div class="bg-orb orb-1"></div>
     <div class="bg-orb orb-2"></div>
     <div class="container">
-        <header><h1 data-i18n="title">🕵️‍♂️ شكونو هو؟</h1></header>
+        <header class="app-header">
+            <button id="game-title-btn" class="game-title-btn" type="button">
+                <h1 data-i18n="title">🕵️‍♂️ شكونو هو؟</h1>
+                <span class="game-title-chevron">▼</span>
+            </button>
+            <div id="game-switch-menu" class="game-switch-menu hidden">
+                <button type="button" class="game-switch-option" data-game-mode="impostor">🕵️‍♂️ شكونو هو؟</button>
+                <button type="button" class="game-switch-option" data-game-mode="thief">🗝️ سارق، حاكم، جلّاد</button>
+            </div>
+        </header>
+
+        <!-- GAME PICKER -->
+        <div id="mode-select-screen" class="screen active">
+            <div class="mode-choice-grid">
+                <button type="button" class="mode-choice-card" data-game-mode="impostor">
+                    <span class="mode-choice-icon">🕵️‍♂️</span>
+                    <span class="mode-choice-title">شكونو هو؟</span>
+                    <span class="mode-choice-sub">كلمة، كذاب، وتصويت</span>
+                </button>
+                <button type="button" class="mode-choice-card" data-game-mode="thief">
+                    <span class="mode-choice-icon">🗝️</span>
+                    <span class="mode-choice-title">سارق، حاكم، جلّاد</span>
+                    <span class="mode-choice-sub">الحاكم يفيق بالسارق</span>
+                </button>
+            </div>
+        </div>
 
         <!-- SETUP SCREEN -->
-        <div id="setup-screen" class="screen active">
+        <div id="setup-screen" class="screen">
             <div class="lang-pill-selector">
                 <button class="lang-pill-btn active" data-lang="tn">🇹🇳 تونسي</button>
                 <button class="lang-pill-btn x18-btn" data-lang="x18">🔞 +18</button>
@@ -40,7 +65,7 @@
             </div>
             <div class="divider"></div>
             <div class="surface-card" style="padding: 10px 24px;">
-                <div class="setting-row">
+                <div class="setting-row impostor-only">
                     <div class="setting-info"><span class="setting-title" data-i18n="impostors_label">🎭 قداش من كذاب</span></div>
                     <div class="counter-group" id="imp-control">
                         <button class="counter-btn" id="imp-minus">−</button>
@@ -57,11 +82,11 @@
                     </div>
                 </div>
             </div>
-            <div class="advanced-header" id="adv-toggle-btn">
+            <div class="advanced-header impostor-only" id="adv-toggle-btn">
                 <span data-i18n="advanced_btn">🔧 زيد بربش</span>
                 <span id="adv-chevron">▼</span>
             </div>
-            <div class="advanced-content" id="adv-panel">
+            <div class="advanced-content impostor-only" id="adv-panel">
                 <div class="toggle-row">
                     <span class="toggle-label"><span class="info-icon" data-info="random">ℹ️</span> <span data-i18n="adv_random">🎲 كذابين على كيف اللعبة</span></span>
                     <div class="toggle-switch" id="t-random"><div class="toggle-thumb"></div></div>

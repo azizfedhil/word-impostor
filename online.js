@@ -62,6 +62,16 @@ function _err(msg) { const el = document.getElementById('online-setup-error'); i
 function _clearErr() { _err(''); }
 function _getLang(room) { return (room.config&&room.config.lang)||'tn'; }
 function _getTrans(room) { return i18n[_getLang(room)]; }
+function _getRoomGameMode(room) { return (room?.config?.gameMode === 'thief') ? 'thief' : 'impostor'; }
+function _isThiefRoom(room) { return _getRoomGameMode(room) === 'thief'; }
+function _thiefRoleMeta(role) {
+    return {
+        thief: { label:'سارق', icon:'🗝️', desc:'إنت السارق. حاول ما يفيقوش بيك.' },
+        judge: { label:'حاكم', icon:'⚖️', desc:'إنت الحاكم. بعد النقاش تختار شكون السارق.' },
+        executioner: { label:'جلّاد', icon:'🪓', desc:'إنت الجلّاد. تستنى حكم الحاكم.' },
+        witness: { label:'شاهد', icon:'👁️', desc:'إنت شاهد. عاون الحاكم بالكلام وما تكشفش برشة.' }
+    }[role] || { label:'شاهد', icon:'👁️', desc:'إنت شاهد. عاون الحاكم.' };
+}
 function _saveOnlineName(name) {
     const clean = (name || '').trim();
     if (!clean) return;
@@ -227,6 +237,7 @@ function _refreshPresenceViews() {
 }
 
 function _handleStateChange(room) {
+    if (typeof setGameMode === 'function') setGameMode(_getRoomGameMode(room), false);
     if (_lastHandledState !== room.state) {
         if (room.state === 'reveal' || room.state === 'lobby') {
             _figuredOut.clear();
@@ -256,6 +267,7 @@ function _handleStateChange(room) {
 
 function _snapshotConfig() {
     return {
+        gameMode: (typeof getCurrentGameMode === 'function' ? getCurrentGameMode() : 'impostor'),
         lang: currentLang, impostors: impostorConfig||1, timer: timerConfig||3,
         randomImpostors: _togActive('t-random'), chaos: _togActive('t-chaos'),
         elimination: _togActive('t-elimination'), noHints: _togActive('t-nohint'),
@@ -398,6 +410,8 @@ function _renderLobby(room) {
         startBtn.classList.remove('hidden');
         if (n < 3) { startBtn.disabled = true; startBtn.style.opacity = '0.5'; waitMsg.innerText = `⏳ نستنا لاعبين... (${n}/3 على الأقل)`; }
         else { startBtn.disabled = false; startBtn.style.opacity = ''; waitMsg.innerText = `✅ ${n} لاعبين — يمكن تبدأ!`; }
+        startBtn.innerText = _isThiefRoom(room) ? '🚀 وزّع كوارط سارق حاكم جلاد' : '🚀 ابدأ اللعبة';
+        if (_isThiefRoom(room)) return;
 
         // ── Settings button ───────────────────────────────
         const cfg = room.config || {};
@@ -653,8 +667,9 @@ function _renderOnlineRoundPlayers(room, screenId) {
 
     // ── Voice + figured-out controls row ─────────────────────
     const isTimerScreen = screenId === 'timer-screen';
+    const isThiefGame = _isThiefRoom(room);
     const myFiguredOut  = _playerFigured(_me(room) || { id:_myId });
-    const canAskQuestion = isTimerScreen && _canAskQuestion(room);
+    const canAskQuestion = isTimerScreen && !isThiefGame && _canAskQuestion(room);
     const voiceActive   = typeof _voiceOn !== 'undefined' && _voiceOn;
 
     panel.innerHTML = `
@@ -668,8 +683,8 @@ function _renderOnlineRoundPlayers(room, screenId) {
             </button>
             ${canAskQuestion ? `<button class="ask-question-btn" id="ask-question-btn">❓ اسأل لاعب</button>` : ''}
             ${isTimerScreen && !canAskQuestion && _me(room)?.askedQuestion ? `<div class="question-used">✅ سألت سؤال</div>` : ''}
-            ${isTimerScreen && !myFiguredOut ? `<button class="figured-btn" id="figured-out-btn">🎯 عرفت الكذاب!</button>` : ''}
-            ${isTimerScreen && myFiguredOut  ? `<div class="figured-announced">✅ أعلنت أنك عرفت الكذاب</div>` : ''}
+            ${isTimerScreen && !isThiefGame && !myFiguredOut ? `<button class="figured-btn" id="figured-out-btn">🎯 عرفت الكذاب!</button>` : ''}
+            ${isTimerScreen && !isThiefGame && myFiguredOut  ? `<div class="figured-announced">✅ أعلنت أنك عرفت الكذاب</div>` : ''}
         </div>
         <div class="online-round-list"></div>
     `;
@@ -815,6 +830,7 @@ function _animateQuestionText(el, finalText) {
 
 async function _startOnlineGame() {
     if (!_isHost||!_room) return;
+    if (_isThiefRoom(_room)) { await _startOnlineThiefGame(); return; }
     if (_pendingConfig) { _room.config = { ..._room.config, ..._pendingConfig }; }
     _pendingConfig = null;
     const config = _room.config, lang = config.lang||'tn';
@@ -847,6 +863,29 @@ async function _startOnlineGame() {
     catch(e) { console.error(e); showToast('خطأ في بدء اللعبة!'); }
 }
 
+async function _startOnlineThiefGame() {
+    if (!_isHost||!_room) return;
+    const config = { ...(_room.config || {}), gameMode:'thief', lang:'tn', currentVoteReason:null };
+    const allP = _room.players || [];
+    if (allP.length < 3) { showToast('يلزم 3 لاعبين على الأقل.'); return; }
+    const roleKeys = ['thief','judge','executioner', ...Array(Math.max(0, allP.length - 3)).fill('witness')].sort(()=>0.5-Math.random());
+    const players = allP.map((p, idx)=>({
+        ...p,
+        role: roleKeys[idx],
+        isImpostor:false,
+        customHint:'',
+        eliminated:false,
+        hasSeenCard:false,
+        vote:null,
+        figuredOut:false,
+        askedQuestion:false
+    }));
+    try {
+        await _update(_room.code,{state:'reveal',config,word_obj:null,players,timer_end_at:null,result:null});
+        _figuredOut.clear();
+    } catch(e) { console.error(e); showToast('خطأ في بدء اللعبة!'); }
+}
+
 function _showMyCard(room) {
     showScreen('online-card-screen');
     const me = _me(room); if (!me) return;
@@ -860,9 +899,15 @@ function _showMyCard(room) {
     const waitingZone = document.getElementById('online-waiting-zone');
     waitingZone.classList.add('hidden');
     waitingZone.classList.remove('all-seen-ready');
-    let roleText = me.isImpostor
-        ? (noHints ? trans.impostor_role : `${trans.impostor_role}<br><br><span style="font-size:16px;">${trans.hint_label}</span><br>${me.customHint}`)
-        : `${trans.citizen_role}<br><br><span style="font-size:16px;">${trans.word_label}</span><br>${room.word_obj.word}`;
+    let roleText;
+    if (_isThiefRoom(room)) {
+        const meta = _thiefRoleMeta(me.role);
+        roleText = `<strong style="font-size:1.7rem">${meta.icon} ${meta.label}</strong><br><br><span style="font-size:16px;">${meta.desc}</span>`;
+    } else {
+        roleText = me.isImpostor
+            ? (noHints ? trans.impostor_role : `${trans.impostor_role}<br><br><span style="font-size:16px;">${trans.hint_label}</span><br>${me.customHint}`)
+            : `${trans.citizen_role}<br><br><span style="font-size:16px;">${trans.word_label}</span><br>${room.word_obj.word}`;
+    }
     const card = document.createElement('div'); card.className = 'flip-card';
     card.innerHTML = `<div class="card-face card-front"><span>${trans.card_of}${me.name}</span></div>
                       <div class="card-face card-back"><span>${roleText}</span></div>`;
@@ -1110,29 +1155,39 @@ function _showOnlineVoting(room) {
     _startVotingTimer(room);
     const list = document.getElementById('voting-list'); list.innerHTML = '';
     const me = _me(room), hasVoted = me&&me.vote!==null;
+    document.querySelector('[data-i18n="voting_title"]').innerText = _isThiefRoom(room) ? '⚖️ حكم الحاكم' : _getTrans(room).voting_title;
+    document.querySelector('[data-i18n="who_impostor"]').innerText = _isThiefRoom(room) ? 'يا حاكم، شكون السارق؟' : _getTrans(room).who_impostor;
     room.players.filter(p=>!p.eliminated).forEach(player=>{
+        if (_isThiefRoom(room) && player.role === 'judge') return;
         const btn = document.createElement('button'); btn.className = 'vote-item';
         const vc = room.players.filter(p=>p.vote===player.id).length;
-        btn.innerHTML = '🗳️ '+player.name+(vc>0?` <span class="vote-count">(${vc})</span>`:'');
-        if (hasVoted) { btn.disabled=true; if(me.vote===player.id) btn.classList.add('my-vote'); }
+        btn.innerHTML = (_isThiefRoom(room) ? '⚖️ ' : '🗳️ ')+player.name+(vc>0?` <span class="vote-count">(${vc})</span>`:'');
+        if (_isThiefRoom(room) && me?.role !== 'judge') { btn.disabled = true; btn.title = 'نستناو الحاكم يحكم'; }
+        else if (hasVoted) { btn.disabled=true; if(me.vote===player.id) btn.classList.add('my-vote'); }
         else if (player.id===_myId) { btn.disabled=true; btn.title='ما تنجمش تصوت على روحك'; }
         else { btn.addEventListener('click',()=>_castVote(player.id)); }
         list.appendChild(btn);
     });
     const alive = room.players.filter(p=>!p.eliminated);
-    const allVoted = alive.length>0&&alive.every(p=>p.vote!==null);
+    const allVoted = _isThiefRoom(room)
+        ? !!room.players.find(p=>p.role==='judge' && p.vote!==null)
+        : alive.length>0&&alive.every(p=>p.vote!==null);
     if (allVoted) setTimeout(()=>_processVotes(room),800);
 }
 
 async function _castVote(targetId) {
     if (!_room || _localPlayerDesired.vote) return; _sfx.vote();
+    if (_isThiefRoom(_room) && _me(_room)?.role !== 'judge') return;
     _localPlayerDesired = {..._localPlayerDesired, vote:targetId};
     _showOnlineVoting(_applyLocalPlayerOverrides(_room));
     try {
-        const updated = await _commitMyPlayerPatch({vote:targetId});
+    const updated = await _commitMyPlayerPatch({vote:targetId});
         _showOnlineVoting(updated);
         const alive = updated.players.filter(p=>!p.eliminated);
-        if (alive.length>0&&alive.every(p=>p.vote!==null)) setTimeout(()=>_processVotes(updated),800);
+        const done = _isThiefRoom(updated)
+            ? !!updated.players.find(p=>p.role==='judge' && p.vote!==null)
+            : alive.length>0&&alive.every(p=>p.vote!==null);
+        if (done) setTimeout(()=>_processVotes(updated),800);
     } catch(e) { console.error(e); }
 }
 
@@ -1145,6 +1200,31 @@ async function _processVotes(room) {
     room = fresh;
     const alive = room.players.filter(p=>!p.eliminated);
     if (!alive.length) return;
+    if (_isThiefRoom(room)) {
+        const judge = room.players.find(p=>p.role==='judge');
+        const thief = room.players.find(p=>p.role==='thief');
+        const executioner = room.players.find(p=>p.role==='executioner');
+        const votedId = judge?.vote || alive.find(p=>p.role!=='judge')?.id;
+        const votedPlayer = room.players.find(p=>p.id===votedId);
+        if (!votedPlayer || !thief) return;
+        const outcome = votedPlayer.role === 'thief' ? 'thief_caught' : 'thief_escaped';
+        const result = {
+            votedPlayerId:votedId,
+            outcome,
+            thiefId: thief.id,
+            judgeId: judge?.id || null,
+            executionerId: executioner?.id || null
+        };
+        const {data,error} = await _supa.from('rooms')
+            .update({state:'result',result,timer_end_at:null,config:{...(room.config||{}),currentVoteReason:null}})
+            .eq('code',room.code)
+            .eq('state','voting')
+            .select()
+            .maybeSingle();
+        if (error) throw error;
+        if (data) { _room = data; _handleStateChange(data); }
+        return;
+    }
     const tally = {}; alive.forEach(p=>{if(p.vote) tally[p.vote]=(tally[p.vote]||0)+1;});
     let maxV=-1, votedId=alive[0].id;
     Object.entries(tally).forEach(([id,count])=>{if(count>maxV){maxV=count;votedId=id;}});
@@ -1186,6 +1266,23 @@ function _showOnlineResult(room) {
     const revealBox = document.getElementById('impostors-reveal');
     const nextBtn = document.getElementById('next-round-btn');
     revealBox.innerHTML = ''; if (!result) return;
+    if (_isThiefRoom(room)) {
+        const voted = room.players.find(p=>p.id===result.votedPlayerId);
+        const thief = room.players.find(p=>p.id===result.thiefId) || room.players.find(p=>p.role==='thief');
+        const judge = room.players.find(p=>p.id===result.judgeId) || room.players.find(p=>p.role==='judge');
+        const executioner = room.players.find(p=>p.id===result.executionerId) || room.players.find(p=>p.role==='executioner');
+        if (result.outcome === 'thief_caught') {
+            triggerAnimation('win');
+            resultMsg.innerText = `الحاكم فقسها! ${voted?.name || '?'} هو السارق.`;
+        } else {
+            triggerAnimation('lose');
+            resultMsg.innerText = `السارق هرب! ${voted?.name || '?'} طلع خاطيه.`;
+        }
+        revealBox.innerHTML = `السارق: <strong style="color:var(--primary-color)">${thief?.name || '?'}</strong><br>الحاكم: <strong>${judge?.name || '?'}</strong><br>الجلّاد: <strong>${executioner?.name || '?'}</strong>`;
+        if (_isHost) { nextBtn.innerText='🔄 عاود انده'; nextBtn.disabled=false; nextBtn.onclick=()=>_resetToLobby(); }
+        else { nextBtn.innerText='⏳ نستناو مولى الروم...'; nextBtn.disabled=true; }
+        return;
+    }
     const voted = room.players.find(p=>p.id===result.votedPlayerId);
     const name = voted?voted.name:'?';
     const allImps = room.players.filter(p=>p.isImpostor).map(p=>p.name).join(' و ');

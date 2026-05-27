@@ -72,6 +72,17 @@ let isEliminationMode = false, noHintsMode = false;
 let currentRevealIndex = 0;
 let impostorConfig = 1, timerConfig = 3, playerCount = 0;
 const X18_REMEMBER_KEY = 'dakheel_x18_unlocked';
+const GAME_MODE_KEY = 'dakheel_game_mode';
+let currentGameMode = 'impostor';
+const gameModes = {
+    impostor: { title: '🕵️‍♂️ شكونو هو؟', start: '🚀 انافا', online: '🌐 العب أونلاين مع أصحابك' },
+    thief: { title: '🗝️ سارق، حاكم، جلّاد', start: '🚀 وزّع الكوارط', online: '🌐 العب أونلاين مع أصحابك' }
+};
+const thiefRoles = [
+    { key:'thief', label:'سارق', icon:'🗝️', desc:'إنت السارق. حاول ما يفيقوش بيك.' },
+    { key:'judge', label:'حاكم', icon:'⚖️', desc:'إنت الحاكم. بعد النقاش تختار شكون السارق.' },
+    { key:'executioner', label:'جلّاد', icon:'🪓', desc:'إنت الجلّاد. تستنى حكم الحاكم.' }
+];
 
 // ============================================================
 // INDEXED DB — settings persistence
@@ -129,6 +140,35 @@ function _togSet(id, val) { document.getElementById(id).classList.toggle('active
 function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(id).classList.add('active');
+}
+
+function setGameMode(mode, goSetup = true) {
+    currentGameMode = mode === 'thief' ? 'thief' : 'impostor';
+    try { localStorage.setItem(GAME_MODE_KEY, currentGameMode); } catch(_) {}
+    if (currentGameMode === 'thief') currentLang = 'tn';
+    updateGameModeUI();
+    if (goSetup) showScreen('setup-screen');
+}
+window.setGameMode = setGameMode;
+window.getCurrentGameMode = () => currentGameMode;
+
+function updateGameModeUI() {
+    const meta = gameModes[currentGameMode];
+    document.body.classList.toggle('game-thief', currentGameMode === 'thief');
+    document.body.classList.toggle('game-impostor', currentGameMode === 'impostor');
+    const title = document.querySelector('header h1');
+    if (title) title.innerText = currentGameMode === 'impostor' ? i18n[currentLang].title : meta.title;
+    document.querySelectorAll('.game-switch-option').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.gameMode === currentGameMode);
+    });
+    const startBtn = document.getElementById('start-game-btn');
+    if (startBtn) startBtn.innerText = meta.start;
+    const onlineBtn = document.getElementById('open-online-btn');
+    if (onlineBtn) onlineBtn.innerText = meta.online;
+    const voteBtn = document.getElementById('go-to-vote-btn');
+    if (voteBtn) voteBtn.innerText = currentGameMode === 'thief' ? '⚖️ يا حاكم، احكم' : i18n[currentLang].vote_btn;
+    const who = document.querySelector('[data-i18n="who_impostor"]');
+    if (who) who.innerText = currentGameMode === 'thief' ? 'يا حاكم، شكون السارق؟' : i18n[currentLang].who_impostor;
 }
 
 function showToast(msg) {
@@ -194,6 +234,7 @@ function applyTranslations() {
     document.querySelectorAll('.player-input').forEach(inp => inp.placeholder = i18n[currentLang].player_placeholder);
     document.querySelectorAll('.lang-pill-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-lang') === currentLang));
     document.body.classList.toggle('lang-x18', currentLang === 'x18');
+    updateGameModeUI();
 }
 
 // ============================================================
@@ -266,7 +307,9 @@ function renderSingleCard() {
     const player = players[currentRevealIndex];
     document.getElementById('current-player-turn-msg').innerText = i18n[currentLang].reveal_player_prefix + player.name;
     let roleText;
-    if (player.isImpostor) {
+    if (currentGameMode === 'thief') {
+        roleText = `<strong style="font-size:1.7rem">${player.roleIcon} ${player.roleLabel}</strong><br><br><span style="font-size:16px;">${player.roleDesc}</span>`;
+    } else if (player.isImpostor) {
         roleText = noHintsMode
             ? i18n[currentLang].impostor_role
             : `${i18n[currentLang].impostor_role}<br><br><span style="font-size:16px;">${i18n[currentLang].hint_label}</span><br>${player.customHint}`;
@@ -304,15 +347,19 @@ window.renderSingleCard = renderSingleCard;
 function goToVoting() {
     showScreen('voting-screen');
     const list = document.getElementById('voting-list'); list.innerHTML = '';
+    document.querySelector('[data-i18n="voting_title"]').innerText = currentGameMode === 'thief' ? '⚖️ حكم الحاكم' : i18n[currentLang].voting_title;
+    document.querySelector('[data-i18n="who_impostor"]').innerText = currentGameMode === 'thief' ? 'يا حاكم، شكون السارق؟' : i18n[currentLang].who_impostor;
     players.filter(p=>!p.eliminated).forEach(player => {
+        if (currentGameMode === 'thief' && player.role === 'judge') return;
         const btn = document.createElement('button'); btn.className = 'vote-item';
-        btn.innerText = '🗳️ ' + player.name;
+        btn.innerText = (currentGameMode === 'thief' ? '⚖️ ' : '🗳️ ') + player.name;
         btn.onclick = () => handleVote(player);
         list.appendChild(btn);
     });
 }
 
 function handleVote(votedPlayer) {
+    if (currentGameMode === 'thief') { handleThiefJudgement(votedPlayer); return; }
     const resultMsg = document.getElementById('result-message');
     const revealBox = document.getElementById('impostors-reveal');
     const nextBtn = document.getElementById('next-round-btn');
@@ -354,6 +401,27 @@ function handleVote(votedPlayer) {
     showScreen('result-screen');
 }
 
+function handleThiefJudgement(votedPlayer) {
+    const resultMsg = document.getElementById('result-message');
+    const revealBox = document.getElementById('impostors-reveal');
+    const nextBtn = document.getElementById('next-round-btn');
+    const thief = players.find(p => p.role === 'thief');
+    const judge = players.find(p => p.role === 'judge');
+    const executioner = players.find(p => p.role === 'executioner');
+    const caught = votedPlayer.role === 'thief';
+    if (caught) {
+        triggerAnimation('win');
+        resultMsg.innerText = `الحاكم فقسها! ${votedPlayer.name} هو السارق.`;
+    } else {
+        triggerAnimation('lose');
+        resultMsg.innerText = `السارق هرب! ${votedPlayer.name} طلع خاطيه.`;
+    }
+    revealBox.innerHTML = `السارق: <strong>${thief?.name || '?'}</strong><br>الحاكم: <strong>${judge?.name || '?'}</strong><br>الجلّاد: <strong>${executioner?.name || '?'}</strong>`;
+    nextBtn.innerText = '🔄 عاود انده';
+    nextBtn.onclick = () => showScreen('setup-screen');
+    showScreen('result-screen');
+}
+
 function updateTimerDisplay() {
     const m = Math.floor(remainingTime/60).toString().padStart(2,'0');
     const s = (remainingTime%60).toString().padStart(2,'0');
@@ -364,6 +432,32 @@ function updateTimerDisplay() {
 }
 window.updateTimerDisplay = updateTimerDisplay;
 
+function startThiefOffline() {
+    saveSettings();
+    const namesInput = Array.from(document.querySelectorAll('.player-input'))
+        .map((inp,idx)=>inp.value.trim()||`لاعب ${idx+1}`);
+    if (namesInput.length < 3) {
+        document.getElementById('setup-error').innerText='يلزم 3 لاعبين على الأقل: سارق، حاكم، وجلّاد.';
+        _sfx.error();
+        return;
+    }
+    document.getElementById('setup-error').innerText='';
+    const shuffled = [...namesInput].sort(()=>0.5-Math.random());
+    const roles = [
+        ...thiefRoles,
+        ...Array(Math.max(0, shuffled.length - 3)).fill(null).map(() => ({ key:'witness', label:'شاهد', icon:'👁️', desc:'إنت شاهد. عاون الحاكم بالكلام وما تكشفش برشة.' }))
+    ].sort(()=>0.5-Math.random());
+    players = shuffled.map((name, idx) => {
+        const role = roles[idx];
+        return { name, role:role.key, roleLabel:role.label, roleIcon:role.icon, roleDesc:role.desc, eliminated:false, viewedCard:false };
+    });
+    remainingTime = timerConfig * 60;
+    currentRevealIndex = 0;
+    renderSingleCard();
+    showScreen('reveal-screen');
+    _sfx.gameStart();
+}
+
 
 
 // ============================================================
@@ -371,6 +465,8 @@ window.updateTimerDisplay = updateTimerDisplay;
 // ============================================================
 document.addEventListener('DOMContentLoaded', async () => {
 
+    try { currentGameMode = localStorage.getItem(GAME_MODE_KEY) || 'impostor'; } catch(_) { currentGameMode = 'impostor'; }
+    if (!['impostor','thief'].includes(currentGameMode)) currentGameMode = 'impostor';
     currentLang = 'tn';
     x18Unlocked = hasRememberedX18Unlock();
     applyTranslations();
@@ -395,6 +491,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('val-timer').innerText = timerConfig;
     applyTranslations();
     checkRules();
+    updateGameModeUI();
+
+    document.querySelectorAll('[data-game-mode]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            setGameMode(btn.dataset.gameMode, true);
+            document.getElementById('game-switch-menu')?.classList.add('hidden');
+        });
+    });
+    document.getElementById('game-title-btn')?.addEventListener('click', e => {
+        e.stopPropagation();
+        if (document.querySelector('.screen.active')?.id === 'mode-select-screen') return;
+        document.getElementById('game-switch-menu')?.classList.toggle('hidden');
+    });
+    document.addEventListener('click', e => {
+        if (!e.target.closest('.app-header')) document.getElementById('game-switch-menu')?.classList.add('hidden');
+    });
 
     // ADD PLAYER
     document.getElementById('add-player-btn').addEventListener('click', () => { addPlayerInput(); saveSettings(); });
@@ -483,6 +595,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // START OFFLINE GAME
     document.getElementById('start-game-btn').addEventListener('click',()=>{
+        if (currentGameMode === 'thief') { startThiefOffline(); return; }
         saveSettings();
         // Fallback names for empty inputs
         const namesInput = Array.from(document.querySelectorAll('.player-input'))
