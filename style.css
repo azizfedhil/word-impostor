@@ -584,14 +584,45 @@ input[type="text"]:focus, input[type="password"]:focus { border-color: var(--pri
 .vote-count { font-size: 0.85rem; font-weight: 700; color: var(--accent-color); }
 
 /* ===== COUP / KOL W BAWAA ===== */
+/* Hide coup-only elements unless in coup mode */
+body:not(.game-coup) .coup-only-btn { display: none !important; }
+
 .coup-topline { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 #coup-title { margin: 0 0 2px; }
 #coup-subtitle { margin: 0; font-size: .96rem; }
-.coup-deck-pill { min-width: 72px; padding: 10px 14px; border-radius: var(--radius-pill); background: var(--surface-color);
-                  border: 1px solid var(--border-color); color: var(--primary-color); font-weight: 900; text-align: center;
-                  box-shadow: var(--shadow-soft); display: grid; gap: 4px; line-height: 1.1; }
+.coup-deck-pill { display: flex; align-items: center; gap: 10px; padding: 8px 13px; border-radius: var(--radius-pill); background: var(--surface-color);
+                  border: 1px solid var(--border-color); box-shadow: var(--shadow-soft); font-size: .88rem; font-weight: 800; color: var(--text-main); }
 .coup-deck-pill span { display: block; white-space: nowrap; }
 .coup-deck-pill strong { color: var(--accent-color); }
+
+/* Bank display */
+.coup-bank-display { display: flex; align-items: center; gap: 6px; }
+.coup-bank-icon { font-size: 1.05rem; line-height: 1; }
+.coup-bank-val { color: var(--accent-color); font-size: 1rem; }
+.coup-coin-bar { display: flex; gap: 2px; align-items: center; margin-inline-start: 2px; }
+.coin-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border-color); transition: background .4s; }
+.coin-dot.filled { background: var(--accent-color); box-shadow: 0 0 4px rgba(241,192,81,.45); }
+
+/* Deck display */
+.coup-deck-display { display: flex; align-items: center; gap: 6px; }
+.coup-deck-val { font-size: 1.05rem; color: var(--primary-color); transition: color .3s; }
+.coup-deck-label { font-size: .7rem; color: var(--text-muted); font-weight: 700; }
+.coup-deck-display.deck-low  .coup-deck-val { color: var(--accent-color); }
+.coup-deck-display.deck-critical .coup-deck-val { color: var(--danger-color); animation: coupTimerPulse .9s ease-in-out infinite; }
+
+/* Visual stacked cards in deck pill */
+.coup-deck-stack-vis { position: relative; width: 26px; height: 34px; flex-shrink: 0; }
+.cds-back2, .cds-back1, .cds-front { position: absolute; border-radius: 3px; border: 1.5px solid var(--border-color); }
+.cds-back2 { width: 19px; height: 25px; top: 7px; left: 4px; background: rgba(82,140,113,.1); transform: rotate(-7deg); }
+.cds-back1 { width: 19px; height: 25px; top: 4px; left: 2px; background: rgba(82,140,113,.2); transform: rotate(-3deg); }
+.cds-front  { width: 21px; height: 28px; top: 2px; left: 0; background: var(--primary-color); color: #fff; font-size: 13px;
+               display: flex; align-items: center; justify-content: center; transform: rotate(2deg);
+               box-shadow: 0 3px 8px rgba(82,140,113,.32); transition: background .3s; }
+.coup-deck-display.deck-low  .cds-front { background: var(--accent-color); box-shadow: 0 3px 8px rgba(241,192,81,.32); }
+.coup-deck-display.deck-critical .cds-front { background: var(--danger-color); box-shadow: 0 3px 8px rgba(212,107,90,.32); }
+
+/* Separator dot between bank and deck */
+.coup-deck-sep { width: 4px; height: 4px; border-radius: 50%; background: var(--border-color); flex-shrink: 0; }
 .coup-status-wrap { display: grid; grid-template-columns: minmax(86px, .27fr) minmax(0, .73fr); grid-template-areas: "timer status";
                     align-items: stretch; gap: 8px; margin-bottom: 12px; direction: ltr; }
 .coup-status { padding: 12px 14px; border-radius: var(--radius-md); background: rgba(82,140,113,0.1);
