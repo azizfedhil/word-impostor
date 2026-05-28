@@ -98,6 +98,10 @@ let coupTimerInterval = null;
 const COUP_DEFAULT_ACTION_MINUTES = 1;
 const COUP_RESPONSE_SECONDS = 45;
 let coupResponseInterval = null;
+
+function _now() {
+    return (window.onlineMode && typeof window._syncedNow === 'function') ? window._syncedNow() : Date.now();
+}
 let coupOtherDecksCollapsed = false;
 let coupOfflineReveal = false;
 const coupActionHelp = {
@@ -223,6 +227,7 @@ window.showModeSelect = showModeSelect;
 
 function updateGameModeUI() {
     const meta = gameModes[currentGameMode];
+    if (currentGameMode !== 'coup') document.getElementById('coup-turn-indicator')?.classList.add('hidden');
     document.body.classList.toggle('game-thief', currentGameMode === 'thief');
     document.body.classList.toggle('game-spyfall', currentGameMode === 'spyfall');
     document.body.classList.toggle('game-coup', currentGameMode === 'coup');
@@ -351,6 +356,7 @@ function triggerWinnerAnnouncement(winnerName) {
     overlay.appendChild(content);
 
     _sfx.win();
+    document.getElementById('coup-turn-indicator')?.classList.add('hidden');
     setTimeout(() => {
         overlay.classList.add('fade-out');
         setTimeout(() => overlay.remove(), 800);
@@ -756,11 +762,11 @@ function _coupActionMinutes(state = coupState) {
 
 function _coupSetTurnDeadline(state = coupState) {
     if (!state) return;
-    state.turnEndsAt = Date.now() + (_coupActionMinutes(state) * 60000);
+    state.turnEndsAt = _now() + (_coupActionMinutes(state) * 60000);
 }
 
 function _coupSetResponseDeadline(pending) {
-    pending.expiresAt = Date.now() + COUP_RESPONSE_SECONDS * 1000;
+    pending.expiresAt = _now() + COUP_RESPONSE_SECONDS * 1000;
 }
 
 function _coupBlockRoleLabel(role) {
@@ -864,11 +870,17 @@ function _wireCoupModalCountdown(root = document) {
     const nodes = root.querySelectorAll?.('.coup-pending-countdown') || [];
     nodes.forEach(node => {
         const tick = () => {
-            const left = Math.max(0, Math.ceil((parseInt(node.dataset.deadline, 10) - Date.now()) / 1000));
+            const left = Math.max(0, Math.ceil((parseInt(node.dataset.deadline, 10) - _now()) / 1000));
             node.textContent = `${left}s`;
             node.classList.toggle('urgent', left <= 10);
+            if (left <= 0 && node._tickInterval) {
+                clearInterval(node._tickInterval);
+                delete node._tickInterval;
+            }
         };
         tick();
+        if (node._tickInterval) clearInterval(node._tickInterval);
+        node._tickInterval = setInterval(tick, 500);
     });
 }
 
@@ -878,6 +890,13 @@ function _closeCoupModal() {
     overlay.classList.remove('show');
     _sfx.modalClose();
     setTimeout(() => overlay.remove(), 220);
+
+    // Re-enable Coup action buttons if they were disabled
+    document.querySelectorAll('.coup-action-btn').forEach(btn => {
+        if (btn.getAttribute('aria-disabled') !== 'true') {
+            btn.disabled = false;
+        }
+    });
 }
 
 function _showCoupCardInfo(type, cards = coupCards) {
@@ -1020,7 +1039,7 @@ function startCoupOffline() {
         turnIndex:0,
         pending:null,
         actionMinutes:_coupActionMinutes(),
-        turnEndsAt:Date.now() + (_coupActionMinutes() * 60000),
+        turnEndsAt:_now() + (_coupActionMinutes() * 60000),
         bankCoins:50 - (namesInput.length * 2),
         log:'كل واحد بدا بزوز فلوس وزوز كوارط. تبلعيط قد ما تحب، أما كان قالولك "تكذب!" حضّر روحك.',
         players:namesInput.map((name, idx) => ({
@@ -1044,7 +1063,7 @@ function startCoupTurnTimer(state = coupState, myId = null) {
     if (!timerEl || !state) return;
     const tick = () => {
         if (!state.turnEndsAt) _coupSetTurnDeadline(state);
-        const left = Math.ceil((state.turnEndsAt - Date.now()) / 1000);
+        const left = Math.ceil((state.turnEndsAt - _now()) / 1000);
         timerEl.innerHTML = _coupTimerHtml(left);
         timerEl.classList.toggle('urgent', left <= 10);
         if (left <= 0 && !state.pending && _coupAlive(state).length > 1) coupHandleTimeout();
@@ -1296,7 +1315,7 @@ function _coupStartResponseTimer(onExpire) {
         _wireCoupModalCountdown(document);
         const p = coupState?.pending;
         if (!p?.expiresAt) return;
-        if (Date.now() >= p.expiresAt) {
+        if (_now() >= p.expiresAt) {
             clearInterval(coupResponseInterval);
             coupResponseInterval = null;
             _closeCoupModal();
@@ -1308,7 +1327,8 @@ function _coupStartResponseTimer(onExpire) {
 }
 
 function _coupPendingTimerHtml(p) {
-    return `<div class="coup-decision-timer">وقت القرار <strong class="coup-pending-countdown" data-deadline="${p.expiresAt}">${COUP_RESPONSE_SECONDS}s</strong></div>`;
+    const left = Math.max(0, Math.ceil((p.expiresAt - _now()) / 1000));
+    return `<div class="coup-decision-timer">وقت القرار <strong class="coup-pending-countdown" data-deadline="${p.expiresAt}">${left}s</strong></div>`;
 }
 
 function renderCoupChallengePanel() {
