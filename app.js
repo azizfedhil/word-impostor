@@ -262,7 +262,7 @@ function closeModal(id) {
     setTimeout(() => m.classList.add('hidden'), 300);
 }
 
-function triggerAnimation(type, extra = {}) {
+function triggerAnimation(type) {
     const overlay = document.createElement('div');
     if (type === 'win') {
         overlay.className = 'anim-win-overlay';
@@ -279,9 +279,7 @@ function triggerAnimation(type, extra = {}) {
             p.style.setProperty('--delay', (Math.random() * 0.28).toFixed(2) + 's');
             overlay.appendChild(p);
         }
-        const center = document.createElement('div');
-        center.className = 'win-center';
-        center.innerHTML = `<span class="win-center-icon">🎉</span>${extra.name ? `<span class="win-center-name">${extra.name} ربح!</span>` : ''}`;
+        const center = document.createElement('div'); center.className = 'win-center'; center.innerText = '🎉';
         overlay.appendChild(center);
         _sfx.win();
     } else {
@@ -297,28 +295,6 @@ function triggerAnimation(type, extra = {}) {
     setTimeout(() => overlay.parentNode && overlay.parentNode.removeChild(overlay), 2800);
 }
 window.triggerAnimation = triggerAnimation;
-
-
-function triggerCoupWinnerAnimation(playerName) {
-    triggerAnimation("win", { name: playerName });
-}
-
-function triggerNotLyingAnimation(playerName, cardType) {
-    const meta = coupCards[cardType] || { name: cardType, icon: "🃏" };
-    const overlay = document.createElement("div");
-    overlay.className = "not-lying-overlay";
-    overlay.innerHTML = `
-        <div class="not-lying-card">
-            <div class="not-lying-title">ما يكذبش!</div>
-            <div class="not-lying-card-icon">${meta.icon}</div>
-            <div class="not-lying-msg">${playerName} ورّى الكارتة الصحيحة</div>
-            <div style="margin-top:10px; font-size:0.9rem; color:#666;">الكارتة تبدلت بوحدة جديدة مالدكة</div>
-        </div>
-    `;
-    document.body.appendChild(overlay);
-    _sfx.win();
-    setTimeout(() => overlay.remove(), 3000);
-}
 
 // ============================================================
 // TRANSLATIONS APPLY
@@ -675,13 +651,7 @@ function _coupResourceHtml(state = coupState) {
 function _coupStatusHtml(state = coupState) {
     const alive = _coupAlive(state);
     const current = state.players[state.turnIndex];
-    if (alive.length <= 1) {
-        if (!state._winnerAnnounced && alive[0]) {
-            state._winnerAnnounced = true;
-            triggerCoupWinnerAnimation(alive[0].name);
-        }
-        return `<span class="coup-status-line">🏆 <bdi>${_escapeHtml(alive[0]?.name || '')}</bdi> ربح الطرح!</span>`;
-    }
+    if (alive.length <= 1) return `<span class="coup-status-line">🏆 <bdi>${_escapeHtml(alive[0]?.name || '')}</bdi> ربح الطرح!</span>`;
     if (state.pending) return `<span class="coup-status-line">${_escapeHtml(state.log || '')}</span>`;
     return `<span class="coup-status-line">الدور على <bdi>${_escapeHtml(current?.name || '?')}.</bdi></span>${state.log ? `<span class="coup-status-line">${_escapeHtml(state.log)}</span>` : ''}`;
 }
@@ -985,7 +955,7 @@ function startCoupOffline() {
     coupState = {
         online:false,
         deck,
-        turnIndex: Math.floor(Math.random() * namesInput.length),
+        turnIndex:0,
         pending:null,
         actionMinutes:_coupActionMinutes(),
         turnEndsAt:Date.now() + (_coupActionMinutes() * 60000),
@@ -1040,17 +1010,6 @@ function renderCoupScreen(state = coupState, myId = null) {
     if (!state) return;
     const alive = _coupAlive(state);
     const current = state.players[state.turnIndex];
-
-    const turnIndicator = document.getElementById('coup-turn-indicator');
-    if (turnIndicator) {
-        if (alive.length > 1) {
-            turnIndicator.innerText = `دور ${current?.name || '???'}`;
-            turnIndicator.classList.remove('hidden');
-        } else {
-            turnIndicator.classList.add('hidden');
-        }
-    }
-
     document.getElementById('coup-deck-pill').innerHTML = _coupResourceHtml(state);
     document.getElementById('coup-status').innerHTML = _coupStatusHtml(state);
     const board = document.getElementById('coup-player-board');
@@ -1071,11 +1030,11 @@ function renderCoupScreen(state = coupState, myId = null) {
         div.className = 'coup-player-card' + (idx===state.turnIndex?' is-turn':'') + (isMe?' is-me':'') + (focused?' is-focused':'') + (dimmed?' is-dimmed':'') + (out?' is-out':'');
         div.dataset.playerId = p.id;
         div.innerHTML = `<div class="coup-player-head"><span>${_escapeHtml(p.name)}${isMe && myId?' <span class="you-tag">أنا</span>':''}</span><span class="coup-coins">🪙 ${p.coins}</span></div>
-            <div class="coup-influence-row">${p.hand.map((c, cIdx) => {
+            <div class="coup-influence-row">${p.hand.map(c => {
                 const meta = coupCards[c.type] || coupCards.duke;
                 const label = (visible || c.lost) ? _coupCardLabelHtml(meta) : (isMe && !state.online ? '<span>👆 انزل باش تشوف</span>' : '<span>🂠 مخبية</span>');
                 const info = (visible || c.lost) ? `<button class="coup-card-info" type="button" data-card-type="${c.type}" aria-label="info">ℹ️</button>` : '';
-                return `<div class="coup-influence ${c.lost?'lost':''}" data-card-idx="${cIdx}"><span>${label}</span>${info}</div>`;
+                return `<div class="coup-influence ${c.lost?'lost':''}"><span>${label}</span>${info}</div>`;
             }).join('')}</div>`;
 
         if (isMe && !state.online) {
@@ -1092,16 +1051,6 @@ function renderCoupScreen(state = coupState, myId = null) {
                 renderCoupScreen(state, myId);
             });
         }
-            div.querySelectorAll('.coup-influence').forEach(cardEl => {
-                cardEl.addEventListener('click', e => {
-                    if (e.target.closest('.coup-card-info')) return;
-                    const cIdx = cardEl.dataset.cardIdx;
-                    const card = p.hand[cIdx];
-                    if (card && (visible || card.lost)) {
-                        _showCoupCardInfo(card.type);
-                    }
-                });
-            });
         div.querySelectorAll('.coup-card-info').forEach(btn => {
             btn.addEventListener('click', e => {
                 e.stopPropagation();
@@ -1316,10 +1265,7 @@ function renderCoupChallengePanel() {
     const blockButtons = p.blockable ? blockers.map(c => _coupBlockOptions(p).map(opt =>
         `<button class="coup-target-btn" data-block-id="${c.id}" data-block-role="${opt.role}">${_escapeHtml(c.name)}: نسكّرها ب${opt.label}</button>`
     ).join('')).join('') : '';
-    let targetLine = target ? `<p class="coup-decision-hint">${_escapeHtml(target.name)}، تنجم تسكّر الأكشن كان عندك الكارتة المناسبة، ولا تقول للّي هاجمك "تكذب!".</p>` : '';
-    if (p.action === 'assassinate' && target && target.hand.some(c => !c.lost && c.type === 'contessa')) {
-        targetLine = `<p class="coup-decision-hint" style="color:var(--primary-color); font-weight:800;">عندك "الكونتيسة"، تحب تمنع روحك والا تسكت؟</p>`;
-    }
+    const targetLine = target ? `<p class="coup-decision-hint">${_escapeHtml(target.name)}، تنجم تسكّر الأكشن كان عندك الكارتة المناسبة، ولا تقول للّي هاجمك "تكذب!".</p>` : '';
     _showCoupModal('بوّع ولا صحيح؟', `
         <p>${_escapeHtml(coupState.log)}</p>
         ${targetLine}
@@ -1419,7 +1365,6 @@ function coupChallenge(challengerId) {
     if (hasIt) {
         const originalPending = {...p};
         _coupProveAndReplace(actor, p.claim);
-        triggerNotLyingAnimation(actor.name, p.claim);
         coupState.log = `${challenger.name} طلع غالط! ${actor.name} ورّى الكارتة و${funWrongAccuser()}`;
         _showCoupEvent(coupState.log, 'bad');
         coupLoseInfluence(challengerId, () => {
@@ -1507,7 +1452,6 @@ function coupChallengeBlock(challengerId = null) {
     const hasIt = blocker.hand.some(c=>!c.lost && c.type===p.blockRole);
     if (hasIt) {
         _coupProveAndReplace(blocker, p.blockRole);
-        triggerNotLyingAnimation(blocker.name, p.blockRole);
         coupState.log = `${challenger.name} اتهم البلوك وطلع غالط. ${blocker.name} عندو ${_coupBlockRoleLabel(p.blockRole)}.`;
         coupState.pending = null;
         _showCoupEvent(coupState.log, 'bad');

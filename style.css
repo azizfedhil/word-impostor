@@ -837,10 +837,8 @@ body:not(.game-coup) .coup-only-btn { display: none !important; }
 /* ===== WIN / LOSE ANIMATIONS ===== */
 .anim-win-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 9999; animation: winFlash 2.6s ease-out forwards; }
 @keyframes winFlash { 0% { background: rgba(46,204,113,0); } 8% { background: rgba(46,204,113,0.35); } 35% { background: rgba(46,204,113,0.1); } 100% { background: rgba(46,204,113,0); } }
-.win-center { position: absolute; top: 50%; left: 50%; display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; text-align: center; animation: winCenterPop 2.6s cubic-bezier(0.34,1.56,0.64,1) forwards; filter: drop-shadow(0 0 28px rgba(46,204,113,0.85)); }
-.win-center-icon { font-size: 110px; line-height: 1; }
-.win-center-name { color: #fff; font-size: 2.2rem; font-weight: 900; text-shadow: 0 4px 12px rgba(0,0,0,0.4); }
-@keyframes winCenterPop { 0% { transform: translate(-50%,-50%) scale(0) rotate(-15deg); opacity: 0; } 18% { transform: translate(-50%,-50%) scale(1.2) rotate(6deg); opacity: 1; } 85% { transform: translate(-50%,-50%) scale(1) rotate(0deg); opacity: 1; } 100% { transform: translate(-50%,-50%) scale(0.8) rotate(0deg); opacity: 0; } }
+.win-center { position: absolute; top: 50%; left: 50%; font-size: 110px; line-height: 1; animation: winCenterPop 2.4s cubic-bezier(0.34,1.56,0.64,1) forwards; filter: drop-shadow(0 0 28px rgba(46,204,113,0.85)); }
+@keyframes winCenterPop { 0% { transform: translate(-50%,-50%) scale(0) rotate(-15deg); opacity: 0; } 18% { transform: translate(-50%,-50%) scale(1.35) rotate(6deg); opacity: 1; } 55% { transform: translate(-50%,-50%) scale(1.08) rotate(1deg); opacity: 1; } 75% { transform: translate(-50%,-50%) scale(1) rotate(0deg); opacity: 1; } 100% { transform: translate(-50%,-50%) scale(0.7) rotate(0deg); opacity: 0; } }
 .win-particle { position: absolute; top: 50%; left: 50%; font-size: 26px; line-height: 1; animation: winParticleFly 1.5s cubic-bezier(0.25,0.46,0.45,0.94) forwards; animation-delay: var(--delay,0s); }
 @keyframes winParticleFly { 0% { transform: translate(-50%,-50%) scale(0); opacity: 1; } 25% { transform: translate(calc(-50% + var(--dx)*0.35), calc(-50% + var(--dy)*0.35)) scale(1.5); opacity: 1; } 100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy) + 55px)) scale(0.4) rotate(var(--rot)); opacity: 0; } }
 .anim-lose-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 9999; animation: loseFlash 2.6s ease-out forwards; }
@@ -875,64 +873,3 @@ body:not(.game-coup) .coup-only-btn { display: none !important; }
 
 /* body.lang-x18 hint toggles greyed */
 body.lang-x18 #nohint-row, body.lang-x18 #allhint-row { opacity: 0.35; pointer-events: none; }
-
-/* ===== COUP ENHANCEMENTS ===== */
-.coup-turn-indicator {
-    position: fixed;
-    top: 14px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 10050;
-    padding: 8px 18px;
-    background: rgba(82, 140, 113, 0.85);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 20px;
-    color: #fff;
-    font-weight: 800;
-    font-size: 1.1rem;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.coup-turn-indicator::before {
-    content: '👑';
-    font-size: 1.2rem;
-}
-
-.coup-turn-indicator.hidden {
-    top: -60px;
-    opacity: 0;
-}
-
-.coup-influence {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    cursor: pointer;
-}
-
-.coup-influence:hover {
-    transform: scale(1.03);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-}
-
-.anim-win-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 10100;
-    opacity: 1;
-    transition: opacity 0.5s ease;
-}
-
-/* ===== NOT LYING ANIMATION ===== */
-.not-lying-overlay { position: fixed; inset: 0; z-index: 10200; background: rgba(52, 152, 219, 0.2); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; animation: fadeInOut 3s forwards; }
-.not-lying-card { background: white; padding: 20px; border-radius: var(--radius-lg); box-shadow: 0 10px 40px rgba(0,0,0,0.3); text-align: center; transform: scale(0); animation: popRotate 3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-.not-lying-title { color: #2980b9; font-size: 1.8rem; font-weight: 900; margin-bottom: 10px; }
-.not-lying-msg { color: #333; font-size: 1.2rem; font-weight: 700; }
-.not-lying-card-icon { font-size: 4rem; margin: 15px 0; }
-
-@keyframes fadeInOut { 0% { opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { opacity: 0; } }
-@keyframes popRotate { 0% { transform: scale(0) rotate(-10deg); } 15% { transform: scale(1.1) rotate(5deg); } 25% { transform: scale(1) rotate(0deg); } 85% { transform: scale(1) rotate(0deg); } 100% { transform: scale(0.8) rotate(5deg); } }
