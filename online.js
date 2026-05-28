@@ -12,6 +12,52 @@ const ONLINE_NAME_KEY = 'dakheel_online_name';
 const ONLINE_LAST_ROOM_KEY = 'dakheel_last_room';
 
 let _myId = null;
+let _serverTimeOffset = 0;
+let _hasSynced = false;
+
+async function _syncServerTime() {
+    try {
+        const before = performance.now();
+        const { data: serverTime, error } = await _supa.rpc('get_server_time');
+        if (error) throw error;
+        const after = performance.now();
+
+        // Round-trip latency
+        const latency = (after - before) / 2;
+
+        // Adjust server timestamp
+        const adjustedServerTime = Number(serverTime) + latency;
+
+        // New calculated offset
+        const newOffset = adjustedServerTime - Date.now();
+
+        // Smooth correction instead of snapping
+        if (_hasSynced) {
+            _serverTimeOffset = (_serverTimeOffset * 0.9) + (newOffset * 0.1);
+        } else {
+            _serverTimeOffset = newOffset;
+            _hasSynced = true;
+        }
+
+        console.log(
+            '[timer-sync]',
+            'offset:', Math.round(_serverTimeOffset),
+            'latency:', Math.round(latency)
+        );
+    } catch (e) {
+        console.error('[timer-sync] failed:', e);
+    }
+}
+
+// Initial sync
+_syncServerTime();
+// Periodic re-sync every 30 seconds
+setInterval(_syncServerTime, 30000);
+
+function _syncedNow() {
+    return Date.now() + _serverTimeOffset;
+}
+
 try { _myId = localStorage.getItem(ONLINE_PLAYER_ID_KEY) || sessionStorage.getItem(ONLINE_PLAYER_ID_KEY); } catch(_) {}
 if (!_myId) _myId = 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
 function _storeMyId(id) {
@@ -293,12 +339,6 @@ function _subscribe(code) {
         })
         .on('broadcast', { event: 'timer-sync' }, ({ payload }) => {
             _handleTimerSync(payload);
-        })
-        .on('broadcast', { event: 'coup-response-sync' }, ({ payload }) => {
-            _handleCoupResponseSync(payload);
-        })
-        .on('broadcast', { event: 'coup-turn-sync' }, ({ payload }) => {
-            _handleCoupTurnSync(payload);
         })
         .on('broadcast', { event: 'question-challenge' }, ({ payload }) => {
             if (payload && payload.question) _showQuestionChallenge(payload);
@@ -1155,7 +1195,7 @@ async function _startOnlineCoupGame() {
         turnIndex: Math.floor(Math.random() * allP.length),
         pending:null,
         actionMinutes,
-        turnEndsAt:Date.now() + actionMinutes * 60000,
+        turnEndsAt:_syncedNow() + actionMinutes * 60000,
         bankCoins:50 - (allP.length * 2),
         log:'كل واحد بدا بزوز فلوس وزوز كوارط. التبلعيط محلول، أما "تكذب!" تستنى.',
         players: allP.map(p=>({
@@ -1268,7 +1308,7 @@ function _checkAllSeen(room) {
 async function _startDiscussion() {
     if (!_isHost||!_room) return;
     const seconds = (_room.config.timer||3)*60;
-    const timerEndAt = new Date(Date.now()+seconds*1000).toISOString();
+    const timerEndAt = new Date(_syncedNow() + seconds * 1000).toISOString();
     const alive = _room.players.filter(p=>!p.eliminated);
     const starter = alive[Math.floor(Math.random()*alive.length)];
     try { await _update(_room.code,{state:'discussion',starter_player:starter.name,timer_end_at:timerEndAt}); }
@@ -1276,7 +1316,7 @@ async function _startDiscussion() {
 }
 
 function _timerNow() {
-    return (window.performance && performance.now) ? performance.now() : Date.now();
+    return _syncedNow();
 }
 
 function _stopOnlineTimer() {
@@ -1330,13 +1370,9 @@ function _startVotingTimer(room) {
 }
 
 function _votingSecondsLeftForRoom(room) {
-    if (!_isHost && _votingSyncState && _votingSyncState.timerEndAt === room.timer_end_at) {
-        const elapsed = (_timerNow() - _votingSyncState.receivedAt) / 1000;
-        return Math.max(0, Math.ceil(_votingSyncState.left - elapsed));
-    }
-    const endAt = new Date(room.timer_end_at || Date.now()+60000).getTime();
+    const endAt = new Date(room.timer_end_at || _syncedNow() + 60000).getTime();
     if (!Number.isFinite(endAt)) return 60;
-    return Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
+    return Math.max(0, Math.ceil((endAt - _syncedNow()) / 1000));
 }
 
 function _broadcastVotingTimerSync(room) {
@@ -1346,18 +1382,10 @@ function _broadcastVotingTimerSync(room) {
     if (sent && typeof sent.catch === 'function') sent.catch(() => {});
 }
 
-function _hostSecondsLeft(room) {
+function _secondsLeftForRoom(room) {
     const endTime = new Date(room.timer_end_at).getTime();
     if (!Number.isFinite(endTime)) return 0;
-    return Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
-}
-
-function _secondsLeftForRoom(room) {
-    if (!_isHost && _timerSyncState && _timerSyncState.timerEndAt === room.timer_end_at) {
-        const elapsed = (_timerNow() - _timerSyncState.receivedAt) / 1000;
-        return Math.max(0, Math.ceil(_timerSyncState.left - elapsed));
-    }
-    return _hostSecondsLeft(room);
+    return Math.max(0, Math.ceil((endTime - _syncedNow()) / 1000));
 }
 
 function _broadcastTimerSync(room) {
@@ -1369,22 +1397,6 @@ function _broadcastTimerSync(room) {
 
 function _handleTimerSync(payload) {
     if (_isHost || !_room || !payload) return;
-    if (payload.timerEndAt !== _room.timer_end_at) return;
-    if (payload.phase === 'voting') {
-        if (_room.state !== 'voting') return;
-        _votingSyncState = {
-            timerEndAt: payload.timerEndAt,
-            left: Math.max(0, Number(payload.left) || 0),
-            receivedAt: _timerNow()
-        };
-        return;
-    }
-    if (_room.state !== 'discussion') return;
-    _timerSyncState = {
-        timerEndAt: payload.timerEndAt,
-        left: Math.max(0, Number(payload.left) || 0),
-        receivedAt: _timerNow()
-    };
 }
 
 function _startClientTimer(room) {
@@ -1432,7 +1444,7 @@ async function _moveToVoting(reason = 'timer') {
     try {
         const fresh = await _fetchRoom(_room.code);
         if (!fresh || fresh.state !== 'discussion') return;
-        const votingEndAt = new Date(Date.now()+60*1000).toISOString();
+        const votingEndAt = new Date(_syncedNow() + 60 * 1000).toISOString();
         const config = {...(fresh.config || {}), currentVoteReason: reason};
         const {data,error} = await _supa.from('rooms')
             .update({state:'voting',timer_end_at:votingEndAt,config})
@@ -1647,7 +1659,7 @@ function _showOnlineResult(room) {
 
 async function _continueDiscussion(room) {
     if (!_isHost) return;
-    const seconds = 60, timerEndAt = new Date(Date.now()+seconds*1000).toISOString();
+    const seconds = 60, timerEndAt = new Date(_syncedNow() + seconds * 1000).toISOString();
     const alive = room.players.filter(p=>!p.eliminated);
     const starter = alive[Math.floor(Math.random()*alive.length)];
     const players = room.players.map(p=>({...p,vote:null,figuredOut:false}));
@@ -1672,7 +1684,7 @@ function _onlineCoupActionMinutes(state) {
 }
 
 function _onlineCoupSetDeadline(state) {
-    state.turnEndsAt = Date.now() + _onlineCoupActionMinutes(state) * 60000;
+    state.turnEndsAt = _syncedNow() + _onlineCoupActionMinutes(state) * 60000;
 }
 
 function _onlineCoupTakeFromBank(state, amount) {
@@ -1722,7 +1734,7 @@ function _onlineCoupResumeBlockNext(pending, actorName) {
 }
 
 function _onlineCoupSetResponseDeadline(pending) {
-    pending.expiresAt = Date.now() + ONLINE_COUP_RESPONSE_SECONDS * 1000;
+    pending.expiresAt = _syncedNow() + ONLINE_COUP_RESPONSE_SECONDS * 1000;
 }
 
 function _onlineCoupBlockRoleLabel(role) {
@@ -1754,7 +1766,8 @@ function _onlineCoupAllPassed(state, pending = state?.pending) {
 }
 
 function _onlineCoupPendingTimerHtml(p) {
-    return `<div class="coup-decision-timer">وقت القرار <strong class="coup-pending-countdown" data-deadline="${p.expiresAt || 0}" data-pending-id="${p.id || ''}">${ONLINE_COUP_RESPONSE_SECONDS}s</strong></div>`;
+    const left = Math.max(0, Math.ceil(((p.expiresAt || 0) - _syncedNow()) / 1000));
+    return `<div class="coup-decision-timer">وقت القرار <strong class="coup-pending-countdown" data-deadline="${p.expiresAt || 0}" data-pending-id="${p.id || ''}">${left}s</strong></div>`;
 }
 
 function _onlineCoupTickResponseCountdown() {
@@ -1764,53 +1777,15 @@ function _onlineCoupTickResponseCountdown() {
         if (!_isHost && _onlineCoupResponseSync && _onlineCoupResponseSync.id === pendingId) {
             left = Math.max(0, Math.ceil(_onlineCoupResponseSync.left - ((_timerNow() - _onlineCoupResponseSync.receivedAt) / 1000)));
         } else {
-            left = Math.max(0, Math.ceil((parseInt(node.dataset.deadline, 10) - Date.now()) / 1000));
+            left = Math.max(0, Math.ceil((parseInt(node.dataset.deadline, 10) - _syncedNow()) / 1000));
         }
         node.textContent = `${left}s`;
         node.classList.toggle('urgent', left <= 10);
     });
 }
 
-function _handleCoupResponseSync(payload) {
-    if (_isHost || !payload?.id) return;
-    _onlineCoupResponseSync = {...payload, receivedAt:_timerNow()};
-    _onlineCoupTickResponseCountdown();
-}
-
-function _broadcastCoupResponseSync(state) {
-    if (!_isHost || !_channel || state?.state !== undefined || !state?.pending?.id) return;
-    const left = Math.max(0, ((state.pending.expiresAt || Date.now()) - Date.now()) / 1000);
-    _channel.send({ type:'broadcast', event:'coup-response-sync', payload:{ id:state.pending.id, left } }).catch(()=>{});
-}
-
-function _onlineCoupTurnId(state) {
-    return `${state?.turnIndex || 0}:${state?.players?.[state?.turnIndex || 0]?.id || ''}:${state?.turnEndsAt || 0}`;
-}
-
 function _onlineCoupTurnSecondsLeft(state) {
-    const turnId = _onlineCoupTurnId(state);
-    if (!_isHost && _onlineCoupTurnSync && _onlineCoupTurnSync.id === turnId) {
-        return Math.max(0, Math.ceil(_onlineCoupTurnSync.left - ((_timerNow() - _onlineCoupTurnSync.receivedAt) / 1000)));
-    }
-    return Math.max(0, Math.ceil(((state.turnEndsAt || Date.now()) - Date.now()) / 1000));
-}
-
-function _handleCoupTurnSync(payload) {
-    if (_isHost || !payload?.id) return;
-    _onlineCoupTurnSync = {...payload, receivedAt:_timerNow()};
-    const state = _room?.word_obj;
-    const timerEl = document.getElementById('coup-action-timer');
-    if (timerEl && state && _onlineCoupTurnId(state) === payload.id) {
-        const left = _onlineCoupTurnSecondsLeft(state);
-        timerEl.innerHTML = _onlineCoupTimerHtml(left);
-        timerEl.classList.toggle('urgent', left <= 10);
-    }
-}
-
-function _broadcastCoupTurnSync(state) {
-    if (!_isHost || !_channel || !state || state.pendingLoss || state.pendingExchange) return;
-    const left = Math.max(0, ((state.turnEndsAt || Date.now()) - Date.now()) / 1000);
-    _channel.send({ type:'broadcast', event:'coup-turn-sync', payload:{ id:_onlineCoupTurnId(state), left } }).catch(()=>{});
+    return Math.max(0, Math.ceil(((state.turnEndsAt || _syncedNow()) - _syncedNow()) / 1000));
 }
 
 function _onlineCoupEvent(state, text, kind = 'notice', extra = {}) {
@@ -1920,7 +1895,6 @@ function _startOnlineCoupTimer(state) {
         const left = _onlineCoupTurnSecondsLeft(state);
         timerEl.innerHTML = _onlineCoupTimerHtml(left);
         timerEl.classList.toggle('urgent', left <= 10);
-        if (_isHost) _broadcastCoupTurnSync(state);
         if (left <= 0 && !state.pending && !state.pendingLoss && !state.pendingExchange && !_onlineCoupTimingOut && _onlineCoupAlive(state).length > 1 && _isHost) {
             _onlineCoupTimeout();
         }
@@ -1930,8 +1904,7 @@ function _startOnlineCoupTimer(state) {
     if (state.pending?.expiresAt) {
         const responseTick = () => {
             _onlineCoupTickResponseCountdown();
-            if (_isHost) _broadcastCoupResponseSync(state);
-            if (Date.now() < state.pending.expiresAt || _onlineCoupTimingOut) return;
+            if (_syncedNow() < state.pending.expiresAt || _onlineCoupTimingOut) return;
             if (_isHost) _onlineCoupPendingTimeout();
         };
         responseTick();
@@ -1945,7 +1918,7 @@ async function _onlineCoupPendingTimeout() {
     try {
         await _onlineCoupMutateState(async state => {
             const p = state.pending;
-            if (!p || !p.expiresAt || Date.now() < p.expiresAt) return null;
+            if (!p || !p.expiresAt || _syncedNow() < p.expiresAt) return null;
             if (p.stage === 'block') {
                 state.log = `${state.players.find(x=>x.id===p.blockerId)?.name || ''} سكّر الأكشن. تعدّت بسلام.`;
                 state.pending = null;
@@ -1965,7 +1938,7 @@ async function _onlineCoupTimeout() {
     _onlineCoupTimingOut = true;
     try {
         await _onlineCoupMutateState(async state => {
-            if (state.pending || state.pendingLoss || state.pendingExchange || Math.ceil(((state.turnEndsAt || Date.now()) - Date.now()) / 1000) > 0) return null;
+            if (state.pending || state.pendingLoss || state.pendingExchange || Math.ceil(((state.turnEndsAt || _syncedNow()) - _syncedNow()) / 1000) > 0) return null;
             const actor = state.players[state.turnIndex || 0];
             if (actor?.hand?.some(c=>!c.lost)) {
                 actor.coins += 1;
@@ -2008,7 +1981,7 @@ function _showOnlineCoup(room) {
         }
     }
     if (state.pending && !state.pending.expiresAt) {
-        state.pending.expiresAt = Date.now() + ONLINE_COUP_RESPONSE_SECONDS * 1000;
+        state.pending.expiresAt = _syncedNow() + ONLINE_COUP_RESPONSE_SECONDS * 1000;
     }
     const activePromptId = state.pending?.id || state.pendingLoss?.id || state.pendingExchange?.id || null;
     if (activePromptId !== _lastCoupPromptId) {
@@ -2436,7 +2409,7 @@ function _renderOnlineCoupActions(room, state, me) {
 async function _onlineCoupSave(state) {
     if (!_room) return;
     state.revision = (parseInt(state.revision || 0, 10) || 0) + 1;
-    state.changedAt = Date.now();
+    state.changedAt = _syncedNow();
     const updated = await _update(_room.code, { word_obj: state });
     _showOnlineCoup(updated);
 }
@@ -2452,7 +2425,7 @@ async function _onlineCoupMutateState(mutator) {
         const next = await mutator(state, latestRoom);
         if (!next) return latestRoom;
         next.revision = baseRevision + 1;
-        next.changedAt = Date.now();
+        next.changedAt = _syncedNow();
         let query = _supa.from('rooms').update({ word_obj: next }).eq('code', latestRoom.code);
         if (hadRevision) query = query.eq('word_obj->>revision', String(baseRevision));
         let {data, error} = await query.select().maybeSingle();
@@ -2512,10 +2485,15 @@ async function _onlineCoupChooseExchange(indices, exchangeId = null) {
 function _onlineCoupChoose(action) {
     const state = structuredClone(_room.word_obj);
     const actor = state.players[state.turnIndex || 0];
-    if (actor.id !== _myId) return;
-    if ((actor.coins || 0) >= 10 && action !== 'coup') return showToast('عندك 10 فلوس ولا أكثر، لازم تعمل Coup.');
-    if (action === 'assassinate' && actor.coins < 3) return showToast('يلزمك 3 فلوس للاغتيال.');
-    if (action === 'coup' && actor.coins < 7) return showToast('يلزمك 7 فلوس للCoup.');
+    const reenable = () => {
+        document.querySelectorAll('.coup-action-btn').forEach(b => {
+            if (b.getAttribute('aria-disabled') !== 'true') b.disabled = false;
+        });
+    };
+    if (actor.id !== _myId) { reenable(); return; }
+    if ((actor.coins || 0) >= 10 && action !== 'coup') { reenable(); return showToast('عندك 10 فلوس ولا أكثر، لازم تعمل Coup.'); }
+    if (action === 'assassinate' && actor.coins < 3) { reenable(); return showToast('يلزمك 3 فلوس للاغتيال.'); }
+    if (action === 'coup' && actor.coins < 7) { reenable(); return showToast('يلزمك 7 فلوس للCoup.'); }
     if (['assassinate','coup','steal'].includes(action)) return _onlineCoupPickTarget(action);
     const actionName = _onlineCoupActionName(action);
     const esc = window.CoupUI?.escapeHtml || (x => x);
@@ -2734,6 +2712,7 @@ function _onlineCoupWrong() {
 }
 
 async function _disconnectForReconnect() {
+    document.getElementById('coup-turn-indicator')?.classList.add('hidden');
     if (!_room) { window.onlineMode = false; showScreen('online-setup-screen'); return; }
     const code = _room.code;
     if (!confirm('تحب تخرج توّة وترجع بالكود؟ بلاصتك تبقى محفوظة في الروم.')) return;
@@ -2761,6 +2740,7 @@ async function _disconnectForReconnect() {
 }
 
 async function _leaveRoom() {
+    document.getElementById('coup-turn-indicator')?.classList.add('hidden');
     if (!_room) { window.onlineMode=false; showScreen('setup-screen'); return; }
     try {
         if (_channel) { try { await _channel.untrack(); } catch(_) {} }
@@ -2785,3 +2765,4 @@ async function _leaveRoom() {
 // Expose for verification/debugging
 window._showOnlineCoup = _showOnlineCoup;
 window._handleStateChange = _handleStateChange;
+window._syncedNow = _syncedNow;
