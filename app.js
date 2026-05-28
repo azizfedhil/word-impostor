@@ -1093,8 +1093,12 @@ function renderCoupScreen(state = coupState, myId = null) {
     const current = state.players[state.turnIndex];
     document.getElementById('coup-deck-pill').innerHTML = _coupResourceHtml(state);
     document.getElementById('coup-status').innerHTML = _coupStatusHtml(state);
-    const board = document.getElementById('coup-player-board');
-    board.innerHTML = '';
+
+    const myBoard = document.getElementById('coup-my-board');
+    const othersBoard = document.getElementById('coup-others-board');
+    if (myBoard) myBoard.innerHTML = '';
+    if (othersBoard) othersBoard.innerHTML = '';
+
     const myIndex = myId ? state.players.findIndex(p => p.id === myId) : state.turnIndex;
     const orderedPlayers = [
         ...state.players.map((p, idx) => ({p, idx})).filter(x => x.idx === myIndex),
@@ -1140,30 +1144,41 @@ function renderCoupScreen(state = coupState, myId = null) {
         });
         return div;
     };
-    if (state.pending) board.appendChild(_renderCoupPendingBanner(state));
+    if (state.pending && myBoard) myBoard.appendChild(_renderCoupPendingBanner(state));
     const mine = orderedPlayers[0];
-    if (mine) {
+    if (mine && myBoard) {
         const label = document.createElement('div');
         label.className = 'coup-my-deck-label';
         label.innerHTML = '<span></span><strong>كوارطي</strong><span></span>';
-        board.appendChild(label);
-        board.appendChild(renderPlayerCard(mine.p, mine.idx));
+        myBoard.appendChild(label);
+        myBoard.appendChild(renderPlayerCard(mine.p, mine.idx));
+
+        const warningEl = document.getElementById('coup-10-coin-warning');
+        if (warningEl) {
+            if (mine.p.coins >= 10) {
+                warningEl.classList.remove('hidden');
+            } else {
+                warningEl.classList.add('hidden');
+            }
+        }
     }
-    const othersHeader = document.createElement('button');
-    othersHeader.type = 'button';
-    othersHeader.className = 'coup-other-divider';
-    othersHeader.innerHTML = `<span></span><strong>كوارط اللاعبين الأخرين</strong><span></span><em>${coupOtherDecksCollapsed ? '▼' : '▲'}</em>`;
-    othersHeader.addEventListener('click', () => {
-        coupOtherDecksCollapsed = !coupOtherDecksCollapsed;
-        renderCoupScreen(state, myId);
-    });
-    board.appendChild(othersHeader);
-    const othersWrap = document.createElement('div');
-    othersWrap.className = 'coup-other-decks' + (coupOtherDecksCollapsed ? ' collapsed' : '');
-    orderedPlayers.slice(1).forEach(({p, idx}) => {
-        othersWrap.appendChild(renderPlayerCard(p, idx));
-    });
-    board.appendChild(othersWrap);
+    if (othersBoard) {
+        const othersHeader = document.createElement('button');
+        othersHeader.type = 'button';
+        othersHeader.className = 'coup-other-divider';
+        othersHeader.innerHTML = `<span></span><strong>كوارط اللاعبين الأخرين</strong><span></span><em>${coupOtherDecksCollapsed ? '▼' : '▲'}</em>`;
+        othersHeader.addEventListener('click', () => {
+            coupOtherDecksCollapsed = !coupOtherDecksCollapsed;
+            renderCoupScreen(state, myId);
+        });
+        othersBoard.appendChild(othersHeader);
+        const othersWrap = document.createElement('div');
+        othersWrap.className = 'coup-other-decks' + (coupOtherDecksCollapsed ? ' collapsed' : '');
+        orderedPlayers.slice(1).forEach(({p, idx}) => {
+            othersWrap.appendChild(renderPlayerCard(p, idx));
+        });
+        othersBoard.appendChild(othersWrap);
+    }
     _renderCoupRoleHelp(coupCards);
     startCoupTurnTimer(state, myId);
     renderCoupActions(state, myId);

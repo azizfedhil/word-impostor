@@ -693,7 +693,18 @@ body:not(.game-coup) .coup-only-btn { display: none !important; }
 .coup-help-head { justify-content: flex-start; font-weight: 950; }
 .coup-guide-btn { width: 100%; margin: 0 0 12px; padding: 12px; border-radius: var(--radius-md); border: 1px solid rgba(82,140,113,.28);
                   background: rgba(82,140,113,.12); color: var(--primary-color); font-weight: 950; box-shadow: var(--shadow-soft); }
-.coup-action-panel { display: grid; gap: 10px; margin-bottom: 24px; }
+.coup-10-coin-warning {
+    background: rgba(212, 107, 90, 0.1);
+    color: var(--danger-color);
+    border: 1px solid rgba(212, 107, 90, 0.3);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    text-align: center;
+    font-weight: 800;
+    margin: 10px 0;
+    animation: coupTimerPulse 1.5s ease-in-out infinite;
+}
+.coup-action-panel { display: grid; gap: 10px; margin-top: 10px; margin-bottom: 24px; }
 .coup-action-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
 .coup-action-btn, .coup-target-btn { width: 100%; padding: 12px 10px; border-radius: var(--radius-md); background: var(--surface-color);
                                      color: var(--text-main); border: 1px solid var(--border-color); box-shadow: var(--shadow-soft);
