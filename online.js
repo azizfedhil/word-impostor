@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 // ============================================================
 // SUPABASE ONLINE — init
@@ -2128,15 +2128,16 @@ function _showOnlineCoup(room) {
 function _renderOnlineCoupLeaveButton(room) {
     document.getElementById('online-coup-leave-btn')?.remove();
     if (!room || !window.onlineMode) return;
-    const panel = document.getElementById('coup-action-panel');
-    if (!panel) return;
+    const section = document.getElementById('coup-screen');
+    if (!section) return;
     const btn = document.createElement('button');
     btn.id = 'online-coup-leave-btn';
     btn.className = 'round-leave-btn coup-reconnect-btn';
     btn.type = 'button';
     btn.textContent = '🚪 نخرج ونرجع';
     btn.addEventListener('click', _disconnectForReconnect);
-    panel.after(btn);
+    btn.style.marginTop = '20px';
+    section.appendChild(btn);
 }
 
 function _renderOnlineCoupLossBanner(state, me) {
