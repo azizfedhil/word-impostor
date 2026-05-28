@@ -205,7 +205,10 @@ function setGameMode(mode, goSetup = true) {
     clearTimeout(document.body._gameSwitchTimer);
     document.body._gameSwitchTimer = setTimeout(() => document.body.classList.remove('game-switching'), 520);
     updateGameModeUI();
-    if (goSetup) showScreen('setup-screen');
+    if (goSetup) {
+        if (currentGameMode === 'coup') showScreen('online-setup-screen');
+        else showScreen('setup-screen');
+    }
 }
 window.setGameMode = setGameMode;
 window.getCurrentGameMode = () => currentGameMode;
@@ -295,6 +298,65 @@ function triggerAnimation(type) {
     setTimeout(() => overlay.parentNode && overlay.parentNode.removeChild(overlay), 2800);
 }
 window.triggerAnimation = triggerAnimation;
+
+function triggerNotLyingAnimation(playerName) {
+    const overlay = document.createElement('div');
+    overlay.className = 'anim-win-overlay not-lying-announcement';
+    document.body.appendChild(overlay);
+
+    const content = document.createElement('div');
+    content.className = 'not-lying-content';
+    content.innerHTML = `
+        <div class="not-lying-icon">🛡️</div>
+        <div class="not-lying-name">${_escapeHtml(playerName)}</div>
+        <div class="not-lying-label">ما طلعش يكذب!</div>
+        <div class="not-lying-sub">الكارتة تبدلت بوحدة جديدة من الدكة.</div>
+    `;
+    overlay.appendChild(content);
+
+    _sfx.win();
+    setTimeout(() => {
+        overlay.classList.add('fade-out');
+        setTimeout(() => overlay.remove(), 600);
+    }, 2800);
+}
+window.triggerNotLyingAnimation = triggerNotLyingAnimation;
+
+function triggerWinnerAnnouncement(winnerName) {
+    const overlay = document.createElement('div');
+    overlay.className = 'anim-win-overlay winner-announcement';
+    document.body.appendChild(overlay);
+
+    const emojis = ['🎉','🏆','🎊','⭐','✨','🎈','🥳','🌟','💫','🎆','🎇','🏅','🌈','💥'];
+    for (let i = 0; i < 30; i++) {
+        const p = document.createElement('div');
+        p.className = 'win-particle';
+        p.innerText = emojis[i % emojis.length];
+        const angle = Math.random() * 2 * Math.PI;
+        const dist = 50 + Math.random() * 250;
+        p.style.setProperty('--dx', (Math.cos(angle) * dist).toFixed(1) + 'px');
+        p.style.setProperty('--dy', (Math.sin(angle) * dist).toFixed(1) + 'px');
+        p.style.setProperty('--rot', (Math.random() * 1080 - 540).toFixed(0) + 'deg');
+        p.style.setProperty('--delay', (Math.random() * 0.5).toFixed(2) + 's');
+        overlay.appendChild(p);
+    }
+
+    const content = document.createElement('div');
+    content.className = 'winner-content';
+    content.innerHTML = `
+        <div class="winner-trophy">🏆</div>
+        <div class="winner-name">${_escapeHtml(winnerName)}</div>
+        <div class="winner-label">ربح الطرح!</div>
+    `;
+    overlay.appendChild(content);
+
+    _sfx.win();
+    setTimeout(() => {
+        overlay.classList.add('fade-out');
+        setTimeout(() => overlay.remove(), 800);
+    }, 4000);
+}
+window.triggerWinnerAnnouncement = triggerWinnerAnnouncement;
 
 // ============================================================
 // TRANSLATIONS APPLY
