@@ -1195,9 +1195,9 @@ function _renderCoupPendingBanner(state = coupState) {
     const wrap = document.createElement('div');
     wrap.className = 'coup-pending-banner';
     const responders = _coupPendingResponders(state, p);
-    const challengeButtons = responders.map(player =>
+    const challengeButtons = p.claim ? responders.map(player =>
         `<button class="coup-target-btn danger-action" data-banner-challenge="${player.id}">${_escapeHtml(player.name)}: تكذب!</button>`
-    ).join('');
+    ).join('') : '';
     const passButtons = responders.filter(player => !(p.passes || []).includes(player.id)).map(player =>
         `<button class="coup-target-btn quiet-action" data-banner-pass="${player.id}">${_escapeHtml(player.name)}: ما عندي حتى اعتراض</button>`
     ).join('');
@@ -1209,7 +1209,7 @@ function _renderCoupPendingBanner(state = coupState) {
     wrap.innerHTML = `
         <div class="coup-pending-title">قرار مباشر</div>
         <strong>${_escapeHtml(state.log || '')}</strong>
-        <p>${isBlockStage ? `${_escapeHtml(blocker?.name || '')} قال يسكّر. أي لاعب ينجم يقول تكذب.` : `${target ? `${_escapeHtml(target.name)} مستهدف. ` : ''}أي لاعب ينجم يقول تكذب أو ما عنديش اعتراض.`}</p>
+        <p>${isBlockStage ? `${_escapeHtml(blocker?.name || '')} قال يسكّر. أي لاعب ينجم يقول تكذب.` : `${target ? `${_escapeHtml(target.name)} مستهدف. ` : ''}${p.claim ? 'أي لاعب ينجم يقول تكذب أو ما عنديش اعتراض.' : 'أي لاعب ينجم يسكّرها أو يقول ما عندو اعتراض.'}`}</p>
         ${_coupPendingTimerHtml(p)}
         <div class="coup-pass-progress">${_coupPassCount(state, p)}/${responders.length} قالو ما عندهم حتى اعتراض</div>
         <div class="coup-pending-actions">${challengeButtons}${blockButtons}${passButtons}</div>
