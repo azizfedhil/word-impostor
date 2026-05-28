@@ -349,6 +349,9 @@ async function _handleKickedFromLobby(room) {
 }
 
 function _handleStateChange(room) {
+    if (room?.state !== 'coup') {
+        document.getElementById('coup-turn-indicator')?.classList.add('hidden');
+    }
     if (window.onlineMode && room?.state === 'lobby' && room.host_id !== _myId && !(room.players || []).some(p => p.id === _myId)) {
         _handleKickedFromLobby(room);
         return;
@@ -1149,7 +1152,7 @@ async function _startOnlineCoupGame() {
     const state = {
         deck,
         revision:0,
-        turnIndex:0,
+        turnIndex: Math.floor(Math.random() * allP.length),
         pending:null,
         actionMinutes,
         turnEndsAt:Date.now() + actionMinutes * 60000,
@@ -1688,8 +1691,8 @@ function _onlineCoupResourceHtml(state) {
 }
 
 function _onlineCoupStatusHtml(state) {
-    const esc = window.CoupUI?.escapeHtml || (x => x);
     const alive = _onlineCoupAlive(state);
+    const esc = window.CoupUI?.escapeHtml || (x => x);
     const current = state.players[state.turnIndex || 0];
     if (alive.length <= 1) return `<span class="coup-status-line">🏆 <bdi>${esc(alive[0]?.name || '')}</bdi> ربح الطرح!</span>`;
     if (state.pendingLoss) return `<span class="coup-status-line">${esc(state.log || '')}</span>`;
@@ -1977,12 +1980,33 @@ async function _onlineCoupTimeout() {
     finally { _onlineCoupTimingOut = false; }
 }
 
+let _coupWinnerAnnounced = false;
+
 function _showOnlineCoup(room) {
     _stopOnlineTimer();
     _stopVotingTimer();
     showScreen('coup-screen');
+
     const state = room.word_obj;
     if (!state) return;
+
+    const alive = _onlineCoupAlive(state);
+    if (alive.length === 1 && !_coupWinnerAnnounced) {
+        _coupWinnerAnnounced = true;
+        window.triggerWinnerAnnouncement(alive[0].name);
+    } else if (alive.length > 1) {
+        _coupWinnerAnnounced = false;
+    }
+
+    const indicator = document.getElementById('coup-turn-indicator');
+    if (indicator) {
+        indicator.classList.remove('hidden');
+        const nameEl = document.getElementById('cti-player-name');
+        if (nameEl) {
+            const currentPlayer = state.players[state.turnIndex || 0];
+            nameEl.innerText = currentPlayer?.name || '...';
+        }
+    }
     if (state.pending && !state.pending.expiresAt) {
         state.pending.expiresAt = Date.now() + ONLINE_COUP_RESPONSE_SECONDS * 1000;
     }
@@ -2010,7 +2034,6 @@ function _showOnlineCoup(room) {
             return;
         }
     }
-    const alive = _onlineCoupAlive(state);
     const current = state.players[state.turnIndex || 0];
     const me = state.players.find(p=>p.id===_myId);
     document.getElementById('coup-deck-pill').innerHTML = _onlineCoupResourceHtml(state);
@@ -2019,6 +2042,9 @@ function _showOnlineCoup(room) {
     if (state.lastEvent?.id && state.lastEvent.id !== _lastCoupEventId) {
         _lastCoupEventId = state.lastEvent.id;
         window.CoupUI?.showEvent?.(state.lastEvent.text, state.lastEvent.kind);
+        if (state.lastEvent.triggerNotLying) {
+            window.triggerNotLyingAnimation(state.lastEvent.triggerNotLying);
+        }
     }
     if (state.lastLossEvent?.id && state.lastLossEvent.id !== _lastCoupLossEventId) {
         _lastCoupLossEventId = state.lastLossEvent.id;
@@ -2059,6 +2085,27 @@ function _showOnlineCoup(room) {
                 window.CoupUI?.showCardInfo?.(btn.dataset.cardType, _coupCards);
             });
         });
+        if (isMe && idx === state.turnIndex && !state.pending && !state.pendingLoss && !state.pendingExchange) {
+            div.querySelectorAll('.coup-influence:not(.lost)').forEach(cardEl => {
+                cardEl.style.cursor = 'pointer';
+                cardEl.addEventListener('click', e => {
+                    e.stopPropagation();
+                    const infoBtn = cardEl.querySelector('.coup-card-info');
+                    const cardType = infoBtn?.dataset.cardType;
+                    if (cardType) {
+                        const actionMap = {
+                            duke: 'tax',
+                            assassin: 'assassinate',
+                            captain: 'steal',
+                            ambassador: 'exchange'
+                        };
+                        const action = actionMap[cardType];
+                        if (action) _onlineCoupChoose(action);
+                        else if (cardType === 'contessa') showToast("البية للدفاع بركة، ما عندهاش هجوم.");
+                    }
+                });
+            });
+        }
         return div;
     };
     if (state.pendingLoss) board.appendChild(_renderOnlineCoupLossBanner(state, me));
@@ -2322,9 +2369,27 @@ function _renderOnlineCoupActions(room, state, me) {
             const blockButtons = canBlock ? _onlineCoupBlockOptions(p).map(opt => `<button class="coup-target-btn" data-popup-block="${opt.role}">نسكّرها ب${opt.label}</button>`).join('') : '';
             const blockStageButtons = `${canChallengeBlock ? '<button class="coup-target-btn danger-action" data-popup-challenge-block="1">تكذب على البلوك!</button>' : ''}`;
             const targetLine = target && !isBlockStage ? `<p class="coup-decision-hint">${esc(target.name)}، اختياراتك واضحة: سكّر بالكارتة المناسبة، ولا اتهمه بالتبلعيط.</p>` : '';
-            const passButton = canPass ? '<button class="coup-target-btn quiet-action" data-popup-pass="1">ما عندي حتى اعتراض</button>' : '';
-            const buttons = `${canChallenge ? '<button class="coup-target-btn danger-action" data-popup-challenge="1">تكذب!</button>' : ''}${blockButtons}${blockStageButtons}${passButton}`;
-            if (buttons) window.CoupUI?.showModal?.(isBlockStage ? 'البلوك صحيح؟' : 'شنوة تعمل؟', `<p>${esc(state.log)}</p>${targetLine}${_onlineCoupPendingTimerHtml(p)}<div class="coup-target-grid">${buttons}</div>`, overlay => {
+        const hasContessa = me && me.hand.some(c => !c.lost && c.type === 'contessa');
+        const isAssassinationTarget = p.action === 'assassinate' && p.targetId === me?.id && !isBlockStage;
+
+        const passButton = canPass ? '<button class="coup-target-btn quiet-action" data-popup-pass="1">ما عندي حتى اعتراض</button>' : '';
+        const buttons = `${canChallenge ? '<button class="coup-target-btn danger-action" data-popup-challenge="1">تكذب!</button>' : ''}${blockButtons}${blockStageButtons}${passButton}`;
+
+        let modalTitle = isBlockStage ? 'البلوك صحيح؟' : 'شنوة تعمل؟';
+        let modalBody = `<p>${esc(state.log)}</p>${targetLine}${_onlineCoupPendingTimerHtml(p)}<div class="coup-target-grid">${buttons}</div>`;
+
+        if (isAssassinationTarget && hasContessa) {
+            modalTitle = "عندك 'البية'!";
+            modalBody = `<p style="font-size:1.2rem; font-weight:800; color:var(--primary-color);">عندك 'البية'، تحب تمنع روحك والا تسكت؟</p>
+                         ${_onlineCoupPendingTimerHtml(p)}
+                         <div class="coup-target-grid">
+                            <button class="coup-target-btn primary-action" data-popup-block="contessa">🛡️ استعمل البية</button>
+                            <button class="coup-target-btn danger-action" data-popup-challenge="1">تكذب!</button>
+                            <button class="coup-target-btn quiet-action" data-popup-pass="1">اسكت</button>
+                         </div>`;
+        }
+
+        if (buttons || (isAssassinationTarget && hasContessa)) window.CoupUI?.showModal?.(modalTitle, modalBody, overlay => {
                 overlay.querySelector('[data-popup-challenge]')?.addEventListener('click', () => { window.CoupUI.closeModal(); _onlineCoupChallenge(me.id, p.id); });
                 overlay.querySelectorAll('[data-popup-block]').forEach(btn => btn.addEventListener('click', () => { window.CoupUI.closeModal(); _onlineCoupBlock(me.id, btn.dataset.popupBlock, p.id); }));
                 overlay.querySelector('[data-popup-challenge-block]')?.addEventListener('click', () => { window.CoupUI.closeModal(); _onlineCoupChallengeBlock(me.id, p.id); });
@@ -2522,7 +2587,7 @@ async function _onlineCoupChallenge(challengerId, pendingId = null) {
         if (hasIt) {
             _onlineCoupProveAndReplace(state, actor, p.claim);
             state.log = `${challenger.name} طلع غالط! ${actor.name} عندو الكارتة. ${_onlineCoupWrong()}`;
-            _onlineCoupEvent(state, state.log, 'bad');
+        _onlineCoupEvent(state, state.log, 'bad', { triggerNotLying: actor.name });
             const next = p.blockable ? _onlineCoupResumeBlockNext(p, actor.name) : { type:'applyAction', action:p.action, targetId:p.targetId };
             _onlineCoupRequestLoss(state, challengerId, 'طلعت غالط في التكذيب. اختار كارتة تخسرها.', next);
         } else {
@@ -2600,7 +2665,7 @@ async function _onlineCoupChallengeBlock(challengerId = _myId, pendingId = null)
         if (hasIt) {
             _onlineCoupProveAndReplace(state, blocker, p.blockRole);
             state.log = `${challenger.name} اتهم البلوك وطلع غالط. ${blocker.name} عندو ${_onlineCoupBlockRoleLabel(p.blockRole)}.`;
-            _onlineCoupEvent(state, state.log, 'bad');
+        _onlineCoupEvent(state, state.log, 'bad', { triggerNotLying: blocker.name });
             _onlineCoupRequestLoss(state, challenger.id, 'طلعت غالط في تكذيب البلوك. اختار كارتة تخسرها.', { type:'nextTurn' });
         } else {
             state.log = `${blocker.name} حاول يسكّر وطلع يبوّع. الأكشن يكمل.`;
@@ -2716,3 +2781,7 @@ async function _leaveRoom() {
     _room=null; _isHost=false; window.onlineMode=false;
     showScreen('setup-screen');
 }
+
+// Expose for verification/debugging
+window._showOnlineCoup = _showOnlineCoup;
+window._handleStateChange = _handleStateChange;
