@@ -103,7 +103,6 @@ function _now() {
     return (window.onlineMode && typeof window._syncedNow === 'function') ? window._syncedNow() : Date.now();
 }
 let coupOtherDecksCollapsed = false;
-let coupOfflineReveal = false;
 const coupActionHelp = {
     income: { title:'شهرية +1', text:'تاخو 1 فلوس من البنك. ما تتسكرش وما حد ينجم يقولك تكذب خاطرها أكشن مفتوحة.' },
     foreignAid: { title:'اعانة +2', text:'تاخو 2 فلوس من البنك. أي لاعب ينجم يقول عندو الشلغمي ويسكّرها. بعد البلوك، أي لاعب ينجم يتهمه بالتبلعيط.' },
@@ -454,11 +453,6 @@ function renderSingleCard() {
     let roleText;
     if (currentGameMode === 'thief') {
         roleText = `<strong style="font-size:1.7rem">${player.roleIcon} ${player.roleLabel}</strong><br><br><span style="font-size:16px;">${player.roleDesc}</span>`;
-    } else if (currentGameMode === 'coup') {
-        roleText = player.hand.map(c => {
-            const meta = coupCards[c.type] || coupCards.duke;
-            return `<div style="margin-bottom:12px;"><strong style="font-size:1.4rem">${meta.icon} ${meta.name}</strong><br><span style="font-size:13px; opacity:0.8;">${meta.attack}</span></div>`;
-        }).join('');
     } else if (currentGameMode === 'spyfall') {
         roleText = player.isSpy
             ? `<strong style="font-size:1.7rem">🕶️ spy</strong><br><br><span style="font-size:16px;">إنت الspy. حاول تعرف البلاصة من كلامهم.</span>`
@@ -1022,42 +1016,7 @@ function showCoupGuide() {
     showScreen('coup-guide-screen');
 }
 
-function startCoupOffline() {
-    _cleanupOnlineGameUI();
-    saveSettings();
-    const namesInput = Array.from(document.querySelectorAll('.player-input'))
-        .map((inp,idx)=>inp.value.trim()||`لاعب ${idx+1}`);
-    if (namesInput.length < 2) {
-        document.getElementById('setup-error').innerText='يلزم زوز لاعبين على الأقل باش تلعب كول وبوّع.';
-        _sfx.error();
-        return;
-    }
-    const twoPlayer = namesInput.length === 2;
-    const deck = _coupBuildDeck();
-    coupState = {
-        online:false,
-        deck,
-        turnIndex:0,
-        pending:null,
-        actionMinutes:_coupActionMinutes(),
-        turnEndsAt:_now() + (_coupActionMinutes() * 60000),
-        // Two-player rule (PDF §5.1): first player starts with 1 coin, second with 2.
-        bankCoins: twoPlayer ? (50 - 3) : (50 - (namesInput.length * 2)),
-        log:'كل واحد بدا بزوز فلوس وزوز كوارط. تبلعيط قد ما تحب، أما كان قالولك "تكذب!" حضّر روحك.',
-        players:namesInput.map((name, idx) => ({
-            id:'local_'+idx,
-            name,
-            coins: twoPlayer ? (idx === 0 ? 1 : 2) : 2,
-            hand:[{type:deck.pop(),lost:false},{type:deck.pop(),lost:false}]
-        }))
-    };
-    document.getElementById('setup-error').innerText='';
-    players = coupState.players.map(p => ({ ...p, viewedCard: false }));
-    currentRevealIndex = 0;
-    renderSingleCard();
-    showScreen('reveal-screen');
-    _sfx.gameStart();
-}
+
 
 function startCoupTurnTimer(state = coupState, myId = null) {
     clearInterval(coupTimerInterval);
@@ -1108,8 +1067,7 @@ function renderCoupScreen(state = coupState, myId = null) {
     ];
     const renderPlayerCard = (p, idx) => {
         const isMe = myId ? p.id === myId : idx === state.turnIndex;
-        // In offline mode (no myId), cards are hidden by default even for the active player.
-        const visible = isMe && (!state.online ? coupOfflineReveal : true);
+        const visible = isMe;
         const focused = coupFocusedPlayerId === p.id || (!coupFocusedPlayerId && isMe);
         const dimmed = !!coupFocusedPlayerId && coupFocusedPlayerId !== p.id;
         const out = !p.hand.some(c=>!c.lost);
@@ -1119,25 +1077,16 @@ function renderCoupScreen(state = coupState, myId = null) {
         div.innerHTML = `<div class="coup-player-head"><span>${_escapeHtml(p.name)}${isMe && myId?' <span class="you-tag">أنا</span>':''}</span><span class="coup-coins">🪙 ${p.coins}</span></div>
             <div class="coup-influence-row">${p.hand.map(c => {
                 const meta = coupCards[c.type] || coupCards.duke;
-                const label = (visible || c.lost) ? _coupCardLabelHtml(meta) : (isMe && !state.online ? '<span>👆 انزل باش تشوف</span>' : '<span>🂠 مخبية</span>');
+                const label = (visible || c.lost) ? _coupCardLabelHtml(meta) : '<span>🂠 مخبية</span>';
                 const info = (visible || c.lost) ? `<button class="coup-card-info" type="button" data-card-type="${c.type}" aria-label="info">ℹ️</button>` : '';
                 return `<div class="coup-influence ${c.lost?'lost':''}"><span>${label}</span>${info}</div>`;
             }).join('')}</div>`;
 
-        if (isMe && !state.online) {
-            const show = e => { e.preventDefault(); if (!coupOfflineReveal) { coupOfflineReveal = true; renderCoupScreen(state, myId); _sfx.cardFlip(); } };
-            const hide = e => { e.preventDefault(); if (coupOfflineReveal) { coupOfflineReveal = false; renderCoupScreen(state, myId); } };
-            div.addEventListener('pointerdown', show);
-            div.addEventListener('pointerup', hide);
-            div.addEventListener('pointerleave', hide);
-            div.addEventListener('pointercancel', hide);
-        } else {
-            div.addEventListener('click', e => {
+        div.addEventListener('click', e => {
                 if (e.target.closest('.coup-card-info')) return;
                 coupFocusedPlayerId = coupFocusedPlayerId === p.id ? null : p.id;
                 renderCoupScreen(state, myId);
             });
-        }
         div.querySelectorAll('.coup-card-info').forEach(btn => {
             btn.addEventListener('click', e => {
                 e.stopPropagation();
@@ -1782,7 +1731,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('start-game-btn').addEventListener('click',()=>{
         if (currentGameMode === 'thief') { startThiefOffline(); return; }
         if (currentGameMode === 'spyfall') { startSpyfallOffline(); return; }
-        if (currentGameMode === 'coup') { startCoupOffline(); return; }
+        if (currentGameMode === 'coup') { showScreen('online-setup-screen'); return; }
         _cleanupOnlineGameUI();
         saveSettings();
         // Fallback names for empty inputs
@@ -1831,11 +1780,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentRevealIndex++;
         if(currentRevealIndex<players.length) { renderSingleCard(); }
         else {
-            if (currentGameMode === 'coup') {
-                renderCoupScreen();
-                showScreen('coup-screen');
-                return;
-            }
             const starter=players[Math.floor(Math.random()*players.length)];
             document.getElementById('starter-player').innerText=`${i18n[currentLang].starter_is}${starter.name}`;
             showScreen('timer-screen'); updateTimerDisplay();
