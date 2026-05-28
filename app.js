@@ -1854,8 +1854,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('share-code-btn').addEventListener('click',()=>{
         const code=document.getElementById('display-room-code').innerText;
-        if(navigator.share){navigator.share({title:'لعبة الدخيل',text:`انضم! كود: ${code}`,url:window.location.href}).catch(()=>{});}
-        else{navigator.clipboard.writeText(code).then(()=>showToast('تكوبي: '+code)).catch(()=>showToast('كود: '+code));}
+        const url = new URL(window.location.href);
+        url.searchParams.set('room', code);
+        const fullUrl = url.toString();
+
+        if(navigator.share){
+            navigator.share({
+                title: 'لعبة شكونو هو؟',
+                text: `انضم للطرح! كود الروم: ${code}`,
+                url: fullUrl
+            }).catch(()=>{});
+        }
+        else{
+            navigator.clipboard.writeText(fullUrl).then(()=>showToast('✅ تكوبي رابط الانضمام!')).catch(()=>showToast('كود: '+code));
+        }
     });
 
     document.getElementById('leave-room-btn').addEventListener('click',()=>{if(confirm('متأكد تحب تخرج من الغرفة؟'))_leaveRoom();});
