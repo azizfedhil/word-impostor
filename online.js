@@ -482,6 +482,37 @@ async function _createRoom() {
     } catch(e) { console.error(e); _err('خطأ في إنشاء الغرفة — جرب مجدداً'); _sfx.error(); }
 }
 
+async function _checkAutoJoin() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomCode = urlParams.get('room');
+    if (roomCode) {
+        // Clear the URL parameter to avoid re-joining on refresh if they leave
+        const newUrl = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, newUrl);
+
+        const savedName = localStorage.getItem(ONLINE_NAME_KEY);
+        if (savedName) {
+            const nameInput = document.getElementById('online-player-name');
+            const roomInput = document.getElementById('room-code-input');
+            if (nameInput) nameInput.value = savedName;
+            if (roomInput) roomInput.value = roomCode;
+
+            // Wait a bit to ensure everything is initialized
+            setTimeout(() => {
+                _joinRoom();
+            }, 800);
+        } else {
+            // If no name, just pre-fill the room code
+            const roomInput = document.getElementById('room-code-input');
+            if (roomInput) roomInput.value = roomCode;
+            showScreen('online-setup-screen');
+            _err('حط اسمك باش تدخل للروم');
+        }
+    }
+}
+// Initial check for auto-join
+setTimeout(_checkAutoJoin, 500);
+
 async function _joinRoom() {
     _clearErr();
     _myName = (document.getElementById('online-player-name').value||'').trim();
@@ -540,12 +571,36 @@ async function _kickLobbyPlayer(playerId) {
     }
 }
 
+function _generateQRCode(code) {
+    const container = document.getElementById('qrcode-container');
+    const qrEl = document.getElementById('qrcode');
+    if (!container || !qrEl || typeof QRCode === 'undefined') return;
+
+    if (qrEl.dataset.renderedCode === code) return;
+    qrEl.dataset.renderedCode = code;
+
+    qrEl.innerHTML = '';
+    const url = new URL(window.location.href);
+    url.searchParams.set('room', code);
+
+    new QRCode(qrEl, {
+        text: url.toString(),
+        width: 160,
+        height: 160,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.M
+    });
+    container.style.display = 'flex';
+}
+
 function _renderLobby(room) {
     const cur = document.querySelector('.screen.active');
     if (cur && !['online-lobby-screen','online-setup-screen'].includes(cur.id)) showScreen('online-lobby-screen');
     else showScreen('online-lobby-screen');
 
     document.getElementById('display-room-code').innerText = room.code;
+    _generateQRCode(room.code);
     const list = document.getElementById('lobby-players-list');
     list.innerHTML = '';
     const frag = document.createDocumentFragment();
@@ -2781,6 +2836,79 @@ async function _leaveRoom() {
     _room=null; _isHost=false; window.onlineMode=false;
     showScreen('setup-screen');
 }
+
+let _html5QrCode = null;
+
+async function _startScanner() {
+    const btn = document.getElementById('open-scanner-btn');
+    const container = document.getElementById('reader-container');
+    if (!btn || !container) return;
+
+    if (_html5QrCode && _html5QrCode.isScanning) {
+        await _html5QrCode.stop();
+        container.style.display = 'none';
+        btn.innerText = '📷 امسح الكود';
+        return;
+    }
+
+    container.style.display = 'block';
+    btn.innerText = '❌ سكر الكاميرا';
+
+    if (!_html5QrCode) {
+        _html5QrCode = new Html5Qrcode("reader");
+    }
+
+    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+    _html5QrCode.start(
+        { facingMode: "environment" },
+        config,
+        (decodedText) => {
+            // Success
+            let code = decodedText;
+            try {
+                const url = new URL(decodedText);
+                const roomParam = url.searchParams.get('room');
+                if (roomParam) code = roomParam;
+            } catch (e) {
+                // Not a URL, use text as is
+            }
+
+            if (code && code.length >= 4) {
+                document.getElementById('room-code-input').value = code.toUpperCase();
+                _stopScanner();
+                _joinRoom();
+            }
+        },
+        (errorMessage) => {
+            // parse error, ignore
+        }
+    ).catch((err) => {
+        console.error(err);
+        let msg = 'خطأ في حلان الكاميرا';
+        if (err?.name === 'NotAllowedError' || err?.name === 'PermissionDeniedError') {
+            msg = 'لازم تعطي صلاحية الكاميرا باش تنجم تمسح الكود';
+        }
+        _err(msg);
+        container.style.display = 'none';
+        btn.innerText = '📷 امسح الكود';
+    });
+}
+
+async function _stopScanner() {
+    if (_html5QrCode && _html5QrCode.isScanning) {
+        await _html5QrCode.stop();
+    }
+    const container = document.getElementById('reader-container');
+    const btn = document.getElementById('open-scanner-btn');
+    if (container) container.style.display = 'none';
+    if (btn) btn.innerText = '📷 امسح الكود';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const scanBtn = document.getElementById('open-scanner-btn');
+    if (scanBtn) scanBtn.addEventListener('click', _startScanner);
+});
 
 // Expose for verification/debugging
 window._showOnlineCoup = _showOnlineCoup;
