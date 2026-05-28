@@ -1257,7 +1257,7 @@ async function _startOnlineCoupGame() {
             id:p.id,
             name:p.name,
             coins:2,
-            hand:[{type:deck.pop(),lost:false},{type:deck.pop(),lost:false}]
+            hand:[{type:deck.pop(),lost:false},{type:deck.pop(),lost:false}], lastAction: null
         }))
     };
     try {

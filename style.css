@@ -1016,3 +1016,201 @@ body:not(.game-coup) .coup-only-btn { display: none !important; }
 
 /* body.lang-x18 hint toggles greyed */
 body.lang-x18 #nohint-row, body.lang-x18 #allhint-row { opacity: 0.35; pointer-events: none; }
+
+/* ===== COUP AT A GLANCE SUMMARY ===== */
+.coup-summary-wrapper {
+    margin-bottom: 12px;
+    position: relative;
+}
+
+.coup-pills-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 8px 4px;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;  /* IE/Edge */
+    -webkit-overflow-scrolling: touch;
+}
+
+.coup-pills-container::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+}
+
+.coup-player-pill {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--surface-color);
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-pill);
+    box-shadow: var(--shadow-soft);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.coup-player-pill.is-turn {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(82,140,113,0.15);
+}
+
+.coup-player-pill.is-dead {
+    opacity: 0.5;
+    filter: grayscale(1);
+    background: var(--bg-color);
+    border-style: dashed;
+}
+
+.pill-influence-dots {
+    display: flex;
+    gap: 3px;
+}
+
+.pill-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    background: transparent;
+}
+
+.pill-dot.active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 4px rgba(82,140,113,0.3);
+}
+
+.pill-coins {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    color: var(--accent-color);
+}
+
+.pill-name {
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Scroll indicators */
+.scroll-indicator {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    background: var(--surface-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    box-shadow: var(--shadow-soft);
+    border: 1px solid var(--border-color);
+    z-index: 5;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.scroll-indicator.visible {
+    opacity: 1;
+}
+
+.scroll-indicator.left { left: -8px; }
+.scroll-indicator.right { right: -8px; }
+
+/* Expanded Detail Panel */
+.coup-detail-panel {
+    background: var(--surface-color);
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-md);
+    margin-top: 8px;
+    padding: 16px;
+    display: grid;
+    grid-template-columns: 40px 1fr 60px;
+    align-items: center;
+    gap: 12px;
+    box-shadow: var(--shadow-soft);
+    animation: slideDownPanel 0.25s cubic-bezier(0.16,1,0.3,1) both;
+}
+
+@keyframes slideDownPanel {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.detail-close-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--bg-color);
+    color: var(--text-muted);
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.detail-info {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.detail-name-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.detail-name {
+    font-size: 1.1rem;
+    font-weight: 800;
+}
+
+.detail-stats {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.detail-last-move {
+    font-size: 0.85rem;
+    color: var(--primary-color);
+    font-weight: 700;
+}
+
+.detail-profile-wrap {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    background: var(--bg-color);
+    border: 1.5px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    color: var(--text-muted);
+    overflow: hidden;
+}
+
+.detail-profile-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
