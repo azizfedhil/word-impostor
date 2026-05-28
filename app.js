@@ -1032,6 +1032,7 @@ function startCoupOffline() {
         _sfx.error();
         return;
     }
+    const twoPlayer = namesInput.length === 2;
     const deck = _coupBuildDeck();
     coupState = {
         online:false,
@@ -1040,12 +1041,13 @@ function startCoupOffline() {
         pending:null,
         actionMinutes:_coupActionMinutes(),
         turnEndsAt:_now() + (_coupActionMinutes() * 60000),
-        bankCoins:50 - (namesInput.length * 2),
+        // Two-player rule (PDF §5.1): first player starts with 1 coin, second with 2.
+        bankCoins: twoPlayer ? (50 - 3) : (50 - (namesInput.length * 2)),
         log:'كل واحد بدا بزوز فلوس وزوز كوارط. تبلعيط قد ما تحب، أما كان قالولك "تكذب!" حضّر روحك.',
         players:namesInput.map((name, idx) => ({
             id:'local_'+idx,
             name,
-            coins:2,
+            coins: twoPlayer ? (idx === 0 ? 1 : 2) : 2,
             hand:[{type:deck.pop(),lost:false},{type:deck.pop(),lost:false}]
         }))
     };
@@ -1313,6 +1315,12 @@ function coupStartPending(action, targetId) {
     const blockable = blockRoles.length > 0;
     const claim = claims[action] || null;
     if (!claim && !blockable) return coupResolveAction(action, targetId);
+    // Assassin's Fee Retention (PDF §3): The 3 coins are deducted immediately on declaration.
+    // They are NOT refunded if the claim is challenged and proven false, nor if blocked by Contessa.
+    if (action === 'assassinate') {
+        actor.coins -= 3;
+        _coupPayBank(coupState, 3);
+    }
     coupState.pending = { id:`p_${Date.now()}_${Math.random().toString(36).slice(2,6)}`, action, actorId:actor.id, targetId, claim, blockable, blockRoles, passes:[] };
     _coupSetResponseDeadline(coupState.pending);
     coupState.log = `${actor.name} قال يعمل ${coupActionName(action)}. تنجمو تقولو "تكذب!"${blockable?' ولا تسكروها.':''}`;
@@ -1382,6 +1390,11 @@ function coupMarkInfluenceLost(player, card) {
     card.lost = true;
     const meta = coupCards[card.type] || coupCards.duke;
     const out = !player.hand.some(c=>!c.lost);
+    // Exile coin sweep (PDF §4.3): when a player is exiled, all remaining coins go to the Treasury immediately.
+    if (out && player.coins > 0) {
+        _coupPayBank(coupState, player.coins);
+        player.coins = 0;
+    }
     _showCoupEvent(out ? `${player.name} خسر ${meta.name} وخرج من الطرح` : `${player.name} خسر ${meta.name}`, 'bad');
     _showCoupLossAnimation(player.name, meta, out);
 }
@@ -1587,8 +1600,7 @@ function coupResolveAction(action, targetId) {
         coupState.log = amount > 0 ? `${actor.name} سرق ${amount} فلوس من ${target.name}. الرايس دخل للمرسى.` : `${actor.name} حاول يسرق ${target.name} أما ما لقى شي.`;
     }
     if (action === 'assassinate' && target) {
-        actor.coins -= 3;
-        _coupPayBank(coupState, 3);
+        // Note: the 3 coins were already deducted in coupStartPending (Assassin's Fee Retention rule).
         coupState.log = `${target.name} تضرّب من حفار القبور. ${target.name} يختار كارتة يخسرها.`;
         _showCoupEvent(coupState.log, 'bad');
         return coupLoseInfluence(target.id, () => {
