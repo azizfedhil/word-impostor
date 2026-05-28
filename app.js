@@ -1195,7 +1195,7 @@ function _renderCoupPendingBanner(state = coupState) {
     const wrap = document.createElement('div');
     wrap.className = 'coup-pending-banner';
     const responders = _coupPendingResponders(state, p);
-    const challengeButtons = p.claim ? responders.map(player =>
+    const challengeButtons = (p.claim || isBlockStage) ? responders.map(player =>
         `<button class="coup-target-btn danger-action" data-banner-challenge="${player.id}">${_escapeHtml(player.name)}: تكذب!</button>`
     ).join('') : '';
     const passButtons = responders.filter(player => !(p.passes || []).includes(player.id)).map(player =>
@@ -1306,11 +1306,12 @@ function _coupPendingTimerHtml(p) {
 function renderCoupChallengePanel() {
     renderCoupScreen();
     const p = coupState.pending;
+    const isBlockStage = p.stage === 'block';
     const actor = coupState.players.find(x=>x.id===p.actorId);
     const target = coupState.players.find(x=>x.id===p.targetId);
     const challengers = _coupAlive().filter(x=>x.id!==actor.id);
     const blockers = p.action === 'foreignAid' ? challengers : challengers.filter(x => x.id === p.targetId);
-    const challengeButtons = p.claim ? challengers.map(c =>
+    const challengeButtons = (p.claim || isBlockStage) ? challengers.map(c =>
         `<button class="coup-target-btn danger-action" data-challenge-id="${c.id}">${_escapeHtml(c.name)}: تكذب!</button>`
     ).join('') : '';
     const passButtons = _coupPendingResponders(coupState, p).filter(c => !(p.passes || []).includes(c.id)).map(c =>
