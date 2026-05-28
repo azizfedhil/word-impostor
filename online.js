@@ -2189,7 +2189,7 @@ function _renderOnlineCoupPendingBanner(state, me) {
     const claimantId = _onlineCoupPendingClaimantId(p);
     const isClaimant = me?.id === claimantId;
     const isBlockStage = p.stage === 'block';
-    const canChallenge = me && !isClaimant && me.hand.some(c=>!c.lost);
+    const canChallenge = me && !isClaimant && me.hand.some(c=>!c.lost) && (p.claim || isBlockStage);
     const canBlock = me && !isBlockStage && p.blockable && me.id !== actor?.id && me.hand.some(c=>!c.lost) && (p.action === 'foreignAid' || p.targetId === me.id);
     const canPass = me && !isClaimant && !(p.passes || []).includes(me.id);
     const passCount = _onlineCoupPassCount(state, p);
