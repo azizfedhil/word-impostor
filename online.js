@@ -80,7 +80,7 @@ let _movingToVoting = false, _processingVotes = false;
 let _localCardRevealed = false;
 let _startingOnlineGame = false;
 let _onlineCoupTimer = null, _onlineCoupTimingOut = false;
-let _onlineCoupFocusedPlayerId = null, _lastCoupEventId = null, _lastCoupLossEventId = null, _lastCoupPendingKey = null, _lastCoupPromptId = null, _onlineCoupResponseTimer = null;
+let _onlineCoupFocusedPlayerId = null, _onlineCoupSummaryExpandedId = null, _lastCoupEventId = null, _lastCoupLossEventId = null, _lastCoupPendingKey = null, _lastCoupPromptId = null, _onlineCoupResponseTimer = null;
 const ONLINE_COUP_RESPONSE_SECONDS = 45;
 let _onlineCoupOtherDecksCollapsed = false;
 let _onlineCoupResponseSync = null, _onlineCoupTurnSync = null;
@@ -1257,7 +1257,7 @@ async function _startOnlineCoupGame() {
             id:p.id,
             name:p.name,
             coins:2,
-            hand:[{type:deck.pop(),lost:false},{type:deck.pop(),lost:false}]
+            hand:[{type:deck.pop(),lost:false},{type:deck.pop(),lost:false}], lastAction: null
         }))
     };
     try {
@@ -1730,6 +1730,92 @@ async function _resetToLobby() {
     catch(e) { console.error(e); }
 }
 
+function _renderOnlineCoupPlayersSummary(state) {
+    const wrapper = document.createElement("div");
+    wrapper.className = "coup-summary-wrapper";
+
+    const container = document.createElement("div");
+    container.className = "coup-pills-container";
+    
+    const leftInd = document.createElement("div");
+    leftInd.className = "scroll-indicator left";
+    leftInd.innerHTML = "◀";
+    const rightInd = document.createElement("div");
+    rightInd.className = "scroll-indicator right";
+    rightInd.innerHTML = "▶";
+
+    // Only other players
+    const others = state.players.filter(p => p.id !== _myId);
+    others.forEach(p => {
+        const isDead = !p.hand.some(c => !c.lost);
+        const isTurn = state.players[state.turnIndex || 0]?.id === p.id;
+        const pill = document.createElement("div");
+        pill.className = `coup-player-pill ${isDead ? "is-dead" : ""} ${isTurn ? "is-turn" : ""}`;
+        
+        const dots = p.hand.map(c => `<span class="pill-dot ${!c.lost ? "active" : ""}"></span>`).join("");
+        const skull = isDead ? "💀 " : "";
+        
+        pill.innerHTML = `
+            <div class="pill-influence-dots">${dots}</div>
+            <div class="pill-coins">🪙 ${p.coins}</div>
+            <div class="pill-name">${skull}${_esc(p.name)}</div>
+        `;
+        
+        pill.onclick = () => {
+            _onlineCoupSummaryExpandedId = _onlineCoupSummaryExpandedId === p.id ? null : p.id;
+            _showOnlineCoup(_room);
+        };
+        container.appendChild(pill);
+    });
+
+    const updateIndicators = () => {
+        const buffer = 5;
+        leftInd.classList.toggle("visible", container.scrollLeft > buffer);
+        rightInd.classList.toggle("visible", container.scrollLeft < (container.scrollWidth - container.clientWidth - buffer));
+    };
+    
+    container.onscroll = updateIndicators;
+    setTimeout(updateIndicators, 100);
+
+    wrapper.appendChild(leftInd);
+    wrapper.appendChild(container);
+    wrapper.appendChild(rightInd);
+
+    // Expanded Panel
+    if (_onlineCoupSummaryExpandedId) {
+        const expPlayer = state.players.find(p => p.id === _onlineCoupSummaryExpandedId);
+        if (expPlayer) {
+            const panel = document.createElement("div");
+            panel.className = "coup-detail-panel";
+            
+            const closeBtn = document.createElement("div");
+            closeBtn.className = "detail-close-btn";
+            closeBtn.innerHTML = "×";
+            closeBtn.onclick = (e) => {
+                e.stopPropagation();
+                _onlineCoupSummaryExpandedId = null;
+                _showOnlineCoup(_room);
+            };
+
+            const liveCount = expPlayer.hand.filter(c => !c.lost).length;
+            const lastMoveText = expPlayer.lastAction ? `آخر حركة: ${expPlayer.lastAction}` : "مازال ما عمل حتى حركة";
+            
+            panel.innerHTML = `
+                <div class="detail-info">
+                    <div class="detail-name-row"><span class="detail-name">${_esc(expPlayer.name)}</span></div>
+                    <div class="detail-stats"><span>🪙 ${expPlayer.coins} فلوس</span><span>🃏 ${liveCount} كوارط</span></div>
+                    <div class="detail-last-move">${lastMoveText}</div>
+                </div>
+                <div class="detail-profile-wrap"><span class="detail-profile-img">👤</span></div>
+            `;
+            panel.prepend(closeBtn);
+            wrapper.appendChild(panel);
+        }
+    }
+
+    return wrapper;
+}
+
 function _onlineCoupAlive(state) {
     return (state?.players || []).filter(p => p.hand.some(c=>!c.lost));
 }
@@ -2082,7 +2168,10 @@ function _showOnlineCoup(room) {
 
     const myBoard = document.getElementById('coup-my-board');
     const othersBoard = document.getElementById('coup-others-board');
-    if (myBoard) myBoard.innerHTML = '';
+    if (myBoard) {
+        myBoard.innerHTML = '';
+        myBoard.appendChild(_renderOnlineCoupPlayersSummary(state));
+    }
     if (othersBoard) othersBoard.innerHTML = '';
     const indexedPlayers = state.players.map((p, idx) => ({p, idx}));
     const orderedPlayers = [
