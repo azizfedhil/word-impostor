@@ -2561,6 +2561,11 @@ async function _onlineCoupStartPending(action, targetId) {
         const blockable = blockRoles.length > 0;
         const claim = claims[action] || null;
         if (!claim && !blockable) return _onlineCoupApplyActionLocal(state, action, targetId);
+        // Deduct assassination fee immediately on declaration (not refunded if caught bluffing or blocked).
+        if (action === 'assassinate') {
+            actor.coins -= 3;
+            _onlineCoupPayBank(state, 3);
+        }
         state.pending = { id:`p_${Date.now()}_${Math.random().toString(36).slice(2,6)}`, action, actorId:actor.id, targetId, claim, blockable, blockRoles, passes:[] };
         _onlineCoupSetResponseDeadline(state.pending);
         state.log = `${actor.name} قال يعمل ${_onlineCoupActionName(action)}. قولولو "تكذب!" كان شاكين.`;
@@ -2700,8 +2705,7 @@ function _onlineCoupApplyActionLocal(state, action, targetId) {
         state.log = amount > 0 ? `${actor.name} سرق ${amount} فلوس من ${target.name}. الرايس دخل للمرسى.` : `${actor.name} حاول يسرق ${target.name} أما ما لقى شي.`;
     }
     if (action === 'assassinate' && target) {
-        actor.coins -= 3;
-        _onlineCoupPayBank(state, 3);
+        // Coins were already deducted at declaration time (in the pending creation block).
         state.log = `${target.name} تضرّب من حفار القبور. ${target.name} يختار كارتة يخسرها.`;
         _onlineCoupEvent(state, state.log, 'bad');
         if (!_onlineCoupRequestLoss(state, target.id, 'تضرّبت من حفار القبور. اختار شنية الكارتة الي تخسرها.', { type:'nextTurn' })) _onlineCoupNextTurn(state);
