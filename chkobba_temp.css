@@ -99,6 +99,43 @@ body.game-chkobba header.app-header {
     min-width: 140px;
 }
 
+@media (max-width: 480px) {
+    .chkobba-opponents {
+        gap: 4px;
+        padding: 0 4px;
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+    .chkobba-player-pill {
+        min-width: 0;
+        flex: 0 1 auto;
+        font-size: 0.75rem;
+        border-width: 1px;
+    }
+    .chkobba-player-pill .pill-main {
+        padding: 4px 8px;
+        min-height: 32px;
+        gap: 6px;
+    }
+    .chkobba-player-pill .pill-name {
+        font-size: 0.75rem;
+        max-width: none;
+        flex: 1;
+        min-width: 0;
+    }
+    .chkobba-player-pill .pill-stats-row {
+        gap: 6px;
+        margin: 0;
+        flex-shrink: 0;
+    }
+    .chkobba-player-pill .pill-stat {
+        font-size: 0.7rem;
+        gap: 1px;
+    }
+    .chkobba-player-pill .pill-chevron {
+        font-size: 0.6rem;
+    }
+}
+
 .chkobba-player-pill:not(.is-entering):hover {
     transform: scale(1.04);
 }
@@ -647,10 +684,10 @@ body.game-chkobba header.app-header {
     width: var(--chkobba-card-w); height: var(--chkobba-card-h);
     z-index: 9998;
     pointer-events: none;
-    opacity: 0.7;
-    transition: opacity 450ms ease-out, transform 320ms var(--ease-out-cubic);
+    opacity: 0.6;
+    transition: opacity 160ms ease-out, transform 260ms var(--ease-out-cubic);
     will-change: transform, opacity;
-    filter: drop-shadow(0 0 15px var(--primary-color)) brightness(1.2) contrast(1.1);
+    filter: drop-shadow(0 0 10px rgba(82, 140, 113, 0.6)) brightness(1.1);
 }
 .chkobba-ghost-trail img {
     width: 100%; height: 100%; border-radius: 12px;
@@ -928,51 +965,6 @@ body.game-chkobba header.app-header {
     }
     .chkobba-hand-dock {
         padding-bottom: 8px;
-    }
-}
-
-/* Mobile Compact Mode — Must come last for precedence */
-@media (max-width: 480px) {
-    .chkobba-opponents {
-        gap: 4px;
-        padding: 0 4px;
-        grid-template-columns: repeat(2, 1fr) !important;
-    }
-    .chkobba-player-pill {
-        min-width: 0;
-        flex: 0 1 auto;
-        font-size: 0.75rem;
-        border-width: 1px;
-    }
-    .chkobba-player-pill .pill-main {
-        padding: 4px 6px;
-        min-height: 28px;
-        gap: 4px;
-    }
-    .chkobba-player-pill .pill-name {
-        font-size: 0.7rem;
-        max-width: none;
-        flex: 1 1 auto;
-        min-width: 0;
-    }
-    .chkobba-player-pill .pill-stats-row {
-        gap: 4px;
-        margin: 0;
-        flex-shrink: 1;
-    }
-    .chkobba-player-pill .pill-stat {
-        font-size: 0.64rem;
-        gap: 1px;
-    }
-    .chkobba-player-pill .pill-chevron {
-        font-size: 0.55rem;
-    }
-    .chkobba-player-pill .you-tag {
-        font-size: 9px;
-        padding: 1px 3px;
-    }
-    .chkobba-table-wrap {
-        width: 94vw;
     }
 }
 
