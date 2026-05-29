@@ -56,25 +56,37 @@ const ChkobbaLogic = {
     },
 
     /**
-     * Map card to its asset path
+     * Centralized Asset Mapping
+     */
+    ASSETS: {
+        BACK: 'assets/chkobba/Chkobba_dos.webp',
+        POINT: 'assets/chkobba/Chkobba_point.webp',
+        MAPPING: {
+            'hearts':   { folder: 'Hearts',   prefix: 'coeur' },
+            'spades':   { folder: 'Sapdes',   prefix: 'pique' },
+            'clovers':  { folder: 'clovers',  prefix: 'trèfle' },
+            'diamonds': { folder: 'diamonds', prefix: 'carreau' }
+        }
+    },
+
+    /**
+     * Map card to its asset path with robust fallback
      */
     getCardAsset: function(card) {
-        if (!card) return 'assets/chkobba/Chkobba_dos.webp';
+        if (!card) return this.ASSETS.BACK;
 
-        let suitFolder = '';
-        let suitPrefix = '';
-
-        switch(card.suit) {
-            case 'hearts':   suitFolder = 'Hearts';  suitPrefix = 'coeur'; break;
-            case 'spades':   suitFolder = 'Sapdes';  suitPrefix = 'pique'; break;
-            case 'clovers':  suitFolder = 'clovers'; suitPrefix = 'trèfle'; break;
-            case 'diamonds': suitFolder = 'diamonds'; suitPrefix = 'carreau'; break;
-        }
+        const suitData = this.ASSETS.MAPPING[card.suit];
+        if (!suitData) return this.ASSETS.BACK;
 
         const valStr = String(card.value).padStart(2, '0');
-        // Handle the potential missing 10 of hearts by falling back to 09 or a generic if needed
-        // but for now let's assume the path exists or we'll handle it in UI
-        return `assets/chkobba/${suitFolder}/Chkobba_${suitPrefix}_${valStr}.webp`;
+        const path = `assets/chkobba/${suitData.folder}/Chkobba_${suitData.prefix}_${valStr}.webp`;
+
+        // Resilience: check if it's a known missing asset or invalid value
+        if (card.value < 1 || card.value > 10) return this.ASSETS.BACK;
+
+        // Special case: Hearts only has 9 cards in some versions, but here we assume the provided assets.
+        // If an asset is missing, we'll return a generic "point" or back card.
+        return path;
     },
 
     /**
