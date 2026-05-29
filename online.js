@@ -677,8 +677,8 @@ function _handCardTilt(index, total) {
     return (index - mid) * 4.5;
 }
 
-/** GPU-friendly card flight; calls onDone when finished (or immediately if reduced motion). */
-function _animateChkobbaFlight({ fromRect, toRect, imgSrc, duration = 420, rotate = 6, onDone }) {
+/** GPU-friendly card flight using translate3d; calls onDone when finished. */
+function _animateChkobbaFlight({ fromRect, toRect, imgSrc, duration = 260, rotate = 6, withGhost = false, onDone }) {
     if (_prefersReducedMotion() || !fromRect || !toRect) {
         onDone?.();
         return;
@@ -689,27 +689,47 @@ function _animateChkobbaFlight({ fromRect, toRect, imgSrc, duration = 420, rotat
         return;
     }
 
-    const flyer = document.createElement('div');
-    flyer.className = 'chkobba-flight-card';
+    // Center points — card is anchored top-left, translate offsets centre it
     const fx = fromRect.left + fromRect.width / 2;
     const fy = fromRect.top + fromRect.height / 2;
     const tx = toRect.left + toRect.width / 2;
     const ty = toRect.top + toRect.height / 2;
 
-    flyer.style.left = `${fx}px`;
-    flyer.style.top = `${fy}px`;
-    flyer.style.setProperty('--flight-rot', `${rotate}deg`);
+    const startTransform = `translate3d(${fx}px, ${fy}px, 0) translate(-50%, -50%) rotate(${rotate}deg) scale(1)`;
+    const endTransform   = `translate3d(${tx}px, ${ty}px, 0) translate(-50%, -50%) rotate(${rotate * 0.3}deg) scale(0.88)`;
+
+    const flyer = document.createElement('div');
+    flyer.className = 'chkobba-flight-card';
+    flyer.style.transform = startTransform;
     const img = document.createElement('img');
     img.alt = '';
     img.src = imgSrc;
     flyer.appendChild(img);
     layer.appendChild(flyer);
 
+    // Optional ghost trail (lags 40ms behind)
+    let ghost = null;
+    if (withGhost) {
+        ghost = document.createElement('div');
+        ghost.className = 'chkobba-ghost-trail';
+        ghost.style.transform = startTransform;
+        const gImg = document.createElement('img');
+        gImg.alt = '';
+        gImg.src = imgSrc;
+        ghost.appendChild(gImg);
+        layer.appendChild(ghost);
+    }
+
+    // Trigger GPU animation via double-rAF
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-            flyer.classList.add('is-flying');
-            flyer.style.left = `${tx}px`;
-            flyer.style.top = `${ty}px`;
+            flyer.style.transform = endTransform;
+            if (ghost) {
+                setTimeout(() => {
+                    ghost.style.transform = endTransform;
+                    ghost.style.opacity = '0';
+                }, 40);
+            }
         });
     });
 
@@ -718,10 +738,11 @@ function _animateChkobbaFlight({ fromRect, toRect, imgSrc, duration = 420, rotat
         if (done) return;
         done = true;
         flyer.remove();
+        if (ghost) setTimeout(() => ghost.remove(), 130);
         onDone?.();
     };
     flyer.addEventListener('transitionend', finish, { once: true });
-    setTimeout(finish, duration + 100);
+    setTimeout(finish, duration + 60);
 }
 
 function _animateChkobbaFlightsSequential(flights, onDone) {
@@ -3873,7 +3894,7 @@ function _renderChkobbaInfoPills(state, me) {
     });
 }
 
-function _animateChkobbaDeal(deckEl, handEl, count, onDone) {
+async function _animateChkobbaDeal(deckEl, handEl, count, onDone) {
     if (_prefersReducedMotion() || !deckEl || !handEl || count < 1) {
         onDone?.();
         return;
@@ -3881,46 +3902,129 @@ function _animateChkobbaDeal(deckEl, handEl, count, onDone) {
     const layer = document.getElementById('chkobba-deal-layer');
     if (!layer) { onDone?.(); return; }
 
+    // Deck pulse before dealing
+    deckEl.style.transition = 'transform 140ms var(--ease-pop, cubic-bezier(0.2,1.2,0.3,1))';
+    deckEl.style.transform = 'scale(1.07)';
+    await new Promise(r => setTimeout(r, 140));
+    deckEl.style.transform = '';
+    setTimeout(() => { deckEl.style.transition = ''; }, 160);
+
     deckEl.classList.add('is-dealing');
     const from = deckEl.getBoundingClientRect();
     const to = handEl.getBoundingClientRect();
     const back = window.ChkobbaLogic.ASSETS.BACK;
     let finished = 0;
 
+    // Compress stagger when many cards to keep total sequence ≤ 900ms
+    const staggerMs = count > 3 ? 40 : 65;
+
     for (let i = 0; i < count; i++) {
-        const clone = document.createElement('div');
-        clone.className = 'chkobba-deal-flyer';
-        clone.style.left = `${from.left + from.width / 2}px`;
-        clone.style.top = `${from.top + from.height / 2}px`;
-        clone.style.transitionDelay = `${i * 70}ms`;
-        clone.innerHTML = `<img src="${back}" alt="">`;
-        layer.appendChild(clone);
+        setTimeout(() => {
+            const fx = from.left + from.width / 2;
+            const fy = from.top + from.height / 2;
+            // Spread cards slightly into hand
+            const tx = to.left + to.width / 2 + (i - (count - 1) / 2) * 14;
+            const ty = to.top + to.height * 0.45;
 
-        requestAnimationFrame(() => {
+            const flyer = document.createElement('div');
+            flyer.className = 'chkobba-flight-card';
+            const rot = (Math.random() - 0.5) * 14;
+            flyer.style.transform = `translate3d(${fx}px, ${fy}px, 0) translate(-50%, -50%) rotate(${rot}deg) scale(1)`;
+            const img = document.createElement('img');
+            img.alt = '';
+            img.src = back;
+            flyer.appendChild(img);
+            layer.appendChild(flyer);
+
             requestAnimationFrame(() => {
-                clone.style.left = `${to.left + to.width / 2 + (i - 1) * 12}px`;
-                clone.style.top = `${to.top + to.height * 0.5}px`;
-                clone.classList.add('is-flying');
+                requestAnimationFrame(() => {
+                    flyer.style.transform = `translate3d(${tx}px, ${ty}px, 0) translate(-50%, -50%) rotate(${rot * 0.25}deg) scale(0.9)`;
+                });
             });
-        });
 
-        clone.addEventListener('transitionend', () => {
-            clone.remove();
-            finished++;
-            if (finished >= count) {
-                deckEl.classList.remove('is-dealing');
-                onDone?.();
-            }
-        }, { once: true });
+            let done = false;
+            const finish = () => {
+                if (done) return;
+                done = true;
+                flyer.remove();
+                finished++;
+                if (finished >= count) {
+                    deckEl.classList.remove('is-dealing');
+                    onDone?.();
+                }
+            };
+            flyer.addEventListener('transitionend', finish, { once: true });
+            setTimeout(finish, 320);
+        }, i * staggerMs);
     }
 
+    // Safety fallback
     setTimeout(() => {
         if (finished < count) {
-            layer.innerHTML = '';
+            layer.querySelectorAll('.chkobba-flight-card').forEach(el => el.remove());
             deckEl.classList.remove('is-dealing');
             onDone?.();
         }
-    }, count * 70 + 600);
+    }, count * staggerMs + 500);
+}
+
+let _chkobbaReactionsInited = false;
+function _initChkobbaReactionsBar() {
+    if (_chkobbaReactionsInited) return;
+    const reactBar = document.getElementById('chkobba-reactions');
+    const handDock = document.querySelector('.chkobba-hand-dock');
+    if (!reactBar || !handDock) return;
+    _chkobbaReactionsInited = true;
+
+    const _hideBar = () => {
+        reactBar.classList.remove('show');
+        clearTimeout(reactBar._hideTimer);
+    };
+
+    // Show bar when tapping empty space in the hand dock
+    handDock.addEventListener('click', (e) => {
+        if (e.target.closest('.chkobba-card') || e.target.closest('#chkobba-reactions')) return;
+        const isVisible = reactBar.classList.contains('show');
+        if (isVisible) {
+            _hideBar();
+        } else {
+            reactBar.classList.add('show');
+            clearTimeout(reactBar._hideTimer);
+            reactBar._hideTimer = setTimeout(_hideBar, 3200);
+        }
+    });
+
+    // Close on tap outside the dock
+    document.addEventListener('click', (e) => {
+        if (!reactBar.classList.contains('show')) return;
+        if (!handDock.contains(e.target)) _hideBar();
+    }, { capture: true });
+
+    // Reaction button handler
+    reactBar.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            _sfx.tap();
+            _hideBar();
+            const emoji = btn.innerText;
+            const kind = btn.dataset.reaction;
+            if (kind === 'laugh') _sfx.reaction('laugh');
+            else if (kind === 'angry') _sfx.reaction('suspect');
+            else if (kind === 'clap') _sfx.notify?.();
+
+            // Broadcast to room if connected
+            if (_channel && _myName) {
+                _channel.send({
+                    type: 'broadcast',
+                    event: 'reaction',
+                    payload: { name: _myName, msg: emoji, sfx: 'notify' }
+                });
+                _showReactionFloat?.(_myName + ': ' + emoji);
+            } else {
+                _showReactionFloat?.(emoji);
+            }
+        });
+    });
 }
 
 function _showOnlineChkobba(room) {
@@ -3941,6 +4045,9 @@ function _showOnlineChkobba(room) {
     const canInteract = isMyTurn && !playLocked;
     const handDock = document.querySelector('.chkobba-hand-dock');
     handDock?.classList.toggle('is-inactive-turn', state.phase === 'playing' && !isMyTurn);
+
+    // Wire reactions bar (idempotent — only attaches once)
+    _initChkobbaReactionsBar();
 
     const prevSnap = _chkobbaLastSnapshot;
     let dealCount = 0;
@@ -4092,6 +4199,7 @@ async function _commitChkobbaCapture() {
             toRect: pileRect,
             imgSrc: logic.getCardAsset(playedCard),
             rotate: 4,
+            withGhost: true,
             staggerAfter: 0
         });
     }
@@ -4104,7 +4212,8 @@ async function _commitChkobbaCapture() {
                 toRect: pileRect,
                 imgSrc: logic.getCardAsset(card),
                 rotate: (i % 2 === 0 ? 1 : -1) * (6 + i * 2),
-                staggerAfter: 48
+                withGhost: true,
+                staggerAfter: 60
             });
         }
     });
