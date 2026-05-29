@@ -3394,10 +3394,10 @@ async function _stopScanner() {
     if (btn) btn.innerText = '📷 امسح الكود';
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+window.__dakheelBootOnlineExtras = function () {
     const scanBtn = document.getElementById('open-scanner-btn');
     if (scanBtn) scanBtn.addEventListener('click', _startScanner);
-});
+};
 
 // Expose for verification/debugging
 window._showOnlineCoup = _showOnlineCoup;
