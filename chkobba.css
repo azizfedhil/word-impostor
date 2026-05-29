@@ -1,0 +1,235 @@
+/* Chkobba Game Styles */
+:root {
+    --chkobba-table-bg: #2d5a27;
+    --card-width: 80px;
+    --card-height: 120px;
+}
+
+#chkobba-screen {
+    background: radial-gradient(circle, #3d7a35 0%, #1b3a16 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px;
+    height: 100vh;
+    overflow: hidden;
+    color: white;
+}
+
+/* 3D Card Presentation */
+.chkobba-card {
+    width: var(--card-width);
+    height: var(--card-height);
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: grab;
+    user-select: none;
+}
+
+.chkobba-card:active {
+    cursor: grabbing;
+}
+
+.chkobba-card.dragging {
+    opacity: 0.8;
+    transform: scale(1.1) rotate(5deg);
+    z-index: 1000;
+}
+
+.chkobba-card img {
+    width: 100%;
+    height: 100%;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    backface-visibility: hidden;
+    pointer-events: none;
+}
+
+/* Layouts */
+.chkobba-table {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-content: center;
+    gap: 15px;
+    perspective: 1000px;
+    padding: 20px;
+}
+
+.chkobba-hand {
+    display: flex;
+    gap: 10px;
+    padding: 15px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 20px 20px 0 0;
+    width: 100%;
+    justify-content: center;
+    perspective: 1000px;
+}
+
+.chkobba-hand .chkobba-card {
+    transform: rotateX(15deg);
+}
+
+.chkobba-hand .chkobba-card:hover {
+    transform: translateY(-20px) rotateX(0deg) scale(1.1);
+    z-index: 10;
+}
+
+/* Opponents */
+.chkobba-opponents {
+    display: grid;
+    width: 100%;
+    padding: 10px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.chkobba-opponents.mode-1v1 {
+    display: flex;
+    justify-content: center;
+}
+
+.chkobba-opponents.mode-1v1v1 {
+    display: flex;
+    justify-content: space-between;
+}
+
+.opponent-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    background: rgba(255,255,255,0.1);
+    padding: 10px;
+    border-radius: 12px;
+    min-width: 100px;
+    transition: transform 0.3s ease;
+}
+
+.opponent-area.is-teammate {
+    border: 2px solid var(--primary-color);
+}
+
+.opponent-avatar.active-turn {
+    box-shadow: 0 0 15px var(--primary-color);
+    transform: scale(1.1);
+}
+
+.opponent-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--surface-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    border: 2px solid var(--primary-color);
+}
+
+.opponent-cards-count {
+    background: rgba(0,0,0,0.5);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.8rem;
+}
+
+/* Score Info */
+.chkobba-info {
+    position: absolute;
+    top: 50px;
+    right: 10px;
+    background: rgba(0,0,0,0.6);
+    padding: 10px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    pointer-events: none;
+}
+
+/* Deck & Capture Piles */
+.deck-pile, .capture-pile {
+    width: var(--card-width);
+    height: var(--card-height);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.1);
+    border: 2px dashed rgba(255,255,255,0.2);
+    position: relative;
+}
+
+.deck-pile::before {
+    content: '🂠';
+    font-size: 3rem;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0.3;
+}
+
+/* Chkobba Animation */
+@keyframes chkobba-flash {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.5); color: #ffd700; text-shadow: 0 0 20px #ffd700; }
+    100% { transform: scale(1); opacity: 0; }
+}
+
+.chkobba-announcement {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 4rem;
+    font-weight: 900;
+    z-index: 2000;
+    pointer-events: none;
+    animation: chkobba-flash 1.5s forwards;
+}
+
+/* Drag Targets */
+.valid-target-highlight {
+    box-shadow: 0 0 15px 5px var(--primary-color) !important;
+    transform: scale(1.05) !important;
+}
+
+/* Responsive Scaling */
+@media (max-width: 600px) {
+    :root {
+        --card-width: 60px;
+        --card-height: 90px;
+    }
+}
+
+/* Tournament Styles */
+.tournament-bracket {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+    background: rgba(0,0,0,0.8);
+    border-radius: 15px;
+    width: 90%;
+    max-width: 600px;
+}
+
+.tournament-match {
+    background: var(--surface-color);
+    padding: 10px;
+    border-radius: 8px;
+    border-right: 4px solid var(--primary-color);
+}
+
+.match-player {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px;
+}
+
+.match-player.winner {
+    color: var(--primary-color);
+    font-weight: bold;
+}
