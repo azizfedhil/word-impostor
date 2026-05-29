@@ -726,14 +726,14 @@ function _animateChkobbaFlight({ fromRect, toRect, imgSrc, duration = 260, rotat
                 setTimeout(() => {
                     ghost.style.transform = endTransform;
                     ghost.style.opacity = '0';
-                }, 40);
+                }, 60);
             }
         });
     });
 
     const finish = () => {
         flyer.remove();
-        if (ghost) setTimeout(() => ghost.remove(), 300);
+        if (ghost) setTimeout(() => ghost.remove(), 500);
         onDone?.();
     };
     flyer.addEventListener('transitionend', finish, { once: true });
@@ -3827,15 +3827,14 @@ async function _chkobbaAcceptStarter() {
 }
 
 function _buildChkobbaOpponentPillHtml(p, state, { active, isTeammate, isExpanded, offline, dinari }) {
+    const isMe = p.id === _myId;
     return `
         <div class="pill-main">
-            <div class="pill-avatar">${isTeammate ? '🤝' : offline ? '📴' : '👤'}</div>
-            <div class="pill-info">
-                <div class="pill-name">${_esc(p.name)}${active ? ' ●' : ''}</div>
-                <div class="pill-stats">
-                    <span>🃏 ${p.hand.length}</span>
-                    <span>🏆 ${p.totalScore}</span>
-                </div>
+            <div class="pill-name">${_esc(p.name)}${isMe ? ' <span class="you-tag">أنا</span>' : ''}${active ? ' ●' : ''}</div>
+            <div class="pill-stats-row">
+                <div class="pill-stat" title="كوارط في اليد">🃏 ${p.hand.length}</div>
+                <div class="pill-stat" title="الماكول">📥 ${p.captured?.length || 0}</div>
+                <div class="pill-stat" title="السكور">🏆 ${p.totalScore}</div>
             </div>
             <div class="pill-chevron">${isExpanded ? '▲' : '▼'}</div>
         </div>
@@ -3879,7 +3878,6 @@ function _renderChkobbaOpponentPills(room, state, me, mode, roomPlayerMeta) {
 
         let pill = _chkobbaOpponentPillEls.get(p.id);
         const isNew = !pill;
-        const expandChanged = pill && pill.dataset.expanded !== String(isExpanded);
 
         if (!pill) {
             pill = document.createElement('div');
@@ -3895,22 +3893,7 @@ function _renderChkobbaOpponentPills(room, state, me, mode, roomPlayerMeta) {
         pill.dataset.expanded = String(isExpanded);
         pill.className = `chkobba-player-pill ${active ? 'is-turn' : ''} ${isMe ? 'is-me' : ''} ${isTeammate ? 'is-teammate' : ''} ${isExpanded ? 'is-expanded' : ''} ${offline ? 'is-offline' : ''}${isNew ? ' is-entering' : ''}`;
 
-        if (isNew || expandChanged) {
-            pill.innerHTML = _buildChkobbaOpponentPillHtml(p, state, { active, isTeammate, isExpanded, offline, dinari });
-            if (isMe) {
-                const nameEl = pill.querySelector('.pill-name');
-                if (nameEl) nameEl.innerHTML += ' <span class="you-tag">أنا</span>';
-            }
-        } else {
-            const nameEl = pill.querySelector('.pill-name');
-            const statsEl = pill.querySelector('.pill-stats');
-            const chevEl = pill.querySelector('.pill-chevron');
-            if (nameEl) nameEl.innerHTML = `${_esc(p.name)}${isMe ? ' <span class="you-tag">أنا</span>' : ''}${active ? ' ●' : ''}`;
-            if (statsEl) {
-                statsEl.innerHTML = `<span>🃏 ${p.hand.length}</span><span>🏆 ${p.totalScore}</span>`;
-            }
-            if (chevEl) chevEl.textContent = isExpanded ? '▲' : '▼';
-        }
+        pill.innerHTML = _buildChkobbaOpponentPillHtml(p, state, { active, isTeammate, isExpanded, offline, dinari });
 
         pill.onclick = () => {
             _onlineCoupSummaryExpandedId = isExpanded ? null : p.id;
@@ -4164,21 +4147,113 @@ async function _chkobbaTimeout() {
     if (!_room || _chkobbaTimingOut) return;
     _chkobbaTimingOut = true;
     try {
-        await _mutatePlayers(_room.code, (players, room) => {
-            const s = room.word_obj;
-            if (s.phase !== 'playing') return null;
+        const s = _room.word_obj;
+        if (!s || s.phase !== 'playing') return;
+        const p = s.players[s.turnIndex];
+        if (!p || p.hand.length === 0) return;
 
-            const p = s.players[s.turnIndex];
-            if (p.hand.length > 0) {
-                // Play first card in hand to table
-                const card = p.hand.splice(0, 1)[0];
-                s.table.push(card);
+        const logic = window.ChkobbaLogic;
+        let chosenCardIndex = -1;
+        let bestMatch = null;
+
+        for (let i = 0; i < p.hand.length; i++) {
+            const possible = logic.getValidCaptures(p.hand[i], s.table);
+            if (possible.length > 0) {
+                chosenCardIndex = i;
+                bestMatch = possible[0];
+                break;
             }
+        }
+        if (chosenCardIndex === -1) chosenCardIndex = 0;
+        const cardToPlay = p.hand[chosenCardIndex];
 
-            _advanceChkobbaTurn(s, room);
-            room.word_obj = s;
-            return players;
-        }, null, (room, players) => ({ word_obj: room.word_obj, timer_end_at: room.timer_end_at }));
+        const runActualMutate = async () => {
+            await _mutatePlayers(_room.code, (players, room) => {
+                const rs = room.word_obj;
+                if (rs.phase !== 'playing') return null;
+                const rp = rs.players[rs.turnIndex];
+                if (!rp || rp.hand.length === 0) return null;
+
+                let cIdx = rp.hand.findIndex(c => c.id === cardToPlay.id);
+                if (cIdx === -1) cIdx = 0;
+                const card = rp.hand.splice(cIdx, 1)[0];
+                const matches = logic.getValidCaptures(card, rs.table);
+                const match = matches.length > 0 ? matches[0] : null;
+
+                if (match) {
+                    const capturedIds = match.map(c => c.id);
+                    const capturedCards = rs.table.filter(c => capturedIds.includes(c.id));
+                    rs.table = rs.table.filter(c => !capturedIds.includes(c.id));
+                    const allCaptured = [card, ...capturedCards];
+                    rp.captured.push(...allCaptured);
+                    rs.lastCaptureId = rp.id;
+                    if (rs.table.length === 0 && rs.deck.length > 0) {
+                        rp.chkobbas++;
+                        rs.chkobbaEvent = { type: 'chkobba', playerId: rp.id, name: rp.name };
+                    } else if (allCaptured.some(c => c.id === 'diamonds_7') && capturedCards.some(c => c.id === 'diamonds_7')) {
+                        rs.chkobbaEvent = { type: 'berria', playerId: rp.id, name: rp.name };
+                    }
+                } else {
+                    rs.table.push(card);
+                }
+                _advanceChkobbaTurn(rs, room);
+                room.word_obj = rs;
+                return players;
+            }, null, (room, players) => ({ word_obj: room.word_obj, timer_end_at: room.timer_end_at }));
+        };
+
+        const isMe = p.id === _myId;
+        const fromEl = isMe ? _chkobbaHandCardEl(chosenCardIndex) : _chkobbaOpponentPillEls.get(p.id);
+        const toEl = bestMatch ? (_chkobbaOpponentPillEls.get(p.id) || document.getElementById('chkobba-my-capture-pile')) : document.getElementById('chkobba-table');
+
+        if (_prefersReducedMotion() || !fromEl || !toEl) {
+            await runActualMutate();
+            return;
+        }
+
+        _chkobbaAnimating = true;
+        if (isMe && fromEl) fromEl.style.opacity = '0';
+
+        if (bestMatch) {
+            const flights = [];
+            flights.push({
+                fromRect: fromEl.getBoundingClientRect(),
+                toRect: toEl.getBoundingClientRect(),
+                imgSrc: logic.getCardAsset(cardToPlay),
+                rotate: 4,
+                withGhost: true,
+                staggerAfter: 60
+            });
+            bestMatch.forEach((c, i) => {
+                const tEl = document.querySelector(`#chkobba-table .table-card[data-card-id="${c.id}"]`);
+                if (tEl) {
+                    tEl.style.opacity = '0';
+                    flights.push({
+                        fromRect: tEl.getBoundingClientRect(),
+                        toRect: toEl.getBoundingClientRect(),
+                        imgSrc: logic.getCardAsset(c),
+                        rotate: (i % 2 === 0 ? 1 : -1) * (6 + i * 2),
+                        withGhost: true,
+                        staggerAfter: 60
+                    });
+                }
+            });
+            _animateChkobbaFlightsSequential(flights, async () => {
+                _chkobbaAnimating = false;
+                await runActualMutate();
+            });
+        } else {
+            _animateChkobbaFlight({
+                fromRect: fromEl.getBoundingClientRect(),
+                toRect: toEl.getBoundingClientRect(),
+                imgSrc: logic.getCardAsset(cardToPlay),
+                rotate: -6,
+                onDone: async () => {
+                    _chkobbaAnimating = false;
+                    await runActualMutate();
+                }
+            });
+        }
     } catch(e) { console.error(e); }
     finally { _chkobbaTimingOut = false; }
 }
@@ -4240,6 +4315,7 @@ async function _commitChkobbaCapture() {
     const flights = [];
 
     if (handEl && pileRect) {
+        handEl.style.opacity = '0';
         flights.push({
             fromRect: handEl.getBoundingClientRect(),
             toRect: pileRect,
@@ -4253,6 +4329,7 @@ async function _commitChkobbaCapture() {
         const tableEl = document.querySelector(`#chkobba-table .table-card[data-card-id="${id}"]`);
         const card = ctx.state.table.find(c => c.id === id);
         if (tableEl && pileRect && card) {
+            tableEl.style.opacity = '0';
             flights.push({
                 fromRect: tableEl.getBoundingClientRect(),
                 toRect: pileRect,
@@ -4326,6 +4403,15 @@ async function _commitChkobbaPlayToTable() {
     const tableEl = document.getElementById('chkobba-table');
     const imgSrc = ctx.logic.getCardAsset(playedCard);
 
+    const tableRect = tableEl?.getBoundingClientRect();
+    const tableCardsCount = ctx.state.table.length;
+    const targetRect = tableRect ? {
+        left: tableRect.left + (tableRect.width / 2) + (tableCardsCount * 12) - 40,
+        top: tableRect.top + (tableRect.height / 2),
+        width: tableRect.width / 4,
+        height: tableRect.height / 2
+    } : null;
+
     const runMutate = async () => {
         await _mutatePlayers(_room.code, (players, room) => {
             const s = room.word_obj;
@@ -4347,9 +4433,10 @@ async function _commitChkobbaPlayToTable() {
     }
 
     _chkobbaAnimating = true;
+    if (handEl) handEl.style.opacity = '0';
     _animateChkobbaFlight({
         fromRect: handEl.getBoundingClientRect(),
-        toRect: tableEl.getBoundingClientRect(),
+        toRect: targetRect || tableEl.getBoundingClientRect(),
         imgSrc,
         rotate: -6,
         onDone: async () => {
