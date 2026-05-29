@@ -1904,14 +1904,14 @@ async function bootApp() {
     });
 
     // ONLINE BUTTONS
-    document.getElementById('open-online-btn')?.addEventListener('click',()=>{showScreen('online-setup-screen');_clearErr();});
+    document.getElementById('open-online-btn')?.addEventListener('click',()=>{showScreen('online-setup-screen');window._clearErr?.();});
     document.getElementById('back-to-setup-btn')?.addEventListener('click',()=>{
         if (document.getElementById('setup-screen')) showScreen('setup-screen');
         else showScreen('online-setup-screen');
     });
-    document.getElementById('create-room-btn')?.addEventListener('click',_createRoom);
-    document.getElementById('join-room-btn')?.addEventListener('click',_joinRoom);
-    if (typeof _restoreOnlineName === 'function') _restoreOnlineName();
+    document.getElementById('create-room-btn')?.addEventListener('click', () => window._createRoom?.());
+    document.getElementById('join-room-btn')?.addEventListener('click', () => window._joinRoom?.());
+    if (typeof window._restoreOnlineName === 'function') window._restoreOnlineName();
 
     const codeInput = document.getElementById('room-code-input');
     if (codeInput) {
@@ -1919,7 +1919,7 @@ async function bootApp() {
         codeInput.addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('join-room-btn')?.click();});
     }
 
-    document.getElementById('online-start-btn')?.addEventListener('click',_startOnlineGame);
+    document.getElementById('online-start-btn')?.addEventListener('click', () => window._startOnlineGame?.());
 
     document.getElementById('copy-code-btn')?.addEventListener('click',()=>{
         const code=document.getElementById('display-room-code').innerText;
@@ -1947,9 +1947,9 @@ async function bootApp() {
         }
     });
 
-    document.getElementById('leave-room-btn')?.addEventListener('click',()=>{if(confirm('متأكد تحب تخرج من الغرفة؟'))_leaveRoom();});
-    document.getElementById('online-seen-btn')?.addEventListener('click',_confirmSeen);
-    document.getElementById('start-discussion-btn')?.addEventListener('click',_startDiscussion);
+    document.getElementById('leave-room-btn')?.addEventListener('click',()=>{if(confirm('متأكد تحب تخرج من الغرفة؟'))window._leaveRoom?.();});
+    document.getElementById('online-seen-btn')?.addEventListener('click', () => window._confirmSeen?.());
+    document.getElementById('start-discussion-btn')?.addEventListener('click', () => window._startDiscussion?.());
 
     // SOUND HOOKS
     document.addEventListener('pointerdown', e => {
