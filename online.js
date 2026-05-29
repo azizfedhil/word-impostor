@@ -135,7 +135,7 @@ const SPYFALL_QUESTIONS = [
 
 let _spyfallDB = [];
 
-fetch('spyfall_tunisia_100_locations.json', { cache:'no-store' })
+fetch((window.__DAKHEEL_ASSET_ROOT || '') + 'spyfall_tunisia_100_locations.json', { cache:'no-store' })
     .then(r => r.json())
     .then(d => { _spyfallDB = d.spyfall_data || d || []; })
     .catch(() => { _spyfallDB = []; });
@@ -381,7 +381,7 @@ function _subscribe(code) {
 function _refreshPresenceViews() {
     if (!_room) return;
     const active = document.querySelector('.screen.active')?.id;
-    if (active === 'online-lobby-screen') _renderLobby(_room);
+    if (active === 'online-lobby-screen' && _room.state === 'lobby') _renderLobby(_room);
     else _refreshRoundPlayerPanel();
 }
 
@@ -989,6 +989,7 @@ async function _onChkobbaPointerUp(e, moved) {
 }
 
 function _renderLobby(room) {
+    if (!room || room.state !== 'lobby') return;
     const cur = document.querySelector('.screen.active');
     if (cur && !['online-lobby-screen','online-setup-screen'].includes(cur.id)) showScreen('online-lobby-screen');
     else showScreen('online-lobby-screen');
@@ -1052,7 +1053,7 @@ function _renderLobby(room) {
         startBtn?.classList.remove('hidden');
         const minPlayers = _lobbyMinPlayers(room);
         if (n < minPlayers) {
-            if (startBtn) { startBtn.disabled = true; startBtn.style.opacity = '0.5'; }
+            if (startBtn) { startBtn.disabled = false; startBtn.style.opacity = '0.5'; }
             if (waitMsg) waitMsg.innerText = `⏳ نستنا لاعبين... (${n}/${minPlayers} على الأقل)`;
         } else {
             if (startBtn) { startBtn.disabled = false; startBtn.style.opacity = ''; }
@@ -1094,6 +1095,7 @@ function _renderLobby(room) {
         settBtn.className = 'advanced-header';
         settBtn.style.cssText = 'margin-top:10px;';
         settBtn.innerHTML = '<span>⚙️ عدّل إعدادات الجولة</span><span id="ls-outer-chevron">▼</span>';
+        if (!startBtn) return;
         startBtn.after(settBtn);
 
         // ── Wrapper uses advanced-content for the drop-down animation ──
@@ -1211,8 +1213,8 @@ function _renderLobby(room) {
 
 
     } else {
-        startBtn.classList.add('hidden');
-        waitMsg.innerText = `⏳ نستناو مولى الروم يبدا... (${n} لاعبين)`;
+        startBtn?.classList.add('hidden');
+        if (waitMsg) waitMsg.innerText = `⏳ نستناو مولى الروم يبدا... (${n} لاعبين)`;
     }
 }
 
@@ -1544,6 +1546,12 @@ async function _startOnlineGame() {
     if (_startingOnlineGame) { showToast('اللعبة قاعدة تبدأ...'); return; }
     if (!_isHost) { showToast('بس مولى الروم يقدر يبدأ اللعبة.'); return; }
     if (!_room) { showToast('ما فماش روم — اعمل روم أو انضم لواحدة.'); return; }
+    const minPlayers = _lobbyMinPlayers(_room);
+    const playerCount = (_room.players || []).length;
+    if (playerCount < minPlayers) {
+        showToast(`يلزم ${minPlayers} لاعبين على الأقل (${playerCount}/${minPlayers})`);
+        return;
+    }
     _startingOnlineGame = true;
     const startBtn = document.getElementById('online-start-btn');
     if (startBtn) startBtn.disabled = true;
@@ -1700,7 +1708,7 @@ function _showMyCard(room) {
     } else {
         roleText = me.isImpostor
             ? (noHints ? trans.impostor_role : `${trans.impostor_role}<br><br><span style="font-size:16px;">${trans.hint_label}</span><br>${_esc(me.customHint)}`)
-            : `${trans.citizen_role}<br><br><span style="font-size:16px;">${trans.word_label}</span><br>${_esc(room.word_obj.word)}`;
+            : `${trans.citizen_role}<br><br><span style="font-size:16px;">${trans.word_label}</span><br>${_esc(room.word_obj?.word ?? '')}`;
     }
     const card = document.createElement('div'); card.className = 'flip-card';
     card.innerHTML = `<div class="card-face card-front"><span>${trans.card_of}${_esc(me.name)}</span></div>
@@ -4254,3 +4262,11 @@ function _initMatch(match, config) {
 
 window._fetchRoom = _fetchRoom;
 window._checkAutoJoin = _checkAutoJoin;
+window._createRoom = _createRoom;
+window._joinRoom = _joinRoom;
+window._leaveRoom = _leaveRoom;
+window._startOnlineGame = _startOnlineGame;
+window._confirmSeen = _confirmSeen;
+window._startDiscussion = _startDiscussion;
+window._clearErr = _clearErr;
+window._restoreOnlineName = _restoreOnlineName;
