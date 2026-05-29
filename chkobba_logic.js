@@ -96,7 +96,7 @@ const ChkobbaLogic = {
             lastCaptureId: null,
             round: options.round || 1,
             phase: 'setup',
-            targetScore: options.targetScore || 21,
+            targetScore: options.targetScore || 11,
             mode: options.mode || '1v1',
             tournament: !!options.tournament,
             log: 'الكومة مخلوطة — وقت القصّة.'
@@ -323,7 +323,7 @@ const ChkobbaLogic = {
     },
 
     /**
-     * Calculate scores for a round
+     * Calculate scores for a round based on Authentic Tunisian Rules
      * @param {Object} playersCapturedCards - { playerId: [cards] }
      * @param {Object} chkobbas - { playerId: count }
      * @param {Array} teams - Optional array of teams [ [p1, p2], [p3, p4] ]
@@ -346,12 +346,20 @@ const ChkobbaLogic = {
                 const chkobbaCount = ids.reduce((sum, id) => sum + (chkobbas[id] || 0), 0);
                 const sevens = captured.filter(c => c.value === 7).length;
                 const sixes = captured.filter(c => c.value === 6).length;
+                const diamonds = captured.filter(c => c.suit === this.SUITS.DINARI).length;
+                const hasBerria = captured.some(c => c.suit === this.SUITS.DINARI && c.value === 7);
                 return {
                     ids,
                     captured,
                     chkobbaCount,
                     sevens,
-                    sixes
+                    sixes,
+                    diamonds,
+                    hasBerria,
+                    carti: 0,
+                    dinari: 0,
+                    berria: 0,
+                    bermila: 0
                 };
             });
         };
@@ -369,24 +377,24 @@ const ChkobbaLogic = {
             if (res.captured.length > maxCards) { maxCards = res.captured.length; cartiWinnerIdx = idx; cartiTie = false; }
             else if (res.captured.length === maxCards) { cartiTie = true; }
         });
-        if (!cartiTie && cartiWinnerIdx !== -1 && maxCards > 0) {
+        if (!cartiTie && cartiWinnerIdx !== -1 && maxCards > 20) {
             groupResults[cartiWinnerIdx].carti = 1;
         }
 
         // 2. Dinari (Most diamonds) - Strictly more than anyone else
         let maxDinari = -1, dinariWinnerIdx = -1, dinariTie = false;
         groupResults.forEach((res, idx) => {
-            const count = res.captured.filter(c => c.suit === this.SUITS.DINARI).length;
+            const count = res.diamonds;
             if (count > maxDinari) { maxDinari = count; dinariWinnerIdx = idx; dinariTie = false; }
             else if (count === maxDinari) { dinariTie = true; }
         });
-        if (!dinariTie && dinariWinnerIdx !== -1 && maxDinari > 0) {
+        if (!dinariTie && dinariWinnerIdx !== -1 && maxDinari > 5) {
             groupResults[dinariWinnerIdx].dinari = 1;
         }
 
         // 3. Berria (7 of diamonds)
         groupResults.forEach(res => {
-            if (res.captured.some(c => c.suit === this.SUITS.DINARI && c.value === 7)) res.berria = 1;
+            if (res.hasBerria) res.berria = 1;
         });
 
         // 4. Bermila (Most 7s, then 6s)
@@ -401,23 +409,31 @@ const ChkobbaLogic = {
             }
         });
 
-        if (bermilaTie && max7s > 0) {
+        if (bermilaTie) {
             // Check 6s if 7s are tied
             let max6s = -1;
-            const candidates = groupResults.filter(res => res.sevens === max7s);
+            const candidates = groupResults.filter(res => res.sevens === Math.max(0, max7s));
+            let subTie = false;
+            let subWinnerIdx = -1;
             candidates.forEach((res) => {
                 const idx = groupResults.indexOf(res);
                 if (res.sixes > max6s) {
                     max6s = res.sixes;
-                    bermilaWinnerIdx = idx;
-                    bermilaTie = false;
+                    subWinnerIdx = idx;
+                    subTie = false;
                 } else if (res.sixes === max6s) {
-                    bermilaTie = true;
+                    subTie = true;
                 }
             });
+            if (!subTie && subWinnerIdx !== -1) {
+                bermilaWinnerIdx = subWinnerIdx;
+                bermilaTie = false;
+            } else {
+                bermilaTie = true;
+            }
         }
 
-        if (!bermilaTie && bermilaWinnerIdx !== -1) {
+        if (!bermilaTie && bermilaWinnerIdx !== -1 && (max7s > 0 || (max7s === 0 && groupResults[bermilaWinnerIdx].sixes > 0))) {
             groupResults[bermilaWinnerIdx].bermila = 1;
         }
 
