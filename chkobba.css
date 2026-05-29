@@ -167,6 +167,18 @@ body.game-chkobba header.app-header {
     white-space: nowrap;
     font-weight: 800;
     min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.berria-pill-icon {
+    font-size: 0.8rem;
+    filter: drop-shadow(0 0 4px var(--primary-color));
+    background: rgba(82, 140, 113, 0.15);
+    padding: 1px 4px;
+    border-radius: 4px;
+    border: 1px solid var(--primary-color);
 }
 
 .chkobba-player-pill .pill-stats-row {
@@ -191,12 +203,12 @@ body.game-chkobba header.app-header {
 }
 
 .chkobba-player-pill.is-expanded {
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-sm);
     min-width: 0;
 }
 
 .chkobba-player-pill.is-expanded .pill-main {
-    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
 }
 
 .chkobba-player-pill .pill-details {
@@ -664,17 +676,37 @@ body.game-chkobba header.app-header {
     position: relative;
 }
 
+.chkobba-hand-dock {
+    width: 100%;
+    padding: 16px 8px 24px;
+    flex-shrink: 0;
+    position: relative;
+    display: flex;
+    justify-content: center;
+}
+
 .chkobba-hand {
     display: flex;
     justify-content: center;
     align-items: flex-end;
-    min-height: calc(var(--chkobba-card-h) + 20px);
-    padding: 10px 6px;
-    background: color-mix(in srgb, var(--surface-color) 88%, transparent);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-    box-shadow: var(--chkobba-surface-shadow);
-    transition: background 0.35s var(--chkobba-ease), box-shadow 0.35s var(--chkobba-ease);
+    min-height: calc(var(--chkobba-card-h) + 24px);
+    padding: 12px 32px;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-pill);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    transition: all 0.35s var(--chkobba-ease);
+    width: fit-content;
+    min-width: 260px;
+}
+
+@media (prefers-color-scheme: dark) {
+    .chkobba-hand {
+        background: rgba(28, 28, 30, 0.72);
+        border-color: rgba(255, 255, 255, 0.1);
+    }
 }
 
 .chkobba-hand-dock.is-inactive-turn {
@@ -714,6 +746,105 @@ body.game-chkobba header.app-header {
     box-shadow: none;
 }
 
+/* Victory Screen & Scoreboard */
+.chkobba-victory-screen {
+    position: absolute;
+    inset: 0;
+    background: var(--bg-color);
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px;
+    overflow-y: auto;
+    animation: fluidEntry 0.4s ease-out;
+}
+
+.victory-header {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.victory-icon {
+    font-size: 4rem;
+    display: block;
+    margin-bottom: 8px;
+    filter: drop-shadow(0 0 15px var(--accent-color));
+}
+
+.chkobba-scoreboard {
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+.scoreboard-item {
+    background: var(--surface-color);
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 18px;
+    box-shadow: var(--shadow-soft);
+}
+
+.scoreboard-item.is-winner {
+    border-color: var(--accent-color);
+    background: rgba(241, 192, 81, 0.05);
+}
+
+.scoreboard-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 8px;
+}
+
+.scoreboard-name {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--text-main);
+}
+
+.scoreboard-total {
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: var(--primary-color);
+}
+
+.scoreboard-details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.score-detail-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+.score-detail-row img {
+    width: 26px;
+    height: 38px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.score-detail-row strong {
+    margin-inline-start: auto;
+    color: var(--text-main);
+    font-size: 1rem;
+}
+
 /* Announcements */
 @keyframes chkobba-flash {
     0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
@@ -737,21 +868,46 @@ body.game-chkobba header.app-header {
     position: absolute;
     width: min(28vw, 100px);
     aspect-ratio: 2.5 / 3.5;
-    transform-style: preserve-3d;
-    animation: chkobbaCelebrateFlip 1.15s var(--chkobba-ease) forwards;
-    filter: drop-shadow(0 0 24px rgba(241, 192, 81, 0.45));
+    perspective: 1000px;
+    z-index: 10;
 }
 
-.chkobba-celebration-wrap.is-berria .chkobba-celebration-card {
+.chkobba-celebration-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+    animation: chkobbaCelebrateFlip 1.15s var(--chkobba-ease) forwards;
+}
+
+.chkobba-celebration-wrap.is-berria .chkobba-celebration-card-inner {
     filter: drop-shadow(0 0 28px rgba(82, 140, 113, 0.55));
 }
 
-.chkobba-celebration-card img {
+.chkobba-celebration-wrap:not(.is-berria) .chkobba-celebration-card-inner {
+    filter: drop-shadow(0 0 24px rgba(241, 192, 81, 0.45));
+}
+
+.chkobba-celebration-card-front, .chkobba-celebration-card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.chkobba-celebration-card-front img, .chkobba-celebration-card-back img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    border-radius: 12px;
-    backface-visibility: hidden;
+}
+
+.chkobba-celebration-card-back {
+    transform: rotateY(180deg);
 }
 
 @keyframes chkobbaCelebrateFlip {
