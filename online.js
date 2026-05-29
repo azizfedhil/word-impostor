@@ -678,50 +678,67 @@ function _handCardTilt(index, total) {
 }
 
 /** GPU-friendly card flight; calls onDone when finished (or immediately if reduced motion). */
-function _animateChkobbaFlight({ fromRect, toRect, imgSrc, duration = 420, rotate = 6, onDone }) {
+function _animateChkobbaFlight({ fromRect, toRect, imgSrc, duration = 260, rotate = 6, withGhost = false, onDone }) {
     if (_prefersReducedMotion() || !fromRect || !toRect) {
         onDone?.();
         return;
     }
     const layer = document.getElementById('chkobba-deal-layer');
-    if (!layer) {
-        onDone?.();
-        return;
-    }
+    if (!layer) { onDone?.(); return; }
 
     const flyer = document.createElement('div');
     flyer.className = 'chkobba-flight-card';
+
+    // Calculate offsets based on top-left anchor
     const fx = fromRect.left + fromRect.width / 2;
     const fy = fromRect.top + fromRect.height / 2;
     const tx = toRect.left + toRect.width / 2;
     const ty = toRect.top + toRect.height / 2;
 
-    flyer.style.left = `${fx}px`;
-    flyer.style.top = `${fy}px`;
-    flyer.style.setProperty('--flight-rot', `${rotate}deg`);
+    // Start position
+    flyer.style.transform = `translate3d(${fx}px, ${fy}px, 0) scale(1) rotate(${rotate}deg) translate(-50%, -50%)`;
+
     const img = document.createElement('img');
-    img.alt = '';
     img.src = imgSrc;
     flyer.appendChild(img);
     layer.appendChild(flyer);
 
+    // Optional Ghost Trail
+    let ghost;
+    if (withGhost) {
+        ghost = document.createElement('div');
+        ghost.className = 'chkobba-ghost-trail';
+        ghost.style.transform = flyer.style.transform;
+        const gImg = document.createElement('img');
+        gImg.src = imgSrc;
+        ghost.appendChild(gImg);
+        layer.appendChild(ghost);
+    }
+
+    // Trigger GPU animation
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-            flyer.classList.add('is-flying');
-            flyer.style.left = `${tx}px`;
-            flyer.style.top = `${ty}px`;
+            const endTransform = `translate3d(${tx}px, ${ty}px, 0) scale(0.85) rotate(${rotate * 0.35}deg) translate(-50%, -50%)`;
+            flyer.style.transform = endTransform;
+
+            if (ghost) {
+                // Ghost lags slightly behind visually via timing
+                setTimeout(() => {
+                    ghost.style.transform = endTransform;
+                    ghost.style.opacity = '0';
+                }, 40);
+            }
         });
     });
 
-    let done = false;
     const finish = () => {
-        if (done) return;
-        done = true;
         flyer.remove();
+        if (ghost) setTimeout(() => ghost.remove(), 120);
         onDone?.();
     };
     flyer.addEventListener('transitionend', finish, { once: true });
-    setTimeout(finish, duration + 100);
+    // Safety fallback
+    setTimeout(finish, duration + 50);
 }
 
 function _animateChkobbaFlightsSequential(flights, onDone) {
@@ -3449,9 +3466,46 @@ async function _stopScanner() {
     if (btn) btn.innerText = '📷 امسح الكود';
 }
 
+function _initChkobbaReactions() {
+    const chkobbaReactBar = document.getElementById('chkobba-reactions');
+    const dock = document.querySelector('.chkobba-hand-dock');
+    if (chkobbaReactBar && dock) {
+        // Show bar when clicking hand dock background
+        dock.addEventListener('click', (e) => {
+            if(e.target.closest('.chkobba-card')) return;
+            chkobbaReactBar.classList.add('show');
+
+            // Auto hide after 3 seconds
+            clearTimeout(chkobbaReactBar._hideTimer);
+            chkobbaReactBar._hideTimer = setTimeout(() => {
+                chkobbaReactBar.classList.remove('show');
+            }, 3000);
+        });
+
+        chkobbaReactBar.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (typeof _sfx !== 'undefined') _sfx.tap();
+                chkobbaReactBar.classList.remove('show');
+
+                // Broadcast reaction
+                if (_channel) {
+                    _channel.send({
+                        type: 'broadcast',
+                        event: 'reaction',
+                        payload: { name: _myName, msg: btn.innerText, sfx: 'notify' }
+                    });
+                    _showReactionFloat(_myName + ': ' + btn.innerText);
+                }
+            });
+        });
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const scanBtn = document.getElementById('open-scanner-btn');
     if (scanBtn) scanBtn.addEventListener('click', _startScanner);
+    _initChkobbaReactions();
 });
 
 // Expose for verification/debugging
@@ -3873,54 +3927,46 @@ function _renderChkobbaInfoPills(state, me) {
     });
 }
 
-function _animateChkobbaDeal(deckEl, handEl, count, onDone) {
+async function _animateChkobbaDeal(deckEl, handEl, count, onDone) {
     if (_prefersReducedMotion() || !deckEl || !handEl || count < 1) {
-        onDone?.();
-        return;
+        onDone?.(); return;
     }
-    const layer = document.getElementById('chkobba-deal-layer');
-    if (!layer) { onDone?.(); return; }
 
-    deckEl.classList.add('is-dealing');
+    // 1. Deck Pulse
+    deckEl.style.transition = "transform 140ms var(--ease-pop)";
+    deckEl.style.transform = "scale(1.06)";
+    await new Promise(r => setTimeout(r, 140));
+    deckEl.style.transform = "scale(1)";
+
     const from = deckEl.getBoundingClientRect();
     const to = handEl.getBoundingClientRect();
     const back = window.ChkobbaLogic.ASSETS.BACK;
     let finished = 0;
 
+    // Compress stagger if many cards to keep sequence ≤ 900ms
+    const staggerMs = count > 3 ? 40 : 70;
+
     for (let i = 0; i < count; i++) {
-        const clone = document.createElement('div');
-        clone.className = 'chkobba-deal-flyer';
-        clone.style.left = `${from.left + from.width / 2}px`;
-        clone.style.top = `${from.top + from.height / 2}px`;
-        clone.style.transitionDelay = `${i * 70}ms`;
-        clone.innerHTML = `<img src="${back}" alt="">`;
-        layer.appendChild(clone);
+        setTimeout(() => {
+            const targetRect = {
+                left: to.left + (i * 12), // Spread slightly in hand
+                top: to.top,
+                width: from.width, height: from.height
+            };
 
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                clone.style.left = `${to.left + to.width / 2 + (i - 1) * 12}px`;
-                clone.style.top = `${to.top + to.height * 0.5}px`;
-                clone.classList.add('is-flying');
+            _animateChkobbaFlight({
+                fromRect: from,
+                toRect: targetRect,
+                imgSrc: back,
+                rotate: (Math.random() - 0.5) * 12,
+                duration: 260,
+                onDone: () => {
+                    finished++;
+                    if (finished >= count) onDone?.();
+                }
             });
-        });
-
-        clone.addEventListener('transitionend', () => {
-            clone.remove();
-            finished++;
-            if (finished >= count) {
-                deckEl.classList.remove('is-dealing');
-                onDone?.();
-            }
-        }, { once: true });
+        }, i * staggerMs);
     }
-
-    setTimeout(() => {
-        if (finished < count) {
-            layer.innerHTML = '';
-            deckEl.classList.remove('is-dealing');
-            onDone?.();
-        }
-    }, count * 70 + 600);
 }
 
 function _showOnlineChkobba(room) {
@@ -4092,7 +4138,8 @@ async function _commitChkobbaCapture() {
             toRect: pileRect,
             imgSrc: logic.getCardAsset(playedCard),
             rotate: 4,
-            staggerAfter: 0
+            withGhost: true,
+            staggerAfter: 60
         });
     }
     capturedIds.forEach((id, i) => {
@@ -4104,7 +4151,8 @@ async function _commitChkobbaCapture() {
                 toRect: pileRect,
                 imgSrc: logic.getCardAsset(card),
                 rotate: (i % 2 === 0 ? 1 : -1) * (6 + i * 2),
-                staggerAfter: 48
+                withGhost: true,
+                staggerAfter: 60
             });
         }
     });

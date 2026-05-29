@@ -288,7 +288,14 @@
                 <div class="chkobba-info" id="chkobba-round-info"></div>
             </div>
 
-            <div class="chkobba-hand-dock">
+            <div class="chkobba-hand-dock" aria-live="polite">
+                <div class="not-your-turn-pill">⏳ دورك مازال...</div>
+                <div class="chkobba-reactions-bar" id="chkobba-reactions">
+                    <button aria-label="ضحك" data-reaction="laugh">😂</button>
+                    <button aria-label="غش" data-reaction="angry">😤</button>
+                    <button aria-label="تصفيق" data-reaction="clap">👏</button>
+                    <button aria-label="تخمام" data-reaction="think">🤔</button>
+                </div>
                 <div class="chkobba-hand" id="chkobba-my-hand"></div>
             </div>
         </section>
