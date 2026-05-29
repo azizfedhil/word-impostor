@@ -271,27 +271,25 @@
         </section>
 
         <!-- CHKOBBA SCREEN -->
-        <section id="chkobba-screen" class="screen" aria-label="شكبّة" hidden aria-hidden="true">
-            <div class="chkobba-opponents" id="chkobba-opponents"></div>
+        <section id="chkobba-screen" class="screen chkobba-screen" aria-label="شكبّة" hidden aria-hidden="true">
+            <div id="chkobba-deal-layer" class="chkobba-deal-layer" aria-hidden="true"></div>
+            <div class="chkobba-stage">
+                <div id="chkobba-opening-panel" class="chkobba-opening-panel" hidden></div>
+                <div class="chkobba-opponents" id="chkobba-opponents"></div>
 
-            <div class="chkobba-table" id="chkobba-table">
-                <!-- Cards on table -->
-            </div>
-
-            <div class="chkobba-info" id="chkobba-round-info">
-                <div id="chkobba-deck-count">🂠 40</div>
-                <div id="chkobba-scores-summary"></div>
-            </div>
-
-            <div class="chkobba-hand-wrap" style="width: 100%;">
-                <div class="chkobba-hand" id="chkobba-my-hand">
-                    <!-- Cards in hand -->
+                <div class="chkobba-table-wrap">
+                    <div id="chkobba-piles" class="chkobba-piles">
+                        <div class="chkobba-pile deck-pile" id="chkobba-deck-pile" aria-label="الكومة"></div>
+                        <div class="chkobba-pile capture-pile" id="chkobba-my-capture-pile" aria-label="الماكول"></div>
+                    </div>
+                    <div class="chkobba-table" id="chkobba-table"></div>
                 </div>
+
+                <div class="chkobba-info" id="chkobba-round-info"></div>
             </div>
 
-            <div id="chkobba-piles" style="display:flex; gap:20px; margin-bottom:10px;">
-                <div class="deck-pile" id="chkobba-deck-pile"></div>
-                <div class="capture-pile" id="chkobba-my-capture-pile"></div>
+            <div class="chkobba-hand-dock">
+                <div class="chkobba-hand" id="chkobba-my-hand"></div>
             </div>
         </section>
 

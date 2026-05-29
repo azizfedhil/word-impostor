@@ -27,7 +27,8 @@ const i18n = {
         elimination_cliffhanger:"أما الطرح مازال ما وفاش... زعما طلع هو الكذاب ولا؟ مانا قايلينلكم شي! 🤐",
         continue_discussion:"⏱️ ارجعو قطعو وريشو (دقيقة بركا)",
         chkobba_scores:"السكور",
-        chkobba_deck:"كوارط مازالت",
+        chkobba_deck:"كوارط مازالت في الكومة",
+        chkobba_round:"رقم الطرح الحالي",
         chkobba_winner:"ربح الطرح!",
         chkobba_target_points:"وصلنا لـ",
         chkobba_tournament:"تورنوا"
