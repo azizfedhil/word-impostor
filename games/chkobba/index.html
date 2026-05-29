@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>شكبّة</title>
+    <link rel="manifest" href="../../manifest.json">
+    <meta name="theme-color" content="#528c71">
+    <link rel="apple-touch-icon" href="../../icon192.png">
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script defer src="https://unpkg.com/html5-qrcode"></script>
+    <link rel="stylesheet" href="../../style.css">
+    <link rel="stylesheet" href="../../chkobba.css">
+</head>
+<body>
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+    <main class="container" id="app-shell">
+        <header class="app-header" id="app-header"></header>
+
+        <section id="online-setup-screen" class="screen active" aria-label="إعدادات الأونلاين">
+            <h2>🌐 العب شكبّة أونلاين</h2>
+            <p style="margin-bottom:24px;">كل واحد يلعب من تلفونو 📱</p>
+            <div style="margin-bottom:20px;">
+                <label style="font-weight:700; margin-bottom:8px; display:block;">اسمك في اللعبة:</label>
+                <input type="text" id="online-player-name" placeholder="اسمك" maxlength="20" autocomplete="off"/>
+            </div>
+            <button id="create-room-btn" class="primary-btn">🏠 اعمل روم جديدة</button>
+            <div class="divider">ادخل لروم موجودة</div>
+            <div class="join-flow-group">
+                <input type="text" id="room-code-input" class="code-input-lg" placeholder="ABCD12" maxlength="6" autocomplete="off"/>
+                <button id="join-room-btn" class="primary-btn" style="flex:1; margin:0; padding:14px 10px;">🚪 انضم</button>
+            </div>
+            <button id="open-scanner-btn" class="secondary-btn" style="margin-top:16px;">📷 امسح الكود</button>
+            <div id="reader-container" style="display:none; margin-bottom:20px;">
+                <div id="reader" style="width:100%; border-radius:20px; overflow:hidden;"></div>
+            </div>
+            <p id="online-setup-error" style="color:var(--danger-color); font-weight:700; margin-top:10px; text-align:center;"></p>
+        </section>
+
+        <section id="online-lobby-screen" class="screen" aria-label="لوبي" hidden aria-hidden="true">
+            <h2>🕹️ الغرفة</h2>
+            <div class="room-code-box">
+                <span style="color:var(--text-muted); font-weight:700;">كود الروم:</span>
+                <span id="display-room-code" class="room-code">------</span>
+                <div id="qrcode-container" style="display:none; justify-content:center; margin:10px 0;">
+                    <div id="qrcode" style="padding:10px; background:white; border-radius:12px;"></div>
+                </div>
+                <div style="display:flex; gap:10px; justify-content:center; margin-top:16px;">
+                    <button id="copy-code-btn" class="icon-btn" style="width:auto; padding:0 20px;">📋 كوبي</button>
+                    <button id="share-code-btn" class="primary-btn" style="width:auto; padding:10px 20px; margin:0;">📤 شارك</button>
+                </div>
+            </div>
+            <div id="lobby-players-list" class="lobby-list"></div>
+            <p id="lobby-wait-msg" style="text-align:center; font-weight:700;">⏳ نستنا لاعبين...</p>
+            <button id="online-start-btn" class="primary-btn hidden">🚀 ابدا الشكبّة</button>
+            <button id="leave-room-btn" class="danger-btn" style="margin-top:16px;">🚪 اخرج من الغرفة</button>
+        </section>
+
+        <section id="chkobba-screen" class="screen chkobba-screen" aria-label="شكبّة" hidden aria-hidden="true">
+            <div id="chkobba-deal-layer" class="chkobba-deal-layer" aria-hidden="true"></div>
+            <div class="chkobba-stage">
+                <div id="chkobba-opening-panel" class="chkobba-opening-panel" hidden></div>
+                <div class="chkobba-opponents" id="chkobba-opponents"></div>
+                <div class="chkobba-table-wrap">
+                    <div id="chkobba-piles" class="chkobba-piles">
+                        <div class="chkobba-pile deck-pile" id="chkobba-deck-pile"></div>
+                        <div class="chkobba-pile capture-pile" id="chkobba-my-capture-pile"></div>
+                    </div>
+                    <div class="chkobba-table" id="chkobba-table"></div>
+                </div>
+                <div class="chkobba-info" id="chkobba-round-info"></div>
+            </div>
+            <div class="chkobba-hand-dock">
+                <div class="chkobba-hand" id="chkobba-my-hand"></div>
+            </div>
+        </section>
+    </main>
+
+    <div id="toast-msg" class="toast"></div>
+    <script type="module" src="bootstrap.js"></script>
+</body>
+</html>

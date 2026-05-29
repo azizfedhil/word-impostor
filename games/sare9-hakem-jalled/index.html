@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>سارق، حاكم، جلّاد</title>
+    <link rel="manifest" href="../../manifest.json">
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+    <main class="container" id="app-shell">
+        <header class="app-header" id="app-header"></header>
+        <section id="setup-screen" class="screen active">
+            <h3 data-i18n="players_label">👥 اساميكم:</h3>
+            <div id="players-inputs-container"></div>
+            <button id="add-player-btn" class="add-player-btn">➕ زيد</button>
+            <div class="setting-row" style="margin-top:16px;"><span data-i18n="timer_label">⏱️ وقت</span>
+                <div class="counter-group"><button id="timer-minus" class="counter-btn">−</button><span id="val-timer" class="counter-value">3</span><button id="timer-plus" class="counter-btn">+</button></div>
+            </div>
+            <button id="start-game-btn" class="primary-btn" style="margin-top:16px;">🚀 وزّع</button>
+            <button id="open-online-btn" class="secondary-btn" style="margin-top:10px;">🌐 أونلاين</button>
+            <p id="setup-error"></p>
+        </section>
+        <section id="reveal-screen" class="screen" hidden aria-hidden="true">
+            <div class="card-container" id="single-card-container"></div>
+            <button id="next-player-btn" class="primary-btn hidden"></button>
+        </section>
+        <section id="timer-screen" class="screen" hidden aria-hidden="true">
+            <div id="timer-display" class="timer-display">03:00</div>
+            <button id="go-to-vote-btn" class="danger-btn">⚖️ احكم</button>
+        </section>
+        <section id="voting-screen" class="screen" hidden aria-hidden="true">
+            <div id="voting-list" class="voting-grid"></div>
+        </section>
+        <section id="result-screen" class="screen" hidden aria-hidden="true">
+            <h3 id="result-message"></h3>
+            <div id="impostors-reveal" class="result-box"></div>
+            <button id="next-round-btn" class="primary-btn">🔄</button>
+        </section>
+        <section id="online-setup-screen" class="screen" hidden aria-hidden="true">
+            <input id="online-player-name" placeholder="اسمك"/>
+            <button id="create-room-btn" class="primary-btn">روم</button>
+            <input id="room-code-input" class="code-input-lg"/><button id="join-room-btn" class="primary-btn">انضم</button>
+            <button id="back-to-setup-btn" class="secondary-btn">↩️</button>
+        </section>
+        <section id="online-lobby-screen" class="screen" hidden aria-hidden="true">
+            <span id="display-room-code" class="room-code">------</span>
+            <div id="lobby-players-list"></div>
+            <button id="online-start-btn" class="primary-btn hidden">ابدأ</button>
+            <button id="leave-room-btn" class="danger-btn">خرج</button>
+        </section>
+        <section id="online-card-screen" class="screen" hidden aria-hidden="true">
+            <div id="online-card-container" class="card-container"></div>
+            <button id="online-seen-btn" class="primary-btn hidden">شفت</button>
+            <button id="start-discussion-btn" class="primary-btn hidden">نقاش</button>
+        </section>
+    </main>
+    <div id="toast-msg" class="toast"></div>
+    <script type="module" src="bootstrap.js"></script>
+</body>
+</html>
