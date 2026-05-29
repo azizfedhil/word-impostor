@@ -71,7 +71,7 @@ const ChkobbaLogic = {
         const deck = this.createDeck();
         const n = playerDefs.length;
         const dealerIndex = 0;
-        const cutterIndex = n > 1 ? 1 : 0;
+        const cutterIndex = n > 1 ? Math.floor(Math.random() * n) : 0;
 
         return {
             deck,

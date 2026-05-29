@@ -164,12 +164,18 @@ body.game-chkobba header.app-header {
     border-radius: var(--radius-md) var(--radius-md) 0 0;
 }
 
+.chkobba-player-pill .pill-details-wrap {
+    border-top: 1px solid transparent;
+}
+
+.chkobba-player-pill.is-expanded .pill-details-wrap {
+    border-top-color: var(--border-color);
+}
+
 .chkobba-player-pill .pill-details {
     padding: 10px 14px 12px;
-    border-top: 1px solid var(--border-color);
     background: var(--bg-color);
     border-radius: 0 0 var(--radius-md) var(--radius-md);
-    animation: chkobbaPillExpand 0.28s var(--chkobba-ease) both;
 }
 
 .chkobba-player-pill .pill-details-grid {
@@ -385,9 +391,9 @@ body.game-chkobba header.app-header {
 }
 
 .chkobba-card.is-armed {
-    z-index: 50;
-    transform: translateY(-12px) scale(1.05);
-    box-shadow: 0 0 0 2px var(--primary-color), var(--chkobba-card-shadow);
+    z-index: 120;
+    transform: translateX(var(--stack-offset, 0px)) translateY(-14px) rotate(var(--tilt, 0deg)) scale(1.08);
+    box-shadow: 0 0 0 3px var(--primary-color), 0 12px 24px rgba(82, 140, 113, 0.25), var(--chkobba-card-shadow);
 }
 
 .chkobba-card.is-capture-candidate {
@@ -425,16 +431,27 @@ body.game-chkobba header.app-header {
 .chkobba-card.hand-card {
     transform: translateX(var(--stack-offset, 0px)) rotate(var(--tilt, 0deg));
     margin-left: calc(var(--stack-overlap, 0px) * -1);
+    z-index: calc(10 + var(--hand-index, 0));
 }
 
 .chkobba-card.hand-card:first-child {
     margin-left: 0;
 }
 
-.chkobba-card.hand-card:hover,
-.chkobba-card.hand-card.is-lifted {
-    transform: translateX(var(--stack-offset, 0px)) translateY(-14px) rotate(var(--tilt, 0deg)) scale(1.06);
-    z-index: 100;
+@media (hover: hover) {
+    .chkobba-hand-dock.is-active-turn .chkobba-card.hand-card:hover,
+    .chkobba-hand-dock.is-active-turn .chkobba-card.hand-card.is-lifted {
+        transform: translateX(var(--stack-offset, 0px)) translateY(-14px) rotate(var(--tilt, 0deg)) scale(1.06);
+        z-index: 100;
+        box-shadow: 0 14px 28px rgba(0, 0, 0, 0.18), var(--chkobba-card-shadow);
+    }
+}
+
+@media (hover: none) {
+    .chkobba-hand-dock.is-active-turn .chkobba-card.hand-card:active {
+        transform: translateX(var(--stack-offset, 0px)) translateY(-10px) rotate(var(--tilt, 0deg)) scale(1.04);
+        z-index: 100;
+    }
 }
 
 .chkobba-card.dragging,
@@ -557,18 +574,40 @@ body.game-chkobba header.app-header {
     width: 100%;
     padding: 12px 8px 16px;
     flex-shrink: 0;
+    transition: opacity 0.28s var(--chkobba-ease), filter 0.28s var(--chkobba-ease), box-shadow 0.28s var(--chkobba-ease);
+}
+
+.chkobba-hand-dock.is-active-turn {
+    box-shadow: 0 -4px 24px rgba(82, 140, 113, 0.12);
+}
+
+.chkobba-hand-dock.is-inactive-turn {
+    opacity: 0.58;
+    filter: saturate(0.82);
+}
+
+.chkobba-hand-dock.is-inactive-turn .chkobba-card.hand-card {
+    pointer-events: none;
+    cursor: default;
 }
 
 .chkobba-hand {
     display: flex;
     justify-content: center;
     align-items: flex-end;
-    min-height: calc(var(--chkobba-card-h) + 20px);
-    padding: 10px 6px;
-    background: color-mix(in srgb, var(--surface-color) 88%, transparent);
+    min-height: calc(var(--chkobba-card-h) + 24px);
+    padding: 12px 10px 14px;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--surface-color) 95%, transparent), color-mix(in srgb, var(--bg-color) 70%, transparent));
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-    box-shadow: var(--chkobba-surface-shadow);
+    box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.04), var(--chkobba-surface-shadow);
+}
+
+@media (max-width: 380px) {
+    :root {
+        --chkobba-card-w: 64px;
+        --chkobba-card-h: 94px;
+    }
 }
 
 /* Announcements */

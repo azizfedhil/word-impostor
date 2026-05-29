@@ -1,4 +1,7 @@
 import { bootstrapGamePage } from '../../shared/bootstrap/game-bootstrap.js';
+import ChkobbaAnim from './animations.js';
+
+window.ChkobbaAnim = ChkobbaAnim;
 
 function patchChkobbaAssets() {
     const L = window.ChkobbaLogic;

@@ -1,0 +1,222 @@
+/* Chkobba fly + celebration (GPU-friendly) */
+
+.chkobba-fly-card {
+    position: fixed;
+    width: var(--chkobba-card-w, 72px);
+    height: var(--chkobba-card-h, 106px);
+    transform: translate(-50%, -50%) scale(1);
+    z-index: 9999;
+    pointer-events: none;
+    transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+        top 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: left, top, transform;
+    filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.22));
+}
+
+.chkobba-fly-card.is-flying {
+    transform: translate(-50%, -50%) scale(1.04) rotate(2deg);
+}
+
+.chkobba-fly-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+/* Table card lands from network */
+.chkobba-card.table-card.is-landing {
+    animation: chkobbaCardLand 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes chkobbaCardLand {
+    from {
+        opacity: 0;
+        transform: rotate(var(--rot, 0deg)) scale(0.88) translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: rotate(var(--rot, 0deg)) scale(1) translateY(0);
+    }
+}
+
+/* Celebration overlay */
+.chkobba-celebrate-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10050;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.12);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.chkobba-celebrate-overlay.is-active {
+    opacity: 1;
+}
+
+.chkobba-celebrate-overlay.is-leaving {
+    opacity: 0;
+}
+
+.chkobba-celebrate-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    animation: chkobbaCelebrateIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.chkobba-celebrate-overlay.is-leaving .chkobba-celebrate-inner {
+    animation: chkobbaCelebrateOut 0.28s ease forwards;
+}
+
+@keyframes chkobbaCelebrateIn {
+    from {
+        opacity: 0;
+        transform: scale(0.7) translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes chkobbaCelebrateOut {
+    to {
+        opacity: 0;
+        transform: scale(1.15) translateY(-8px);
+    }
+}
+
+.chkobba-celebrate-card-3d {
+    width: 88px;
+    height: 128px;
+    perspective: 600px;
+    transform-style: preserve-3d;
+}
+
+.chkobba-celebrate-card-face {
+    width: 100%;
+    height: 100%;
+    border-radius: 14px;
+    background: linear-gradient(145deg, #fef9e7, #f1c051);
+    box-shadow: 0 0 28px rgba(241, 192, 81, 0.55), 0 16px 40px rgba(0, 0, 0, 0.2);
+    animation: chkobbaCelebrateSpin 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+    border: 2px solid rgba(241, 192, 81, 0.8);
+}
+
+.chkobba-celebrate-overlay.type-berria .chkobba-celebrate-card-face {
+    background: linear-gradient(145deg, #fff5f5, #e74c3c);
+    box-shadow: 0 0 32px rgba(231, 76, 60, 0.5), 0 16px 40px rgba(0, 0, 0, 0.2);
+    border-color: rgba(231, 76, 60, 0.7);
+}
+
+@keyframes chkobbaCelebrateSpin {
+    0% {
+        transform: rotateY(0deg) scale(0.85);
+    }
+    40% {
+        transform: rotateY(200deg) scale(1.12);
+    }
+    100% {
+        transform: rotateY(360deg) scale(1);
+    }
+}
+
+.chkobba-celebrate-label {
+    text-align: center;
+    color: var(--text-main);
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+}
+
+.chkobba-celebrate-label strong {
+    display: block;
+    font-size: clamp(1.6rem, 7vw, 2.4rem);
+    font-weight: 900;
+    color: var(--accent-color);
+}
+
+.chkobba-celebrate-overlay.type-berria .chkobba-celebrate-label strong {
+    color: var(--danger-color);
+}
+
+.chkobba-celebrate-label span {
+    display: block;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--text-muted);
+    margin-top: 4px;
+    letter-spacing: 0.08em;
+}
+
+/* Capture pile pulse */
+.chkobba-pile.capture-pile.is-pulse {
+    animation: chkobbaPilePulse 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes chkobbaPilePulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+}
+
+/* Pill dropdown — grid collapse (paired with chkobba.css base) */
+.chkobba-player-pill .pill-details-wrap {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition: grid-template-rows 0.26s cubic-bezier(0.16, 1, 0.3, 1),
+        opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.chkobba-player-pill.is-expanded .pill-details-wrap {
+    grid-template-rows: 1fr;
+    opacity: 1;
+}
+
+.chkobba-player-pill .pill-details-inner {
+    overflow: hidden;
+}
+
+.chkobba-player-pill .pill-chevron {
+    transition: transform 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.chkobba-player-pill.is-expanded .pill-chevron {
+    transform: rotate(180deg);
+}
+
+.chkobba-player-pill.is-cutter .pill-name::after {
+    content: ' · يقصّ';
+    font-size: 0.78em;
+    color: var(--primary-color);
+    font-weight: 800;
+}
+
+.chkobba-opening-panel.is-my-cut {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(82, 140, 113, 0.2), var(--chkobba-surface-shadow, var(--shadow-soft));
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .chkobba-fly-card,
+    .chkobba-celebrate-inner,
+    .chkobba-celebrate-card-face,
+    .chkobba-card.table-card.is-landing,
+    .chkobba-pile.capture-pile.is-pulse,
+    .chkobba-player-pill .pill-details-wrap,
+    .chkobba-player-pill .pill-chevron {
+        animation: none !important;
+        transition: none !important;
+    }
+
+    .chkobba-player-pill.is-expanded .pill-details-wrap {
+        grid-template-rows: 1fr;
+        opacity: 1;
+    }
+}
