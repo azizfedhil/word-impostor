@@ -439,6 +439,10 @@ function _handleStateChange(room) {
         case 'chkobba':    _showOnlineChkobba(room); break;
         case 'chkobba_tournament': _showTournamentBracket(room); break;
     }
+    if (room.state !== 'chkobba') {
+        document.getElementById('chkobba-victory-screen')?.classList.add('hidden');
+        document.getElementById('chkobba-main-stage')?.classList.remove('hidden');
+    }
 }
 
 function _snapshotConfig() {
@@ -618,6 +622,7 @@ let _lastChkobbaAnnounced = null;
 let _chkobbaPlaySession = null;
 let _chkobbaLastSnapshot = null;
 let _chkobbaExpandedInfoPill = null;
+let _chkobbaExpandedPillId = null;
 let _chkobbaSkipDealAnim = false;
 let _chkobbaAnimating = false;
 let _chkobbaOpponentPillEls = new Map();
@@ -1044,6 +1049,7 @@ async function _onChkobbaPointerUp(e, moved) {
     document.getElementById('chkobba-my-capture-pile')?.classList.remove('is-drop-target');
 
     const target = document.elementFromPoint(e.clientX, e.clientY);
+    const droppedHandIdx = parseInt(cardEl.dataset.index, 10);
 
     if (!moved) {
         if (cardEl.classList.contains('hand-card')) _armChkobbaHandCard(cardEl);
@@ -1051,15 +1057,20 @@ async function _onChkobbaPointerUp(e, moved) {
         return;
     }
 
-    if (_chkobbaPlaySession?.phase === 'readyCapture') {
-        if (target?.closest?.('#chkobba-my-capture-pile')) await _commitChkobbaCapture();
-    } else if (_chkobbaPlaySession?.phase === 'armed') {
-        if (target?.closest?.('#chkobba-table') && !target?.closest?.('.table-card')) {
-            await _commitChkobbaPlayToTable();
+    if (target?.closest?.('#chkobba-my-capture-pile')) {
+        if (_chkobbaPlaySession?.phase === 'readyCapture' && _chkobbaPlaySession.handIndex === droppedHandIdx) {
+            await _commitChkobbaCapture();
         }
-    } else if (_chkobbaPlaySession?.phase === 'selecting') {
+    } else if (target?.closest?.('#chkobba-table')) {
         const tableCard = target?.closest?.('.table-card');
-        if (tableCard) _onChkobbaTableCardTap(tableCard);
+        if (tableCard) {
+            if (!_chkobbaPlaySession || _chkobbaPlaySession.handIndex !== droppedHandIdx) {
+                _armChkobbaHandCard(cardEl);
+            }
+            _onChkobbaTableCardTap(tableCard);
+        } else {
+            await _commitChkobbaPlayToTable(droppedHandIdx);
+        }
     }
 
     _chkobbaPointerDrag = null;
@@ -2747,6 +2758,23 @@ function _showOnlineCoup(room) {
     window.CoupUI?.renderRoleHelp?.(_coupCards);
     _renderOnlineCoupActions(room, state, me);
     _renderOnlineCoupLeaveButton(room);
+    _renderOnlineChkobbaLeaveButton(room);
+}
+
+function _renderOnlineChkobbaLeaveButton(room) {
+    document.getElementById('online-chkobba-leave-btn')?.remove();
+    if (!room || !window.onlineMode) return;
+    const section = document.getElementById('chkobba-screen');
+    if (!section) return;
+    const btn = document.createElement('button');
+    btn.id = 'online-chkobba-leave-btn';
+    btn.className = 'round-leave-btn coup-reconnect-btn';
+    btn.type = 'button';
+    btn.textContent = '🚪 نخرج ونرجع';
+    btn.addEventListener('click', _disconnectForReconnect);
+    btn.style.marginTop = '20px';
+    btn.style.marginBottom = '20px';
+    section.appendChild(btn);
 }
 
 function _renderOnlineCoupLeaveButton(room) {
@@ -3528,7 +3556,7 @@ window._syncedNow = _syncedNow;
 function _renderChkobbaLobbySettings(anchorBtn, room) {
     const cfg = room.config || {};
     const mode = cfg.chkobbaMode || '1v1';
-    const target = cfg.chkobbaTarget || 21;
+    const target = cfg.chkobbaTarget || 11;
     const tournament = !!cfg.chkobbaTournament;
     const turnTime = cfg.chkobbaTurnTime || 45;
 
@@ -3618,8 +3646,8 @@ function _renderChkobbaLobbySettings(anchorBtn, room) {
         };
     });
 
-    wrap.querySelector('#chk-target-minus').onclick = () => updateConfig({ chkobbaTarget: Math.max(11, target - 10) });
-    wrap.querySelector('#chk-target-plus').onclick = () => updateConfig({ chkobbaTarget: Math.min(101, target + 10) });
+    wrap.querySelector('#chk-target-minus').onclick = () => updateConfig({ chkobbaTarget: Math.max(6, target - 1) });
+    wrap.querySelector('#chk-target-plus').onclick = () => updateConfig({ chkobbaTarget: Math.min(21, target + 1) });
 
     wrap.querySelector('#chk-time-minus').onclick = () => updateConfig({ chkobbaTurnTime: Math.max(15, turnTime - 15) });
     wrap.querySelector('#chk-time-plus').onclick = () => updateConfig({ chkobbaTurnTime: Math.min(120, turnTime + 15) });
@@ -3658,7 +3686,7 @@ async function _startOnlineChkobbaGame() {
         })),
         {
             teams,
-            targetScore: cfg.chkobbaTarget || 21,
+            targetScore: cfg.chkobbaTarget || 11,
             mode,
             tournament: !!cfg.chkobbaTournament
         }
@@ -3826,11 +3854,14 @@ async function _chkobbaAcceptStarter() {
     _chkobbaLastSnapshot = null;
 }
 
-function _buildChkobbaOpponentPillHtml(p, state, { active, isTeammate, isExpanded, offline, dinari }) {
+function _buildChkobbaOpponentPillHtml(p, state, { active, isTeammate, isExpanded, offline, dinari, hasBerria }) {
     const isMe = p.id === _myId;
     return `
         <div class="pill-main">
-            <div class="pill-name">${_esc(p.name)}${isMe ? ' <span class="you-tag">أنا</span>' : ''}${active ? ' ●' : ''}</div>
+            <div class="pill-name">
+                ${_esc(p.name)}${isMe ? ' <span class="you-tag">أنا</span>' : ''}${active ? ' ●' : ''}
+                ${hasBerria ? '<span class="berria-pill-icon" title="السبعة الحية">♦️7</span>' : ''}
+            </div>
             <div class="pill-stats-row">
                 <div class="pill-stat" title="كوارط في اليد">🃏 ${p.hand.length}</div>
                 <div class="pill-stat" title="الماكول">📥 ${p.captured?.length || 0}</div>
@@ -3871,10 +3902,12 @@ function _renderChkobbaOpponentPills(room, state, me, mode, roomPlayerMeta) {
         const isMe = p.id === _myId;
         const active = state.players[state.turnIndex].id === p.id;
         const isTeammate = mode === '2v2' && p.team === me?.team;
-        const isExpanded = _onlineCoupSummaryExpandedId === p.id;
+        const isExpanded = _chkobbaExpandedPillId === p.id;
         const meta = roomPlayerMeta[p.id];
         const offline = !isMe && meta && meta.connected === false;
-        const dinari = p.captured?.filter(c => c.suit === 'diamonds').length || 0;
+        const captured = p.captured || [];
+        const dinari = captured.filter(c => c.suit === 'diamonds').length;
+        const hasBerria = captured.some(c => c.suit === 'diamonds' && c.value === 7);
 
         let pill = _chkobbaOpponentPillEls.get(p.id);
         const isNew = !pill;
@@ -3893,10 +3926,10 @@ function _renderChkobbaOpponentPills(room, state, me, mode, roomPlayerMeta) {
         pill.dataset.expanded = String(isExpanded);
         pill.className = `chkobba-player-pill ${active ? 'is-turn' : ''} ${isMe ? 'is-me' : ''} ${isTeammate ? 'is-teammate' : ''} ${isExpanded ? 'is-expanded' : ''} ${offline ? 'is-offline' : ''}${isNew ? ' is-entering' : ''}`;
 
-        pill.innerHTML = _buildChkobbaOpponentPillHtml(p, state, { active, isTeammate, isExpanded, offline, dinari });
+        pill.innerHTML = _buildChkobbaOpponentPillHtml(p, state, { active, isTeammate, isExpanded, offline, dinari, hasBerria });
 
         pill.onclick = () => {
-            _onlineCoupSummaryExpandedId = isExpanded ? null : p.id;
+            _chkobbaExpandedPillId = isExpanded ? null : p.id;
             _showOnlineChkobba(room);
         };
     });
@@ -4006,6 +4039,14 @@ function _showOnlineChkobba(room) {
     const state = room.word_obj;
     if (!state) return;
 
+    if (state.phase === 'finished') {
+        _renderChkobbaVictory(room, state);
+        return;
+    }
+
+    document.getElementById('chkobba-victory-screen')?.classList.add('hidden');
+    document.getElementById('chkobba-main-stage')?.classList.remove('hidden');
+
     const me = state.players.find(p => p.id === _myId);
     const isMyTurn = state.players[state.turnIndex].id === _myId;
     const mode = state.mode || '1v1';
@@ -4107,6 +4148,8 @@ function _showOnlineChkobba(room) {
         if (nameEl) nameEl.innerText = state.players[state.turnIndex].name;
         _startOnlineChkobbaTimer(room);
     }
+
+    _renderOnlineChkobbaLeaveButton(room);
 }
 
 let _chkobbaTimer = null;
@@ -4187,10 +4230,11 @@ async function _chkobbaTimeout() {
                     const allCaptured = [card, ...capturedCards];
                     rp.captured.push(...allCaptured);
                     rs.lastCaptureId = rp.id;
-                    if (rs.table.length === 0 && rs.deck.length > 0) {
+                    if (rs.table.length === 0 && (rs.deck.length > 0 || rs.players.some(pl => pl.hand.length > 0))) {
                         rp.chkobbas++;
                         rs.chkobbaEvent = { type: 'chkobba', playerId: rp.id, name: rp.name };
-                    } else if (allCaptured.some(c => c.id === 'diamonds_7') && capturedCards.some(c => c.id === 'diamonds_7')) {
+                    }
+                    if (allCaptured.some(c => c.id === 'diamonds_7') && capturedCards.some(c => c.id === 'diamonds_7')) {
                         rs.chkobbaEvent = { type: 'berria', playerId: rp.id, name: rp.name };
                     }
                 } else {
@@ -4250,6 +4294,7 @@ async function _chkobbaTimeout() {
                 rotate: -6,
                 onDone: async () => {
                     _chkobbaAnimating = false;
+            _sfx.tap();
                     await runActualMutate();
                 }
             });
@@ -4359,10 +4404,11 @@ async function _commitChkobbaCapture() {
             p.captured.push(...allCaptured);
             s.lastCaptureId = _myId;
 
-            if (s.table.length === 0 && s.deck.length > 0) {
+            if (s.table.length === 0 && (s.deck.length > 0 || s.players.some(pl => pl.hand.length > 0))) {
                 p.chkobbas++;
                 s.chkobbaEvent = { type: 'chkobba', playerId: _myId, name: p.name };
-            } else if (allCaptured.some(c => c.id === 'diamonds_7') && capturedCards.some(c => c.id === 'diamonds_7')) {
+            }
+            if (allCaptured.some(c => c.id === 'diamonds_7') && capturedCards.some(c => c.id === 'diamonds_7')) {
                 // Trigger Berria ONLY if it was taken from the TABLE
                 s.chkobbaEvent = { type: 'berria', playerId: _myId, name: p.name };
             }
@@ -4382,20 +4428,26 @@ async function _commitChkobbaCapture() {
     _chkobbaAnimating = true;
     _animateChkobbaFlightsSequential(flights, async () => {
         _chkobbaAnimating = false;
+        _sfx.cardFlip();
         await runMutate();
     });
 }
 
-async function _commitChkobbaPlayToTable() {
+async function _commitChkobbaPlayToTable(handIdx = null) {
     if (_chkobbaAnimating) return;
     const ctx = _getChkobbaPlayContext();
-    if (!ctx || !_chkobbaPlaySession) return;
+    if (!ctx) return;
 
-    const handIndex = _chkobbaPlaySession.handIndex;
-    const playedCard = _chkobbaPlaySession.playedCard;
+    const handIndex = handIdx !== null ? parseInt(handIdx, 10) : _chkobbaPlaySession?.handIndex;
+    if (handIndex === undefined || handIndex === null) return;
+
+    const playedCard = ctx.me.hand[handIndex];
+    if (!playedCard) return;
+
     const captures = ctx.logic.getValidCaptures(playedCard, ctx.state.table);
     if (captures.length > 0) {
         showToast('لازم تاكل! فما كوارط تنجم تاخذهم.');
+        _resetChkobbaPlaySession();
         return;
     }
 
@@ -4441,6 +4493,7 @@ async function _commitChkobbaPlayToTable() {
         rotate: -6,
         onDone: async () => {
             _chkobbaAnimating = false;
+            _sfx.tap();
             await runMutate();
         }
     });
@@ -4507,6 +4560,7 @@ function _endChkobbaRound(state, roomObj) {
     if (gameOver) {
         state.phase = 'finished';
         state.log = 'الطرح وفى!';
+        state.finalScores = scores;
     } else {
         // Reset for next round
         const deck = logic.createDeck();
@@ -4559,12 +4613,28 @@ function _handleChkobbaBroadcastEvent(event) {
 
     const cardFlip = document.createElement('div');
     cardFlip.className = 'chkobba-celebration-card';
-    const flipImg = document.createElement('img');
-    flipImg.alt = '';
-    flipImg.src = isBerria
+    const inner = document.createElement('div');
+    inner.className = 'chkobba-celebration-card-inner';
+    
+    const front = document.createElement('div');
+    front.className = 'chkobba-celebration-card-front';
+    const frontImg = document.createElement('img');
+    frontImg.src = isBerria
         ? window.ChkobbaLogic.getCardAsset({ suit: 'diamonds', value: 7 })
         : window.ChkobbaLogic.ASSETS.BACK;
-    cardFlip.appendChild(flipImg);
+    front.appendChild(frontImg);
+    
+    const back = document.createElement('div');
+    back.className = 'chkobba-celebration-card-back';
+    const backImg = document.createElement('img');
+    backImg.src = isBerria
+        ? window.ChkobbaLogic.ASSETS.BACK
+        : window.ChkobbaLogic.getCardAsset({ suit: 'diamonds', value: 7 }); // Just a card for Chkobba
+    back.appendChild(backImg);
+    
+    inner.appendChild(front);
+    inner.appendChild(back);
+    cardFlip.appendChild(inner);
     wrap.appendChild(cardFlip);
 
     const announce = document.createElement('div');
@@ -4703,7 +4773,87 @@ function _initMatch(match, config) {
     const logic = window.ChkobbaLogic;
     const gameState = logic.createNewGameState(
         match.players.map(p => ({ id: p.id, name: p.name })),
-        { mode: config.chkobbaMode || '1v1', targetScore: config.chkobbaTarget || 21 }
+        { mode: config.chkobbaMode || '1v1', targetScore: config.chkobbaTarget || 11 }
     );
     Object.assign(match, gameState);
+}
+
+function _renderChkobbaVictory(room, state) {
+    const vic = document.getElementById('chkobba-victory-screen');
+    const stage = document.getElementById('chkobba-main-stage');
+    if (!vic || !stage) return;
+
+    vic.classList.remove('hidden');
+    stage.classList.add('hidden');
+
+    const logic = window.ChkobbaLogic;
+    const scoreboard = document.getElementById('chkobba-final-scoreboard');
+    scoreboard.innerHTML = '';
+
+    const winners = state.players.filter(p => p.totalScore >= state.targetScore);
+    const winnerNameEl = document.getElementById('chkobba-winner-name');
+    if (winners.length > 0) {
+        winnerNameEl.innerText = `${winners.map(w => w.name).join(' و ')} ربحوا!`;
+        _sfx.win();
+    } else {
+        winnerNameEl.innerText = 'وفى الماتش!';
+    }
+
+    state.players.forEach(p => {
+        const item = document.createElement('div');
+        item.className = 'scoreboard-item';
+        if (p.totalScore >= state.targetScore) item.classList.add('is-winner');
+
+        const details = state.finalScores?.[p.id]?.details || {};
+        
+        const cardAsset = (val) => logic.getCardAsset({ suit: 'diamonds', value: val });
+        const backAsset = logic.ASSETS.BACK;
+
+        item.innerHTML = `
+            <div class="scoreboard-item-header">
+                <span class="scoreboard-name">${_esc(p.name)}</span>
+                <span class="scoreboard-total">${p.totalScore}</span>
+            </div>
+            <div class="scoreboard-details-grid">
+                <div class="score-detail-row">
+                    <img src="${backAsset}" alt="">
+                    <span>كوارط:</span>
+                    <strong>${details.carti ? '+1' : '0'}</strong>
+                </div>
+                <div class="score-detail-row">
+                    <img src="${cardAsset(7)}" alt="">
+                    <span>ديناري:</span>
+                    <strong>${details.dinari ? '+1' : '0'}</strong>
+                </div>
+                <div class="score-detail-row">
+                    <img src="${cardAsset(7)}" alt="">
+                    <span>السبعة الحية:</span>
+                    <strong>${details.berria ? '+1' : '0'}</strong>
+                </div>
+                <div class="score-detail-row">
+                    <img src="${cardAsset(6)}" alt="">
+                    <span>برميلة:</span>
+                    <strong>${details.bermila ? '+1' : '0'}</strong>
+                </div>
+                <div class="score-detail-row">
+                    <span style="font-size:1.2rem;">⚡</span>
+                    <span>شكبّة:</span>
+                    <strong>+${details.chkobba || 0}</strong>
+                </div>
+            </div>
+        `;
+        scoreboard.appendChild(item);
+    });
+
+    const resetBtn = document.getElementById('chkobba-reset-btn');
+    const resetWait = document.getElementById('chkobba-reset-wait');
+
+    if (_isHost) {
+        resetBtn.classList.remove('hidden');
+        resetWait.classList.add('hidden');
+        resetBtn.onclick = () => _resetToLobby();
+    } else {
+        resetBtn.classList.add('hidden');
+        resetWait.classList.remove('hidden');
+    }
 }
