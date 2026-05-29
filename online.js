@@ -914,7 +914,7 @@ function _ensureChkobbaTableListeners() {
     });
     tableCont.addEventListener('drop', _onChkobbaTableDrop);
     tableCont.addEventListener('click', (e) => {
-        if (e.target === tableCont && _chkobbaPlaySession?.phase === 'armed') {
+        if (_chkobbaPlaySession?.phase === 'armed' && !e.target.closest('.table-card')) {
             _commitChkobbaPlayToTable();
         }
     });
@@ -3522,6 +3522,7 @@ function _renderChkobbaLobbySettings(anchorBtn, room) {
     const mode = cfg.chkobbaMode || '1v1';
     const target = cfg.chkobbaTarget || 21;
     const tournament = !!cfg.chkobbaTournament;
+    const turnTime = cfg.chkobbaTurnTime || 45;
 
     // Mode names map
     const modeLabels = {
@@ -3568,6 +3569,17 @@ function _renderChkobbaLobbySettings(anchorBtn, room) {
                 </div>
             </div>
 
+            <div class="setting-row">
+                <div class="setting-info">
+                    <span class="setting-title">⏱️ وقت الدور (ثانية)</span>
+                </div>
+                <div class="counter-group">
+                    <button class="counter-btn" id="chk-time-minus">−</button>
+                    <span class="counter-value" id="chk-time-val">${turnTime}</span>
+                    <button class="counter-btn" id="chk-time-plus">+</button>
+                </div>
+            </div>
+
             <div class="toggle-row" style="border-bottom:none; margin-top:16px;">
                 <span class="toggle-label">🏆 نظام تورنوا</span>
                 <div class="toggle-switch ${tournament?'active':''}" id="chk-tournament-tog">
@@ -3601,6 +3613,9 @@ function _renderChkobbaLobbySettings(anchorBtn, room) {
     wrap.querySelector('#chk-target-minus').onclick = () => updateConfig({ chkobbaTarget: Math.max(11, target - 10) });
     wrap.querySelector('#chk-target-plus').onclick = () => updateConfig({ chkobbaTarget: Math.min(101, target + 10) });
 
+    wrap.querySelector('#chk-time-minus').onclick = () => updateConfig({ chkobbaTurnTime: Math.max(15, turnTime - 15) });
+    wrap.querySelector('#chk-time-plus').onclick = () => updateConfig({ chkobbaTurnTime: Math.min(120, turnTime + 15) });
+
     wrap.querySelector('#chk-tournament-tog').onclick = () => {
         updateConfig({ chkobbaTournament: !tournament });
     };
@@ -3611,6 +3626,7 @@ async function _startOnlineChkobbaGame() {
     const allP = _room.players || [];
     const cfg = _room.config || {};
     const mode = cfg.chkobbaMode || '1v1';
+    const turnTime = cfg.chkobbaTurnTime || 45;
 
     // Validate player count for mode
     const needed = mode === '1v1' ? 2 : mode === '1v1v1' ? 3 : 4;
@@ -3641,8 +3657,10 @@ async function _startOnlineChkobbaGame() {
     );
 
     try {
+        const timerEndAt = new Date(_syncedNow() + turnTime * 1000).toISOString();
         await _update(_room.code, {
             state: 'chkobba',
+            timer_end_at: timerEndAt,
             word_obj: state,
             config: { ...cfg, gameMode: 'chkobba' }
         });
@@ -3720,8 +3738,9 @@ function _renderChkobbaOpening(room, state) {
             ` : ''}
             ${amDealer && !amCutter ? '<p>إذا قبلها، التاجر يعطيه كارتين زيادة. وإلا تبقى على الطاولة.</p>' : ''}
         `;
+        const displayCard = amCutter ? state.starterCard : { id: 'hidden', suit: 'back', value: 0 };
         panel.querySelector('#chkobba-starter-slot')?.appendChild(
-            _renderChkobbaCard(state.starterCard, { zone: 'table', index: 0, interactive: false })
+            _renderChkobbaCard(displayCard, { zone: 'table', index: 0, interactive: false })
         );
     } else {
         panel.innerHTML = `<h3>⏳ تحضير الطرح</h3><p>${_esc(state.log || '')}</p>`;
@@ -3925,6 +3944,22 @@ function _renderChkobbaInfoPills(state, me) {
         };
         infoCont.appendChild(el);
     });
+
+    // Voice Chat Toggle
+    const voiceActive = typeof _voiceOn !== 'undefined' && _voiceOn;
+    const vBtn = document.createElement('button');
+    vBtn.type = 'button';
+    vBtn.className = `chkobba-info-pill voice-info-pill ${voiceActive ? 'voice-active' : ''}`;
+    vBtn.innerHTML = `<span class="info-pill-collapsed">${voiceActive ? '🔴' : '🎙️'} <span class="info-pill-label">${voiceActive ? 'نقص الصوت' : 'نحل الصوت'}</span></span>`;
+    vBtn.onclick = () => {
+        if (typeof _voiceOn !== 'undefined' && _voiceOn) {
+            stopVoice();
+        } else {
+            if (_room) initVoice(_room.code);
+        }
+        setTimeout(() => _renderChkobbaInfoPills(state, me), 200);
+    };
+    infoCont.appendChild(vBtn);
 }
 
 async function _animateChkobbaDeal(deckEl, handEl, count, onDone) {
@@ -4073,7 +4108,65 @@ function _showOnlineChkobba(room) {
         indicator.classList.remove('hidden');
         const nameEl = document.getElementById('cti-player-name');
         if (nameEl) nameEl.innerText = state.players[state.turnIndex].name;
+        _startOnlineChkobbaTimer(room);
     }
+}
+
+let _chkobbaTimer = null;
+let _chkobbaTimingOut = false;
+
+function _startOnlineChkobbaTimer(room) {
+    clearInterval(_chkobbaTimer);
+    const timerEl = document.getElementById('chkobba-turn-timer');
+    if (!timerEl) return;
+
+    if (!room.timer_end_at || room.word_obj?.phase !== 'playing') {
+        timerEl.classList.add('hidden');
+        return;
+    }
+
+    timerEl.classList.remove('hidden');
+
+    const tick = () => {
+        const endTime = new Date(room.timer_end_at).getTime();
+        const left = Math.max(0, Math.ceil((endTime - _syncedNow()) / 1000));
+
+        const m = Math.floor(left / 60).toString().padStart(2, '0');
+        const s = (left % 60).toString().padStart(2, '0');
+        timerEl.innerText = `${m}:${s}`;
+
+        if (left <= 10) timerEl.style.color = 'var(--danger-color)';
+        else timerEl.style.color = '';
+
+        if (left <= 0 && _isHost && !_chkobbaTimingOut && room.word_obj?.phase === 'playing') {
+            _chkobbaTimeout();
+        }
+    };
+    tick();
+    _chkobbaTimer = setInterval(tick, 500);
+}
+
+async function _chkobbaTimeout() {
+    if (!_room || _chkobbaTimingOut) return;
+    _chkobbaTimingOut = true;
+    try {
+        await _mutatePlayers(_room.code, (players, room) => {
+            const s = room.word_obj;
+            if (s.phase !== 'playing') return null;
+
+            const p = s.players[s.turnIndex];
+            if (p.hand.length > 0) {
+                // Play first card in hand to table
+                const card = p.hand.splice(0, 1)[0];
+                s.table.push(card);
+            }
+
+            _advanceChkobbaTurn(s);
+            room.word_obj = s;
+            return players;
+        }, null, (room, players) => ({ word_obj: room.word_obj, timer_end_at: room.timer_end_at }));
+    } catch(e) { console.error(e); }
+    finally { _chkobbaTimingOut = false; }
 }
 
 function _onChkobbaDragStart(e) {
@@ -4254,6 +4347,13 @@ async function _commitChkobbaPlayToTable() {
 function _advanceChkobbaTurn(state) {
     state.turnIndex = (state.turnIndex + 1) % state.players.length;
 
+    if (_room && _isHost) {
+        const turnTime = _room.config?.chkobbaTurnTime || 45;
+        const timerEndAt = new Date(_syncedNow() + turnTime * 1000).toISOString();
+        // This will be committed by the caller since _advanceChkobbaTurn is usually called inside a mutation
+        _room.timer_end_at = timerEndAt;
+    }
+
     // Check if everyone played their 3 cards
     const allEmpty = state.players.every(p => p.hand.length === 0);
     if (allEmpty) {
@@ -4315,6 +4415,12 @@ function _endChkobbaRound(state) {
         });
         state.round++;
         state.turnIndex = 0; // Usually dealer moves, but we'll keep it simple
+
+        if (_room && _isHost) {
+            const turnTime = _room.config?.chkobbaTurnTime || 45;
+            const timerEndAt = new Date(_syncedNow() + turnTime * 1000).toISOString();
+            _room.timer_end_at = timerEndAt;
+        }
     }
 }
 
