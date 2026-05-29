@@ -1,0 +1,13 @@
+127.0.0.1 - - [28/May/2026 20:27:24] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 20:27:24] "GET /style.css HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 20:27:24] "GET /sounds.js HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 20:27:24] "GET /app.js HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 20:27:24] "GET /online.js HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 20:27:24] "GET /adult_words_data.js HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 20:27:24] "GET /voice.js HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 20:27:24] "GET /analytics.js HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 20:27:25] "GET /word%20list.json HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 20:27:25] "GET /spyfall_tunisia_100_locations.json HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 20:27:25] "GET /spyfall_tunisia_100_locations.json HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 20:27:26] "GET /assets/coup/duke.png HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 20:27:26] "GET /assets/coup/captain.png HTTP/1.1" 200 -
