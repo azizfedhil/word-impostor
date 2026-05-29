@@ -733,7 +733,7 @@ function _animateChkobbaFlight({ fromRect, toRect, imgSrc, duration = 260, rotat
 
     const finish = () => {
         flyer.remove();
-        if (ghost) setTimeout(() => ghost.remove(), 120);
+        if (ghost) setTimeout(() => ghost.remove(), 300);
         onDone?.();
     };
     flyer.addEventListener('transitionend', finish, { once: true });
@@ -746,19 +746,27 @@ function _animateChkobbaFlightsSequential(flights, onDone) {
         onDone?.();
         return;
     }
-    let i = 0;
-    const step = () => {
-        if (i >= flights.length) {
-            onDone?.();
-            return;
-        }
-        const { staggerAfter, ...flightOpts } = flights[i++];
+    let started = 0;
+    let finished = 0;
+    const total = flights.length;
+
+    const startNext = () => {
+        if (started >= total) return;
+        const { staggerAfter, ...flightOpts } = flights[started++];
+
         _animateChkobbaFlight({
             ...flightOpts,
-            onDone: () => setTimeout(step, staggerAfter || 0)
+            onDone: () => {
+                finished++;
+                if (finished >= total) onDone?.();
+            }
         });
+
+        if (started < total) {
+            setTimeout(startNext, staggerAfter || 0);
+        }
     };
-    step();
+    startNext();
 }
 
 function _chkobbaHandCardEl(handIndex) {
@@ -3850,22 +3858,23 @@ function _renderChkobbaOpponentPills(room, state, me, mode, roomPlayerMeta) {
     if (!oppCont) return;
 
     oppCont.className = `chkobba-opponents mode-${mode}`;
-    const others = state.players.filter(p => p.id !== _myId);
-    const otherIds = new Set(others.map(p => p.id));
+    const playersToRender = state.players; // Render all players including me
+    const playerIds = new Set(playersToRender.map(p => p.id));
 
     for (const [id, el] of _chkobbaOpponentPillEls) {
-        if (!otherIds.has(id)) {
+        if (!playerIds.has(id)) {
             el.remove();
             _chkobbaOpponentPillEls.delete(id);
         }
     }
 
-    others.forEach(p => {
+    playersToRender.forEach(p => {
+        const isMe = p.id === _myId;
         const active = state.players[state.turnIndex].id === p.id;
         const isTeammate = mode === '2v2' && p.team === me?.team;
         const isExpanded = _onlineCoupSummaryExpandedId === p.id;
         const meta = roomPlayerMeta[p.id];
-        const offline = meta && meta.connected === false;
+        const offline = !isMe && meta && meta.connected === false;
         const dinari = p.captured?.filter(c => c.suit === 'diamonds').length || 0;
 
         let pill = _chkobbaOpponentPillEls.get(p.id);
@@ -3884,15 +3893,19 @@ function _renderChkobbaOpponentPills(room, state, me, mode, roomPlayerMeta) {
         }
 
         pill.dataset.expanded = String(isExpanded);
-        pill.className = `chkobba-player-pill ${active ? 'is-turn' : ''} ${isTeammate ? 'is-teammate' : ''} ${isExpanded ? 'is-expanded' : ''} ${offline ? 'is-offline' : ''}${isNew ? ' is-entering' : ''}`;
+        pill.className = `chkobba-player-pill ${active ? 'is-turn' : ''} ${isMe ? 'is-me' : ''} ${isTeammate ? 'is-teammate' : ''} ${isExpanded ? 'is-expanded' : ''} ${offline ? 'is-offline' : ''}${isNew ? ' is-entering' : ''}`;
 
         if (isNew || expandChanged) {
             pill.innerHTML = _buildChkobbaOpponentPillHtml(p, state, { active, isTeammate, isExpanded, offline, dinari });
+            if (isMe) {
+                const nameEl = pill.querySelector('.pill-name');
+                if (nameEl) nameEl.innerHTML += ' <span class="you-tag">أنا</span>';
+            }
         } else {
             const nameEl = pill.querySelector('.pill-name');
             const statsEl = pill.querySelector('.pill-stats');
             const chevEl = pill.querySelector('.pill-chevron');
-            if (nameEl) nameEl.innerHTML = `${_esc(p.name)}${active ? ' ●' : ''}`;
+            if (nameEl) nameEl.innerHTML = `${_esc(p.name)}${isMe ? ' <span class="you-tag">أنا</span>' : ''}${active ? ' ●' : ''}`;
             if (statsEl) {
                 statsEl.innerHTML = `<span>🃏 ${p.hand.length}</span><span>🏆 ${p.totalScore}</span>`;
             }
@@ -3905,7 +3918,8 @@ function _renderChkobbaOpponentPills(room, state, me, mode, roomPlayerMeta) {
         };
     });
 
-    others.forEach(p => {
+    // Maintain order
+    playersToRender.forEach(p => {
         const el = _chkobbaOpponentPillEls.get(p.id);
         if (el) oppCont.appendChild(el);
     });
@@ -4161,7 +4175,7 @@ async function _chkobbaTimeout() {
                 s.table.push(card);
             }
 
-            _advanceChkobbaTurn(s);
+            _advanceChkobbaTurn(s, room);
             room.word_obj = s;
             return players;
         }, null, (room, players) => ({ word_obj: room.word_obj, timer_end_at: room.timer_end_at }));
@@ -4220,7 +4234,7 @@ async function _commitChkobbaCapture() {
         return;
     }
 
-    const pileEl = document.getElementById('chkobba-my-capture-pile');
+    const pileEl = _chkobbaOpponentPillEls.get(_myId) || document.getElementById('chkobba-my-capture-pile');
     const handEl = _chkobbaHandCardEl(handIndex);
     const pileRect = pileEl?.getBoundingClientRect();
     const flights = [];
@@ -4271,13 +4285,14 @@ async function _commitChkobbaCapture() {
             if (s.table.length === 0 && s.deck.length > 0) {
                 p.chkobbas++;
                 s.chkobbaEvent = { type: 'chkobba', playerId: _myId, name: p.name };
-            } else if (allCaptured.some(c => c.id === 'diamonds_7')) {
+            } else if (allCaptured.some(c => c.id === 'diamonds_7') && capturedCards.some(c => c.id === 'diamonds_7')) {
+                // Trigger Berria ONLY if it was taken from the TABLE
                 s.chkobbaEvent = { type: 'berria', playerId: _myId, name: p.name };
             }
 
-            _advanceChkobbaTurn(s);
+            _advanceChkobbaTurn(s, room);
             return players;
-        }, null, (room, players) => ({ word_obj: room.word_obj }));
+        }, null, (room, players) => ({ word_obj: room.word_obj, timer_end_at: room.timer_end_at }));
 
         _resetChkobbaPlaySession();
     };
@@ -4319,9 +4334,9 @@ async function _commitChkobbaPlayToTable() {
 
             const card = p.hand.splice(handIndex, 1)[0];
             s.table.push(card);
-            _advanceChkobbaTurn(s);
+            _advanceChkobbaTurn(s, room);
             return players;
-        }, null, (room, players) => ({ word_obj: room.word_obj }));
+        }, null, (room, players) => ({ word_obj: room.word_obj, timer_end_at: room.timer_end_at }));
 
         _resetChkobbaPlaySession();
     };
@@ -4344,14 +4359,14 @@ async function _commitChkobbaPlayToTable() {
     });
 }
 
-function _advanceChkobbaTurn(state) {
+function _advanceChkobbaTurn(state, roomObj) {
     state.turnIndex = (state.turnIndex + 1) % state.players.length;
 
-    if (_room && _isHost) {
-        const turnTime = _room.config?.chkobbaTurnTime || 45;
+    const actualRoom = roomObj || _room;
+    if (actualRoom && _isHost) {
+        const turnTime = actualRoom.config?.chkobbaTurnTime || 45;
         const timerEndAt = new Date(_syncedNow() + turnTime * 1000).toISOString();
-        // This will be committed by the caller since _advanceChkobbaTurn is usually called inside a mutation
-        _room.timer_end_at = timerEndAt;
+        actualRoom.timer_end_at = timerEndAt;
     }
 
     // Check if everyone played their 3 cards
@@ -4364,12 +4379,12 @@ function _advanceChkobbaTurn(state) {
             });
         } else {
             // End of round scoring
-            _endChkobbaRound(state);
+            _endChkobbaRound(state, roomObj);
         }
     }
 }
 
-function _endChkobbaRound(state) {
+function _endChkobbaRound(state, roomObj) {
     // Last capture takes leftovers
     if (state.table.length > 0 && state.lastCaptureId) {
         const winner = state.players.find(p => p.id === state.lastCaptureId);
@@ -4416,10 +4431,11 @@ function _endChkobbaRound(state) {
         state.round++;
         state.turnIndex = 0; // Usually dealer moves, but we'll keep it simple
 
-        if (_room && _isHost) {
-            const turnTime = _room.config?.chkobbaTurnTime || 45;
+        const actualRoom = roomObj || _room;
+        if (actualRoom && _isHost) {
+            const turnTime = actualRoom.config?.chkobbaTurnTime || 45;
             const timerEndAt = new Date(_syncedNow() + turnTime * 1000).toISOString();
-            _room.timer_end_at = timerEndAt;
+            actualRoom.timer_end_at = timerEndAt;
         }
     }
 }
