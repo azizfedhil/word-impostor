@@ -15,8 +15,22 @@ import { GAME_SCRIPTS } from './game-scripts.js';
  * @param {() => Promise<void>} [config.afterScripts]
  * @param {boolean} [config.onlineOnly]
  */
+async function bootLegacyRuntime() {
+    if (typeof window.__dakheelBootApp === 'function') {
+        await window.__dakheelBootApp();
+    }
+    if (typeof window.__dakheelBootOnlineExtras === 'function') {
+        window.__dakheelBootOnlineExtras();
+    }
+    if (typeof window.__dakheelBootAnalytics === 'function') {
+        await window.__dakheelBootAnalytics();
+    }
+}
+
 export async function bootstrapGamePage(config) {
     const { slug, gameMode, title, scripts = [], afterScripts, onlineOnly = false } = config;
+
+    const rootPrefix = '../../';
 
     window.__DAKHEEL_GAME_MODE = gameMode;
     window.__DAKHEEL_GAME_SLUG = slug;
@@ -29,8 +43,6 @@ export async function bootstrapGamePage(config) {
     installScreenGlobals();
     registerServiceWorker('../../sw.js');
 
-    const rootPrefix = '../../';
-
     const scriptList = scripts.length ? scripts : GAME_SCRIPTS[slug] || GAME_SCRIPTS.impostor;
     await loadClassicScripts(['shared/runtime/bridge.js', ...scriptList], rootPrefix);
 
@@ -38,9 +50,7 @@ export async function bootstrapGamePage(config) {
         await afterScripts();
     }
 
-    if (typeof window.__dakheelInitGame === 'function') {
-        await window.__dakheelInitGame({ gameMode, slug, onlineOnly });
-    }
+    await bootLegacyRuntime();
 
     if (typeof window._fetchRoom === 'function') {
         const { code, redirected } = await resolveRoomDeepLink({

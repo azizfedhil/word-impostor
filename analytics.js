@@ -141,10 +141,10 @@ const _analytics = (() => {
 
 
 // ============================================================
-// DOM HOOKS — wired after page load
+// BOOT — wired after game-bootstrap loads legacy scripts
 // ============================================================
 
-document.addEventListener('DOMContentLoaded', () => {
+function bootAnalytics() {
     const _activeToggle = id => document.getElementById(id)?.classList.contains('active') || false;
 
     // ── 1. Track every page visit ─────────────────────────────
@@ -219,4 +219,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 typeof currentLang !== 'undefined' ? currentLang : 'tn');
         }
     });
-});
+}
+
+window.__dakheelBootAnalytics = bootAnalytics;

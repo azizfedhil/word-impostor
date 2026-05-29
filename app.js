@@ -167,8 +167,8 @@ function hasRememberedX18Unlock() {
     catch (_) { return false; }
 }
 
-function _togActive(id) { return document.getElementById(id).classList.contains('active'); }
-function _togSet(id, val) { document.getElementById(id).classList.toggle('active', !!val); }
+function _togActive(id) { return document.getElementById(id)?.classList.contains('active') ?? false; }
+function _togSet(id, val) { document.getElementById(id)?.classList.toggle('active', !!val); }
 
 // ============================================================
 // UTILITIES
@@ -285,11 +285,13 @@ window._showToast = showToast;
 
 function openModal(id) {
     const m = document.getElementById(id);
+    if (!m) return;
     m.classList.remove('hidden');
     requestAnimationFrame(() => requestAnimationFrame(() => { m.classList.add('active'); _sfx.modalOpen(); }));
 }
 function closeModal(id) {
     const m = document.getElementById(id);
+    if (!m) return;
     m.classList.remove('active'); _sfx.modalClose();
     setTimeout(() => m.classList.add('hidden'), 300);
 }
@@ -407,6 +409,7 @@ function applyTranslations() {
 // ============================================================
 function addPlayerInput(savedName = '') {
     const container = document.getElementById('players-inputs-container');
+    if (!container) return;
     playerCount++;
     const row = document.createElement('div');
     row.className = 'player-row';
@@ -421,15 +424,19 @@ function addPlayerInput(savedName = '') {
 // GAME RULES / TOGGLE INTERLOCK
 // ============================================================
 function checkRules() {
-    // Random impostors → disable impostor count
-    document.getElementById('imp-control').classList.toggle('disabled-ui', _togActive('t-random'));
+    const impControl = document.getElementById('imp-control');
+    if (!impControl) return;
+
+    impControl.classList.toggle('disabled-ui', _togActive('t-random'));
 
     const noHint = _togActive('t-nohint'), allHint = _togActive('t-allhint');
     const nohintRow = document.getElementById('nohint-row');
     const allhintRow = document.getElementById('allhint-row');
 
-    if (noHint) { _togSet('t-allhint', false); allhintRow.classList.add('disabled-ui'); } else { allhintRow.classList.remove('disabled-ui'); }
-    if (allHint) { _togSet('t-nohint', false); nohintRow.classList.add('disabled-ui'); } else { nohintRow.classList.remove('disabled-ui'); }
+    if (nohintRow && allhintRow) {
+        if (noHint) { _togSet('t-allhint', false); allhintRow.classList.add('disabled-ui'); } else { allhintRow.classList.remove('disabled-ui'); }
+        if (allHint) { _togSet('t-nohint', false); nohintRow.classList.add('disabled-ui'); } else { nohintRow.classList.remove('disabled-ui'); }
+    }
     saveSettings();
 }
 
@@ -1628,10 +1635,9 @@ function _cleanupOnlineGameUI() {
 
 
 // ============================================================
-// DOM READY — wire everything up
+// BOOT — wire everything up (called from game-bootstrap after scripts load)
 // ============================================================
-document.addEventListener('DOMContentLoaded', async () => {
-
+async function bootApp() {
     if (window.__DAKHEEL_GAME_MODE) {
         currentGameMode = window.__DAKHEEL_GAME_MODE;
     } else {
@@ -1642,21 +1648,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     x18Unlocked = hasRememberedX18Unlock();
     applyTranslations();
 
-    // Load saved settings
-    const parsed = await loadSettings();
-    if (parsed) {
-        currentLang = 'tn';
-        _togSet('t-random', parsed.randomImpostors);
-        _togSet('t-chaos', parsed.chaos);
-        _togSet('t-elimination', parsed.elimination);
-        _togSet('t-nohint', parsed.noHints);
-        _togSet('t-allhint', parsed.allCorrect);
-        impostorConfig = parsed.impostors||1;
-        timerConfig = parsed.timer||3;
-        if (parsed.players&&parsed.players.length>0) parsed.players.forEach(n=>addPlayerInput(n));
-        else for(let i=0;i<4;i++) addPlayerInput();
-    } else {
-        for(let i=0;i<4;i++) addPlayerInput();
+    const playersContainer = document.getElementById('players-inputs-container');
+
+    // Load saved settings (only on pages with player setup UI)
+    const parsed = playersContainer ? await loadSettings() : null;
+    if (playersContainer) {
+        if (parsed) {
+            currentLang = 'tn';
+            _togSet('t-random', parsed.randomImpostors);
+            _togSet('t-chaos', parsed.chaos);
+            _togSet('t-elimination', parsed.elimination);
+            _togSet('t-nohint', parsed.noHints);
+            _togSet('t-allhint', parsed.allCorrect);
+            impostorConfig = parsed.impostors||1;
+            timerConfig = parsed.timer||3;
+            if (parsed.players&&parsed.players.length>0) parsed.players.forEach(n=>addPlayerInput(n));
+            else for(let i=0;i<4;i++) addPlayerInput();
+        } else {
+            for(let i=0;i<4;i++) addPlayerInput();
+        }
     }
     if (currentGameMode === 'coup') timerConfig = COUP_DEFAULT_ACTION_MINUTES;
     const valImp = document.getElementById('val-impostors');
@@ -1664,7 +1674,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (valImp) valImp.innerText = impostorConfig;
     if (valTim) valTim.innerText = timerConfig;
     applyTranslations();
-    checkRules();
+    if (document.getElementById('imp-control')) checkRules();
     updateGameModeUI();
 
     if (window.__DAKHEEL_FIXED_MODE) {
@@ -1706,11 +1716,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             if(db) db.transaction('settingsStore','readwrite').objectStore('settingsStore').delete('game_settings');
         } catch(e) {}
         impostorConfig=1; timerConfig=3;
-        document.getElementById('val-impostors').innerText='1';
-        document.getElementById('val-timer').innerText='3';
+        const vImp = document.getElementById('val-impostors');
+        const vTim = document.getElementById('val-timer');
+        if (vImp) vImp.innerText='1';
+        if (vTim) vTim.innerText='3';
         ['t-random','t-chaos','t-elimination','t-nohint','t-allhint'].forEach(id=>_togSet(id,false));
-        document.getElementById('players-inputs-container').innerHTML='';
-        playerCount=0; for(let i=0;i<4;i++) addPlayerInput();
+        const pc = document.getElementById('players-inputs-container');
+        if (pc) { pc.innerHTML=''; playerCount=0; for(let i=0;i<4;i++) addPlayerInput(); }
         checkRules(); saveSettings();
     });
 
@@ -1722,8 +1734,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // ADVANCED PANEL
     document.getElementById('adv-toggle-btn')?.addEventListener('click',()=>{
-        const p=document.getElementById('adv-panel'); p.classList.toggle('open');
-        document.getElementById('adv-chevron').innerText=p.classList.contains('open')?'▲':'▼';
+        const p=document.getElementById('adv-panel');
+        if (!p) return;
+        p.classList.toggle('open');
+        const chev = document.getElementById('adv-chevron');
+        if (chev) chev.innerText=p.classList.contains('open')?'▲':'▼';
     });
 
     // TOGGLES
@@ -1739,11 +1754,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         icon.addEventListener('click',e=>{
             e.stopPropagation();
             const key = e.target.getAttribute('data-info');
-            document.getElementById('info-modal-text').innerText = infoDescriptions[key][currentLang];
+            const infoText = document.getElementById('info-modal-text');
+            if (infoText && infoDescriptions[key]) infoText.innerText = infoDescriptions[key][currentLang];
             openModal('info-modal');
         });
     });
-    document.getElementById('close-info-btn').addEventListener('click',()=>closeModal('info-modal'));
+    document.getElementById('close-info-btn')?.addEventListener('click',()=>closeModal('info-modal'));
 
     // LANGUAGE / PASSWORD
     document.querySelectorAll('.lang-pill-btn').forEach(btn=>{
@@ -1751,10 +1767,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             const lang = this.getAttribute('data-lang');
             if (lang==='x18') {
                 if (!x18Unlocked) {
-                    document.getElementById('password-input').value='';
-                    document.getElementById('password-error').style.display='none';
+                    const pwIn = document.getElementById('password-input');
+                    const pwErr = document.getElementById('password-error');
+                    if (pwIn) pwIn.value='';
+                    if (pwErr) pwErr.style.display='none';
                     openModal('password-modal');
-                    setTimeout(()=>document.getElementById('password-input').focus(),350);
+                    setTimeout(()=>document.getElementById('password-input')?.focus(),350);
                     return;
                 }
             }
@@ -1762,23 +1780,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
-    document.getElementById('password-confirm-btn').addEventListener('click',()=>{
-        const val = document.getElementById('password-input').value;
+    document.getElementById('password-confirm-btn')?.addEventListener('click',()=>{
+        const val = document.getElementById('password-input')?.value;
         if (val==='simba') {
             x18Unlocked=true; currentLang='x18'; applyTranslations();
-            if (document.getElementById('pw-remember-toggle').checked) rememberX18Unlock();
+            if (document.getElementById('pw-remember-toggle')?.checked) rememberX18Unlock();
             saveSettings();
             closeModal('password-modal');
         } else {
-            document.getElementById('password-error').style.display='block';
-            document.getElementById('password-input').value='';
-            document.getElementById('password-input').classList.add('shake-input');
-            setTimeout(()=>document.getElementById('password-input').classList.remove('shake-input'),400);
+            const pwErr = document.getElementById('password-error');
+            const pwIn = document.getElementById('password-input');
+            if (pwErr) pwErr.style.display='block';
+            if (pwIn) { pwIn.value=''; pwIn.classList.add('shake-input'); }
+            setTimeout(()=>document.getElementById('password-input')?.classList.remove('shake-input'),400);
             _sfx.error();
         }
     });
-    document.getElementById('password-input').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('password-confirm-btn').click();});
-    document.getElementById('password-cancel-btn').addEventListener('click',()=>closeModal('password-modal'));
+    document.getElementById('password-input')?.addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('password-confirm-btn')?.click();});
+    document.getElementById('password-cancel-btn')?.addEventListener('click',()=>closeModal('password-modal'));
 
     // START OFFLINE GAME
     document.getElementById('start-game-btn')?.addEventListener('click',()=>{
@@ -1829,19 +1848,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // NEXT PLAYER CARD
-    document.getElementById('next-player-btn').addEventListener('click',()=>{
+    document.getElementById('next-player-btn')?.addEventListener('click',()=>{
         currentRevealIndex++;
         if(currentRevealIndex<players.length) { renderSingleCard(); }
         else {
             const starter=players[Math.floor(Math.random()*players.length)];
-            document.getElementById('starter-player').innerText=`${i18n[currentLang].starter_is}${starter.name}`;
+            const starterEl = document.getElementById('starter-player');
+            if (starterEl) starterEl.innerText=`${i18n[currentLang].starter_is}${starter.name}`;
             showScreen('timer-screen'); updateTimerDisplay();
             timerInterval=setInterval(()=>{remainingTime--;updateTimerDisplay();if(remainingTime<=0){clearInterval(timerInterval);goToVoting();}},1000);
         }
     });
 
     // VOTE BUTTON
-    document.getElementById('go-to-vote-btn').addEventListener('click',()=>{
+    document.getElementById('go-to-vote-btn')?.addEventListener('click',()=>{
         if (window.onlineMode) return; // handled by online mode override
         clearInterval(timerInterval); goToVoting();
     });
@@ -1949,14 +1969,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if(lobbyList){let prev=0;new MutationObserver(()=>{const n=lobbyList.children.length;if(n>prev)_sfx.notify();prev=n;}).observe(lobbyList,{childList:true});}
 
 
-    document.getElementById('leave-room-btn').addEventListener('click',()=>{if(_voiceOn)stopVoice();},true);
+    document.getElementById('leave-room-btn')?.addEventListener('click',()=>{if(_voiceOn)stopVoice();},true);
+}
 
-    // PWA SERVICE WORKER
-    if('serviceWorker'in navigator){
-        window.addEventListener('load',()=>{
-            navigator.serviceWorker.register('./sw.js').then(reg=>reg.update()).catch(err=>console.warn('SW failed:',err));
-        });
-        let refreshing=false;
-        navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!refreshing){refreshing=true;window.location.reload();}});
-    }
-});
+window.__dakheelBootApp = bootApp;

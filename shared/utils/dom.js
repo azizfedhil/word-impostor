@@ -23,3 +23,12 @@ export async function loadClassicScripts(paths, rootPrefix = '../../') {
         await loadScript(rootPrefix + p.replace(/^\//, ''));
     }
 }
+
+/** Run callback when DOM is ready (works after dynamic script injection). */
+export function onDomReady(fn) {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', fn, { once: true });
+    } else {
+        fn();
+    }
+}
