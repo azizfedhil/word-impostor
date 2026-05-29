@@ -737,13 +737,34 @@ body.game-chkobba header.app-header {
     position: absolute;
     width: min(28vw, 100px);
     aspect-ratio: 2.5 / 3.5;
+    perspective: 1000px;
+    filter: drop-shadow(0 0 24px rgba(241, 192, 81, 0.45));
+}
+
+.chkobba-celebration-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    transition: transform 0.6s;
     transform-style: preserve-3d;
     animation: chkobbaCelebrateFlip 1.15s var(--chkobba-ease) forwards;
-    filter: drop-shadow(0 0 24px rgba(241, 192, 81, 0.45));
 }
 
 .chkobba-celebration-wrap.is-berria .chkobba-celebration-card {
     filter: drop-shadow(0 0 28px rgba(82, 140, 113, 0.55));
+}
+
+.chkobba-celebration-card-front, .chkobba-celebration-card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+}
+
+.chkobba-celebration-card-back {
+    transform: rotateY(180deg);
 }
 
 .chkobba-celebration-card img {
@@ -751,7 +772,7 @@ body.game-chkobba header.app-header {
     height: 100%;
     object-fit: cover;
     border-radius: 12px;
-    backface-visibility: hidden;
+    border: 1px solid var(--border-color);
 }
 
 @keyframes chkobbaCelebrateFlip {
@@ -989,5 +1010,139 @@ body.game-chkobba header.app-header {
     .chkobba-confetti-bit,
     .chkobba-player-pill.is-entering {
         animation-duration: 0.001ms !important;
+    }
+}
+
+/* Victory Screen & Scoreboard */
+.chkobba-victory-screen {
+    position: absolute;
+    inset: 0;
+    z-index: 500;
+    background: var(--bg-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px;
+    overflow-y: auto;
+    animation: fadeIn 0.5s ease both;
+}
+
+.victory-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.victory-icon {
+    font-size: 4rem;
+    display: block;
+    margin-bottom: 8px;
+    animation: chkobbaPillDropIn 0.8s var(--ease-pop) both;
+}
+
+.chkobba-scoreboard {
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+.scoreboard-item {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    box-shadow: var(--shadow-soft);
+    transition: transform 0.3s ease;
+}
+
+.scoreboard-item.is-winner {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(82, 140, 113, 0.15), var(--shadow-soft);
+    transform: scale(1.02);
+}
+
+.scoreboard-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.scoreboard-name {
+    font-weight: 800;
+    font-size: 1.1rem;
+}
+
+.scoreboard-total {
+    font-size: 1.3rem;
+    font-weight: 900;
+    color: var(--primary-color);
+}
+
+.scoreboard-details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.score-detail-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.score-detail-row img {
+    width: 20px;
+    height: 30px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+}
+
+.score-detail-row strong {
+    margin-right: auto;
+    color: var(--text-main);
+    font-weight: 800;
+}
+
+.wait-msg {
+    font-weight: 700;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.berria-pill-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    color: #d63031;
+    border: 1px solid #fab1a0;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    padding: 1px 3px;
+    margin-left: 4px;
+    font-weight: 900;
+    vertical-align: middle;
+    box-shadow: 0 2px 4px rgba(214, 48, 49, 0.15);
+}
+
+.chkobba-hand {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+@media (prefers-color-scheme: dark) {
+    .chkobba-hand {
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.05);
     }
 }

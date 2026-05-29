@@ -96,7 +96,7 @@ const ChkobbaLogic = {
             lastCaptureId: null,
             round: options.round || 1,
             phase: 'setup',
-            targetScore: options.targetScore || 21,
+            targetScore: options.targetScore || 11,
             mode: options.mode || '1v1',
             tournament: !!options.tournament,
             log: 'الكومة مخلوطة — وقت القصّة.'
@@ -323,7 +323,7 @@ const ChkobbaLogic = {
     },
 
     /**
-     * Calculate scores for a round
+     * Calculate scores for a round based on Authentic Tunisian Rules
      * @param {Object} playersCapturedCards - { playerId: [cards] }
      * @param {Object} chkobbas - { playerId: count }
      * @param {Array} teams - Optional array of teams [ [p1, p2], [p3, p4] ]
@@ -336,120 +336,121 @@ const ChkobbaLogic = {
         pIds.forEach(id => {
             scores[id] = {
                 total: 0,
-                details: { carti: 0, dinari: 0, berria: 0, basila: 0, chkobba: chkobbas[id] || 0 }
+                details: { carti: 0, dinari: 0, berria: 0, bermila: 0, chkobba: chkobbas[id] || 0 }
             };
         });
 
-        if (teams && teams.length > 0) {
-            // Team-based scoring (2v2)
-            const teamResults = teams.map(teamIds => {
-                const captured = teamIds.flatMap(id => playersCapturedCards[id] || []);
-                const chkobbaCount = teamIds.reduce((sum, id) => sum + (chkobbas[id] || 0), 0);
+        const getResultsForGroups = (groupDefs) => {
+            return groupDefs.map(ids => {
+                const captured = ids.flatMap(id => playersCapturedCards[id] || []);
+                const chkobbaCount = ids.reduce((sum, id) => sum + (chkobbas[id] || 0), 0);
+                const sevens = captured.filter(c => c.value === 7).length;
+                const sixes = captured.filter(c => c.value === 6).length;
+                const diamonds = captured.filter(c => c.suit === this.SUITS.DINARI).length;
+                const hasBerria = captured.some(c => c.suit === this.SUITS.DINARI && c.value === 7);
                 return {
-                    ids: teamIds,
+                    ids,
                     captured,
                     chkobbaCount,
-                    prime: this.calculatePrimeScore(captured)
+                    sevens,
+                    sixes,
+                    diamonds,
+                    hasBerria,
+                    carti: 0,
+                    dinari: 0,
+                    berria: 0,
+                    bermila: 0
                 };
             });
+        };
 
-            // 1. Carti
-            let maxCards = -1, cartiWinnerIdx = -1, cartiTie = false;
-            teamResults.forEach((res, idx) => {
-                if (res.captured.length > maxCards) { maxCards = res.captured.length; cartiWinnerIdx = idx; cartiTie = false; }
-                else if (res.captured.length === maxCards) { cartiTie = true; }
-            });
-            if (!cartiTie && cartiWinnerIdx !== -1 && maxCards > 20) {
-                teamResults[cartiWinnerIdx].carti = 1;
-            }
-
-            // 2. Dinari
-            let maxDinari = -1, dinariWinnerIdx = -1, dinariTie = false;
-            teamResults.forEach((res, idx) => {
-                const count = res.captured.filter(c => c.suit === this.SUITS.DINARI).length;
-                if (count > maxDinari) { maxDinari = count; dinariWinnerIdx = idx; dinariTie = false; }
-                else if (count === maxDinari) { dinariTie = true; }
-            });
-            if (!dinariTie && dinariWinnerIdx !== -1 && maxDinari > 5) {
-                teamResults[dinariWinnerIdx].dinari = 1;
-            }
-
-            // 3. Berria
-            teamResults.forEach(res => {
-                if (res.captured.some(c => c.suit === this.SUITS.DINARI && c.value === 7)) res.berria = 1;
-            });
-
-            // 4. Basila
-            let maxPrime = -1, basilaWinnerIdx = -1, basilaTie = false;
-            teamResults.forEach((res, idx) => {
-                if (res.prime > maxPrime) { maxPrime = res.prime; basilaWinnerIdx = idx; basilaTie = false; }
-                else if (res.prime === maxPrime) { basilaTie = true; }
-            });
-            if (!basilaTie && basilaWinnerIdx !== -1) teamResults[basilaWinnerIdx].basila = 1;
-
-            // Distribute team scores to individual players (usually just for tracking total)
-            teamResults.forEach(res => {
-                const teamTotal = (res.carti||0) + (res.dinari||0) + (res.berria||0) + (res.basila||0) + res.chkobbaCount;
-                res.ids.forEach(id => {
-                    scores[id].total = teamTotal;
-                    scores[id].details = {
-                        carti: res.carti || 0,
-                        dinari: res.dinari || 0,
-                        berria: res.berria || 0,
-                        basila: res.basila || 0,
-                        chkobba: res.chkobbaCount // Total chkobbas for the team
-                    };
-                });
-            });
-
+        let groupResults;
+        if (teams && teams.length > 0) {
+            groupResults = getResultsForGroups(teams);
         } else {
-            // Individual scoring (1v1, 1v1v1)
-            pIds.forEach(id => { scores[id].total += scores[id].details.chkobba; });
+            groupResults = getResultsForGroups(pIds.map(id => [id]));
+        }
 
-            // 1. Carti
-            let maxCards = -1, cartiWinner = null, cartiTie = false;
-            pIds.forEach(id => {
-                const count = playersCapturedCards[id].length;
-                if (count > maxCards) { maxCards = count; cartiWinner = id; cartiTie = false; }
-                else if (count === maxCards) cartiTie = true;
-            });
-            if (!cartiTie && cartiWinner !== null && (pIds.length > 2 || maxCards > 20)) {
-                scores[cartiWinner].details.carti = 1;
-                scores[cartiWinner].total += 1;
+        // 1. Carti (Most cards) - Strictly more than anyone else
+        let maxCards = -1, cartiWinnerIdx = -1, cartiTie = false;
+        groupResults.forEach((res, idx) => {
+            if (res.captured.length > maxCards) { maxCards = res.captured.length; cartiWinnerIdx = idx; cartiTie = false; }
+            else if (res.captured.length === maxCards) { cartiTie = true; }
+        });
+        if (!cartiTie && cartiWinnerIdx !== -1 && maxCards > 20) {
+            groupResults[cartiWinnerIdx].carti = 1;
+        }
+
+        // 2. Dinari (Most diamonds) - Strictly more than anyone else
+        let maxDinari = -1, dinariWinnerIdx = -1, dinariTie = false;
+        groupResults.forEach((res, idx) => {
+            const count = res.diamonds;
+            if (count > maxDinari) { maxDinari = count; dinariWinnerIdx = idx; dinariTie = false; }
+            else if (count === maxDinari) { dinariTie = true; }
+        });
+        if (!dinariTie && dinariWinnerIdx !== -1 && maxDinari > 5) {
+            groupResults[dinariWinnerIdx].dinari = 1;
+        }
+
+        // 3. Berria (7 of diamonds)
+        groupResults.forEach(res => {
+            if (res.hasBerria) res.berria = 1;
+        });
+
+        // 4. Bermila (Most 7s, then 6s)
+        let max7s = -1, bermilaWinnerIdx = -1, bermilaTie = false;
+        groupResults.forEach((res, idx) => {
+            if (res.sevens > max7s) {
+                max7s = res.sevens;
+                bermilaWinnerIdx = idx;
+                bermilaTie = false;
+            } else if (res.sevens === max7s) {
+                bermilaTie = true;
             }
+        });
 
-            // 2. Dinari
-            let maxDinari = -1, dinariWinner = null, dinariTie = false;
-            pIds.forEach(id => {
-                const count = playersCapturedCards[id].filter(c => c.suit === this.SUITS.DINARI).length;
-                if (count > maxDinari) { maxDinari = count; dinariWinner = id; dinariTie = false; }
-                else if (count === maxDinari) dinariTie = true;
-            });
-            if (!dinariTie && dinariWinner !== null && (pIds.length > 2 || maxDinari > 5)) {
-                scores[dinariWinner].details.dinari = 1;
-                scores[dinariWinner].total += 1;
-            }
-
-            // 3. Berria
-            pIds.forEach(id => {
-                if (playersCapturedCards[id].some(c => c.suit === this.SUITS.DINARI && c.value === 7)) {
-                    scores[id].details.berria = 1;
-                    scores[id].total += 1;
+        if (bermilaTie) {
+            // Check 6s if 7s are tied
+            let max6s = -1;
+            const candidates = groupResults.filter(res => res.sevens === Math.max(0, max7s));
+            let subTie = false;
+            let subWinnerIdx = -1;
+            candidates.forEach((res) => {
+                const idx = groupResults.indexOf(res);
+                if (res.sixes > max6s) {
+                    max6s = res.sixes;
+                    subWinnerIdx = idx;
+                    subTie = false;
+                } else if (res.sixes === max6s) {
+                    subTie = true;
                 }
             });
-
-            // 4. Basila
-            let maxPrime = -1, basilaWinner = null, basilaTie = false;
-            pIds.forEach(id => {
-                const prime = this.calculatePrimeScore(playersCapturedCards[id]);
-                if (prime > maxPrime) { maxPrime = prime; basilaWinner = id; basilaTie = false; }
-                else if (prime === maxPrime) basilaTie = true;
-            });
-            if (!basilaTie && basilaWinner !== null) {
-                scores[basilaWinner].details.basila = 1;
-                scores[basilaWinner].total += 1;
+            if (!subTie && subWinnerIdx !== -1) {
+                bermilaWinnerIdx = subWinnerIdx;
+                bermilaTie = false;
+            } else {
+                bermilaTie = true;
             }
         }
+
+        if (!bermilaTie && bermilaWinnerIdx !== -1 && (max7s > 0 || (max7s === 0 && groupResults[bermilaWinnerIdx].sixes > 0))) {
+            groupResults[bermilaWinnerIdx].bermila = 1;
+        }
+
+        // Apply results back to scores object
+        groupResults.forEach(res => {
+            const groupTotal = (res.carti || 0) + (res.dinari || 0) + (res.berria || 0) + (res.bermila || 0) + res.chkobbaCount;
+            res.ids.forEach(id => {
+                scores[id].total = groupTotal;
+                scores[id].details = {
+                    carti: res.carti || 0,
+                    dinari: res.dinari || 0,
+                    berria: res.berria || 0,
+                    bermila: res.bermila || 0,
+                    chkobba: res.chkobbaCount
+                };
+            });
+        });
 
         return scores;
     },
