@@ -8,4 +8,8 @@ bootstrapGamePage({
     afterScripts: async () => {
         initSocialDeductionGame({ mode: 'impostor', title: '🕵️‍♂️ شكونو هو؟' });
     },
+}).catch((err) => {
+    console.error('[bootstrap]', err);
+    const t = document.getElementById('toast-msg');
+    if (t) { t.innerText = 'خطأ في تحميل اللعبة — حدّث الصفحة.'; t.classList.add('show'); }
 });

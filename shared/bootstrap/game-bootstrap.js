@@ -43,7 +43,7 @@ export async function bootstrapGamePage(config) {
     installScreenGlobals();
     registerServiceWorker('../../sw.js');
 
-    const scriptList = scripts.length ? scripts : GAME_SCRIPTS[slug] || GAME_SCRIPTS.impostor;
+    const scriptList = scripts.length ? scripts : GAME_SCRIPTS[gameMode] || GAME_SCRIPTS[slug] || GAME_SCRIPTS.impostor;
     await loadClassicScripts(['shared/runtime/bridge.js', ...scriptList], rootPrefix);
 
     if (typeof afterScripts === 'function') {

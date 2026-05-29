@@ -68,15 +68,32 @@
             <p id="online-setup-error"></p>
         </section>
         <section id="online-lobby-screen" class="screen" hidden aria-hidden="true">
-            <span id="display-room-code" class="room-code">------</span>
+            <h2>🕹️ الغرفة</h2>
+            <div class="room-code-box">
+                <span style="color:var(--text-muted); font-weight:700;">كود الروم:</span>
+                <span id="display-room-code" class="room-code">------</span>
+                <div id="qrcode-container" style="display:none; justify-content:center; margin:10px 0;">
+                    <div id="qrcode" style="padding:10px; background:white; border-radius:12px; border:1px solid #eee;"></div>
+                </div>
+                <div style="display:flex; gap:10px; justify-content:center; margin-top:16px;">
+                    <button id="copy-code-btn" class="icon-btn" style="width:auto; padding:0 20px; font-size:1rem;">📋 كوبي</button>
+                    <button id="share-code-btn" class="primary-btn" style="width:auto; padding:10px 20px; font-size:1rem; margin:0;">📤 شارك</button>
+                </div>
+            </div>
             <div id="lobby-players-list" class="lobby-list"></div>
+            <p id="lobby-wait-msg" style="text-align:center; font-weight:700;">⏳ نستنا لاعبين...</p>
             <button id="online-start-btn" class="primary-btn hidden">🚀 ابدأ</button>
-            <button id="leave-room-btn" class="danger-btn">خرج</button>
+            <button id="leave-room-btn" class="danger-btn" style="margin-top:16px;">🚪 اخرج</button>
         </section>
-        <section id="online-card-screen" class="screen" hidden aria-hidden="true">
+        <section id="online-card-screen" class="screen" style="text-align:center;" hidden aria-hidden="true">
+            <h2>🃏 كارطتك</h2>
             <div id="online-card-container" class="card-container"></div>
             <button id="online-seen-btn" class="primary-btn hidden">✅ شفت</button>
-            <div id="online-waiting-zone" class="hidden"><button id="start-discussion-btn" class="primary-btn hidden">💬 نقاش</button></div>
+            <div id="online-waiting-zone" class="surface-card hidden" style="margin-top:20px; padding:16px;">
+                <div id="online-seen-status" class="seen-status-list"></div>
+                <p id="online-waiting-text">⏳ نستناو الناس...</p>
+                <button id="start-discussion-btn" class="primary-btn hidden">💬 نقاش</button>
+            </div>
         </section>
     </main>
     <div id="toast-msg" class="toast"></div>

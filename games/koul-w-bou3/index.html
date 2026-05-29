@@ -37,7 +37,11 @@
         <section id="online-lobby-screen" class="screen" hidden aria-hidden="true">
             <h2>🕹️ الغرفة</h2>
             <div class="room-code-box">
+                <span style="color:var(--text-muted); font-weight:700;">كود الروم:</span>
                 <span id="display-room-code" class="room-code">------</span>
+                <div id="qrcode-container" style="display:none; justify-content:center; margin:10px 0;">
+                    <div id="qrcode" style="padding:10px; background:white; border-radius:12px; border:1px solid #eee;"></div>
+                </div>
                 <div style="display:flex; gap:10px; justify-content:center; margin-top:16px;">
                     <button id="copy-code-btn" class="icon-btn" style="width:auto; padding:0 20px;">📋 كوبي</button>
                     <button id="share-code-btn" class="primary-btn" style="width:auto; padding:10px 20px; margin:0;">📤 شارك</button>
