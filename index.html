@@ -273,7 +273,18 @@
         <!-- CHKOBBA SCREEN -->
         <section id="chkobba-screen" class="screen chkobba-screen" aria-label="شكبّة" hidden aria-hidden="true">
             <div id="chkobba-deal-layer" class="chkobba-deal-layer" aria-hidden="true"></div>
-            <div class="chkobba-stage">
+            
+            <div id="chkobba-victory-screen" class="chkobba-victory-screen hidden">
+                <div class="victory-header">
+                    <span class="victory-icon">🏆</span>
+                    <h2 id="chkobba-winner-name">الرابح!</h2>
+                </div>
+                <div id="chkobba-final-scoreboard" class="chkobba-scoreboard"></div>
+                <button id="chkobba-reset-btn" class="primary-btn hidden">🔄 عاود انده</button>
+                <p id="chkobba-reset-wait" class="wait-msg">⏳ نستناو مولى الروم يعاود...</p>
+            </div>
+
+            <div class="chkobba-stage" id="chkobba-main-stage">
                 <div id="chkobba-opening-panel" class="chkobba-opening-panel" hidden></div>
                 <div class="chkobba-opponents" id="chkobba-opponents"></div>
 
