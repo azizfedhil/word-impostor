@@ -1003,6 +1003,25 @@ body:not(.game-coup) .coup-only-btn { display: none !important; }
     pointer-events: none;
     transition: opacity 0.3s ease, transform 0.3s ease;
 }
+
+.chkobba-turn-timer {
+    font-weight: 800;
+    color: var(--danger-color);
+    margin-right: 8px;
+    padding-right: 8px;
+    border-right: 1.5px solid var(--border-color);
+    min-width: 45px;
+    text-align: center;
+}
+
+[dir="rtl"] .chkobba-turn-timer {
+    margin-right: 0;
+    margin-left: 8px;
+    padding-right: 0;
+    padding-left: 8px;
+    border-right: none;
+    border-left: 1.5px solid var(--border-color);
+}
 .coup-turn-indicator.hidden {
     opacity: 0;
     transform: translateX(-50%) translateY(-20px);

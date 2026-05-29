@@ -678,9 +678,12 @@ body.game-chkobba header.app-header {
 .chkobba-hand-dock.is-inactive-turn {
     opacity: 0.7;
     filter: grayscale(60%) saturate(40%);
-    pointer-events: none;
     transition: opacity 0.35s var(--chkobba-ease), filter 0.35s var(--chkobba-ease);
     position: relative;
+}
+
+.chkobba-hand-dock.is-inactive-turn .chkobba-hand {
+    pointer-events: none;
 }
 
 .not-your-turn-pill {
