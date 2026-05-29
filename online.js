@@ -215,7 +215,10 @@ async function _fetchRoom(code) {
 
 async function _update(code, patch) {
     const {data,error} = await _supa.from('rooms').update(patch).eq('code',code).select().single();
-    if (error) throw error; _room = data; return data;
+    if (error) throw error;
+    _room = data;
+    _handleStateChange(data);
+    return data;
 }
 
 function _playerHasPatch(room, pid, patch) {
@@ -1046,11 +1049,16 @@ function _renderLobby(room) {
     document.getElementById('lobby-settings-panel')?.remove();
 
     if (_isHost) {
-        startBtn.classList.remove('hidden');
+        startBtn?.classList.remove('hidden');
         const minPlayers = _lobbyMinPlayers(room);
-        if (n < minPlayers) { startBtn.disabled = true; startBtn.style.opacity = '0.5'; waitMsg.innerText = `⏳ نستنا لاعبين... (${n}/${minPlayers} على الأقل)`; }
-        else { startBtn.disabled = false; startBtn.style.opacity = ''; waitMsg.innerText = `✅ ${n} لاعبين — يمكن تبدأ!`; }
-        startBtn.innerText = _isChkobbaRoom(room) ? '🚀 ابدا الشكبّة' : _isCoupRoom(room) ? '🚀 ابدا كول وبوّع' : _isThiefRoom(room) ? '🚀 وزّع كوارط سارق حاكم جلاد' : _isSpyfallRoom(room) ? '🚀 وزّع كوارط ماناش هوني' : '🚀 ابدأ اللعبة';
+        if (n < minPlayers) {
+            if (startBtn) { startBtn.disabled = true; startBtn.style.opacity = '0.5'; }
+            if (waitMsg) waitMsg.innerText = `⏳ نستنا لاعبين... (${n}/${minPlayers} على الأقل)`;
+        } else {
+            if (startBtn) { startBtn.disabled = false; startBtn.style.opacity = ''; }
+            if (waitMsg) waitMsg.innerText = `✅ ${n} لاعبين — يمكن تبدأ!`;
+        }
+        if (startBtn) startBtn.innerText = _isChkobbaRoom(room) ? '🚀 ابدا الشكبّة' : _isCoupRoom(room) ? '🚀 ابدا كول وبوّع' : _isThiefRoom(room) ? '🚀 وزّع كوارط سارق حاكم جلاد' : _isSpyfallRoom(room) ? '🚀 وزّع كوارط ماناش هوني' : '🚀 ابدأ اللعبة';
         if (_isChkobbaRoom(room)) {
             _renderChkobbaLobbySettings(startBtn, room);
             return;
@@ -1533,7 +1541,9 @@ function _animateQuestionText(el, finalText) {
 }
 
 async function _startOnlineGame() {
-    if (!_isHost||!_room || _startingOnlineGame) return;
+    if (_startingOnlineGame) { showToast('اللعبة قاعدة تبدأ...'); return; }
+    if (!_isHost) { showToast('بس مولى الروم يقدر يبدأ اللعبة.'); return; }
+    if (!_room) { showToast('ما فماش روم — اعمل روم أو انضم لواحدة.'); return; }
     _startingOnlineGame = true;
     const startBtn = document.getElementById('online-start-btn');
     if (startBtn) startBtn.disabled = true;
@@ -1672,12 +1682,13 @@ function _showMyCard(room) {
     _renderOnlineRoundPlayers(room, 'online-card-screen');
     if (me.hasSeenCard) { _renderCardWaiting(room); return; }
     const container = document.getElementById('online-card-container');
+    if (!container) return;
     container.innerHTML = '';
     container.classList.remove('online-card-done-compact');
-    document.getElementById('online-seen-btn').classList.add('hidden');
+    document.getElementById('online-seen-btn')?.classList.add('hidden');
     const waitingZone = document.getElementById('online-waiting-zone');
-    waitingZone.classList.add('hidden');
-    waitingZone.classList.remove('all-seen-ready');
+    waitingZone?.classList.add('hidden');
+    waitingZone?.classList.remove('all-seen-ready');
     let roleText;
     if (_isThiefRoom(room)) {
         const meta = _thiefRoleMeta(me.role);
@@ -1729,10 +1740,14 @@ async function _confirmSeen() {
 function _renderCardWaiting(room) {
     _renderOnlineRoundPlayers(room, 'online-card-screen');
     const container = document.getElementById('online-card-container');
+    if (!container) return;
     container.classList.add('online-card-done-compact');
     container.innerHTML = '<div class="card-done-badge">✅</div>';
-    const zone = document.getElementById('online-waiting-zone'); zone.classList.remove('hidden');
-    const statusEl = document.getElementById('online-seen-status'); statusEl.innerHTML = '';
+    const zone = document.getElementById('online-waiting-zone');
+    zone?.classList.remove('hidden');
+    const statusEl = document.getElementById('online-seen-status');
+    if (!statusEl) return;
+    statusEl.innerHTML = '';
     const frag = document.createDocumentFragment();
     room.players.filter(p=>!p.eliminated).forEach(p=>{
         const online = _playerOnline(p);
@@ -1751,12 +1766,14 @@ function _checkAllSeen(room) {
     const zone = document.getElementById('online-waiting-zone');
     zone?.classList.toggle('all-seen-ready', allSeen);
     if (_isHost) {
-        discBtn.classList.toggle('hidden',!allSeen);
-        if (allSeen && zone && zone.firstElementChild !== discBtn) zone.prepend(discBtn);
-        document.getElementById('online-waiting-text').innerText = allSeen?'✅ الناس الكل شافت كوارتها!':'⏳ نستنا الكل يشوف كارطتو...';
+        discBtn?.classList.toggle('hidden', !allSeen);
+        if (allSeen && zone && discBtn && zone.firstElementChild !== discBtn) zone.prepend(discBtn);
+        const waitText = document.getElementById('online-waiting-text');
+        if (waitText) waitText.innerText = allSeen ? '✅ الناس الكل شافت كوارتها!' : '⏳ نستنا الكل يشوف كارطتو...';
     } else {
-        discBtn.classList.add('hidden');
-        document.getElementById('online-waiting-text').innerText = allSeen?'⏳ نستنا الهوست يبدأ النقاش...':'⏳ نستنا الكل يشوف كارطتو...';
+        discBtn?.classList.add('hidden');
+        const waitText = document.getElementById('online-waiting-text');
+        if (waitText) waitText.innerText = allSeen ? '⏳ نستنا الهوست يبدأ النقاش...' : '⏳ نستنا الكل يشوف كارطتو...';
     }
 }
 
