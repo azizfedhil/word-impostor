@@ -3028,30 +3028,56 @@ function _renderChkobbaLobbySettings(anchorBtn, room) {
     const target = cfg.chkobbaTarget || 21;
     const tournament = !!cfg.chkobbaTournament;
 
+    // Mode names map
+    const modeLabels = {
+        '1v1': '1 ضد 1',
+        '2v2': '2 ضد 2 (فِرَق)',
+        '1v1v1': 'اللعب الحر (3 لاعبين)',
+        '1v1v1v1': 'اللعب الحر (4 لاعبين)'
+    };
+
     const wrap = document.createElement('div');
     wrap.id = 'lobby-settings-panel';
     wrap.className = 'advanced-content open simple-lobby-settings';
+
     wrap.innerHTML = `
         <div class="surface-card" style="padding:10px 24px;">
             <div class="setting-row">
-                <div class="setting-info"><span class="setting-title">🎮 المود</span></div>
-                <div class="chkobba-mode-selector">
-                    <button class="mode-pill ${mode==='1v1'?'active':''}" data-cmode="1v1">1v1</button>
-                    <button class="mode-pill ${mode==='2v2'?'active':''}" data-cmode="2v2">2v2</button>
-                    <button class="mode-pill ${mode==='1v1v1'?'active':''}" data-cmode="1v1v1">1v1v1</button>
+                <div class="setting-info">
+                    <span class="setting-title">🎮 نوع الطرح</span>
+                </div>
+                <div class="dropdown-select" id="chk-mode-dropdown">
+                    <div class="dropdown-trigger">
+                        <span>${modeLabels[mode] || mode}</span>
+                        <span class="dropdown-chevron">▼</span>
+                    </div>
+                    <div class="dropdown-menu">
+                        ${Object.entries(modeLabels).map(([val, label]) => `
+                            <div class="dropdown-option ${mode === val ? 'active' : ''}" data-value="${val}">
+                                ${label}
+                                ${mode === val ? '<span class="option-check">✓</span>' : ''}
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
             </div>
+
             <div class="setting-row">
-                <div class="setting-info"><span class="setting-title">🎯 نقاط الربح</span></div>
+                <div class="setting-info">
+                    <span class="setting-title">🎯 قداش نوصلو؟</span>
+                </div>
                 <div class="counter-group">
                     <button class="counter-btn" id="chk-target-minus">−</button>
                     <span class="counter-value" id="chk-target-val">${target}</span>
                     <button class="counter-btn" id="chk-target-plus">+</button>
                 </div>
             </div>
-            <div class="toggle-row" style="border-bottom:none;">
-                <span class="toggle-label">🏆 نظام تورنوا (لأكثر من 4 لاعبين)</span>
-                <div class="toggle-switch ${tournament?'active':''}" id="chk-tournament-tog"><div class="toggle-thumb"></div></div>
+
+            <div class="toggle-row" style="border-bottom:none; margin-top:16px;">
+                <span class="toggle-label">🏆 نظام تورنوا</span>
+                <div class="toggle-switch ${tournament?'active':''}" id="chk-tournament-tog">
+                    <div class="toggle-thumb"></div>
+                </div>
             </div>
         </div>
     `;
@@ -3062,12 +3088,22 @@ function _renderChkobbaLobbySettings(anchorBtn, room) {
         try { await _update(room.code, { config: newCfg }); } catch(e) { console.error(e); }
     };
 
-    wrap.querySelectorAll('[data-cmode]').forEach(btn => btn.addEventListener('click', () => {
-        updateConfig({ chkobbaMode: btn.dataset.cmode });
-    }));
+    // Wire dropdown
+    const dropdown = wrap.querySelector('#chk-mode-dropdown');
+    dropdown.querySelector('.dropdown-trigger').onclick = () => dropdown.classList.toggle('open');
+    dropdown.querySelectorAll('.dropdown-option').forEach(opt => {
+        opt.onclick = () => {
+            dropdown.classList.remove('open');
+            updateConfig({ chkobbaMode: opt.dataset.value });
+        };
+    });
+
     wrap.querySelector('#chk-target-minus').onclick = () => updateConfig({ chkobbaTarget: Math.max(11, target - 10) });
     wrap.querySelector('#chk-target-plus').onclick = () => updateConfig({ chkobbaTarget: Math.min(101, target + 10) });
-    wrap.querySelector('#chk-tournament-tog').onclick = () => updateConfig({ chkobbaTournament: !tournament });
+
+    wrap.querySelector('#chk-tournament-tog').onclick = () => {
+        updateConfig({ chkobbaTournament: !tournament });
+    };
 }
 
 async function _startOnlineChkobbaGame() {
@@ -3146,20 +3182,41 @@ function _showOnlineChkobba(room) {
     oppCont.innerHTML = '';
     oppCont.className = `chkobba-opponents mode-${mode}`;
 
-    state.players.filter(p => p.id !== _myId).forEach(p => {
-        const div = document.createElement('div');
+    const others = state.players.filter(p => p.id !== _myId);
+    others.forEach(p => {
         const active = state.players[state.turnIndex].id === p.id;
         const isTeammate = mode === '2v2' && p.team === me?.team;
-        div.className = `opponent-area ${isTeammate?'is-teammate':''}`;
-        div.innerHTML = `
-            <div class="opponent-avatar ${active?'active-turn':''}">
-                ${isTeammate?'🤝':'👤'}
+        const isExpanded = _onlineCoupSummaryExpandedId === p.id;
+
+        const pill = document.createElement('div');
+        pill.className = `chkobba-player-pill ${active?'is-turn':''} ${isTeammate?'is-teammate':''} ${isExpanded?'is-expanded':''}`;
+
+        pill.innerHTML = `
+            <div class="pill-main">
+                <div class="pill-avatar">${isTeammate?'🤝':'👤'}</div>
+                <div class="pill-info">
+                    <div class="pill-name">${_esc(p.name)}</div>
+                    <div class="pill-stats">
+                        <span>🃏 ${p.hand.length}</span>
+                        <span>🏆 ${p.totalScore}</span>
+                    </div>
+                </div>
+                <div class="pill-chevron">${isExpanded?'▲':'▼'}</div>
             </div>
-            <div class="opponent-name">${_esc(p.name)} ${isTeammate?'(زميلك)':''}</div>
-            <div class="opponent-cards-count">🃏 ${p.hand.length}</div>
-            <div class="opponent-score">🏆 ${p.totalScore}</div>
+            ${isExpanded ? `
+                <div class="pill-details">
+                    <div class="detail-row"><span>الشكبّات:</span> <strong>${p.chkobbas || 0}</strong></div>
+                    <div class="detail-row"><span>الاوراق الماكلة:</span> <strong>${p.captured?.length || 0}</strong></div>
+                    <div class="detail-row"><span>الديناري:</span> <strong>${p.captured?.filter(c => c.suit === 'diamonds').length || 0}</strong></div>
+                </div>
+            ` : ''}
         `;
-        oppCont.appendChild(div);
+
+        pill.onclick = () => {
+            _onlineCoupSummaryExpandedId = isExpanded ? null : p.id;
+            _showOnlineChkobba(room);
+        };
+        oppCont.appendChild(pill);
     });
 
     // Render Table
@@ -3195,8 +3252,11 @@ function _showOnlineChkobba(room) {
     }
 
     // Update Info
-    document.getElementById('chkobba-deck-count').innerText = `🂠 ${state.deck.length}`;
-    document.getElementById('chkobba-scores-summary').innerText = `🏆 سكورك: ${me?.totalScore || 0}`;
+    const infoCont = document.getElementById('chkobba-round-info');
+    infoCont.innerHTML = `
+        <div class="chkobba-info-pill">🂠 ${state.deck.length}</div>
+        <div class="chkobba-info-pill">🏆 ${me?.totalScore || 0}</div>
+    `;
 
     // Enable drop on table
     tableCont.addEventListener('dragover', e => e.preventDefault());
@@ -3427,6 +3487,13 @@ function _showTournamentBracket(room) {
     showScreen('chkobba-screen');
     const state = room.word_obj;
     const container = document.getElementById('chkobba-table');
+
+    // Clear styles that might interfere
+    container.style.aspectRatio = 'auto';
+    container.style.width = '100%';
+    container.style.height = 'auto';
+    container.style.borderRadius = 'var(--radius-lg)';
+
     container.innerHTML = '<div class="tournament-bracket"></div>';
     const bracket = container.querySelector('.tournament-bracket');
 
