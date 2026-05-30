@@ -1911,27 +1911,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         const vw = window.innerWidth;
         const vh = window.innerHeight;
 
-        // Scale to fill width (capped at 560px for desktop)
-        const maxWidth = Math.min(vw, 560);
-        const factor = maxWidth / BASE_W;
+        // On mobile vw === screen width, on desktop cap at 560px
+        const factor = Math.min(vw, 560) / BASE_W;
         window._gameScale = factor;
 
-        // Virtual height fills the real viewport
-        const virtualHeight = vh / factor;
+        const virtualH = vh / factor;
 
-        shell.style.transform = `scale(${factor})`;
+        // Size the unscaled shell
+        shell.style.width  = BASE_W + 'px';
+        shell.style.height = virtualH + 'px';
+
+        // Scale from top-center so it fills from the top down and stays centered
         shell.style.transformOrigin = 'top center';
-        shell.style.height = `${virtualHeight}px`;
-        shell.style.width = `${BASE_W}px`;
+        shell.style.transform = 'scale(' + factor + ')';
 
-        // Center horizontally on wide screens
-        const scaledW = BASE_W * factor;
-        const leftOffset = Math.max(0, (vw - scaledW) / 2);
-        shell.style.position = 'absolute';
-        shell.style.left = `${leftOffset}px`;
-        shell.style.top = '0';
-
-        document.body.style.minHeight = `${vh}px`;
+        // Keep body tall enough so the scaled shell is not clipped
+        document.body.style.height = vh + 'px';
+        document.body.style.minHeight = vh + 'px';
     }
     window.addEventListener('resize', _resizeGame);
     _resizeGame();
