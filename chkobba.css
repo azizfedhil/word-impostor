@@ -1,608 +1,974 @@
-/* Chkobba New UI — Inspiration-driven design (Merged & Restored) */
+/* ═══════════════════════════════════════════════════════════════
+   CHKOBBA — Full 9:16 Locked Redesign
+   Reference: casino-table aesthetic, avatar corners, hand dock
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── 9:16 Viewport Lock ──────────────────────────────────────── */
 :root {
-    --chkobba-card-w: 78px;
-    --chkobba-card-h: 114px;
-    --chkobba-ease: cubic-bezier(0.16, 1, 0.3, 1);
-    --chkobba-card-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    --primary-green: #2d5a3f;
-    --dark-green: #1a3a2a;
-    --accent-turn: #4ade80;
-    --ease-out-cubic: cubic-bezier(0.22, 0.9, 0.3, 1);
+    --chk-bg:               #0a2416;
+    --chk-felt:             #0d2e1a;
+    --chk-gold:             #c9a84c;
+    --chk-gold-dim:         rgba(201,168,76,0.45);
+    --chk-glass:            rgba(255,255,255,0.08);
+    --chk-glass-border:     rgba(255,255,255,0.14);
+    --chk-text:             #f0ede6;
+    --chk-text-dim:         rgba(240,237,230,0.62);
+    --chk-green-glow:       rgba(82,200,130,0.22);
+    --chk-primary:          #528c71;
+    --chk-accent:           #f1c051;
+    --chk-danger:           #d46b5a;
+
+    --chkobba-card-w:       68px;
+    --chkobba-card-h:       100px;
+    --chkobba-ease:         cubic-bezier(0.16, 1, 0.3, 1);
+    --chkobba-card-shadow:  0 8px 24px rgba(0,0,0,0.55);
+    --ease-out-cubic:       cubic-bezier(0.22, 0.9, 0.3, 1);
+    --ease-pop:             cubic-bezier(0.2, 1.2, 0.3, 1);
 }
 
-/* Background & Screen */
-#chkobba-screen.chkobba-screen {
-    position: fixed;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    background: var(--dark-green);
-    background-image: radial-gradient(circle, var(--primary-green) 0%, var(--dark-green) 100%);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+/* ── Aspect-ratio shell ─────────────────────────────────────────
+   We wrap the game in a 9:16 box centred on the page.
+   Inside that box everything is positioned absolutely.
+───────────────────────────────────────────────────────────────── */
+body.game-chkobba {
+    background: #000;
     margin: 0;
     padding: 0;
-    color: #fff;
-    font-family: 'Baloo Bhaijaan 2', system-ui, sans-serif;
-}
-
-/* Top Header */
-.chkobba-header-new {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    right: 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    z-index: 100;
-}
-
-.chkobba-menu-btn {
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: white;
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: 14px;
-    font-weight: 600;
+    overflow: hidden;
+    min-height: 100dvh;
     display: flex;
     align-items: center;
-    gap: 8px;
-    cursor: pointer;
+    justify-content: center;
 }
 
-.chkobba-menu-btn:active {
-    transform: scale(0.95);
-    background: rgba(255, 255, 255, 0.15);
+/* Hide the generic app header/container when in chkobba */
+body.game-chkobba .bg-orb,
+body.game-chkobba header.app-header,
+body.game-chkobba .container > *:not(#chkobba-screen) {
+    display: none !important;
 }
 
-/* Opponents Section */
-.chkobba-opponents-new {
-    position: absolute;
-    top: 20px;
-    left: 0;
-    right: 0;
-    display: flex;
-    justify-content: space-between;
-    padding: 0 20px;
-    pointer-events: none;
-}
-
-.chkobba-opponent-avatar-pill {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    pointer-events: auto;
-}
-
-.opponent-avatar-wrap, .me-avatar-wrap {
-    position: relative;
-    width: 64px;
-    height: 64px;
-    border-radius: 50%;
-    padding: 4px;
-}
-
-.placeholder-avatar {
+body.game-chkobba .container {
+    padding: 0;
+    max-width: none;
     width: 100%;
     height: 100%;
-    background: #e0e0e0;
-    border-radius: 50%;
-    border: 3px solid #333;
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23999"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>');
-    background-size: 60%;
-    background-position: center;
-    background-repeat: no-repeat;
-}
-
-.opponent-turn-ring, .me-turn-ring {
-    position: absolute;
-    inset: 0;
-    border: 3px solid transparent;
-    border-radius: 50%;
-    transition: border-color 0.3s ease;
-}
-
-.is-turn .opponent-turn-ring, .is-turn .me-turn-ring {
-    border-color: var(--accent-turn);
-    animation: turnPulse 1.5s infinite;
-}
-
-@keyframes turnPulse {
-    0% { transform: scale(1); opacity: 1; border-width: 3px; }
-    50% { transform: scale(1.15); opacity: 0.5; border-width: 1px; }
-    100% { transform: scale(1); opacity: 1; border-width: 3px; }
-}
-
-.opponent-info {
-    text-align: center;
-}
-
-.opponent-name {
-    font-weight: 700;
-    font-size: 0.9rem;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-}
-
-.opponent-cards-count {
-    font-size: 0.75rem;
-    color: rgba(255,255,255,0.7);
-}
-
-.opponent-timer {
-    position: absolute;
-    bottom: -5px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--accent-turn);
-    color: #111;
-    font-size: 0.65rem;
-    font-weight: 900;
-    padding: 1px 6px;
-    border-radius: 10px;
-    border: 2px solid #111;
-}
-
-/* Stage & Table */
-.chkobba-stage {
-    flex: 1;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
+}
+
+/* ── Main screen — 9:16 box ──────────────────────────────────── */
+#chkobba-screen.chkobba-screen,
+#chkobba-screen {
     position: relative;
-}
+    /* 9:16 via aspect-ratio + max constraints */
+    width: min(100vw, calc(100dvh * 9 / 16));
+    height: min(100dvh, calc(100vw * 16 / 9));
+    max-width: 480px;
+    max-height: calc(480px * 16 / 9);
+    margin: auto;
 
-.chkobba-table-wrap {
-    width: 100%;
-    max-width: 400px;
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.chkobba-table {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
-    gap: 12px;
-    min-height: 140px;
-    width: 100%;
-}
-
-/* Side Piles */
-.chkobba-piles {
-    position: absolute;
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    padding: 0 10px;
-    pointer-events: none;
-    top: 50%;
-    transform: translateY(-50%);
-}
-
-.side-pile {
-    width: 64px;
-    height: 94px;
-    border-radius: 6px;
+    background-image: url('chkobba_background.webp');
     background-size: cover;
-    box-shadow: var(--chkobba-card-shadow);
-    position: relative;
-    pointer-events: auto;
-}
+    background-position: center;
 
-.side-pile::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: inherit;
-}
-
-.side-pile .pile-count {
-    position: absolute;
-    bottom: -10px;
-    right: -10px;
-    width: 28px;
-    height: 28px;
-    background: #1a1a1a;
-    color: #fff;
-    border: 2px solid #333;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.8rem;
-    font-weight: 900;
-    z-index: 10;
-}
-
-/* Bottom Bar */
-.chkobba-bottom-bar {
-    position: relative;
-    background: #111;
-    height: 140px;
-    width: 100%;
-    border-top: 1px solid #333;
-    border-radius: 40% 40% 0 0 / 20px 20px 0 0;
     display: flex;
     flex-direction: column;
-    padding: 10px 20px;
-    z-index: 100;
+    align-items: stretch;
+    overflow: hidden;
+    border-radius: 0;
+
+    /* Reset any inherited padding/margin */
+    padding: 0;
+    gap: 0;
+    min-height: unset;
+    color: var(--chk-text);
 }
 
-.chkobba-bottom-bar::after {
-    content: '';
+/* ── Top bar: Menu button centred ───────────────────────────── */
+#chkobba-screen .chkobba-topbar {
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(241, 192, 81, 0.4), transparent);
-}
-
-.chkobba-me-info {
+    height: 56px;
     display: flex;
     align-items: center;
-    gap: 15px;
-    margin-bottom: 10px;
+    justify-content: center;
+    z-index: 50;
+    pointer-events: none;
 }
 
-.me-details {
-    flex: 1;
-}
-
-.me-name {
-    font-weight: 800;
-    font-size: 1.1rem;
-    color: var(--accent-turn);
-}
-
-.me-stats {
+/* We repurpose the existing leave/menu button injected by JS */
+#chkobba-leave-btn,
+.chkobba-leave-btn {
+    pointer-events: auto;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--chk-glass-border);
+    color: var(--chk-text);
+    border-radius: 99px;
+    padding: 8px 22px;
+    font-size: 0.88rem;
+    font-weight: 700;
     display: flex;
-    gap: 20px;
-    margin-top: 4px;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
 }
 
-.me-stat {
+/* ── Stage (middle area) ───────────────────────────────────── */
+.chkobba-stage {
+    position: absolute;
+    inset: 56px 0 0 0;
+    display: block; /* children are absolutely positioned */
+    overflow: hidden;
+}
+
+/* ── Opponents row ─────────────────────────────────────────── */
+.chkobba-opponents {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 8px 10px 0;
+    z-index: 20;
+    pointer-events: none;
+}
+
+/* In 1v1 mode: one opponent centered at top */
+.chkobba-opponents.mode-1v1 {
+    justify-content: space-between;
+}
+
+/* ── Player pill — avatar style ─────────────────────────────── */
+.chkobba-player-pill {
+    pointer-events: auto;
     display: flex;
     flex-direction: column;
     align-items: center;
+    cursor: pointer;
+    transition: transform 180ms var(--ease-pop);
+    will-change: transform;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    min-width: 0;
+    max-width: 90px;
 }
 
-.stat-val {
-    font-weight: 900;
-    font-size: 1rem;
+.chkobba-player-pill:hover { transform: scale(1.05); }
+.chkobba-player-pill:active { transform: scale(0.97); }
+
+/* Avatar circle */
+.chkobba-player-pill .pill-main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    min-height: unset;
 }
 
-.stat-label {
-    font-size: 0.65rem;
-    color: rgba(255,255,255,0.5);
-    text-transform: uppercase;
-}
-
-.me-turn-status {
+/* Avatar ring */
+.chkobba-player-pill .pill-avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.45);
+    border: 2.5px solid var(--chk-gold-dim);
     display: flex;
     align-items: center;
-    gap: 8px;
-    background: rgba(255,255,255,0.05);
-    padding: 6px 12px;
-    border-radius: 12px;
-    opacity: 0.5;
+    justify-content: center;
+    font-size: 1.45rem;
+    position: relative;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    box-shadow: 0 0 0 0 transparent;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    overflow: visible;
 }
 
-.me-turn-status.active {
-    opacity: 1;
+.chkobba-player-pill.is-turn .pill-avatar {
+    border-color: #4ade80;
+    box-shadow: 0 0 0 3px rgba(74,222,128,0.28), 0 0 16px rgba(74,222,128,0.25);
 }
 
-.turn-dot {
-    width: 8px;
-    height: 8px;
-    background: #666;
+/* Timer badge on avatar */
+.chkobba-player-pill .pill-avatar .avatar-timer {
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.75);
+    border: 1px solid var(--chk-gold-dim);
+    color: #4ade80;
+    font-size: 0.64rem;
+    font-weight: 800;
+    padding: 1px 5px;
+    border-radius: 99px;
+    white-space: nowrap;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+/* Card count badge */
+.chkobba-player-pill .pill-avatar .avatar-cards {
+    position: absolute;
+    top: -6px;
+    right: -8px;
+    background: rgba(0,0,0,0.8);
+    border: 1px solid var(--chk-glass-border);
+    color: var(--chk-text);
+    font-size: 0.62rem;
+    font-weight: 800;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.active .turn-dot {
-    background: var(--accent-turn);
-    box-shadow: 0 0 8px var(--accent-turn);
+/* Player name under avatar */
+.chkobba-player-pill .pill-name {
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: var(--chk-text);
+    text-shadow: 0 1px 4px rgba(0,0,0,0.7);
+    text-align: center;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-top: 12px; /* space for timer badge */
 }
 
-.turn-text {
+/* Stats row: hide by default, show on expanded */
+.chkobba-player-pill .pill-stats-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 3px;
+}
+
+.chkobba-player-pill .pill-stat {
+    font-size: 0.68rem;
+    font-weight: 800;
+    color: var(--chk-text-dim);
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: rgba(0,0,0,0.4);
+    border-radius: 99px;
+    padding: 1px 5px;
+    border: 1px solid var(--chk-glass-border);
+}
+
+.chkobba-player-pill .pill-chevron { display: none; }
+
+/* Expanded detail panel */
+.chkobba-player-pill .pill-details {
+    margin-top: 6px;
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--chk-glass-border);
+    border-radius: 14px;
+    padding: 8px 10px;
+    animation: chkobbaPillExpand 0.28s var(--ease-pop) both;
+    min-width: 120px;
+}
+
+.chkobba-player-pill .pill-details-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.chkobba-player-pill .detail-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.74rem;
+    color: var(--chk-text-dim);
     font-weight: 700;
-    font-size: 0.85rem;
+    gap: 8px;
+}
+
+.chkobba-player-pill .detail-row strong {
+    color: var(--chk-text);
+}
+
+/* Me pill — bottom left corner */
+.chkobba-player-pill.is-me {
+    /* positioned by the bottom bar */
+}
+
+.chkobba-player-pill.is-offline { opacity: 0.55; }
+
+.chkobba-player-pill.is-entering {
+    animation: chkobbaPillDropIn 0.35s var(--ease-pop) both;
+}
+
+@keyframes chkobbaPillDropIn {
+    from { opacity: 0; transform: translateY(-10px) scale(0.9); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes chkobbaPillExpand {
+    from { opacity: 0; transform: translateY(-6px); max-height: 0; }
+    to   { opacity: 1; transform: translateY(0);    max-height: 200px; }
+}
+
+.you-tag {
+    font-size: 0.6rem;
+    background: var(--chk-gold);
+    color: #000;
+    border-radius: 99px;
+    padding: 1px 4px;
+    font-weight: 900;
+    margin-inline-start: 3px;
+    vertical-align: middle;
+}
+
+.berria-pill-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    color: #d63031;
+    border: 1px solid #fab1a0;
+    border-radius: 4px;
+    font-size: 0.6rem;
+    padding: 1px 3px;
+    margin-inline-start: 3px;
+    font-weight: 900;
+    vertical-align: middle;
+}
+
+/* ── Deck & Capture piles ───────────────────────────────────── */
+/* Piles are positioned inside the table-wrap */
+.chkobba-table-wrap {
+    position: absolute;
+    top: 70px; /* below opponent row */
+    bottom: 210px; /* above hand dock */
+    left: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.chkobba-piles {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 5;
+}
+
+/* Deck pile — top-left corner of the table area */
+.chkobba-pile.deck-pile {
+    position: absolute;
+    top: 0;
+    left: 12px;
+    width: 52px;
+    height: 72px;
+    border-radius: 10px;
+    background: center / cover no-repeat;
+    box-shadow:
+        2px 2px 0 rgba(0,0,0,0.2),
+        4px 4px 0 rgba(0,0,0,0.12),
+        var(--chkobba-card-shadow);
+}
+
+/* Capture pile — top-right corner of the table area */
+.chkobba-pile.capture-pile {
+    position: absolute;
+    top: 0;
+    right: 12px;
+    width: 52px;
+    height: 72px;
+    border-radius: 10px;
+    background: rgba(0,0,0,0.3);
+    border: 2px dashed rgba(201,168,76,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--chk-gold-dim);
+    font-size: 1.2rem;
+}
+
+.chkobba-pile.capture-pile.has-cards {
+    border-style: solid;
+    border-color: var(--chk-gold-dim);
+}
+
+.chkobba-pile .pile-count {
+    position: absolute;
+    bottom: -8px;
+    right: -8px;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 5px;
+    border-radius: 99px;
+    background: rgba(0,0,0,0.8);
+    border: 1.5px solid var(--chk-gold);
+    color: var(--chk-gold);
+    font-size: 0.7rem;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chkobba-pile.capture-pile .pile-count {
+    background: rgba(82,140,113,0.85);
+    border-color: #4ade80;
     color: #fff;
 }
 
-.turn-subtext {
-    font-size: 0.7rem;
-    color: rgba(255,255,255,0.4);
+.chkobba-pile.deck-pile.is-dealing {
+    animation: chkobbaDeckPulse 0.5s var(--chkobba-ease);
 }
 
-/* Hand Dock */
-.chkobba-hand-dock {
-    position: absolute;
-    bottom: 85px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: auto;
-    z-index: 200;
+@keyframes chkobbaDeckPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
 }
 
-.chkobba-hand {
+/* ── Table (card play area) ─────────────────────────────────── */
+.chkobba-table {
+    position: relative;
+    width: calc(100% - 24px);
+    max-width: 340px;
+    min-height: 140px;
+    background: rgba(0,0,0,0.18);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 24px;
     display: flex;
+    flex-wrap: wrap;
+    align-items: center;
     justify-content: center;
-    align-items: flex-end;
-    gap: -20px; /* Overlap */
+    align-content: center;
+    gap: 10px;
+    padding: 16px;
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.06),
+        0 12px 40px rgba(0,0,0,0.35);
 }
 
-/* Cards */
+.chkobba-table.is-drop-target {
+    box-shadow:
+        0 0 0 2px #4ade80,
+        inset 0 1px 0 rgba(255,255,255,0.06),
+        0 12px 40px rgba(0,0,0,0.35);
+}
+
+/* ── Cards ──────────────────────────────────────────────────── */
 .chkobba-card {
     width: var(--chkobba-card-w);
     height: var(--chkobba-card-h);
-    border-radius: 8px;
-    transition: transform 0.2s var(--chkobba-ease), box-shadow 0.2s var(--chkobba-ease);
-    cursor: pointer;
-    box-shadow: var(--chkobba-card-shadow);
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.26s var(--chkobba-ease), box-shadow 0.26s var(--chkobba-ease);
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+    flex-shrink: 0;
 }
 
 .chkobba-card img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    border-radius: inherit;
-    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 10px;
+    box-shadow: var(--chkobba-card-shadow);
+    backface-visibility: hidden;
+    pointer-events: none;
+    border: 1px solid rgba(255,255,255,0.18);
 }
 
-.hand-card {
-    margin-left: -20px;
-    transform: rotate(var(--tilt, 0deg));
-}
-
-.hand-card:first-child {
-    margin-left: 0;
-}
-
-.hand-card:hover {
-    transform: translateY(-20px) rotate(0deg) scale(1.1);
+.chkobba-card.is-armed {
     z-index: 50;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    transform: translateY(-14px) scale(1.07);
+    box-shadow: 0 0 0 2.5px #4ade80, var(--chkobba-card-shadow);
 }
 
-.hand-card.is-armed {
-    transform: translateY(-30px) scale(1.05);
-    box-shadow: 0 0 0 3px var(--accent-turn), 0 10px 25px rgba(0,0,0,0.5);
-    z-index: 100;
+.chkobba-card.is-capture-candidate {
+    box-shadow: 0 0 0 2px rgba(82,222,128,0.45), var(--chkobba-card-shadow);
 }
 
-.table-card {
+.chkobba-card.table-card.is-selected,
+.chkobba-card.is-table.is-selected {
+    transform: rotate(var(--rot, 0deg));
+    box-shadow: 0 0 0 3px var(--chk-accent), 0 6px 20px rgba(241,192,81,0.4), var(--chkobba-card-shadow);
+    z-index: 40;
+}
+
+.chkobba-card.hand-card.is-selected {
+    box-shadow: 0 0 0 3px var(--chk-accent), var(--chkobba-card-shadow);
+    z-index: 40;
+}
+
+.chkobba-card.is-invalid {
+    animation: chkobbaCardShake 0.35s ease;
+}
+
+@keyframes chkobbaCardShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+.chkobba-card.table-card,
+.chkobba-card.is-table {
     transform: rotate(var(--rot, 0deg));
 }
 
-.table-card:hover {
-    transform: rotate(0deg) scale(1.05);
-    z-index: 10;
+.chkobba-card.hand-card {
+    z-index: var(--hand-z, 10);
+    transform: translateX(var(--stack-offset, 0px)) rotate(var(--tilt, 0deg));
+    margin-left: calc(var(--stack-overlap, 0px) * -1);
 }
 
-.table-card.is-selected {
-    box-shadow: 0 0 0 4px #f1c051, 0 8px 20px rgba(0,0,0,0.4);
-    z-index: 20;
+.chkobba-card.hand-card:first-child { margin-left: 0; }
+
+.chkobba-card.hand-card:hover,
+.chkobba-card.hand-card.is-lifted {
+    transform: translateX(var(--stack-offset, 0px)) translateY(-16px) rotate(var(--tilt, 0deg)) scale(1.08);
+    z-index: 100;
 }
 
-/* Floating Info Pills - Hidden in Chkobba redesign */
-.chkobba-info-floating {
-    display: none;
+.chkobba-card.dragging,
+.chkobba-card.is-dragging {
+    opacity: 0.3;
+    transform: scale(0.9);
+    cursor: grabbing;
 }
 
-/* Reaction Bar */
-.chkobba-reactions-bar {
-    position: absolute;
-    bottom: calc(100% + 40px);
-    right: 0;
-    background: rgba(0,0,0,0.8);
-    backdrop-filter: blur(10px);
-    border-radius: 30px;
-    padding: 8px 16px;
-    display: flex;
-    gap: 12px;
-    transform: scale(0.8);
-    opacity: 0;
-    pointer-events: none;
-    transition: all 0.3s var(--chkobba-ease);
-}
-
-.chkobba-reactions-bar.show {
-    opacity: 1;
-    transform: scale(1);
-    pointer-events: auto;
-}
-
-.chkobba-reactions-bar button {
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-    transition: transform 0.2s;
-}
-
-.chkobba-reactions-bar button:hover {
-    transform: scale(1.3);
-}
-
-/* Animations (Restored) */
-.chkobba-deal-layer {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 9999;
-}
-
-.chkobba-flight-card {
-    position: fixed;
-    top: 0; left: 0;
-    width: var(--chkobba-card-w);
-    height: var(--chkobba-card-h);
-    z-index: 10000;
-    pointer-events: none;
-    will-change: transform, opacity;
-    transition: transform 260ms var(--ease-out-cubic), opacity 120ms ease-out;
-}
-
-.chkobba-flight-card img {
-    width: 100%; height: 100%;
-    object-fit: cover;
-    border-radius: 12px;
-    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.4);
-}
-
-.chkobba-ghost-trail {
-    position: fixed; top: 0; left: 0;
-    width: var(--chkobba-card-w); height: var(--chkobba-card-h);
-    z-index: 9998;
-    pointer-events: none;
-    opacity: 0.7;
-    transition: opacity 450ms ease-out, transform 320ms var(--ease-out-cubic);
-    will-change: transform, opacity;
-    filter: drop-shadow(0 0 15px var(--accent-turn)) brightness(1.2) contrast(1.1);
-}
-
-.chkobba-ghost-trail img {
-    width: 100%; height: 100%; border-radius: 12px;
-}
-
+/* ── Drag ghost ─────────────────────────────────────────────── */
 .chkobba-drag-ghost {
     position: fixed;
     width: var(--chkobba-card-w);
     height: var(--chkobba-card-h);
     z-index: 9999;
     pointer-events: none;
-    transform: translate(-50%, -50%) rotate(var(--ghost-tilt, 4deg)) scale(1.08);
+    transform: translate(-50%, -50%) rotate(var(--ghost-tilt, 4deg)) scale(1.1);
     transition: transform 0.08s ease-out;
-    filter: drop-shadow(0 16px 28px rgba(0, 0, 0, 0.4));
+    filter: drop-shadow(0 18px 32px rgba(0,0,0,0.5));
 }
 
 .chkobba-drag-ghost img {
-    width: 100%; height: 100%; border-radius: 12px;
-}
-
-/* Victory Screen & Scoreboard (Restored & Themed) */
-.chkobba-victory-screen {
-    position: absolute;
-    inset: 0;
-    background: var(--dark-green);
-    z-index: 2000;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 24px 16px;
-    overflow-y: auto;
-}
-
-.victory-header {
-    text-align: center;
-    margin-bottom: 24px;
-}
-
-.victory-icon {
-    font-size: 4rem;
-    display: block;
-    margin-bottom: 8px;
-}
-
-.chkobba-scoreboard {
     width: 100%;
-    max-width: 400px;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+/* ── Capture ready bar ──────────────────────────────────────── */
+.chkobba-capture-ready-bar {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10000;
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    margin-bottom: 32px;
-}
-
-.scoreboard-item {
-    background: rgba(0, 0, 0, 0.3);
-    border: 1.5px solid rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
+    align-items: center;
+    gap: 12px;
+    width: min(88vw, 280px);
     padding: 18px;
-    backdrop-filter: blur(10px);
+    background: rgba(10,36,22,0.92);
+    border: 2px solid #4ade80;
+    border-radius: 24px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    animation: chkobbaCaptureBarEnter 0.32s var(--ease-pop) both;
 }
 
-.scoreboard-item.is-winner {
-    border-color: var(--accent-turn);
-    background: rgba(74, 222, 128, 0.1);
+@keyframes chkobbaCaptureBarEnter {
+    from { opacity: 0; transform: translate(-50%, -40%) scale(0.88); }
+    to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 }
 
-.scoreboard-item-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 14px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    padding-bottom: 8px;
-}
-
-.scoreboard-name {
-    font-size: 1.2rem;
-    font-weight: 800;
-}
-
-.scoreboard-total {
-    font-size: 1.4rem;
-    font-weight: 900;
-    color: var(--accent-turn);
-}
-
-.scoreboard-details-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-}
-
-.score-detail-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.9rem;
+.chkobba-capture-ready-bar p {
+    margin: 0;
+    font-size: 0.84rem;
     font-weight: 700;
-    color: rgba(255, 255, 255, 0.7);
-}
-
-.score-detail-row img {
-    width: 26px;
-    height: 38px;
-    object-fit: cover;
-    border-radius: 4px;
-}
-
-/* Traditional opening ceremony */
-.chkobba-opening-panel {
-    width: min(100%, 340px);
-    margin: 0 auto 12px;
-    padding: 16px 18px;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
+    color: var(--chk-text-dim);
     text-align: center;
+    line-height: 1.35;
 }
 
-.chkobba-opening-panel h3 {
-    margin: 0 0 8px;
-    font-size: 1.1rem;
+.chkobba-capture-ready-bar .primary-btn {
+    width: 100%;
+    margin: 0;
+    padding: 10px 16px;
+    font-size: 0.92rem;
+    background: #4ade80;
+    color: #0a2416;
+    border-radius: 99px;
+    box-shadow: 0 4px 16px rgba(74,222,128,0.35);
 }
 
-.chkobba-opening-panel p {
-    margin: 0 0 12px;
+/* ── Info pills (deck/score/round) ──────────────────────────── */
+.chkobba-info {
+    position: absolute;
+    bottom: calc(247px + 8px); /* just above hand dock */
+    left: 0;
+    right: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 5px;
+    padding: 0 10px;
+    z-index: 15;
+    pointer-events: auto;
+}
+
+.chkobba-info-pill {
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--chk-glass-border);
+    padding: 5px 12px;
+    border-radius: 99px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: var(--chk-text);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.2s ease, border-radius 0.2s ease;
+}
+
+.chkobba-info-pill:hover {
+    background: rgba(0,0,0,0.65);
+}
+
+.chkobba-info-pill.is-expanded {
+    border-radius: 14px;
+    padding: 8px 14px;
+}
+
+.chkobba-info-pill .info-pill-collapsed {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.chkobba-info-pill .info-pill-label {
+    color: var(--chk-text-dim);
+    font-weight: 700;
+    font-size: 0.72rem;
+}
+
+.chkobba-info-pill .info-pill-hint {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--chk-text-dim);
+    text-align: center;
+    line-height: 1.3;
+    max-width: 130px;
+    animation: chkobbaPillExpand 0.28s var(--ease-pop) both;
+}
+
+.chkobba-info-pill.voice-info-pill { border-color: rgba(241,192,81,0.3); }
+.chkobba-info-pill.voice-active    { border-color: #ef4444; color: #ef4444; }
+
+/* ── Hand dock ──────────────────────────────────────────────── */
+.chkobba-hand-dock {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 210px;
+    flex-shrink: 0;
+    padding: 0;
+    z-index: 30;
+}
+
+/* Curved table edge background — matches the webp */
+.chkobba-hand {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-bottom: 18px;
+    padding-top: 32px;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+/* Not-your-turn overlay */
+.chkobba-hand-dock.is-inactive-turn {
+    opacity: 0.72;
+    filter: grayscale(50%) saturate(50%);
+    transition: opacity 0.35s ease, filter 0.35s ease;
+}
+
+.chkobba-hand-dock.is-inactive-turn .chkobba-hand {
+    pointer-events: none;
+}
+
+.not-your-turn-pill {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translate(-50%, -6px);
+    background: rgba(0,0,0,0.72);
+    color: var(--chk-text);
+    padding: 5px 14px;
+    border-radius: 99px;
+    font-size: 0.82rem;
+    font-weight: 800;
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 180ms var(--ease-pop), opacity 180ms ease-out;
+    z-index: 20;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid var(--chk-glass-border);
+}
+
+.chkobba-hand-dock.is-inactive-turn .not-your-turn-pill {
+    transform: translate(-50%, 0);
+    opacity: 1;
+}
+
+/* ── Bottom status bar ──────────────────────────────────────── */
+/* Hide the old coup-turn-indicator in chkobba mode */
+body.game-chkobba #coup-turn-indicator {
+    display: none !important;
+}
+
+.chkobba-bottom-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 14px;
+    background: rgba(0,0,0,0.72);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid var(--chk-glass-border);
+    z-index: 40;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
+}
+
+.chkobba-bottom-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    border: 2px solid var(--chk-gold-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+    transition: border-color 0.25s ease;
+}
+
+.chkobba-bottom-bar.is-my-turn .chkobba-bottom-avatar {
+    border-color: #4ade80;
+    box-shadow: 0 0 0 2px rgba(74,222,128,0.25);
+}
+
+.chkobba-bottom-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+    min-width: 0;
+}
+
+.chkobba-bottom-name {
     font-size: 0.88rem;
-    color: rgba(255, 255, 255, 0.7);
+    font-weight: 800;
+    color: var(--chk-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-/* Celebrations (Restored) */
+.chkobba-bottom-stats {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.chkobba-bstat {
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: var(--chk-text-dim);
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.chkobba-bstat#chkobba-bstat-diamonds {
+    color: #f87171; /* red for diamonds */
+}
+
+.chkobba-bottom-turn {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.chkobba-bottom-turn-label {
+    font-size: 0.78rem;
+    font-weight: 900;
+    color: var(--chk-text);
+}
+
+.chkobba-bottom-bar.is-my-turn .chkobba-bottom-turn-label {
+    color: #4ade80;
+}
+
+.chkobba-bottom-turn-sub {
+    font-size: 0.68rem;
+    color: var(--chk-text-dim);
+    font-weight: 700;
+}
+
+/* Adjust hand dock to sit above the bottom bar */
+.chkobba-hand-dock {
+    bottom: 72px;
+    height: 175px;
+}
+
+.chkobba-table-wrap {
+    bottom: 247px; /* 72 bar + 175 hand */
+}
+
+/* Turn timer inside bottom turn area */
+#chkobba-turn-timer.chkobba-turn-timer {
+    background: rgba(74,222,128,0.15);
+    border: 1px solid rgba(74,222,128,0.35);
+    color: #4ade80;
+    border-radius: 99px;
+    padding: 2px 9px;
+    font-size: 0.75rem;
+    font-weight: 900;
+    text-align: center;
+    margin-bottom: 2px;
+}
+
+/* ── Reactions bar ──────────────────────────────────────────── */
+.chkobba-reactions-bar {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    right: 10px;
+    background: rgba(0,0,0,0.75);
+    border: 1px solid var(--chk-glass-border);
+    border-radius: 99px;
+    padding: 5px 10px;
+    display: flex;
+    gap: 6px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    transform: translateY(8px);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 200ms var(--ease-pop), opacity 200ms ease;
+    z-index: 100;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.chkobba-reactions-bar.show {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.chkobba-reactions-bar button {
+    background: transparent;
+    border: none;
+    font-size: 1.2rem;
+    padding: 3px;
+    transition: transform 120ms var(--ease-pop);
+    cursor: pointer;
+}
+
+.chkobba-reactions-bar button:active {
+    transform: translateY(-4px) scale(1.15);
+}
+
+/* ── Announcements / Flash ──────────────────────────────────── */
+@keyframes chkobba-flash {
+    0%   { transform: translate(-50%, -50%) scale(0.5);  opacity: 0; }
+    20%  { transform: translate(-50%, -50%) scale(1.18); opacity: 1; }
+    80%  { transform: translate(-50%, -50%) scale(1);    opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1.5);  opacity: 0; }
+}
+
+.chkobba-announcement {
+    position: fixed;
+    top: 52%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: clamp(2.2rem, 11vw, 3.8rem);
+    font-weight: 900;
+    z-index: 10002;
+    pointer-events: none;
+    animation: chkobba-flash 2s forwards;
+    white-space: nowrap;
+    color: var(--chk-accent);
+    text-shadow: 0 4px 28px rgba(241,192,81,0.55);
+}
+
+.chkobba-announcement.is-berria {
+    color: #4ade80;
+    text-shadow: 0 4px 32px rgba(74,222,128,0.55);
+    animation: chkobbaBerriaFlash 1.85s forwards;
+}
+
+@keyframes chkobbaBerriaFlash {
+    0%   { transform: translate(-50%, -50%) scale(0.5);  opacity: 0; }
+    18%  { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+    75%  { transform: translate(-50%, -50%) scale(1);    opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1.3);  opacity: 0; }
+}
+
+/* ── Celebration ────────────────────────────────────────────── */
 .chkobba-celebration-wrap {
     position: fixed;
     inset: 0;
@@ -616,32 +982,33 @@
 
 .chkobba-celebration-card {
     position: absolute;
-    width: 100px;
+    width: min(26vw, 90px);
     aspect-ratio: 2.5 / 3.5;
     perspective: 1000px;
+    filter: drop-shadow(0 0 24px rgba(241,192,81,0.5));
 }
 
 .chkobba-celebration-card-inner {
     position: relative;
     width: 100%;
     height: 100%;
+    text-align: center;
+    transition: transform 0.6s;
     transform-style: preserve-3d;
     animation: chkobbaCelebrateFlip 1.15s var(--chkobba-ease) forwards;
 }
 
-@keyframes chkobbaCelebrateFlip {
-    0% { transform: rotateY(0deg) scale(0.6); opacity: 0; }
-    25% { transform: rotateY(200deg) scale(1.08); opacity: 1; }
-    55% { transform: rotateY(360deg) scale(1.12); opacity: 1; }
-    100% { transform: rotateY(540deg) scale(0.85); opacity: 0; }
+.chkobba-celebration-wrap.is-berria .chkobba-celebration-card {
+    filter: drop-shadow(0 0 28px rgba(74,222,128,0.6));
 }
 
-.chkobba-celebration-card-front, .chkobba-celebration-card-back {
+.chkobba-celebration-card-front,
+.chkobba-celebration-card-back {
     position: absolute;
     width: 100%;
     height: 100%;
+    -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
-    border-radius: 12px;
 }
 
 .chkobba-celebration-card-back {
@@ -649,82 +1016,353 @@
 }
 
 .chkobba-celebration-card img {
-    width: 100%; height: 100%; border-radius: 12px;
-}
-
-.chkobba-announcement {
-    position: fixed;
-    top: 58%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 3rem;
-    font-weight: 900;
-    z-index: 10002;
-    color: var(--accent-turn);
-    text-shadow: 0 0 20px rgba(74, 222, 128, 0.5);
-    animation: chkobba-flash 2s forwards;
-}
-
-@keyframes chkobba-flash {
-    0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
-    20% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
-    100% { transform: translate(-50%, -50%) scale(1.4); opacity: 0; }
-}
-
-/* Turn Indicator Override for Chkobba */
-.chkobba-screen:not([hidden]) ~ #coup-turn-indicator,
-body:has(.chkobba-screen:not([hidden])) #coup-turn-indicator {
-    top: 20px !important;
-    background: rgba(255, 255, 255, 0.15) !important;
-    backdrop-filter: blur(15px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.25) !important;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.3) !important;
-    color: white !important;
-    padding: 8px 20px !important;
-    border-radius: 25px !important;
-    z-index: 200 !important;
-}
-
-.chkobba-screen:not([hidden]) ~ #coup-turn-indicator .cti-label,
-body:has(.chkobba-screen:not([hidden])) #coup-turn-indicator .cti-label {
-    color: rgba(255, 255, 255, 0.8) !important;
-}
-
-/* Mobile Adjustments */
-@media (max-width: 500px) {
-    :root {
-        --chkobba-card-w: 68px;
-        --chkobba-card-h: 100px;
-    }
-    .chkobba-bottom-bar {
-        height: 120px;
-    }
-    .chkobba-hand-dock {
-        bottom: 75px;
-    }
-    .me-avatar-wrap {
-        width: 54px;
-        height: 54px;
-    }
-    .me-stats {
-        gap: 12px;
-    }
-    .me-turn-status {
-        padding: 4px 8px;
-    }
-    .turn-subtext {
-        display: none;
-    }
-}
-
-/* Timer Styling for Chkobba Context */
-#chkobba-turn-timer {
-    background: rgba(0, 0, 0, 0.4);
-    padding: 2px 10px;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
     border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+@keyframes chkobbaCelebrateFlip {
+    0%   { transform: rotateY(0deg)   scale(0.6); opacity: 0; }
+    25%  { transform: rotateY(200deg) scale(1.1); opacity: 1; }
+    55%  { transform: rotateY(360deg) scale(1.14); opacity: 1; }
+    100% { transform: rotateY(540deg) scale(0.85); opacity: 0; }
+}
+
+.chkobba-confetti-bit {
+    position: fixed;
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    z-index: 10001;
+    pointer-events: none;
+    animation: chkobbaConfetti 1.1s var(--chkobba-ease) forwards;
+}
+
+@keyframes chkobbaConfetti {
+    from { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+    to   { transform: translate(var(--confetti-dx), var(--confetti-dy)) rotate(var(--confetti-rot)); opacity: 0; }
+}
+
+/* ── Flight / deal layer ────────────────────────────────────── */
+.chkobba-deal-layer {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9998;
+}
+
+.chkobba-deal-flyer {
+    position: fixed;
+    width: var(--chkobba-card-w);
+    height: var(--chkobba-card-h);
+    transform: translate(-50%, -50%);
+    transition: left 0.42s var(--chkobba-ease), top 0.42s var(--chkobba-ease), opacity 0.2s ease;
+    z-index: 9999;
+    opacity: 1;
+}
+
+.chkobba-deal-flyer img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 10px;
+    box-shadow: var(--chkobba-card-shadow);
+}
+
+.chkobba-flight-card {
+    position: fixed;
+    top: 0; left: 0;
+    width: var(--chkobba-card-w);
+    height: var(--chkobba-card-h);
+    z-index: 9999;
+    pointer-events: none;
+    will-change: transform, opacity;
+    transition: transform 260ms var(--ease-out-cubic), opacity 120ms ease-out;
+}
+
+.chkobba-flight-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 10px;
+    box-shadow: 0 14px 36px rgba(0,0,0,0.55);
+}
+
+.chkobba-ghost-trail {
+    position: fixed; top: 0; left: 0;
+    width: var(--chkobba-card-w); height: var(--chkobba-card-h);
+    z-index: 9998;
+    pointer-events: none;
+    opacity: 0.7;
+    transition: opacity 450ms ease-out, transform 320ms var(--ease-out-cubic);
+    will-change: transform, opacity;
+    filter: drop-shadow(0 0 14px #4ade80) brightness(1.2);
+}
+
+.chkobba-ghost-trail img {
+    width: 100%; height: 100%; border-radius: 10px;
+}
+
+/* ── Capture stack ──────────────────────────────────────────── */
+.chkobba-capture-stack {
+    position: fixed;
+    z-index: 10001;
+    pointer-events: none;
+    left: 0; top: 0;
+    transform: translate(-50%, -50%);
+    width: var(--chkobba-card-w);
+    height: var(--chkobba-card-h);
+}
+
+.chkobba-capture-stack-card {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    transform: translate(calc(var(--stack-i, 0) * 6px), calc(var(--stack-i, 0) * -6px)) rotate(calc(var(--stack-i, 0) * 3deg));
+}
+
+.chkobba-capture-stack-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 10px;
+    box-shadow: var(--chkobba-card-shadow);
+}
+
+/* ── Opening panel ──────────────────────────────────────────── */
+.chkobba-opening-panel {
+    position: absolute;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 30;
+    width: min(calc(100% - 24px), 320px);
+    padding: 14px 16px;
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--chk-glass-border);
+    border-radius: 20px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.4);
+    text-align: center;
+    color: var(--chk-text);
+}
+
+.chkobba-opening-panel h3 {
+    margin: 0 0 6px;
+    font-size: 1rem;
+    color: var(--chk-text);
+}
+
+.chkobba-opening-panel p {
+    margin: 0 0 10px;
+    font-size: 0.84rem;
+    color: var(--chk-text-dim);
+    line-height: 1.4;
+}
+
+.chkobba-opening-starter {
+    display: flex;
+    justify-content: center;
+    margin: 10px 0;
+    animation: chkobbaStarterReveal 0.42s var(--chkobba-ease) both;
+}
+
+@keyframes chkobbaStarterReveal {
+    from { opacity: 0; transform: scale(0.8) rotate(-8deg); }
+    to   { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+.chkobba-opening-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.chkobba-opening-actions .primary-btn,
+.chkobba-opening-actions .secondary-btn {
+    width: 100%;
+    margin: 0;
+    border-radius: 99px;
+}
+
+.chkobba-opening-actions .primary-btn {
+    background: #4ade80;
+    color: #0a2416;
+    box-shadow: 0 4px 16px rgba(74,222,128,0.35);
+}
+
+.chkobba-table-wrap.is-setup-locked .chkobba-table {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.chkobba-hand-dock.is-setup-locked {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+/* ── Victory screen ─────────────────────────────────────────── */
+.chkobba-victory-screen {
+    position: absolute;
+    inset: 0;
+    z-index: 500;
+    background: rgba(10,36,22,0.96);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 16px 24px;
+    overflow-y: auto;
+    animation: fadeIn 0.45s ease both;
+    color: var(--chk-text);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.victory-header {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.victory-icon {
+    font-size: 4rem;
+    display: block;
+    margin-bottom: 8px;
+    animation: chkobbaPillDropIn 0.8s var(--ease-pop) both;
+}
+
+.chkobba-scoreboard {
+    width: 100%;
+    max-width: 380px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.scoreboard-item {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--chk-glass-border);
+    border-radius: 18px;
+    padding: 14px;
+    transition: transform 0.3s ease;
+}
+
+.scoreboard-item.is-winner {
+    border-color: var(--chk-gold);
+    box-shadow: 0 0 0 2px rgba(201,168,76,0.2);
+    transform: scale(1.025);
+}
+
+.scoreboard-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--chk-glass-border);
+}
+
+.scoreboard-name {
+    font-weight: 800;
+    font-size: 1rem;
+    color: var(--chk-text);
+}
+
+.scoreboard-total {
+    font-size: 1.2rem;
     font-weight: 900;
-    font-family: monospace;
-    margin-right: 10px;
-    font-size: 1.1rem;
-    color: var(--accent-turn);
+    color: var(--chk-gold);
+}
+
+.scoreboard-details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+}
+
+.score-detail-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--chk-text-dim);
+}
+
+.score-detail-row img {
+    width: 18px;
+    height: 27px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid var(--chk-glass-border);
+}
+
+.score-detail-row strong {
+    margin-right: auto;
+    color: var(--chk-text);
+    font-weight: 800;
+}
+
+.wait-msg {
+    font-weight: 700;
+    color: var(--chk-text-dim);
+    text-align: center;
+}
+
+/* ── Pile drop-target states ────────────────────────────────── */
+.chkobba-pile.capture-pile.is-drop-target {
+    box-shadow: 0 0 0 3px #4ade80, var(--chkobba-card-shadow);
+    transform: scale(1.06);
+}
+
+/* ── Lobby settings (keep as-is but style for dark) ─────────── */
+#lobby-settings-panel.chkobba-lobby-settings .surface-card {
+    background: rgba(0,0,0,0.55);
+    border-color: var(--chk-glass-border);
+    color: var(--chk-text);
+}
+
+/* ── Reduce motion ──────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    .chkobba-card,
+    .chkobba-player-pill,
+    .chkobba-drag-ghost,
+    .chkobba-flight-card,
+    .chkobba-hand-dock {
+        transition-duration: 0.001ms !important;
+    }
+    .chkobba-announcement,
+    .chkobba-celebration-card,
+    .chkobba-confetti-bit,
+    .chkobba-player-pill.is-entering {
+        animation-duration: 0.001ms !important;
+    }
+}
+
+/* ── Compact height adjustments ─────────────────────────────── */
+@media (max-height: 680px) {
+    :root {
+        --chkobba-card-w: 58px;
+        --chkobba-card-h: 84px;
+    }
+    .chkobba-hand-dock { height: 170px; }
+    .chkobba-table-wrap { bottom: 170px; }
+}
+
+/* ── Very small width (sub-360px) ───────────────────────────── */
+@media (max-width: 360px) {
+    :root {
+        --chkobba-card-w: 58px;
+        --chkobba-card-h: 84px;
+    }
+    .chkobba-player-pill .pill-avatar { width: 44px; height: 44px; font-size: 1.2rem; }
+    .chkobba-player-pill .pill-name   { font-size: 0.65rem; }
 }
