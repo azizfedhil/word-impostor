@@ -1,0 +1,2897 @@
+[
+  {
+    "word": "كسكسي",
+    "hint": "تقليدي",
+    "category": "Food"
+  },
+  {
+    "word": "فؤاد",
+    "hint": "طحان",
+    "category": "people"
+  },
+  {
+    "word": "لبلابي",
+    "hint": "شعبية",
+    "category": "Food"
+  },
+  {
+    "word": "بريك",
+    "hint": "مقرمش",
+    "category": "Food"
+  },
+  {
+    "word": "هريسة",
+    "hint": "حار",
+    "category": "Food"
+  },
+  {
+    "word": "ملوخية",
+    "hint": "مطبوخ",
+    "category": "Food"
+  },
+  {
+    "word": "مقرونة",
+    "hint": "شائعة",
+    "category": "Food"
+  },
+  {
+    "word": "شاورما",
+    "hint": "سريعة",
+    "category": "Food"
+  },
+  {
+    "word": "بيتزا",
+    "hint": "مخبوزة",
+    "category": "Food"
+  },
+  {
+    "word": "تمر",
+    "hint": "حلوة",
+    "category": "Food"
+  },
+  {
+    "word": "زيت زيتون",
+    "hint": "طبيعي",
+    "category": "Food"
+  },
+  {
+    "word": "جامع",
+    "hint": "راحة",
+    "category": "Places"
+  },
+  {
+    "word": "قهوة",
+    "hint": "جلوس",
+    "category": "Places"
+  },
+  {
+    "word": "شاطئ",
+    "hint": "ساحلي",
+    "category": "Places"
+  },
+  {
+    "word": "مدينة",
+    "hint": "طريق",
+    "category": "Places"
+  },
+  {
+    "word": "سوق",
+    "hint": "تجارة",
+    "category": "Places"
+  },
+  {
+    "word": "مدرسة",
+    "hint": "تعلم",
+    "category": "Places"
+  },
+  {
+    "word": "ملعب",
+    "hint": "رياضية",
+    "category": "Places"
+  },
+  {
+    "word": "مطار",
+    "hint": "خروج",
+    "category": "Places"
+  },
+  {
+    "word": "صيدلية",
+    "hint": "صحي",
+    "category": "Places"
+  },
+  {
+    "word": "حمام",
+    "hint": "اغتسال",
+    "category": "Places"
+  },
+  {
+    "word": "هاتف",
+    "hint": "اتصال",
+    "category": "Objects"
+  },
+  {
+    "word": "مفتاح",
+    "hint": "دخول",
+    "category": "Objects"
+  },
+  {
+    "word": "كرسي",
+    "hint": "جلوس",
+    "category": "Objects"
+  },
+  {
+    "word": "طاولة",
+    "hint": "دار",
+    "category": "Objects"
+  },
+  {
+    "word": "سبحة",
+    "hint": "راحة",
+    "category": "Objects"
+  },
+  {
+    "word": "كاس",
+    "hint": "ادوات",
+    "category": "Objects"
+  },
+  {
+    "word": "شنطة",
+    "hint": "حفظ",
+    "category": "Objects"
+  },
+  {
+    "word": "commande",
+    "hint": "تحكم",
+    "category": "Objects"
+  },
+  {
+    "word": "مروحة",
+    "hint": "صيف",
+    "category": "Objects"
+  },
+  {
+    "word": "حاسوب",
+    "hint": "إلكتروني",
+    "category": "Objects"
+  },
+  {
+    "word": "لواج",
+    "hint": "خلاص",
+    "category": "Transportation"
+  },
+  {
+    "word": "مترو",
+    "hint": "تونس",
+    "category": "Transportation"
+  },
+  {
+    "word": "تاكسي",
+    "hint": "عداد",
+    "category": "Transportation"
+  },
+  {
+    "word": "حافلة",
+    "hint": "عباد",
+    "category": "Transportation"
+  },
+  {
+    "word": "دراجة",
+    "hint": "دائرتين",
+    "category": "Transportation"
+  },
+  {
+    "word": "سيارة",
+    "hint": "خاصة",
+    "category": "Transportation"
+  },
+  {
+    "word": "طائرة",
+    "hint": "جوية",
+    "category": "Transportation"
+  },
+  {
+    "word": "قطار",
+    "hint": "حديدية",
+    "category": "Transportation"
+  },
+  {
+    "word": "سفينة",
+    "hint": "بحرية",
+    "category": "Transportation"
+  },
+  {
+    "word": "سكوتر",
+    "hint": "صغيرة",
+    "category": "Transportation"
+  },
+  {
+    "word": "شمس",
+    "hint": "مضيء",
+    "category": "Nature"
+  },
+  {
+    "word": "قمر",
+    "hint": "سماوي",
+    "category": "Nature"
+  },
+  {
+    "word": "مطر",
+    "hint": "هبوط",
+    "category": "Nature"
+  },
+  {
+    "word": "ريح",
+    "hint": "متحرك",
+    "category": "Nature"
+  },
+  {
+    "word": "بحر",
+    "hint": "مائي",
+    "category": "Nature"
+  },
+  {
+    "word": "جبل",
+    "hint": "مرتفعة",
+    "category": "Nature"
+  },
+  {
+    "word": "غابة",
+    "hint": "خضراء",
+    "category": "Nature"
+  },
+  {
+    "word": "رمل",
+    "hint": "صغيرة",
+    "category": "Nature"
+  },
+  {
+    "word": "نخلة",
+    "hint": "مثمرة",
+    "category": "Nature"
+  },
+  {
+    "word": "وردة",
+    "hint": "روائح",
+    "category": "Nature"
+  },
+  {
+    "word": "قطة",
+    "hint": "شعر",
+    "category": "Animals"
+  },
+  {
+    "word": "كلب",
+    "hint": "حارس",
+    "category": "Animals"
+  },
+  {
+    "word": "جمل",
+    "hint": "صحراوي",
+    "category": "Animals"
+  },
+  {
+    "word": "حصان",
+    "hint": "ركوب",
+    "category": "Animals"
+  },
+  {
+    "word": "عصفور",
+    "hint": "صغير",
+    "category": "Animals"
+  },
+  {
+    "word": "سمكة",
+    "hint": "مائي",
+    "category": "Animals"
+  },
+  {
+    "word": "خروف",
+    "hint": "عشبي",
+    "category": "Animals"
+  },
+  {
+    "word": "دجاجة",
+    "hint": "حيوان",
+    "category": "Animals"
+  },
+  {
+    "word": "ذيب",
+    "hint": "مفترس",
+    "category": "Animals"
+  },
+  {
+    "word": "نحلة",
+    "hint": "نافعة",
+    "category": "Animals"
+  },
+  {
+    "word": "طبيب",
+    "hint": "رعاية",
+    "category": "Jobs"
+  },
+  {
+    "word": "معلم",
+    "hint": "تعليمي",
+    "category": "Jobs"
+  },
+  {
+    "word": "شرطي",
+    "hint": "عمل",
+    "category": "Jobs"
+  },
+  {
+    "word": "خباز",
+    "hint": "طعام",
+    "category": "Jobs"
+  },
+  {
+    "word": "سائق",
+    "hint": "مركبة",
+    "category": "Jobs"
+  },
+  {
+    "word": "نجار",
+    "hint": "عمل",
+    "category": "Jobs"
+  },
+  {
+    "word": "حلاق",
+    "hint": "شعر",
+    "category": "Jobs"
+  },
+  {
+    "word": "طباخ",
+    "hint": "وجبات",
+    "category": "Jobs"
+  },
+  {
+    "word": "مهندس",
+    "hint": "مشاريع",
+    "category": "Jobs"
+  },
+  {
+    "word": "فلاح",
+    "hint": "زراعي",
+    "category": "Jobs"
+  },
+  {
+    "word": "كرة قدم",
+    "hint": "شعبية",
+    "category": "Entertainment"
+  },
+  {
+    "word": "بلايستيشن",
+    "hint": "ألعاب",
+    "category": "Entertainment"
+  },
+  {
+    "word": "فيلم",
+    "hint": "مرئي",
+    "category": "Entertainment"
+  },
+  {
+    "word": "موسيقى",
+    "hint": "اجواء",
+    "category": "Entertainment"
+  },
+  {
+    "word": "تيك توك",
+    "hint": "مقاطع",
+    "category": "Entertainment"
+  },
+  {
+    "word": "يوتيوب",
+    "hint": "فيديوهات",
+    "category": "Entertainment"
+  },
+  {
+    "word": "ورق لعب",
+    "hint": "تسلية",
+    "category": "Entertainment"
+  },
+  {
+    "word": "شطرنج",
+    "hint": "تفكير",
+    "category": "Entertainment"
+  },
+  {
+    "word": "memes",
+    "hint": "طريفة",
+    "category": "Entertainment"
+  },
+  {
+    "word": "concert",
+    "hint": "فني",
+    "category": "Entertainment"
+  },
+  {
+    "word": "قرطاج",
+    "hint": "أثري",
+    "category": "Tunisia"
+  },
+  {
+    "word": "سيدي بوسعيد",
+    "hint": "ازرق",
+    "category": "Tunisia"
+  },
+  {
+    "word": "الترجي",
+    "hint": "رياضي",
+    "category": "Tunisia"
+  },
+  {
+    "word": "النادي الافريقي",
+    "hint": "رياضي",
+    "category": "Tunisia"
+  },
+  {
+    "word": "شاشية",
+    "hint": "رأس",
+    "category": "Tunisia"
+  },
+  {
+    "word": "فريكاسي",
+    "hint": "خفيفة",
+    "category": "Tunisia"
+  },
+  {
+    "word": "دڨلة",
+    "hint": "تمور",
+    "category": "Tunisia"
+  },
+  {
+    "word": "زنقة",
+    "hint": "ضيق",
+    "category": "Tunisia"
+  },
+  {
+    "word": "بابور",
+    "hint": "بحرية",
+    "category": "Tunisia"
+  },
+  {
+    "word": "قفة",
+    "hint": "تقليدي",
+    "category": "Tunisia"
+  },
+  {
+    "word": "عجة",
+    "hint": "سريعة",
+    "category": "Food"
+  },
+  {
+    "word": "كفتاجي",
+    "hint": "مقلي",
+    "category": "Food"
+  },
+  {
+    "word": "طاجين",
+    "hint": "فرن",
+    "category": "Food"
+  },
+  {
+    "word": "مشوي",
+    "hint": "مطهو",
+    "category": "Food"
+  },
+  {
+    "word": "زلابية",
+    "hint": "مقلية",
+    "category": "Food"
+  },
+  {
+    "word": "مقروض",
+    "hint": "تقليدية",
+    "category": "Food"
+  },
+  {
+    "word": "بسيسة",
+    "hint": "مطحون",
+    "category": "Food"
+  },
+  {
+    "word": "سلاطة مشوية",
+    "hint": "مشوية",
+    "category": "Food"
+  },
+  {
+    "word": "كعك ورقة",
+    "hint": "مناسبات",
+    "category": "Food"
+  },
+  {
+    "word": "غريبة",
+    "hint": "هشة",
+    "category": "Food"
+  },
+  {
+    "word": "شاي",
+    "hint": "ساخن",
+    "category": "Drinks"
+  },
+  {
+    "word": "عصير",
+    "hint": "فواكه",
+    "category": "Drinks"
+  },
+  {
+    "word": "ماء",
+    "hint": "حيوي",
+    "category": "Drinks"
+  },
+  {
+    "word": "ليمونادة",
+    "hint": "منعش",
+    "category": "Drinks"
+  },
+  {
+    "word": "قازوز",
+    "hint": "غازي",
+    "category": "Drinks"
+  },
+  {
+    "word": "كابتشينو",
+    "hint": "قهوة",
+    "category": "Drinks"
+  },
+  {
+    "word": "لبن",
+    "hint": "حليبي",
+    "category": "Drinks"
+  },
+  {
+    "word": "حليب",
+    "hint": "أبيض",
+    "category": "Drinks"
+  },
+  {
+    "word": "قهوة عربي",
+    "hint": "مركز",
+    "category": "Drinks"
+  },
+  {
+    "word": "موكا",
+    "hint": "شوكولاتة",
+    "category": "Drinks"
+  },
+  {
+    "word": "ساعة",
+    "hint": "قياس",
+    "category": "Objects"
+  },
+  {
+    "word": "نظارات",
+    "hint": "عين",
+    "category": "Objects"
+  },
+  {
+    "word": "شاحن",
+    "hint": "طاقة",
+    "category": "Objects"
+  },
+  {
+    "word": "بطانية",
+    "hint": "شتوي",
+    "category": "Objects"
+  },
+  {
+    "word": "وسادة",
+    "hint": "مريح",
+    "category": "Objects"
+  },
+  {
+    "word": "مصباح",
+    "hint": "إضاءة",
+    "category": "Objects"
+  },
+  {
+    "word": "مقص",
+    "hint": "قطع",
+    "category": "Objects"
+  },
+  {
+    "word": "دفتر",
+    "hint": "أوراق",
+    "category": "Objects"
+  },
+  {
+    "word": "قلم",
+    "hint": "كتابة",
+    "category": "Objects"
+  },
+  {
+    "word": "مرآة",
+    "hint": "عاكس",
+    "category": "Objects"
+  },
+  {
+    "word": "واي فاي",
+    "hint": "لاسلكية",
+    "category": "Technology"
+  },
+  {
+    "word": "كيبورد",
+    "hint": "مفاتيح",
+    "category": "Technology"
+  },
+  {
+    "word": "ماوس",
+    "hint": "تحكم",
+    "category": "Technology"
+  },
+  {
+    "word": "سماعات",
+    "hint": "صوت",
+    "category": "Technology"
+  },
+  {
+    "word": "كاميرا",
+    "hint": "تصوير",
+    "category": "Technology"
+  },
+  {
+    "word": "ميموري",
+    "hint": "تخزين",
+    "category": "Technology"
+  },
+  {
+    "word": "شاشة",
+    "hint": "عرض",
+    "category": "Technology"
+  },
+  {
+    "word": "ميكروفون",
+    "hint": "صوت",
+    "category": "Technology"
+  },
+  {
+    "word": "لابتوب",
+    "hint": "محمول",
+    "category": "Technology"
+  },
+  {
+    "word": "تابلت",
+    "hint": "ذكي",
+    "category": "Technology"
+  },
+  {
+    "word": "قميص",
+    "hint": "علوي",
+    "category": "Clothes"
+  },
+  {
+    "word": "سروال",
+    "hint": "ملابس",
+    "category": "Clothes"
+  },
+  {
+    "word": "جاكيت",
+    "hint": "قصير",
+    "category": "Clothes"
+  },
+  {
+    "word": "صباط",
+    "hint": "قدم",
+    "category": "Clothes"
+  },
+  {
+    "word": "قبعة",
+    "hint": "رأس",
+    "category": "Clothes"
+  },
+  {
+    "word": "شال",
+    "hint": "قماش",
+    "category": "Clothes"
+  },
+  {
+    "word": "حزام",
+    "hint": "ربط",
+    "category": "Clothes"
+  },
+  {
+    "word": "شراب",
+    "hint": "قدم",
+    "category": "Clothes"
+  },
+  {
+    "word": "جلابة",
+    "hint": "طويل",
+    "category": "Clothes"
+  },
+  {
+    "word": "برنوس",
+    "hint": "تقليدي",
+    "category": "Clothes"
+  },
+  {
+    "word": "كرة سلة",
+    "hint": "جماعية",
+    "category": "Sports"
+  },
+  {
+    "word": "تنس",
+    "hint": "المضرب",
+    "category": "Sports"
+  },
+  {
+    "word": "سباحة",
+    "hint": "مائي",
+    "category": "Sports"
+  },
+  {
+    "word": "جري",
+    "hint": "سريعة",
+    "category": "Sports"
+  },
+  {
+    "word": "حديد",
+    "hint": "رياضية",
+    "category": "Sports"
+  },
+  {
+    "word": "ملاكمة",
+    "hint": "قتالية",
+    "category": "Sports"
+  },
+  {
+    "word": "كرة طائرة",
+    "hint": "شبكية",
+    "category": "Sports"
+  },
+  {
+    "word": "حكم",
+    "hint": "مباراة",
+    "category": "Sports"
+  },
+  {
+    "word": "مدرب",
+    "hint": "رياضي",
+    "category": "Sports"
+  },
+  {
+    "word": "هدف",
+    "hint": "مسجلة",
+    "category": "Sports"
+  },
+  {
+    "word": "جار",
+    "hint": "مجاور",
+    "category": "People"
+  },
+  {
+    "word": "صديق",
+    "hint": "مقرب",
+    "category": "People"
+  },
+  {
+    "word": "طفل",
+    "hint": "صغير",
+    "category": "People"
+  },
+  {
+    "word": "عروس",
+    "hint": "تتزوج",
+    "category": "People"
+  },
+  {
+    "word": "عريس",
+    "hint": "يتزوج",
+    "category": "People"
+  },
+  {
+    "word": "سائح",
+    "hint": "أجنبي",
+    "category": "People"
+  },
+  {
+    "word": "لاعب",
+    "hint": "رياضة",
+    "category": "People"
+  },
+  {
+    "word": "مغني",
+    "hint": "أصوات",
+    "category": "People"
+  },
+  {
+    "word": "ممثل",
+    "hint": "أدوار",
+    "category": "People"
+  },
+  {
+    "word": "بائع",
+    "hint": "سلع",
+    "category": "People"
+  },
+  {
+    "word": "مطبخ",
+    "hint": "غرفة",
+    "category": "Home"
+  },
+  {
+    "word": "صالون",
+    "hint": "غرفة",
+    "category": "Home"
+  },
+  {
+    "word": "ثلاجة",
+    "hint": "جهاز",
+    "category": "Home"
+  },
+  {
+    "word": "فرن",
+    "hint": "جهاز",
+    "category": "Home"
+  },
+  {
+    "word": "غسالة",
+    "hint": "جهاز",
+    "category": "Home"
+  },
+  {
+    "word": "مكيف",
+    "hint": "حرارة",
+    "category": "Home"
+  },
+  {
+    "word": "ستارة",
+    "hint": "نافذة",
+    "category": "Home"
+  },
+  {
+    "word": "سجادة",
+    "hint": "أرضي",
+    "category": "Home"
+  },
+  {
+    "word": "دوش",
+    "hint": "استحمام",
+    "category": "Home"
+  },
+  {
+    "word": "بلكونة",
+    "hint": "منزل",
+    "category": "Home"
+  },
+  {
+    "word": "غيم",
+    "hint": "متجمع",
+    "category": "Nature"
+  },
+  {
+    "word": "برق",
+    "hint": "ساطع",
+    "category": "Nature"
+  },
+  {
+    "word": "وادي",
+    "hint": "طبيعي",
+    "category": "Nature"
+  },
+  {
+    "word": "صحراء",
+    "hint": "جافة",
+    "category": "Nature"
+  },
+  {
+    "word": "زيتونة",
+    "hint": "مباركة",
+    "category": "Nature"
+  },
+  {
+    "word": "عشب",
+    "hint": "أرضي",
+    "category": "Nature"
+  },
+  {
+    "word": "موج",
+    "hint": "مائية",
+    "category": "Nature"
+  },
+  {
+    "word": "نجمة",
+    "hint": "مضيئة",
+    "category": "Nature"
+  },
+  {
+    "word": "كهف",
+    "hint": "صخري",
+    "category": "Nature"
+  },
+  {
+    "word": "شلال",
+    "hint": "متساقطة",
+    "category": "Nature"
+  },
+  {
+    "word": "بقرة",
+    "hint": "منتج",
+    "category": "Animals"
+  },
+  {
+    "word": "ماعز",
+    "hint": "ريفي",
+    "category": "Animals"
+  },
+  {
+    "word": "ديك",
+    "hint": "يصيح",
+    "category": "Animals"
+  },
+  {
+    "word": "بطريق",
+    "hint": "مائي",
+    "category": "Animals"
+  },
+  {
+    "word": "أرنب",
+    "hint": "سريع",
+    "category": "Animals"
+  },
+  {
+    "word": "سلحفاة",
+    "hint": "بطيء",
+    "category": "Animals"
+  },
+  {
+    "word": "دلفين",
+    "hint": "بحري",
+    "category": "Animals"
+  },
+  {
+    "word": "أسد",
+    "hint": "بري",
+    "category": "Animals"
+  },
+  {
+    "word": "نمر",
+    "hint": "مخطط",
+    "category": "Animals"
+  },
+  {
+    "word": "فيل",
+    "hint": "ضخم",
+    "category": "Animals"
+  },
+  {
+    "word": "قفصة",
+    "hint": "جنوبية",
+    "category": "Tunisia"
+  },
+  {
+    "word": "صفاقس",
+    "hint": "اقتصادية",
+    "category": "Tunisia"
+  },
+  {
+    "word": "سوسة",
+    "hint": "ساحلية",
+    "category": "Tunisia"
+  },
+  {
+    "word": "قليبية",
+    "hint": "بحري",
+    "category": "Tunisia"
+  },
+  {
+    "word": "جربة",
+    "hint": "تونسية",
+    "category": "Tunisia"
+  },
+  {
+    "word": "قفطان",
+    "hint": "تقليدي",
+    "category": "Tunisia"
+  },
+  {
+    "word": "فوطة",
+    "hint": "قماش",
+    "category": "Tunisia"
+  },
+  {
+    "word": "بامبالوني",
+    "hint": "مقلية",
+    "category": "Tunisia"
+  },
+  {
+    "word": "كعيبة",
+    "hint": "مفرد",
+    "category": "Tunisia"
+  },
+  {
+    "word": "كوشة",
+    "hint": "تقليدي",
+    "category": "Tunisia"
+  },
+  {
+    "word": "سر",
+    "hint": "مخفي",
+    "category": "Random"
+  },
+  {
+    "word": "هدية",
+    "hint": "مجاني",
+    "category": "Random"
+  },
+  {
+    "word": "حفلة",
+    "hint": "احتفالي",
+    "category": "Random"
+  },
+  {
+    "word": "عرس",
+    "hint": "زواج",
+    "category": "Random"
+  },
+  {
+    "word": "امتحان",
+    "hint": "قدرات",
+    "category": "Random"
+  },
+  {
+    "word": "صورة",
+    "hint": "مرئية",
+    "category": "Random"
+  },
+  {
+    "word": "ضحكة",
+    "hint": "سعيد",
+    "category": "Random"
+  },
+  {
+    "word": "حلم",
+    "hint": "ليلية",
+    "category": "Random"
+  },
+  {
+    "word": "مفتاح سيارة",
+    "hint": "تشغيل",
+    "category": "Random"
+  },
+  {
+    "word": "بطاقة",
+    "hint": "ورقية",
+    "category": "Random"
+  },
+  {
+    "word": "المشموم",
+    "hint": "ياسمين"
+  },
+  {
+    "word": "البلوزة",
+    "hint": "تقليدي"
+  },
+  {
+    "word": "الشلاكة",
+    "hint": "خفيف"
+  },
+  {
+    "word": "الكانون",
+    "hint": "فخاري"
+  },
+  {
+    "word": "البراد",
+    "hint": "شاي"
+  },
+  {
+    "word": "الفخار",
+    "hint": "طينية"
+  },
+  {
+    "word": "المرمومة",
+    "hint": "حارة"
+  },
+  {
+    "word": "العرجون",
+    "hint": "تمر"
+  },
+  {
+    "word": "الخمسة",
+    "hint": "وقاية"
+  },
+  {
+    "word": "التبسية",
+    "hint": "عميق"
+  },
+  {
+    "word": "الزغرودة",
+    "hint": "فرح"
+  },
+  {
+    "word": "الدرجوحة",
+    "hint": "عب"
+  },
+  {
+    "word": "الحرقوس",
+    "hint": "تقليدية"
+  },
+  {
+    "word": "الملوية",
+    "hint": "مورق"
+  },
+  {
+    "word": "الملاوي",
+    "hint": "مطهو"
+  },
+  {
+    "word": "التبون",
+    "hint": "تقليدي"
+  },
+  {
+    "word": "العصيدة",
+    "hint": "احتفالي"
+  },
+  {
+    "word": "الزريقة",
+    "hint": "تونسية"
+  },
+  {
+    "word": "البوزة",
+    "hint": "كثيف"
+  },
+  {
+    "word": "السلاطة المشوية",
+    "hint": "معروف"
+  },
+  {
+    "word": "المرقاز",
+    "hint": "مشوية"
+  },
+  {
+    "word": "المحمص",
+    "hint": "تقليدية"
+  },
+  {
+    "word": "البوجة",
+    "hint": "شعبي"
+  },
+  {
+    "word": "السفساري",
+    "hint": "نسائي"
+  },
+  {
+    "word": "الدنقري",
+    "hint": "زرقاء"
+  },
+  {
+    "word": "الحايك",
+    "hint": "نسائي"
+  },
+  {
+    "word": "البلغة",
+    "hint": "تقليدي"
+  },
+  {
+    "word": "الكوتش",
+    "hint": "خيل"
+  },
+  {
+    "word": "التاكسي الجماعي",
+    "hint": "مشترك"
+  },
+  {
+    "word": "الكار",
+    "hint": "نقل"
+  },
+  {
+    "word": "اللوأج",
+    "hint": "معروف"
+  },
+  {
+    "word": "الحماص",
+    "hint": "فواكه"
+  },
+  {
+    "word": "العطار",
+    "hint": "بقالة"
+  },
+  {
+    "word": "القهوة العربي",
+    "hint": "معروف"
+  },
+  {
+    "word": "البطحة",
+    "hint": "فارغة"
+  },
+  {
+    "word": "الحومة",
+    "hint": "سكني"
+  },
+  {
+    "word": "المارشي",
+    "hint": "شعبي"
+  },
+  {
+    "word": "البلدية",
+    "hint": "محلية"
+  },
+  {
+    "word": "الجو",
+    "hint": "ممتعة"
+  },
+  {
+    "word": "التبوريب",
+    "hint": "قوة"
+  },
+  {
+    "word": "التكعير",
+    "hint": "الكلام"
+  },
+  {
+    "word": "التمسكيط",
+    "hint": "غريب"
+  },
+  {
+    "word": "التكبيس",
+    "hint": "سريع"
+  },
+  {
+    "word": "التشخشيخ",
+    "hint": "دسم"
+  },
+  {
+    "word": "التزعبين",
+    "hint": "زائد"
+  },
+  {
+    "word": "الركشة",
+    "hint": "هادئة"
+  },
+  {
+    "word": "التفيسخ",
+    "hint": "امتحان"
+  },
+  {
+    "word": "الفيس",
+    "hint": "زائد"
+  },
+  {
+    "word": "البهنيس",
+    "hint": "جهل"
+  },
+  {
+    "word": "البلعة",
+    "hint": "مكثف"
+  },
+  {
+    "word": "الحطة",
+    "hint": "ملفتة"
+  },
+  {
+    "word": "اللقطة",
+    "hint": "مميزة"
+  },
+  {
+    "word": "الفازة",
+    "hint": "ذكي"
+  },
+  {
+    "word": "التمنيك",
+    "hint": "ومزاح"
+  },
+  {
+    "word": "التفريك",
+    "hint": "مبالغ"
+  },
+  {
+    "word": "التنبير",
+    "hint": "ساخر"
+  },
+  {
+    "word": "الحرقة",
+    "hint": "شرعية"
+  },
+  {
+    "word": "الكلندار",
+    "hint": "مواعيد"
+  },
+  {
+    "word": "الدفوار",
+    "hint": "مدرسي"
+  },
+  {
+    "word": "الأستاذ",
+    "hint": "ومربي"
+  },
+  {
+    "word": "الروكور",
+    "hint": "تدارك"
+  },
+  {
+    "word": "الكريدي",
+    "hint": "مالي"
+  },
+  {
+    "word": "المصروف",
+    "hint": "يومي"
+  },
+  {
+    "word": "البوز",
+    "hint": "سريعة"
+  },
+  {
+    "word": "ستوري",
+    "hint": "مؤقتة"
+  },
+  {
+    "word": "الميساج",
+    "hint": "نصية"
+  },
+  {
+    "word": "الانستا",
+    "hint": "صور"
+  },
+  {
+    "word": "الفيس بوك",
+    "hint": "تواصل"
+  },
+  {
+    "word": "الفريب",
+    "hint": "مستعملة"
+  },
+  {
+    "word": "المريول",
+    "hint": "رياضي"
+  },
+  {
+    "word": "الستيل",
+    "hint": "خارجي"
+  },
+  {
+    "word": "الدايركت",
+    "hint": "خاصة"
+  },
+  {
+    "word": "الكنكسيون",
+    "hint": "إنترنت"
+  },
+  {
+    "word": "الريزو",
+    "hint": "الهاتف"
+  },
+  {
+    "word": "الشارج",
+    "hint": "البطارية"
+  },
+  {
+    "word": "النمرو",
+    "hint": "هاتف"
+  },
+  {
+    "word": "الكورسات",
+    "hint": "خصوصية"
+  },
+  {
+    "word": "الليفار",
+    "hint": "عارمة"
+  },
+  {
+    "word": "الزدمة",
+    "hint": "مفاجئ"
+  },
+  {
+    "word": "الفوت",
+    "hint": "كرة"
+  },
+  {
+    "word": "الكلوب",
+    "hint": "طلابي"
+  },
+  {
+    "word": "السيريات",
+    "hint": "متتالية"
+  },
+  {
+    "word": "الgيمينغ",
+    "hint": "إلكترونية"
+  },
+  {
+    "word": "الجيم",
+    "hint": "رياضة"
+  },
+  {
+    "word": "الخروج",
+    "hint": "خارجية"
+  },
+  {
+    "word": "ترند",
+    "hint": "مشهور",
+    "category": "Gen Z"
+  },
+  {
+    "word": "فايب",
+    "hint": "عام",
+    "category": "Gen Z"
+  },
+  {
+    "word": "كراش",
+    "hint": "سري",
+    "category": "Gen Z"
+  },
+  {
+    "word": "ديت",
+    "hint": "غرامي",
+    "category": "Gen Z"
+  },
+  {
+    "word": "توكسيك",
+    "hint": "سام",
+    "category": "Gen Z"
+  },
+  {
+    "word": "ريدفلاغ",
+    "hint": "تحذير",
+    "category": "Gen Z"
+  },
+  {
+    "word": "غوستينغ",
+    "hint": "فجئي",
+    "category": "Gen Z"
+  },
+  {
+    "word": "سيمب",
+    "hint": "اهتمام",
+    "category": "Gen Z"
+  },
+  {
+    "word": "بيستي",
+    "hint": "مفضل",
+    "category": "Gen Z"
+  },
+  {
+    "word": "موود",
+    "hint": "نفسية",
+    "category": "Gen Z"
+  },
+  {
+    "word": "ريلز",
+    "hint": "قصير",
+    "category": "Gen Z"
+  },
+  {
+    "word": "تيكتوكر",
+    "hint": "محتوى",
+    "category": "Gen Z"
+  },
+  {
+    "word": "فلوق",
+    "hint": "مصورة",
+    "category": "Gen Z"
+  },
+  {
+    "word": "بلوك",
+    "hint": "تواصل",
+    "category": "Gen Z"
+  },
+  {
+    "word": "سينيال",
+    "hint": "عن",
+    "category": "Gen Z"
+  },
+  {
+    "word": "بان",
+    "hint": "نهائي",
+    "category": "Gen Z"
+  },
+  {
+    "word": "سكرين",
+    "hint": "شاشة",
+    "category": "Gen Z"
+  },
+  {
+    "word": "سكرول",
+    "hint": "سريع",
+    "category": "Gen Z"
+  },
+  {
+    "word": "انفو",
+    "hint": "سريعة",
+    "category": "Gen Z"
+  },
+  {
+    "word": "بونبلان",
+    "hint": "جيدة",
+    "category": "Gen Z"
+  },
+  {
+    "word": "سورتي",
+    "hint": "أصحاب",
+    "category": "Gen Z"
+  },
+  {
+    "word": "بلان",
+    "hint": "مشروع",
+    "category": "Gen Z"
+  },
+  {
+    "word": "كور",
+    "hint": "جامعي",
+    "category": "University"
+  },
+  {
+    "word": "تيبي",
+    "hint": "تطبيقي",
+    "category": "University"
+  },
+  {
+    "word": "تيدي",
+    "hint": "موجه",
+    "category": "University"
+  },
+  {
+    "word": "ريفزيون",
+    "hint": "امتحان",
+    "category": "University"
+  },
+  {
+    "word": "اكسبوزيه",
+    "hint": "شفوي",
+    "category": "University"
+  },
+  {
+    "word": "ستاج",
+    "hint": "تدريب",
+    "category": "University"
+  },
+  {
+    "word": "سيفي",
+    "hint": "ذاتية",
+    "category": "University"
+  },
+  {
+    "word": "انتروتيان",
+    "hint": "عمل",
+    "category": "University"
+  },
+  {
+    "word": "فاك",
+    "hint": "جامعية",
+    "category": "Places"
+  },
+  {
+    "word": "ليسي",
+    "hint": "ثانوي",
+    "category": "Places"
+  },
+  {
+    "word": "كولاج",
+    "hint": "إعدادية",
+    "category": "Places"
+  },
+  {
+    "word": "بريبا",
+    "hint": "تحضيرية",
+    "category": "Places"
+  },
+  {
+    "word": "فواييه",
+    "hint": "جامعي",
+    "category": "Places"
+  },
+  {
+    "word": "رستو",
+    "hint": "جامعي",
+    "category": "Places"
+  },
+  {
+    "word": "بوفيت",
+    "hint": "الكلية",
+    "category": "Places"
+  },
+  {
+    "word": "كسكروت",
+    "hint": "شارع",
+    "category": "Food"
+  },
+  {
+    "word": "مقلوب",
+    "hint": "تونسي",
+    "category": "Food"
+  },
+  {
+    "word": "شاباتي",
+    "hint": "محشي",
+    "category": "Food"
+  },
+  {
+    "word": "عياري",
+    "hint": "حارة",
+    "category": "Food"
+  },
+  {
+    "word": "فتاير",
+    "hint": "مقلي",
+    "category": "Food"
+  },
+  {
+    "word": "مخارق",
+    "hint": "باجية",
+    "category": "Food"
+  },
+  {
+    "word": "بوظة",
+    "hint": "تقليدية",
+    "category": "Food"
+  },
+  {
+    "word": "درع",
+    "hint": "شتوي",
+    "category": "Food"
+  },
+  {
+    "word": "مسفوف",
+    "hint": "حلو",
+    "category": "Food"
+  },
+  {
+    "word": "برزقان",
+    "hint": "احتفالي",
+    "category": "Food"
+  },
+  {
+    "word": "مدفونة",
+    "hint": "ورقية",
+    "category": "Food"
+  },
+  {
+    "word": "روز جربي",
+    "hint": "خضار",
+    "category": "Food"
+  },
+  {
+    "word": "كمونية",
+    "hint": "كمون",
+    "category": "Food"
+  },
+  {
+    "word": "قلاية",
+    "hint": "مطبوخ",
+    "category": "Food"
+  },
+  {
+    "word": "عصبان",
+    "hint": "محشوة",
+    "category": "Food"
+  },
+  {
+    "word": "قديد",
+    "hint": "مجفف",
+    "category": "Food"
+  },
+  {
+    "word": "شريحة",
+    "hint": "مجففة",
+    "category": "Food"
+  },
+  {
+    "word": "حلاليم",
+    "hint": "تقليدي",
+    "category": "Food"
+  },
+  {
+    "word": "رشتة",
+    "hint": "محلية",
+    "category": "Food"
+  },
+  {
+    "word": "نواصر",
+    "hint": "مربع",
+    "category": "Food"
+  },
+  {
+    "word": "دويدة",
+    "hint": "رقيقة",
+    "category": "Food"
+  },
+  {
+    "word": "عين سبنيورية",
+    "hint": "مفروم",
+    "category": "Food"
+  },
+  {
+    "word": "يويو",
+    "hint": "دائرية",
+    "category": "Food"
+  },
+  {
+    "word": "دبلة",
+    "hint": "مقرمشة",
+    "category": "Food"
+  },
+  {
+    "word": "طرشي",
+    "hint": "مخللة",
+    "category": "Food"
+  },
+  {
+    "word": "برودو",
+    "hint": "خضار",
+    "category": "Food"
+  },
+  {
+    "word": "هندي",
+    "hint": "شوكي",
+    "category": "Nature"
+  },
+  {
+    "word": "زعرور",
+    "hint": "صغيرة",
+    "category": "Nature"
+  },
+  {
+    "word": "عوينة",
+    "hint": "صيفية",
+    "category": "Nature"
+  },
+  {
+    "word": "دلاع",
+    "hint": "أحمر",
+    "category": "Nature"
+  },
+  {
+    "word": "بطيخ",
+    "hint": "صفراء",
+    "category": "Nature"
+  },
+  {
+    "word": "كرموس",
+    "hint": "طازج",
+    "category": "Nature"
+  },
+  {
+    "word": "فريز",
+    "hint": "حمراء",
+    "category": "Nature"
+  },
+  {
+    "word": "بنان",
+    "hint": "استوائية",
+    "category": "Nature"
+  },
+  {
+    "word": "تفاح",
+    "hint": "مقرمشة",
+    "category": "Nature"
+  },
+  {
+    "word": "رمان",
+    "hint": "حمراء",
+    "category": "Nature"
+  },
+  {
+    "word": "خوخ",
+    "hint": "صيفية",
+    "category": "Nature"
+  },
+  {
+    "word": "مشماش",
+    "hint": "برتقالية",
+    "category": "Nature"
+  },
+  {
+    "word": "لوز",
+    "hint": "صلبة",
+    "category": "Nature"
+  },
+  {
+    "word": "فستق",
+    "hint": "خضراء",
+    "category": "Nature"
+  },
+  {
+    "word": "بوفريوة",
+    "hint": "محمص",
+    "category": "Nature"
+  },
+  {
+    "word": "زقوقو",
+    "hint": "سوداء",
+    "category": "Nature"
+  },
+  {
+    "word": "قلوب",
+    "hint": "عباد",
+    "category": "Nature"
+  },
+  {
+    "word": "كاكاوية",
+    "hint": "سوداني",
+    "category": "Nature"
+  },
+  {
+    "word": "حمص",
+    "hint": "صفراء",
+    "category": "Nature"
+  },
+  {
+    "word": "فول",
+    "hint": "خضراء",
+    "category": "Nature"
+  },
+  {
+    "word": "جلبانة",
+    "hint": "كروية",
+    "category": "Nature"
+  },
+  {
+    "word": "فنارية",
+    "hint": "برتقالي",
+    "category": "Nature"
+  },
+  {
+    "word": "لفت",
+    "hint": "أبيض",
+    "category": "Nature"
+  },
+  {
+    "word": "بسباس",
+    "hint": "عطري",
+    "category": "Nature"
+  },
+  {
+    "word": "معدنوس",
+    "hint": "خضراء",
+    "category": "Nature"
+  },
+  {
+    "word": "كرافس",
+    "hint": "ذات",
+    "category": "Nature"
+  },
+  {
+    "word": "كلاكات",
+    "hint": "صيفي",
+    "category": "Clothes"
+  },
+  {
+    "word": "هودي",
+    "hint": "بقبعة",
+    "category": "Clothes"
+  },
+  {
+    "word": "سنيكرز",
+    "hint": "رياضي",
+    "category": "Clothes"
+  },
+  {
+    "word": "دجين",
+    "hint": "قماش",
+    "category": "Clothes"
+  },
+  {
+    "word": "كاسكيط",
+    "hint": "رأس",
+    "category": "Clothes"
+  },
+  {
+    "word": "فيستة",
+    "hint": "خفيف",
+    "category": "Clothes"
+  },
+  {
+    "word": "كوستيم",
+    "hint": "رسمية",
+    "category": "Clothes"
+  },
+  {
+    "word": "كرافات",
+    "hint": "عنق",
+    "category": "Clothes"
+  },
+  {
+    "word": "صاك",
+    "hint": "يد",
+    "category": "Objects"
+  },
+  {
+    "word": "فاليز",
+    "hint": "سفر",
+    "category": "Objects"
+  },
+  {
+    "word": "محفظة",
+    "hint": "أوراق",
+    "category": "Objects"
+  },
+  {
+    "word": "ساشيه",
+    "hint": "بلاستيك",
+    "category": "Objects"
+  },
+  {
+    "word": "كردونة",
+    "hint": "كرتون",
+    "category": "Objects"
+  },
+  {
+    "word": "باكو",
+    "hint": "صغيرة",
+    "category": "Objects"
+  },
+  {
+    "word": "دبوزة",
+    "hint": "زجاج",
+    "category": "Objects"
+  },
+  {
+    "word": "حكة",
+    "hint": "معدنية",
+    "category": "Objects"
+  },
+  {
+    "word": "طنجرة",
+    "hint": "طبخ",
+    "category": "Objects"
+  },
+  {
+    "word": "مقلة",
+    "hint": "قلي",
+    "category": "Objects"
+  },
+  {
+    "word": "كسكاس",
+    "hint": "تبخير",
+    "category": "Objects"
+  },
+  {
+    "word": "مهراس",
+    "hint": "دق",
+    "category": "Objects"
+  },
+  {
+    "word": "غربال",
+    "hint": "تصفية",
+    "category": "Objects"
+  },
+  {
+    "word": "سطل",
+    "hint": "ماء",
+    "category": "Objects"
+  },
+  {
+    "word": "بانو",
+    "hint": "غسيل",
+    "category": "Objects"
+  },
+  {
+    "word": "شيتة",
+    "hint": "تنظيف",
+    "category": "Objects"
+  },
+  {
+    "word": "مساحة",
+    "hint": "مسح",
+    "category": "Objects"
+  },
+  {
+    "word": "خيشة",
+    "hint": "قماش",
+    "category": "Objects"
+  },
+  {
+    "word": "فكرون",
+    "hint": "برية",
+    "category": "Animals"
+  },
+  {
+    "word": "ببوشة",
+    "hint": "صغير",
+    "category": "Animals"
+  },
+  {
+    "word": "وزغة",
+    "hint": "جداري",
+    "category": "Animals"
+  },
+  {
+    "word": "جرانة",
+    "hint": "مائي",
+    "category": "Animals"
+  },
+  {
+    "word": "حنش",
+    "hint": "سام",
+    "category": "Animals"
+  },
+  {
+    "word": "عقرب",
+    "hint": "لاسعة",
+    "category": "Animals"
+  },
+  {
+    "word": "رتيلة",
+    "hint": "كبير",
+    "category": "Animals"
+  },
+  {
+    "word": "ذبانة",
+    "hint": "طائرة",
+    "category": "Animals"
+  },
+  {
+    "word": "ناموسة",
+    "hint": "ماصة",
+    "category": "Animals"
+  },
+  {
+    "word": "سراق زيت",
+    "hint": "ليلي",
+    "category": "Animals"
+  },
+  {
+    "word": "فرزيط",
+    "hint": "ناطة",
+    "category": "Animals"
+  },
+  {
+    "word": "سردوك",
+    "hint": "الدجاج",
+    "category": "Animals"
+  },
+  {
+    "word": "بهيم",
+    "hint": "صبور",
+    "category": "Animals"
+  },
+  {
+    "word": "بغل",
+    "hint": "هجين",
+    "category": "Animals"
+  },
+  {
+    "word": "عود",
+    "hint": "أصيل",
+    "category": "Animals"
+  },
+  {
+    "word": "راس",
+    "hint": "علوي",
+    "category": "Body"
+  },
+  {
+    "word": "شعر",
+    "hint": "الرأس",
+    "category": "Body"
+  },
+  {
+    "word": "عين",
+    "hint": "بصر",
+    "category": "Body"
+  },
+  {
+    "word": "خشم",
+    "hint": "شم",
+    "category": "Body"
+  },
+  {
+    "word": "فم",
+    "hint": "طعام",
+    "category": "Body"
+  },
+  {
+    "word": "شلغوم",
+    "hint": "الشارب",
+    "category": "Body"
+  },
+  {
+    "word": "لحية",
+    "hint": "الوجه",
+    "category": "Body"
+  },
+  {
+    "word": "وذن",
+    "hint": "سمع",
+    "category": "Body"
+  },
+  {
+    "word": "رقبة",
+    "hint": "الجسد",
+    "category": "Body"
+  },
+  {
+    "word": "كتف",
+    "hint": "علوي",
+    "category": "Body"
+  },
+  {
+    "word": "يد",
+    "hint": "علوي",
+    "category": "Body"
+  },
+  {
+    "word": "صبع",
+    "hint": "اليد",
+    "category": "Body"
+  },
+  {
+    "word": "ظفر",
+    "hint": "صلبة",
+    "category": "Body"
+  },
+  {
+    "word": "كرش",
+    "hint": "ممتلئ",
+    "category": "Body"
+  },
+  {
+    "word": "ظهر",
+    "hint": "الجسد",
+    "category": "Body"
+  },
+  {
+    "word": "ساق",
+    "hint": "سفلي",
+    "category": "Body"
+  },
+  {
+    "word": "ركبة",
+    "hint": "الساق",
+    "category": "Body"
+  },
+  {
+    "word": "كعب",
+    "hint": "القدم",
+    "category": "Body"
+  },
+  {
+    "word": "راجل",
+    "hint": "غ",
+    "category": "People"
+  },
+  {
+    "word": "مرا",
+    "hint": "غة",
+    "category": "People"
+  },
+  {
+    "word": "وليد",
+    "hint": "يافع",
+    "category": "People"
+  },
+  {
+    "word": "بنية",
+    "hint": "شابة",
+    "category": "People"
+  },
+  {
+    "word": "شيباني",
+    "hint": "مسن",
+    "category": "People"
+  },
+  {
+    "word": "عزوزة",
+    "hint": "مسنة",
+    "category": "People"
+  },
+  {
+    "word": "كهل",
+    "hint": "العمر",
+    "category": "People"
+  },
+  {
+    "word": "مراهق",
+    "hint": "ناشئ",
+    "category": "People"
+  },
+  {
+    "word": "بيبي",
+    "hint": "صغير",
+    "category": "People"
+  },
+  {
+    "word": "خو",
+    "hint": "ذكر",
+    "category": "People"
+  },
+  {
+    "word": "أخت",
+    "hint": "أنثى",
+    "category": "People"
+  },
+  {
+    "word": "أب",
+    "hint": "العائلة",
+    "category": "People"
+  },
+  {
+    "word": "أم",
+    "hint": "حنون",
+    "category": "People"
+  },
+  {
+    "word": "جد",
+    "hint": "الوالد",
+    "category": "People"
+  },
+  {
+    "word": "جدة",
+    "hint": "الوالد",
+    "category": "People"
+  },
+  {
+    "word": "عم",
+    "hint": "الأب",
+    "category": "People"
+  },
+  {
+    "word": "خال",
+    "hint": "الأم",
+    "category": "People"
+  },
+  {
+    "word": "عمة",
+    "hint": "الأب",
+    "category": "People"
+  },
+  {
+    "word": "خالة",
+    "hint": "الأم",
+    "category": "People"
+  },
+  {
+    "word": "نسيب",
+    "hint": "زواج",
+    "category": "People"
+  },
+  {
+    "word": "سلف",
+    "hint": "الزوج",
+    "category": "People"
+  },
+  {
+    "word": "ضرة",
+    "hint": "ثانية",
+    "category": "People"
+  },
+  {
+    "word": "حب",
+    "hint": "جميل",
+    "category": "Emotions"
+  },
+  {
+    "word": "كره",
+    "hint": "سلبي",
+    "category": "Emotions"
+  },
+  {
+    "word": "غش",
+    "hint": "شديد",
+    "category": "Emotions"
+  },
+  {
+    "word": "فرحة",
+    "hint": "غامرة",
+    "category": "Emotions"
+  },
+  {
+    "word": "حزن",
+    "hint": "نفسي",
+    "category": "Emotions"
+  },
+  {
+    "word": "قلق",
+    "hint": "عصبي",
+    "category": "Emotions"
+  },
+  {
+    "word": "فدة",
+    "hint": "شديد",
+    "category": "Emotions"
+  },
+  {
+    "word": "ستريس",
+    "hint": "نفسي",
+    "category": "Emotions"
+  },
+  {
+    "word": "ديبريسيون",
+    "hint": "حاد",
+    "category": "Emotions"
+  },
+  {
+    "word": "ثقة",
+    "hint": "داخلي",
+    "category": "Emotions"
+  },
+  {
+    "word": "كذب",
+    "hint": "الزور",
+    "category": "Emotions"
+  },
+  {
+    "word": "نفاق",
+    "hint": "لشخص",
+    "category": "Emotions"
+  },
+  {
+    "word": "خيانة",
+    "hint": "العهد",
+    "category": "Emotions"
+  },
+  {
+    "word": "وفاء",
+    "hint": "دائم",
+    "category": "Emotions"
+  },
+  {
+    "word": "صدق",
+    "hint": "الحق",
+    "category": "Emotions"
+  },
+  {
+    "word": "مرج",
+    "hint": "مزعج",
+    "category": "Slang"
+  },
+  {
+    "word": "تبلفيط",
+    "hint": "فارغ",
+    "category": "Slang"
+  },
+  {
+    "word": "تشقنيس",
+    "hint": "مبالغ",
+    "category": "Slang"
+  },
+  {
+    "word": "تفشليم",
+    "hint": "كاذب",
+    "category": "Slang"
+  },
+  {
+    "word": "تكمبين",
+    "hint": "خبيث",
+    "category": "Slang"
+  },
+  {
+    "word": "تخلويض",
+    "hint": "عارمة",
+    "category": "Slang"
+  },
+  {
+    "word": "ترهويج",
+    "hint": "خفيف",
+    "category": "Slang"
+  },
+  {
+    "word": "تغفيس",
+    "hint": "عشوائي",
+    "category": "Slang"
+  },
+  {
+    "word": "تبهليل",
+    "hint": "غباء",
+    "category": "Slang"
+  },
+  {
+    "word": "تسطيكة",
+    "hint": "خفيفة",
+    "category": "Slang"
+  },
+  {
+    "word": "تكركير",
+    "hint": "عمل",
+    "category": "Slang"
+  },
+  {
+    "word": "تفدليك",
+    "hint": "طريف",
+    "category": "Slang"
+  },
+  {
+    "word": "ريق",
+    "hint": "مكرر",
+    "category": "Slang"
+  },
+  {
+    "word": "بلادة",
+    "hint": "تصرف",
+    "category": "Slang"
+  },
+  {
+    "word": "ركاكة",
+    "hint": "دم",
+    "category": "Slang"
+  },
+  {
+    "word": "تجلطيم",
+    "hint": "مستفز",
+    "category": "Slang"
+  },
+  {
+    "word": "تقعويج",
+    "hint": "مفتعلة",
+    "category": "Slang"
+  },
+  {
+    "word": "تنقنيق",
+    "hint": "مستمر",
+    "category": "Slang"
+  },
+  {
+    "word": "ترهدين",
+    "hint": "مخفي",
+    "category": "Slang"
+  },
+  {
+    "word": "تفليم",
+    "hint": "درامي",
+    "category": "Slang"
+  },
+  {
+    "word": "تخرنين",
+    "hint": "دائمة",
+    "category": "Slang"
+  },
+  {
+    "word": "تبوحيط",
+    "hint": "مصطنع",
+    "category": "Slang"
+  },
+  {
+    "word": "تشعبين",
+    "hint": "ماكر",
+    "category": "Slang"
+  },
+  {
+    "word": "تكمش",
+    "hint": "جسدي",
+    "category": "Slang"
+  },
+  {
+    "word": "تكشبير",
+    "hint": "الوجه",
+    "category": "Slang"
+  },
+  {
+    "word": "تلغويج",
+    "hint": "غيرمفهوم",
+    "category": "Slang"
+  },
+  {
+    "word": "تسخسيخ",
+    "hint": "شديد",
+    "category": "Slang"
+  },
+  {
+    "word": "تبزنيس",
+    "hint": "كلامية",
+    "category": "Slang"
+  },
+  {
+    "word": "تطييح",
+    "hint": "مقصودة",
+    "category": "Slang"
+  },
+  {
+    "word": "تكمبيص",
+    "hint": "سري",
+    "category": "Slang"
+  },
+  {
+    "word": "تغنحيش",
+    "hint": "مصطنع",
+    "category": "Slang"
+  },
+  {
+    "word": "بيسي",
+    "hint": "شخصي",
+    "category": "Technology"
+  },
+  {
+    "word": "ايفون",
+    "hint": "ذكي",
+    "category": "Technology"
+  },
+  {
+    "word": "ايربودز",
+    "hint": "أذن",
+    "category": "Technology"
+  },
+  {
+    "word": "شارجور",
+    "hint": "طاقة",
+    "category": "Technology"
+  },
+  {
+    "word": "باوربانك",
+    "hint": "متنقلة",
+    "category": "Technology"
+  },
+  {
+    "word": "فلاش",
+    "hint": "صغيرة",
+    "category": "Technology"
+  },
+  {
+    "word": "مونيتور",
+    "hint": "عرض",
+    "category": "Technology"
+  },
+  {
+    "word": "كابل",
+    "hint": "توصيل",
+    "category": "Technology"
+  },
+  {
+    "word": "سويتش",
+    "hint": "تيار",
+    "category": "Technology"
+  },
+  {
+    "word": "بلاي",
+    "hint": "لعب",
+    "category": "Technology"
+  },
+  {
+    "word": "سيبار",
+    "hint": "انترنت",
+    "category": "Places"
+  },
+  {
+    "word": "وتيل",
+    "hint": "سياحي",
+    "category": "Places"
+  },
+  {
+    "word": "بيسين",
+    "hint": "ماء",
+    "category": "Places"
+  },
+  {
+    "word": "بارك",
+    "hint": "عامة",
+    "category": "Places"
+  },
+  {
+    "word": "ماناج",
+    "hint": "ملاهي",
+    "category": "Places"
+  },
+  {
+    "word": "زوو",
+    "hint": "حيوان",
+    "category": "Places"
+  },
+  {
+    "word": "سينيما",
+    "hint": "أفلام",
+    "category": "Places"
+  },
+  {
+    "word": "مسرح",
+    "hint": "تمثيل",
+    "category": "Places"
+  },
+  {
+    "word": "متحف",
+    "hint": "آثار",
+    "category": "Places"
+  },
+  {
+    "word": "معرض",
+    "hint": "عرض",
+    "category": "Places"
+  },
+  {
+    "word": "فريبرية",
+    "hint": "مستعملة",
+    "category": "Places"
+  },
+  {
+    "word": "بوتيك",
+    "hint": "ملابس",
+    "category": "Places"
+  },
+  {
+    "word": "مغازة",
+    "hint": "تجارية",
+    "category": "Places"
+  },
+  {
+    "word": "عطرية",
+    "hint": "توابل",
+    "category": "Places"
+  },
+  {
+    "word": "كوافور",
+    "hint": "حلاقة",
+    "category": "Places"
+  },
+  {
+    "word": "فرماسي",
+    "hint": "دواء",
+    "category": "Places"
+  },
+  {
+    "word": "سبيطار",
+    "hint": "عام",
+    "category": "Places"
+  },
+  {
+    "word": "كلينيك",
+    "hint": "خاصة",
+    "category": "Places"
+  },
+  {
+    "word": "بوستة",
+    "hint": "بريد",
+    "category": "Places"
+  },
+  {
+    "word": "بانكة",
+    "hint": "مالية",
+    "category": "Places"
+  },
+  {
+    "word": "كوميسارية",
+    "hint": "شرطة",
+    "category": "Places"
+  },
+  {
+    "word": "قباضة",
+    "hint": "ضرائب",
+    "category": "Places"
+  },
+  {
+    "word": "محطة",
+    "hint": "حافلات",
+    "category": "Places"
+  },
+  {
+    "word": "بياج",
+    "hint": "استخلاص",
+    "category": "Places"
+  },
+  {
+    "word": "رومبوان",
+    "hint": "دائري",
+    "category": "Places"
+  },
+  {
+    "word": "كياس",
+    "hint": "معبد",
+    "category": "Places"
+  },
+  {
+    "word": "تروتوار",
+    "hint": "مشاة",
+    "category": "Places"
+  },
+  {
+    "word": "بيست",
+    "hint": "ترابي",
+    "category": "Places"
+  },
+  {
+    "word": "سكة",
+    "hint": "قطار",
+    "category": "Places"
+  },
+  {
+    "word": "قنطرة",
+    "hint": "عبور",
+    "category": "Places"
+  },
+  {
+    "word": "نفق",
+    "hint": "سفلي",
+    "category": "Places"
+  },
+  {
+    "word": "باركينغ",
+    "hint": "سيارات",
+    "category": "Places"
+  },
+  {
+    "word": "كرهبة",
+    "hint": "نقل",
+    "category": "Transportation"
+  },
+  {
+    "word": "موتور",
+    "hint": "نارية",
+    "category": "Transportation"
+  },
+  {
+    "word": "بسكلات",
+    "hint": "هوائية",
+    "category": "Transportation"
+  },
+  {
+    "word": "كميون",
+    "hint": "سلع",
+    "category": "Transportation"
+  },
+  {
+    "word": "تراكتور",
+    "hint": "زراعي",
+    "category": "Transportation"
+  },
+  {
+    "word": "تران",
+    "hint": "ركاب",
+    "category": "Transportation"
+  },
+  {
+    "word": "بطاح",
+    "hint": "نقل",
+    "category": "Transportation"
+  },
+  {
+    "word": "فلوكة",
+    "hint": "صغير",
+    "category": "Transportation"
+  },
+  {
+    "word": "شقف",
+    "hint": "صيد",
+    "category": "Transportation"
+  },
+  {
+    "word": "يخت",
+    "hint": "فخمة",
+    "category": "Transportation"
+  },
+  {
+    "word": "طاكسيفون",
+    "hint": "عمومي",
+    "category": "Objects"
+  },
+  {
+    "word": "بريكة",
+    "hint": "غاز",
+    "category": "Objects"
+  },
+  {
+    "word": "دخان",
+    "hint": "لف",
+    "category": "Objects"
+  },
+  {
+    "word": "شيشة",
+    "hint": "تدخين",
+    "category": "Objects"
+  },
+  {
+    "word": "معسل",
+    "hint": "منكه",
+    "category": "Objects"
+  },
+  {
+    "word": "فحم",
+    "hint": "مشتعل",
+    "category": "Objects"
+  },
+  {
+    "word": "كسرونة",
+    "hint": "طبخ",
+    "category": "Objects"
+  },
+  {
+    "word": "تبسي",
+    "hint": "عميق",
+    "category": "Objects"
+  },
+  {
+    "word": "شقالة",
+    "hint": "كبير",
+    "category": "Objects"
+  },
+  {
+    "word": "مغرفة",
+    "hint": "طعام",
+    "category": "Objects"
+  },
+  {
+    "word": "فرشيطة",
+    "hint": "أكل",
+    "category": "Objects"
+  },
+  {
+    "word": "موس",
+    "hint": "قطع",
+    "category": "Objects"
+  },
+  {
+    "word": "فنجان",
+    "hint": "قهوة",
+    "category": "Objects"
+  },
+  {
+    "word": "سنيوة",
+    "hint": "تقديم",
+    "category": "Objects"
+  },
+  {
+    "word": "عصا",
+    "hint": "خشب",
+    "category": "Objects"
+  },
+  {
+    "word": "زلايز",
+    "hint": "أرضي",
+    "category": "Materials"
+  },
+  {
+    "word": "جير",
+    "hint": "أبيض",
+    "category": "Materials"
+  },
+  {
+    "word": "سيمان",
+    "hint": "بناء",
+    "category": "Materials"
+  },
+  {
+    "word": "ياجور",
+    "hint": "أحمر",
+    "category": "Materials"
+  },
+  {
+    "word": "حصى",
+    "hint": "صغيرة",
+    "category": "Materials"
+  },
+  {
+    "word": "بلار",
+    "hint": "شفاف",
+    "category": "Materials"
+  },
+  {
+    "word": "لوح",
+    "hint": "صلب",
+    "category": "Materials"
+  },
+  {
+    "word": "نحاس",
+    "hint": "لامع",
+    "category": "Materials"
+  },
+  {
+    "word": "ذهب",
+    "hint": "ثمين",
+    "category": "Materials"
+  },
+  {
+    "word": "فضة",
+    "hint": "أبيض",
+    "category": "Materials"
+  },
+  {
+    "word": "نقرة",
+    "hint": "خالصة",
+    "category": "Materials"
+  },
+  {
+    "word": "زمرد",
+    "hint": "كريم",
+    "category": "Materials"
+  },
+  {
+    "word": "ياقوت",
+    "hint": "أحمر",
+    "category": "Materials"
+  },
+  {
+    "word": "لؤلؤ",
+    "hint": "بحري",
+    "category": "Materials"
+  },
+  {
+    "word": "مرجان",
+    "hint": "بحرية",
+    "category": "Materials"
+  },
+  {
+    "word": "عنبر",
+    "hint": "فواح",
+    "category": "Materials"
+  },
+  {
+    "word": "مسك",
+    "hint": "طيبة",
+    "category": "Materials"
+  }
+]
