@@ -1102,11 +1102,11 @@ body.game-chkobba header.app-header {
     }
     .chkobba-menu-btn {
         padding: 8px 16px;
-        height: calc(100% - 15px);
+        height: 36px;
     }
     .chkobba-top-controls .coup-turn-indicator {
         padding: 3px 31px;
-        height: calc(100% - 15px);
+        height: 36px;
     }
 }
 
