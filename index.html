@@ -24,9 +24,9 @@
     <link rel="stylesheet" href="chkobba.css">
 </head>
 <body>
-    <div class="bg-orb orb-1"></div>
-    <div class="bg-orb orb-2"></div>
     <main class="container" id="app-shell">
+        <div class="bg-orb orb-1"></div>
+        <div class="bg-orb orb-2"></div>
         <header class="app-header">
             <button id="game-title-btn" class="game-title-btn" type="button">
                 <h1 data-i18n="title">🕵️‍♂️ شكونو هو؟</h1>
@@ -323,41 +323,40 @@
                 <button id="start-discussion-btn" class="primary-btn hidden">💬 ابدأ النقاش</button>
             </div>
         </section>
-    </main><!-- end .container -->
-
-    <!-- INFO MODAL -->
-    <div id="info-modal" class="modal hidden">
-        <div class="modal-content">
-            <h3 data-i18n="info_title" style="margin-top:0; color:var(--primary-color); font-size:1.6rem;">ℹ️ معلومة</h3>
-            <p id="info-modal-text" style="font-size:1.15rem; line-height:1.6; margin-bottom:24px; color:var(--text-main);"></p>
-            <button id="close-info-btn" class="primary-btn" data-i18n="close_btn">فهمت</button>
-        </div>
-    </div>
-
-    <!-- PASSWORD MODAL -->
-    <div id="password-modal" class="modal hidden">
-        <div class="modal-content">
-            <div style="font-size:3rem; margin-bottom:10px;">🔞</div>
-            <h3 style="margin-top:0; font-size:1.5rem; color:var(--danger-color);">محتوى للكبار فقط</h3>
-            <p style="color:var(--text-muted); font-size:1rem; margin-bottom:20px;">أدخل الكلمة السرية باش تكمل</p>
-            <input type="password" id="password-input" placeholder="🔑 الكلمة السرية" style="text-align:center; letter-spacing:4px;" autocomplete="off"/>
-            <p id="password-error">❌ كلمة سرية غلط!</p>
-            <div class="pw-remember-row">
-                <input type="checkbox" id="pw-remember-toggle"/>
-                <label for="pw-remember-toggle">ابقالي فاتح +18</label>
+        <!-- INFO MODAL -->
+        <div id="info-modal" class="modal hidden">
+            <div class="modal-content">
+                <h3 data-i18n="info_title" style="margin-top:0; color:var(--primary-color); font-size:1.6rem;">ℹ️ معلومة</h3>
+                <p id="info-modal-text" style="font-size:1.15rem; line-height:1.6; margin-bottom:24px; color:var(--text-main);"></p>
+                <button id="close-info-btn" class="primary-btn" data-i18n="close_btn">فهمت</button>
             </div>
-            <button id="password-confirm-btn" class="primary-btn" style="margin-top:20px;">تأكيد</button>
-            <button id="password-cancel-btn" class="secondary-btn" style="margin-top:10px; border:none; background:transparent; color:var(--text-muted);">إلغاء</button>
         </div>
-    </div>
 
-    <div id="coup-turn-indicator" class="coup-turn-indicator hidden">
-        <div id="chkobba-turn-timer" class="chkobba-turn-timer hidden">00:45</div>
-        <span class="cti-label">الدور على:</span>
-        <strong id="cti-player-name">...</strong>
-    </div>
+        <!-- PASSWORD MODAL -->
+        <div id="password-modal" class="modal hidden">
+            <div class="modal-content">
+                <div style="font-size:3rem; margin-bottom:10px;">🔞</div>
+                <h3 style="margin-top:0; font-size:1.5rem; color:var(--danger-color);">محتوى للكبار فقط</h3>
+                <p style="color:var(--text-muted); font-size:1rem; margin-bottom:20px;">أدخل الكلمة السرية باش تكمل</p>
+                <input type="password" id="password-input" placeholder="🔑 الكلمة السرية" style="text-align:center; letter-spacing:4px;" autocomplete="off"/>
+                <p id="password-error">❌ كلمة سرية غلط!</p>
+                <div class="pw-remember-row">
+                    <input type="checkbox" id="pw-remember-toggle"/>
+                    <label for="pw-remember-toggle">ابقالي فاتح +18</label>
+                </div>
+                <button id="password-confirm-btn" class="primary-btn" style="margin-top:20px;">تأكيد</button>
+                <button id="password-cancel-btn" class="secondary-btn" style="margin-top:10px; border:none; background:transparent; color:var(--text-muted);">إلغاء</button>
+            </div>
+        </div>
 
-    <div id="toast-msg" class="toast"></div>
+        <div id="coup-turn-indicator" class="coup-turn-indicator hidden">
+            <div id="chkobba-turn-timer" class="chkobba-turn-timer hidden">00:45</div>
+            <span class="cti-label">الدور على:</span>
+            <strong id="cti-player-name">...</strong>
+        </div>
+
+        <div id="toast-msg" class="toast"></div>
+    </main><!-- end .container -->
 
     <!-- Adult word list: base64-obfuscated, decoded into window._adultWordsDecoded -->
     <script defer src="adult_words_data.js"></script>
