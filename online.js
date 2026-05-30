@@ -166,6 +166,7 @@ function _chkobbaMinPlayers(room) {
 }
 
 function _lobbyMinPlayers(room) {
+    if (room?.config?.versusAI) return 1;
     if (_isChkobbaRoom(room)) return _chkobbaMinPlayers(room);
     if (_isCoupRoom(room)) return 2;
     return 3;
@@ -1328,7 +1329,7 @@ function _renderLobby(room) {
             return;
         }
         if (_isCoupRoom(room)) {
-            _renderSimpleLobbyTimerSettings(startBtn, room, { key:'actionTimer', label:'⏱️ وقت الدور', fallback:1, max:5 });
+            _renderCoupLobbySettings(startBtn, room);
             return;
         }
         if (_isThiefRoom(room) || _isSpyfallRoom(room)) {
@@ -1478,6 +1479,44 @@ function _renderLobby(room) {
         startBtn.classList.add('hidden');
         waitMsg.innerText = `⏳ نستناو مولى الروم يبدا... (${n} لاعبين)`;
     }
+}
+
+function _renderCoupLobbySettings(anchorBtn, room) {
+    const cfg = room.config || {};
+    const turnTime = cfg.actionTimer || 1;
+    const versusAI = !!cfg.versusAI;
+
+    const wrap = document.createElement('div');
+    wrap.id = 'lobby-settings-panel';
+    wrap.className = 'advanced-content open simple-lobby-settings';
+    wrap.innerHTML = `
+        <div class="surface-card" style="padding:10px 24px;">
+            <div class="setting-row">
+                <div class="setting-info"><span class="setting-title">⏱️ وقت الدور</span></div>
+                <div class="counter-group">
+                    <button class="counter-btn" id="coup-time-minus">−</button>
+                    <span class="counter-value" id="coup-time-val">${turnTime}</span>
+                    <button class="counter-btn" id="coup-time-plus">+</button>
+                </div>
+            </div>
+            <div class="toggle-row" style="border-bottom:none; margin-top:16px;">
+                <span class="toggle-label">🤖 اللعب ضد الذكاء الاصطناعي</span>
+                <div class="toggle-switch ${versusAI?'active':''}" id="coup-ai-tog">
+                    <div class="toggle-thumb"></div>
+                </div>
+            </div>
+        </div>
+    `;
+    anchorBtn.after(wrap);
+
+    const updateConfig = async (patch) => {
+        const newCfg = { ...room.config, ...patch };
+        try { await _update(room.code, { config: newCfg }); } catch(e) { console.error(e); }
+    };
+
+    wrap.querySelector('#coup-time-minus').onclick = () => updateConfig({ actionTimer: Math.max(1, turnTime - 1) });
+    wrap.querySelector('#coup-time-plus').onclick = () => updateConfig({ actionTimer: Math.min(5, turnTime + 1) });
+    wrap.querySelector('#coup-ai-tog').onclick = () => updateConfig({ versusAI: !versusAI });
 }
 
 function _renderSimpleLobbyTimerSettings(anchorBtn, room, opts = {}) {
@@ -1912,8 +1951,20 @@ function _onlineCoupDeck() {
 
 async function _startOnlineCoupGame() {
     if (!_isHost||!_room) return;
-    const allP = _room.players || [];
-    if (allP.length < 2) { showToast('يلزم زوز لاعبين على الأقل.'); return; }
+    let allP = [...(_room.players || [])];
+    const cfg = _room.config || {};
+    if (allP.length < 2 && !cfg.versusAI) { showToast('يلزم زوز لاعبين على الأقل.'); return; }
+
+    if (cfg.versusAI && allP.length < 2) {
+        const usedNames = new Set(allP.map(p => p.name));
+        while (allP.length < 2) {
+            let name = _getRandomTunisianName();
+            while (usedNames.has(name)) name = _getRandomTunisianName();
+            usedNames.add(name);
+            allP.push({ id: 'ai_' + Math.random().toString(36).substr(2, 9), name, isAI: true });
+        }
+    }
+
     const deck = _onlineCoupDeck();
     const actionMinutes = Math.max(1, Math.min(5, parseInt(_room.config?.actionTimer || _pendingConfig?.actionTimer || 1, 10) || 1));
     const state = {
@@ -1928,6 +1979,7 @@ async function _startOnlineCoupGame() {
         players: allP.map(p=>({
             id:p.id,
             name:p.name,
+            isAI: !!p.isAI,
             coins:2,
             hand:[{type:deck.pop(),lost:false},{type:deck.pop(),lost:false}], lastAction: null
         }))
@@ -2711,12 +2763,47 @@ function _startOnlineCoupTimer(state) {
         if (left <= 0 && !state.pending && !state.pendingLoss && !state.pendingExchange && !_onlineCoupTimingOut && _onlineCoupAlive(state).length > 1 && _isHost) {
             _onlineCoupTimeout();
         }
+
+        // AI Logic for active turn
+        if (_isHost && !state.pending && !state.pendingLoss && !state.pendingExchange && !_onlineCoupTimingOut) {
+            const actor = state.players[state.turnIndex];
+            if (actor?.isAI) {
+                const elapsed = (state.actionMinutes * 60) - left;
+                if (elapsed > (2 + Math.random() * 2)) {
+                    _onlineCoupAIAction(state, actor);
+                }
+            }
+        }
     };
+    // Handle AI Loss / AI Exchange
+    if (_isHost && !_onlineCoupTimingOut) {
+        if (state.pendingLoss) {
+            const victim = state.players.find(p => p.id === state.pendingLoss.playerId);
+            if (victim?.isAI) setTimeout(() => _onlineCoupAILoss(state, victim), 1500 + Math.random() * 1500);
+        } else if (state.pendingExchange) {
+            const exchanger = state.players.find(p => p.id === state.pendingExchange.playerId);
+            if (exchanger?.isAI) setTimeout(() => _onlineCoupAIExchange(state, exchanger), 2000 + Math.random() * 2000);
+        }
+    }
+
     tick();
     _onlineCoupTimer = setInterval(tick, 500);
     if (state.pending?.expiresAt) {
         const responseTick = () => {
             _onlineCoupTickResponseCountdown();
+
+            // AI Responses
+            if (_isHost && !_onlineCoupTimingOut && state.pending) {
+                const responders = _onlineCoupPendingResponders(state, state.pending);
+                const aiResponders = responders.filter(p => p.isAI && !state.pending.passes.includes(p.id));
+                if (aiResponders.length > 0) {
+                    const elapsed = (ONLINE_COUP_RESPONSE_SECONDS) - Math.max(0, Math.ceil((state.pending.expiresAt - _syncedNow()) / 1000));
+                    if (elapsed > (1.5 + Math.random() * 2)) {
+                        _onlineCoupAIResponse(state, aiResponders[0]);
+                    }
+                }
+            }
+
             if (_syncedNow() < state.pending.expiresAt || _onlineCoupTimingOut) return;
             if (_isHost) _onlineCoupPendingTimeout();
         };
@@ -2748,10 +2835,12 @@ async function _onlineCoupPendingTimeout() {
 
 async function _onlineCoupTimeout() {
     if (!_room?.word_obj || _onlineCoupTimingOut) return;
+    const actor = _room.word_obj.players[_room.word_obj.turnIndex];
+    const isAI = actor?.isAI;
     _onlineCoupTimingOut = true;
     try {
         await _onlineCoupMutateState(async state => {
-            if (state.pending || state.pendingLoss || state.pendingExchange || Math.ceil(((state.turnEndsAt || _syncedNow()) - _syncedNow()) / 1000) > 0) return null;
+            if (!isAI && (state.pending || state.pendingLoss || state.pendingExchange || Math.ceil(((state.turnEndsAt || _syncedNow()) - _syncedNow()) / 1000) > 0)) return null;
             const actor = state.players[state.turnIndex || 0];
             if (actor?.hand?.some(c=>!c.lost)) {
                 actor.coins += 1;
@@ -3547,6 +3636,88 @@ function _onlineCoupWrong() {
     return ['عمل روحو حاكم وطلع غلط.','تكذب؟ لا يا خويا، إنت الي تخلص.','دخل في حيط بيديه.'][Math.floor(Math.random()*3)];
 }
 
+async function _onlineCoupAIAction(state, ai) {
+    if (!ai || ai.hand.every(c => c.lost)) return;
+    const aliveOpponents = state.players.filter(p => p.id !== ai.id && p.hand.some(c => !c.lost));
+    if (!aliveOpponents.length) return;
+    const randomOpponent = aliveOpponents[Math.floor(Math.random() * aliveOpponents.length)];
+
+    if (ai.coins >= 10) {
+        await _onlineCoupApplyAction(state, 'coup', randomOpponent.id);
+        return;
+    }
+
+    const possible = ['income', 'foreignAid', 'tax', 'exchange'];
+    if (ai.coins >= 3) possible.push('assassinate');
+    if (aliveOpponents.some(p => p.coins > 0)) possible.push('steal');
+    if (ai.coins >= 7) possible.push('coup');
+
+    const weights = { income: 10, foreignAid: 15, tax: 25, steal: 20, assassinate: 15, exchange: 5, coup: 10 };
+    const pool = [];
+    possible.forEach(act => { for (let i = 0; i < (weights[act] || 10); i++) pool.push(act); });
+    const action = pool[Math.floor(Math.random() * pool.length)];
+
+    if (['coup', 'assassinate', 'steal'].includes(action)) {
+        let targetId = randomOpponent.id;
+        if (action === 'steal') {
+            const hasMoney = aliveOpponents.filter(p => p.coins > 0);
+            if (hasMoney.length) targetId = hasMoney[Math.floor(Math.random() * hasMoney.length)].id;
+        }
+        await _onlineCoupStartPending(action, targetId);
+    } else {
+        await _onlineCoupApplyAction(state, action, null);
+    }
+}
+
+async function _onlineCoupAIResponse(state, ai) {
+    const p = state.pending;
+    if (!p || p.passes.includes(ai.id)) return;
+
+    const roll = Math.random();
+    // 80% pass, 10% challenge, 10% block (if target)
+    if (p.stage === 'action') {
+        const isTarget = p.targetId === ai.id;
+        if (isTarget && p.blockRoles && roll < 0.3) {
+            await _onlineCoupBlock(ai.id, p.blockRoles[0], p.id);
+        } else if (roll < 0.1 && p.action !== 'income' && p.action !== 'foreignAid' && p.action !== 'coup') {
+            await _onlineCoupChallenge(ai.id, p.id);
+        } else if (roll < 0.05 && p.action === 'foreignAid') {
+            await _onlineCoupBlock(ai.id, 'duke', p.id);
+        } else {
+            await _onlineCoupPass(ai.id, p.id);
+        }
+    } else if (p.stage === 'block') {
+        if (roll < 0.15) {
+            await _onlineCoupChallengeBlock(ai.id, p.id);
+        } else {
+            await _onlineCoupPass(ai.id, p.id);
+        }
+    }
+}
+
+async function _onlineCoupAILoss(state, ai) {
+    const p = state.pendingLoss;
+    if (!p || p.playerId !== ai.id) return;
+    const live = ai.hand.map((c, i) => ({ c, i })).filter(x => !x.c.lost);
+    if (!live.length) return;
+    await _onlineCoupChooseLoss(live[Math.floor(Math.random() * live.length)].i, p.id);
+}
+
+async function _onlineCoupAIExchange(state, ai) {
+    const p = state.pendingExchange;
+    if (!p || p.playerId !== ai.id) return;
+    const indices = [];
+    const pool = [...p.pool];
+    for (let i = 0; i < p.keep; i++) {
+        const idx = Math.floor(Math.random() * pool.length);
+        indices.push(pool.splice(idx, 1)[0].handIndex ?? (ai.hand.length + indices.filter(x => x >= ai.hand.length).length));
+        // This index logic for new cards is tricky, but _onlineCoupChooseExchange handles it.
+        // Actually, let's just pick first N indices.
+    }
+    const finalIndices = Array.from({ length: p.keep }, (_, i) => i);
+    await _onlineCoupChooseExchange(finalIndices, p.id);
+}
+
 async function _disconnectForReconnect() {
     document.getElementById('coup-turn-indicator')?.classList.add('hidden');
     if (!_room) { window.onlineMode = false; showScreen('online-setup-screen'); return; }
@@ -3722,6 +3893,7 @@ function _renderChkobbaLobbySettings(anchorBtn, room) {
     const mode = cfg.chkobbaMode || '1v1';
     const target = cfg.chkobbaTarget || 21;
     const tournament = !!cfg.chkobbaTournament;
+    const versusAI = !!cfg.versusAI;
     const turnTime = cfg.chkobbaTurnTime || 45;
 
     // Mode names map
@@ -3780,9 +3952,16 @@ function _renderChkobbaLobbySettings(anchorBtn, room) {
                 </div>
             </div>
 
-            <div class="toggle-row" style="border-bottom:none; margin-top:16px;">
+            <div class="toggle-row" style="margin-top:16px;">
                 <span class="toggle-label">🏆 نظام تورنوا</span>
                 <div class="toggle-switch ${tournament?'active':''}" id="chk-tournament-tog">
+                    <div class="toggle-thumb"></div>
+                </div>
+            </div>
+
+            <div class="toggle-row" style="border-bottom:none;">
+                <span class="toggle-label">🤖 اللعب ضد الذكاء الاصطناعي</span>
+                <div class="toggle-switch ${versusAI?'active':''}" id="chk-ai-tog">
                     <div class="toggle-thumb"></div>
                 </div>
             </div>
@@ -3819,20 +3998,37 @@ function _renderChkobbaLobbySettings(anchorBtn, room) {
     wrap.querySelector('#chk-tournament-tog').onclick = () => {
         updateConfig({ chkobbaTournament: !tournament });
     };
+
+    wrap.querySelector('#chk-ai-tog').onclick = () => {
+        updateConfig({ versusAI: !versusAI });
+    };
 }
+
+const _TUNISIAN_NAMES = ["حمادي", "فوزية", "بلقاسم", "منجي", "نجاة", "مبروكة", "الصادق", "بشيرة", "عياشي", "زهيرة", "فرحات", "لطيفة", "توفيق", "منيرة", "الشاذلي", "عزيزة"];
+function _getRandomTunisianName() { return _TUNISIAN_NAMES[Math.floor(Math.random() * _TUNISIAN_NAMES.length)]; }
 
 async function _startOnlineChkobbaGame() {
     if (!_isHost || !_room) return;
-    const allP = _room.players || [];
+    let allP = [...(_room.players || [])];
     const cfg = _room.config || {};
     const mode = cfg.chkobbaMode || '1v1';
     const turnTime = cfg.chkobbaTurnTime || 45;
 
     // Validate player count for mode
     const needed = mode === '1v1' ? 2 : mode === '1v1v1' ? 3 : 4;
-    if (allP.length < needed && !cfg.chkobbaTournament) {
+    if (allP.length < needed && !cfg.chkobbaTournament && !cfg.versusAI) {
         showToast(`يلزم ${needed} لاعبين للمود هذا.`);
         return;
+    }
+
+    if (cfg.versusAI && allP.length < needed) {
+        const usedNames = new Set(allP.map(p => p.name));
+        while (allP.length < needed) {
+            let name = _getRandomTunisianName();
+            while (usedNames.has(name)) name = _getRandomTunisianName();
+            usedNames.add(name);
+            allP.push({ id: 'ai_' + Math.random().toString(36).substr(2, 9), name, isAI: true });
+        }
     }
 
     const logic = window.ChkobbaLogic;
@@ -3846,6 +4042,7 @@ async function _startOnlineChkobbaGame() {
         allP.map((p, idx) => ({
             id: p.id,
             name: p.name,
+            isAI: !!p.isAI,
             team: mode === '2v2' ? (idx % 2 === 0 ? 0 : 1) : null
         })),
         {
@@ -4366,10 +4563,26 @@ function _startOnlineChkobbaTimer(room) {
         if (left <= 10) timerEl.style.color = 'var(--danger-color)';
         else timerEl.style.color = '';
 
-        if (left <= 0 && _isHost && !_chkobbaTimingOut && room.word_obj?.phase === 'playing') {
-            _chkobbaTimeout();
+        const s = room.word_obj;
+        const p = s?.players?.[s.turnIndex];
+        const isAI = p?.isAI;
+
+        if (_isHost && !_chkobbaTimingOut && s?.phase === 'playing') {
+            if (left <= 0) {
+                _chkobbaTimeout();
+            } else if (isAI) {
+                // AI move after a short delay
+                const totalTurn = (new Date(room.timer_end_at).getTime() - endTime + (left*1000)); // approximate
+                const elapsed = (new Date(room.timer_end_at).getTime() - (left*1000)) - _syncedNow(); // this is not right
+                // Let's use a simpler logic: AI moves when left is less than (TurnTime - random(2,4))
+                const turnTime = room.config?.chkobbaTurnTime || 45;
+                if (left < (turnTime - 2 - Math.random() * 2)) {
+                    _chkobbaTimeout();
+                }
+            }
         }
     };
+
     tick();
     _chkobbaTimer = setInterval(tick, 500);
 }
@@ -4387,14 +4600,32 @@ async function _chkobbaTimeout() {
         let chosenCardIndex = -1;
         let bestMatch = null;
 
+        // Better AI logic:
+        // 1. Can we capture the 7 of diamonds?
+        // 2. Can we capture a 7?
+        // 3. Can we capture more than one card?
+        // 4. Capture highest value card.
+
+        const candidates = [];
         for (let i = 0; i < p.hand.length; i++) {
-            const possible = logic.getValidCaptures(p.hand[i], s.table);
-            if (possible.length > 0) {
-                chosenCardIndex = i;
-                bestMatch = possible[0];
-                break;
+            const captures = logic.getValidCaptures(p.hand[i], s.table);
+            if (captures.length > 0) {
+                captures.forEach(match => {
+                    let score = match.length; // base score: number of cards captured
+                    if (match.some(c => c.id === 'diamonds_7') || p.hand[i].id === 'diamonds_7') score += 10;
+                    if (match.some(c => c.value === 7)) score += 5;
+                    if (match.some(c => c.suit === 'diamonds')) score += 2;
+                    candidates.push({ handIdx: i, match, score });
+                });
             }
         }
+
+        if (candidates.length > 0) {
+            candidates.sort((a, b) => b.score - a.score);
+            chosenCardIndex = candidates[0].handIdx;
+            bestMatch = candidates[0].match;
+        }
+
         if (chosenCardIndex === -1) chosenCardIndex = 0;
         const cardToPlay = p.hand[chosenCardIndex];
 
