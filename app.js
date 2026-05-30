@@ -1907,27 +1907,35 @@ document.addEventListener('DOMContentLoaded', async () => {
         const shell = document.getElementById('app-shell');
         if (!shell) return;
 
-        const BASE_W = 480;
         const vw = window.innerWidth;
         const vh = window.innerHeight;
 
-        // On mobile vw === screen width, on desktop cap at 560px
-        const factor = Math.min(vw, 560) / BASE_W;
-        window._gameScale = factor;
+        // On mobile: fill full width. On desktop: cap at 480px and center.
+        if (vw <= 520) {
+            // Mobile: no scaling, just fill the screen naturally
+            window._gameScale = 1;
+            shell.style.transform = '';
+            shell.style.transformOrigin = '';
+            shell.style.width = '100%';
+            shell.style.height = '100%';
+            shell.style.position = '';
+            shell.style.left = '';
+            shell.style.top = '';
+        } else {
+            // Desktop: scale a 480px virtual shell to fit, centered
+            const factor = Math.min(vw, 560) / 480;
+            window._gameScale = factor;
+            const virtualH = vh / factor;
+            shell.style.width = '480px';
+            shell.style.height = virtualH + 'px';
+            shell.style.transformOrigin = 'top left';
+            shell.style.transform = 'scale(' + factor + ')';
+            shell.style.position = 'absolute';
+            shell.style.left = ((vw - 480 * factor) / 2) + 'px';
+            shell.style.top = '0';
+        }
 
-        const virtualH = vh / factor;
-
-        // Size the unscaled shell
-        shell.style.width  = BASE_W + 'px';
-        shell.style.height = virtualH + 'px';
-
-        // Scale from top-center so it fills from the top down and stays centered
-        shell.style.transformOrigin = 'top center';
-        shell.style.transform = 'scale(' + factor + ')';
-
-        // Keep body tall enough so the scaled shell is not clipped
         document.body.style.height = vh + 'px';
-        document.body.style.minHeight = vh + 'px';
     }
     window.addEventListener('resize', _resizeGame);
     _resizeGame();
