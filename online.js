@@ -3859,17 +3859,6 @@ function _buildChkobbaOpponentPillHtml(p, state, { active, isTeammate, isExpande
                 <div class="pill-stat">${p.hand.length} كارت</div>
             </div>
         </div>
-        ${isExpanded ? `
-            <div class="pill-details">
-                <div class="pill-details-grid">
-                    <div class="detail-row"><span>الشكبّات</span><strong>${p.chkobbas || 0}</strong></div>
-                    <div class="detail-row"><span>الماكول</span><strong>${p.captured?.length || 0}</strong></div>
-                    <div class="detail-row"><span>الديناري</span><strong>${dinari}</strong></div>
-                    ${offline ? '<div class="detail-row"><span>الاتصال</span><strong>غير متصل</strong></div>' : ''}
-                    <div class="detail-row"><span>الطرح</span><strong>${state.round || 1}</strong></div>
-                </div>
-            </div>
-        ` : ''}
     `;
 }
 
@@ -3918,10 +3907,7 @@ function _renderChkobbaOpponentPills(room, state, me, mode, roomPlayerMeta) {
 
         pill.innerHTML = _buildChkobbaOpponentPillHtml(p, state, { active, isTeammate, isExpanded, offline, dinari, hasBerria });
 
-        pill.onclick = () => {
-            _chkobbaExpandedPillId = isExpanded ? null : p.id;
-            _showOnlineChkobba(room);
-        };
+        pill.onclick = null;
     });
 
     // Maintain order
@@ -3987,10 +3973,6 @@ function _renderChkobbaInfoPills(state, me) {
                 <span class="stat-label">شكبّة</span>
                 <span class="stat-value">${me.chkobbas || 0}</span>
             </div>
-        </div>
-        <div class="chkobba-turn-status">
-            <span class="turn-dot"></span>
-            <span>الدور على: ${_esc(currentPlayer.name)}</span>
         </div>
     `;
 }
@@ -4142,7 +4124,6 @@ function _showOnlineChkobba(room) {
     _maybeShowChkobbaAnnouncement(state);
 
     _renderChkobbaOpponentPills(room, state, me, mode, roomPlayerMeta);
-    _renderChkobbaTopPlayers(state, me);
 
     const tableCont = document.getElementById('chkobba-table');
     tableCont.innerHTML = '';
