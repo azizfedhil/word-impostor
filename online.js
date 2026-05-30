@@ -769,7 +769,7 @@ function _handCardTilt(index, total) {
 }
 
 /** GPU-friendly card flight; calls onDone when finished (or immediately if reduced motion). */
-function _animateChkobbaFlight({ fromRect, toRect, imgSrc, duration = 260, rotate = 6, withGhost = false, onDone }) {
+function _animateChkobbaFlight({ fromRect, toRect, imgSrc, duration = 600, rotate = 6, withGhost = false, onDone }) {
     if (_prefersReducedMotion() || !fromRect || !toRect) {
         onDone?.();
         return;
@@ -786,8 +786,10 @@ function _animateChkobbaFlight({ fromRect, toRect, imgSrc, duration = 260, rotat
     const tx = toRect.left + toRect.width / 2;
     const ty = toRect.top + toRect.height / 2;
 
-    // Start position
+    // Start position with opacity 0 for smooth fade-in
     flyer.style.transform = `translate3d(${fx}px, ${fy}px, 0) scale(1) rotate(${rotate}deg) translate(-50%, -50%)`;
+    flyer.style.opacity = '0';
+    flyer.style.transition = `transform ${duration}ms cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity ${duration * 0.2}ms ease-out`;
 
     const img = document.createElement('img');
     img.src = imgSrc;
@@ -800,36 +802,50 @@ function _animateChkobbaFlight({ fromRect, toRect, imgSrc, duration = 260, rotat
         ghost = document.createElement('div');
         ghost.className = 'chkobba-ghost-trail';
         ghost.style.transform = flyer.style.transform;
+        ghost.style.opacity = '0';
+        ghost.style.transition = `transform ${duration}ms cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity ${duration * 0.2}ms ease-out`;
         const gImg = document.createElement('img');
         gImg.src = imgSrc;
         ghost.appendChild(gImg);
         layer.appendChild(ghost);
     }
 
-    // Trigger GPU animation
+    // Trigger GPU animation with fade-in
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-            const endTransform = `translate3d(${tx}px, ${ty}px, 0) scale(0.85) rotate(${rotate * 0.35}deg) translate(-50%, -50%)`;
-            flyer.style.transform = endTransform;
+            // Fade in first
+            flyer.style.opacity = '1';
+            
+            // Then animate to target position
+            requestAnimationFrame(() => {
+                const endTransform = `translate3d(${tx}px, ${ty}px, 0) scale(1) rotate(${rotate * 0.35}deg) translate(-50%, -50%)`;
+                flyer.style.transform = endTransform;
 
-            if (ghost) {
-                // Ghost lags slightly behind visually via timing
-                setTimeout(() => {
-                    ghost.style.transform = endTransform;
-                    ghost.style.opacity = '0';
-                }, 60);
-            }
+                if (ghost) {
+                    // Ghost lags slightly behind visually via timing
+                    setTimeout(() => {
+                        ghost.style.opacity = '0.5';
+                        ghost.style.transform = endTransform;
+                        setTimeout(() => {
+                            ghost.style.opacity = '0';
+                        }, duration * 0.5);
+                    }, 60);
+                }
+            });
         });
     });
 
     const finish = () => {
-        flyer.remove();
-        if (ghost) setTimeout(() => ghost.remove(), 500);
-        onDone?.();
+        flyer.style.opacity = '0';
+        setTimeout(() => {
+            flyer.remove();
+            if (ghost) setTimeout(() => ghost.remove(), 200);
+            onDone?.();
+        }, 150);
     };
     flyer.addEventListener('transitionend', finish, { once: true });
     // Safety fallback
-    setTimeout(finish, duration + 50);
+    setTimeout(finish, duration + 200);
 }
 
 function _animateChkobbaFlightsSequential(flights, onDone) {
@@ -4559,14 +4575,50 @@ function _showOnlineChkobba(room) {
     _renderChkobbaOpponentPills(room, state, me, mode, roomPlayerMeta);
 
     const tableCont = document.getElementById('chkobba-table');
-    tableCont.innerHTML = '';
-    state.table.forEach((card, idx) => {
-        tableCont.appendChild(_renderChkobbaCard(card, {
-            zone: 'table',
-            index: idx,
-            interactive: canInteract
-        }));
+    
+    // Get existing cards to preserve them for animation
+    const existingCards = Array.from(tableCont.querySelectorAll('.table-card'));
+    const existingCardIds = new Set(existingCards.map(el => el.dataset.cardId));
+    
+    // Clear only cards that are no longer on the table
+    const newCardIds = new Set(state.table.map(c => c.id));
+    existingCards.forEach(el => {
+        if (!newCardIds.has(el.dataset.cardId)) {
+            el.remove();
+        }
     });
+    
+    // Add or update cards
+    state.table.forEach((card, idx) => {
+        let cardEl = tableCont.querySelector(`.table-card[data-card-id="${card.id}"]`);
+        if (!cardEl) {
+            // New card - render it
+            cardEl = _renderChkobbaCard(card, {
+                zone: 'table',
+                index: idx,
+                interactive: canInteract
+            });
+            tableCont.appendChild(cardEl);
+        } else {
+            // Existing card - update its index/rotation
+            cardEl.dataset.index = String(idx);
+            cardEl.style.setProperty('--rot', `${_tableCardRotation(idx, card.id)}deg`);
+        }
+    });
+
+    // Check total cards on table and apply appropriate size reduction
+    const tableCards = tableCont.querySelectorAll('.table-card');
+    const totalCards = tableCards.length;
+    
+    // Remove all stacking classes first
+    tableCont.classList.remove('is-stacked-30', 'is-stacked-60');
+    
+    // Apply appropriate class based on total cards
+    if (totalCards > 6) {
+        tableCont.classList.add('is-stacked-60');
+    } else if (totalCards > 4) {
+        tableCont.classList.add('is-stacked-30');
+    }
 
     // Setup menu and voice button event listeners
     _setupChkobbaMenuButtons();

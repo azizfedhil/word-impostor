@@ -983,7 +983,7 @@ body:not(.game-coup) .coup-only-btn { display: none !important; }
 
 .coup-turn-indicator {
     position: fixed;
-    top: 107.5px;
+    top: 53.75px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 9991;
@@ -1002,6 +1002,16 @@ body:not(.game-coup) .coup-only-btn { display: none !important; }
     font-size: 0.95rem;
     pointer-events: none;
     transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Chkobba mode: turn indicator sits in top controls, not floating */
+.chkobba-top-controls .coup-turn-indicator {
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+    z-index: auto;
+    pointer-events: auto;
 }
 
 .chkobba-turn-timer {

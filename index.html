@@ -277,6 +277,19 @@
             <!-- Chkobba Menu and Voice Buttons -->
             <div class="chkobba-top-controls">
                 <button id="chkobba-voice-btn" class="chkobba-voice-btn" type="button">🎙️</button>
+                <div id="coup-turn-indicator" class="coup-turn-indicator hidden">
+                    <div id="chkobba-turn-timer" class="chkobba-turn-timer hidden">00:45</div>
+                    <div class="cti-pages">
+                        <div class="cti-page cti-page-turn active">
+                            <span class="cti-label">الدور على:</span>
+                            <strong id="cti-player-name">...</strong>
+                        </div>
+                        <div class="cti-page cti-page-players">
+                            <span class="cti-label">اللاعبين:</span>
+                            <div class="cti-players-list" id="cti-players-list"></div>
+                        </div>
+                    </div>
+                </div>
                 <button id="chkobba-menu-btn" class="chkobba-menu-btn" type="button">menu</button>
                 <div id="chkobba-menu-dropdown" class="chkobba-menu-dropdown hidden">
                     <button id="chkobba-back-to-main-btn" class="chkobba-menu-option">🏠 ارجع للقائمة الرئيسية</button>
@@ -342,12 +355,6 @@
             <button id="password-confirm-btn" class="primary-btn" style="margin-top:20px;">تأكيد</button>
             <button id="password-cancel-btn" class="secondary-btn" style="margin-top:10px; border:none; background:transparent; color:var(--text-muted);">إلغاء</button>
         </div>
-    </div>
-
-    <div id="coup-turn-indicator" class="coup-turn-indicator hidden">
-        <div id="chkobba-turn-timer" class="chkobba-turn-timer hidden">00:45</div>
-        <span class="cti-label">الدور على:</span>
-        <strong id="cti-player-name">...</strong>
     </div>
 
     <div id="toast-msg" class="toast"></div>

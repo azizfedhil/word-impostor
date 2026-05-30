@@ -1,7 +1,7 @@
 /* Chkobba — theme-aware, floating mobile card UI */
 :root {
-    --chkobba-card-w: 144.585px;
-    --chkobba-card-h: 212.86125px;
+    --chkobba-card-w: 166.27275px;
+    --chkobba-card-h: 244.7904375px;
     --chkobba-ease: cubic-bezier(0.16, 1, 0.3, 1);
     --chkobba-card-shadow: 0 8px 20px rgba(45, 42, 38, 0.14);
     --chkobba-surface-shadow: var(--shadow-soft);
@@ -478,7 +478,7 @@ body.game-chkobba header.app-header {
     -webkit-backdrop-filter: blur(16px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 75px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15), 0 0 20px rgba(255, 255, 255, 0.3);
     color: #fff;
     font-weight: 700;
     font-size: 1.0rem;
@@ -637,9 +637,10 @@ body.game-chkobba header.app-header {
 /* In-place selection: keep table rotation, avoid translateY jump */
 .chkobba-card.table-card.is-selected,
 .chkobba-card.is-table.is-selected {
-    transform: rotate(var(--rot, 0deg));
+    transform: rotate(var(--rot, 0deg)) translateY(-8px);
     box-shadow: 0 0 0 3px var(--accent-color), 0 6px 16px rgba(241, 192, 81, 0.35), var(--chkobba-card-shadow);
     z-index: 40;
+    transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.2s ease;
 }
 
 .chkobba-card.hand-card.is-selected {
@@ -659,21 +660,51 @@ body.game-chkobba header.app-header {
 
 .chkobba-card.table-card,
 .chkobba-card.is-table {
-    transform: rotate(var(--rot, 0deg));
-    width: 106.2241846875px;
-    height: 156.5985403125px;
+    transform: rotate(var(--rot, 0deg)) translateY(14px);
+    width: 95.60176621875px;
+    height: 140.93868628125px;
+    transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.4s ease, height 0.4s ease;
+    animation: tableCardEnter 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes tableCardEnter {
+    from {
+        opacity: 0;
+        transform: rotate(var(--rot, 0deg)) translateY(14px) scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: rotate(var(--rot, 0deg)) translateY(14px) scale(1);
+    }
+}
+
+/* When more than 4 cards on table, reduce size by 30% */
+.chkobba-table.is-stacked-30 .chkobba-card.table-card,
+.chkobba-table.is-stacked-30 .chkobba-card.is-table {
+    width: 66.92123633125px;
+    height: 98.657080396875px;
+}
+
+/* When more than 6 cards on table, reduce size by 60% */
+.chkobba-table.is-stacked-60 .chkobba-card.table-card,
+.chkobba-table.is-stacked-60 .chkobba-card.is-table {
+    width: 38.2407064875px;
+    height: 56.3754745125px;
 }
 
 .chkobba-card.hand-card {
     z-index: var(--hand-z, 10);
-    transform: translateX(var(--stack-offset, 0px)) rotate(var(--tilt, 0deg));
+    transform:
+        translateX(var(--stack-offset, 0px))
+        translateY(var(--stack-lift, 0px))
+        rotate(var(--tilt, 0deg));
     margin-left: calc(var(--stack-overlap, 0px) * -1);
 }
 
 .chkobba-card.hand-card img {
     box-shadow:
-        0 2px 4px rgba(45, 42, 38, 0.12),
-        0 10px 22px rgba(45, 42, 38, 0.14);
+        0 4px 10px rgba(0,0,0,.28),
+        0 18px 36px rgba(0,0,0,.28);
     transition: box-shadow 0.7095s var(--chkobba-ease), filter 0.7095s var(--chkobba-ease);
 }
 
@@ -681,13 +712,25 @@ body.game-chkobba header.app-header {
     filter: brightness(0.98);
 }
 
+.chkobba-card.hand-card:hover img,
+.chkobba-card.hand-card.is-lifted img {
+    box-shadow:
+        0 8px 16px rgba(0,0,0,.35),
+        0 24px 48px rgba(0,0,0,.35);
+}
+
+
 .chkobba-card.hand-card:first-child {
     margin-left: 0;
 }
 
 .chkobba-card.hand-card:hover,
 .chkobba-card.hand-card.is-lifted {
-    transform: translateX(var(--stack-offset, 0px)) translateY(-14px) rotate(var(--tilt, 0deg)) scale(1.06);
+    transform:
+        translateX(var(--stack-offset, 0px))
+        translateY(calc(var(--stack-lift, 0px) - 10px))
+        rotate(var(--tilt, 0deg))
+        scale(1.04);
     z-index: 100;
 }
 
@@ -1039,8 +1082,8 @@ body.game-chkobba header.app-header {
 /* Responsive */
 @media (max-width: 600px) {
     :root {
-        --chkobba-card-w: 124.50375px;
-        --chkobba-card-h: 184.7475px;
+        --chkobba-card-w: 143.1793125px;
+        --chkobba-card-h: 212.459625px;
     }
     .chkobba-table {
         min-height: 170px;
@@ -1060,8 +1103,8 @@ body.game-chkobba header.app-header {
 
 @media (max-height: 700px) {
     :root {
-        --chkobba-card-w: 112.455px;
-        --chkobba-card-h: 164.66625px;
+        --chkobba-card-w: 129.32325px;
+        --chkobba-card-h: 189.3661875px;
     }
     .chkobba-stage {
         gap: 6px;
@@ -1119,8 +1162,8 @@ body.game-chkobba header.app-header {
         width: 94vw;
     }
     :root {
-        --chkobba-card-w: 108.43875px;
-        --chkobba-card-h: 159.31125px;
+        --chkobba-card-w: 124.7045625px;
+        --chkobba-card-h: 183.2079375px;
     }
     .chkobba-pile {
         width: 79px;
