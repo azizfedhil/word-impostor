@@ -4644,6 +4644,30 @@ function _startOnlineChkobbaTimer(room) {
     const timerEl = document.getElementById('chkobba-turn-timer');
     if (!timerEl) return;
 
+    // Setup AI must run even when there is no timer (timer_end_at is null during setup phase)
+    if (_isHost && !_chkobbaSetupAIBusy) {
+        const s = room.word_obj;
+        if (s?.phase === 'setup') {
+            const cutter = s.players[s.cutterIndex];
+            if (cutter?.isAI) {
+                if (s.setupPhase === window.ChkobbaLogic.SETUP_PHASES.SHUFFLED) {
+                    _chkobbaSetupAIBusy = true;
+                    setTimeout(async () => {
+                        try { await _chkobbaPerformCutAI(); } finally { _chkobbaSetupAIBusy = false; }
+                    }, 800 + Math.random() * 800);
+                } else if (s.setupPhase === window.ChkobbaLogic.SETUP_PHASES.REVEALED) {
+                    _chkobbaSetupAIBusy = true;
+                    setTimeout(async () => {
+                        try {
+                            if (Math.random() > 0.5) await _chkobbaAcceptStarterAI();
+                            else await _chkobbaDeclineStarterAI();
+                        } finally { _chkobbaSetupAIBusy = false; }
+                    }, 800 + Math.random() * 800);
+                }
+            }
+        }
+    }
+
     if (!room.timer_end_at) {
         timerEl.classList.add('hidden');
         return;
@@ -4665,27 +4689,6 @@ function _startOnlineChkobbaTimer(room) {
 
         const s = room.word_obj;
         if (!s) return;
-
-        // Setup AI actions
-        if (_isHost && !_chkobbaTimingOut && !_chkobbaSetupAIBusy && s.phase === 'setup') {
-            const cutter = s.players[s.cutterIndex];
-            if (cutter?.isAI) {
-                if (s.setupPhase === window.ChkobbaLogic.SETUP_PHASES.SHUFFLED) {
-                    _chkobbaSetupAIBusy = true;
-                    setTimeout(async () => {
-                        try { await _chkobbaPerformCutAI(); } finally { _chkobbaSetupAIBusy = false; }
-                    }, 800 + Math.random() * 800);
-                } else if (s.setupPhase === window.ChkobbaLogic.SETUP_PHASES.REVEALED) {
-                    _chkobbaSetupAIBusy = true;
-                    setTimeout(async () => {
-                        try {
-                            if (Math.random() > 0.5) await _chkobbaAcceptStarterAI();
-                            else await _chkobbaDeclineStarterAI();
-                        } finally { _chkobbaSetupAIBusy = false; }
-                    }, 800 + Math.random() * 800);
-                }
-            }
-        }
 
         const p = s?.players?.[s.turnIndex];
         const isAI = p?.isAI;
