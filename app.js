@@ -1912,22 +1912,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         const VIRTUAL_W = 480;
         const VIRTUAL_H = 1040;
 
-        // Scale to fit both width and height within the viewport
-        const scaleX = vw / VIRTUAL_W;
-        const scaleY = vh / VIRTUAL_H;
-        const factor = Math.min(scaleX, scaleY);
+        // Scale only by width — height scrolls inside .screen if needed
+        const factor = vw / VIRTUAL_W;
         window._gameScale = factor;
 
-        // Center the scaled shell
-        const scaledW = VIRTUAL_W * factor;
-        const scaledH = VIRTUAL_H * factor;
-        const offsetX = (vw - scaledW) / 2;
-        const offsetY = (vh - scaledH) / 2;
+        const offsetY = Math.max(0, (vh - VIRTUAL_H * factor) / 2);
 
         shell.style.width  = VIRTUAL_W + 'px';
         shell.style.height = VIRTUAL_H + 'px';
         shell.style.transformOrigin = '0 0';
-        shell.style.transform = 'translate(' + offsetX + 'px, ' + offsetY + 'px) scale(' + factor + ')';
+        shell.style.transform = 'translate(0px, ' + offsetY + 'px) scale(' + factor + ')';
         shell.style.position = 'fixed';
         shell.style.left = '0';
         shell.style.top  = '0';
