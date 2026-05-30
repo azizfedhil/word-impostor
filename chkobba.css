@@ -862,7 +862,7 @@ body.game-chkobba header.app-header {
 }
 
 .chkobba-capture-ready-bar {
-    position: fixed;
+    position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
