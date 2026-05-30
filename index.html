@@ -274,12 +274,7 @@
         <section id="chkobba-screen" class="screen chkobba-screen" aria-label="شكبّة" hidden aria-hidden="true">
             <div id="chkobba-deal-layer" class="chkobba-deal-layer" aria-hidden="true"></div>
 
-            <div class="chkobba-header-new">
-                <button id="chkobba-menu-btn" class="chkobba-menu-btn">
-                    <span class="menu-icon">☰</span> Menu
-                </button>
-            </div>
-            
+            <!-- Victory overlay -->
             <div id="chkobba-victory-screen" class="chkobba-victory-screen hidden">
                 <div class="victory-header">
                     <span class="victory-icon">🏆</span>
@@ -290,55 +285,51 @@
                 <p id="chkobba-reset-wait" class="wait-msg">⏳ نستناو مولى الروم يعاود...</p>
             </div>
 
+            <!-- Main stage -->
             <div class="chkobba-stage" id="chkobba-main-stage">
-                <div class="chkobba-opponents-new" id="chkobba-opponents"></div>
-
                 <div id="chkobba-opening-panel" class="chkobba-opening-panel" hidden></div>
+                <div class="chkobba-opponents" id="chkobba-opponents"></div>
 
                 <div class="chkobba-table-wrap">
                     <div id="chkobba-piles" class="chkobba-piles">
-                        <!-- Right: Deck (First in RTL) -->
-                        <div class="chkobba-pile side-pile main-deck-pile" id="chkobba-deck-pile" aria-label="الكومة"></div>
-                        <!-- Left: My Captured (Second in RTL) -->
-                        <div class="chkobba-pile side-pile my-captured-pile" id="chkobba-my-capture-pile" aria-label="الماكول"></div>
+                        <div class="chkobba-pile deck-pile" id="chkobba-deck-pile" aria-label="الكومة"></div>
+                        <div class="chkobba-pile capture-pile" id="chkobba-my-capture-pile" aria-label="الماكول"></div>
                     </div>
                     <div class="chkobba-table" id="chkobba-table"></div>
                 </div>
+
+                <div class="chkobba-info" id="chkobba-round-info"></div>
             </div>
 
-            <div class="chkobba-bottom-bar">
-                <div class="chkobba-me-info">
-                    <div class="me-avatar-wrap">
-                        <div class="me-avatar placeholder-avatar"></div>
-                        <div class="me-turn-ring"></div>
-                    </div>
-                    <div class="me-details">
-                        <div class="me-name" id="chkobba-me-name">...</div>
-                        <div class="me-stats">
-                            <div class="me-stat"><span class="stat-icon">📥</span> <span class="stat-val" id="stat-cards">0</span> <span class="stat-label">كوارط</span></div>
-                            <div class="me-stat"><span class="stat-icon">♦️</span> <span class="stat-val" id="stat-diamonds">0</span> <span class="stat-label">ديناري</span></div>
-                            <div class="me-stat"><span class="stat-icon">🏆</span> <span class="stat-val" id="stat-chkobba">0</span> <span class="stat-label">شكبّة</span></div>
-                        </div>
-                    </div>
-                    <div class="me-turn-status" id="chkobba-turn-status">
-                        <div class="turn-dot"></div>
-                        <div class="turn-text">دورك</div>
-                        <div class="turn-subtext">تخمم...</div>
-                    </div>
+            <!-- Hand dock -->
+            <div class="chkobba-hand-dock" aria-live="polite">
+                <div class="not-your-turn-pill">⏳ دورك مازال...</div>
+                <div class="chkobba-reactions-bar" id="chkobba-reactions">
+                    <button aria-label="ضحك" data-reaction="laugh">😂</button>
+                    <button aria-label="غش" data-reaction="angry">😤</button>
+                    <button aria-label="تصفيق" data-reaction="clap">👏</button>
+                    <button aria-label="تخمام" data-reaction="think">🤔</button>
                 </div>
-                <div class="chkobba-hand-dock" aria-live="polite">
-                    <div class="not-your-turn-pill">⏳ دورك مازال...</div>
-                    <div class="chkobba-reactions-bar" id="chkobba-reactions">
-                        <button aria-label="ضحك" data-reaction="laugh">😂</button>
-                        <button aria-label="غش" data-reaction="angry">😤</button>
-                        <button aria-label="تصفيق" data-reaction="clap">👏</button>
-                        <button aria-label="تخمام" data-reaction="think">🤔</button>
-                    </div>
-                    <div class="chkobba-hand" id="chkobba-my-hand"></div>
-                </div>
+                <div class="chkobba-hand" id="chkobba-my-hand"></div>
             </div>
 
-            <div class="chkobba-info-floating" id="chkobba-round-info"></div>
+            <!-- Bottom status bar -->
+            <div class="chkobba-bottom-bar" id="chkobba-bottom-bar">
+                <div class="chkobba-bottom-avatar">🎮</div>
+                <div class="chkobba-bottom-info">
+                    <span class="chkobba-bottom-name" id="chkobba-bottom-name">أنا</span>
+                    <div class="chkobba-bottom-stats">
+                        <span class="chkobba-bstat" id="chkobba-bstat-cards">🃏 –</span>
+                        <span class="chkobba-bstat" id="chkobba-bstat-diamonds">♦ –</span>
+                        <span class="chkobba-bstat" id="chkobba-bstat-chkobbas">⚡ –</span>
+                    </div>
+                </div>
+                <div class="chkobba-bottom-turn" id="chkobba-bottom-turn">
+                    <div id="chkobba-turn-timer" class="chkobba-turn-timer hidden">00:45</div>
+                    <span class="chkobba-bottom-turn-label">دورك</span>
+                    <span class="chkobba-bottom-turn-sub" id="chkobba-bottom-thinking">فكّر...</span>
+                </div>
+            </div>
         </section>
 
         <!-- ONLINE CARD SCREEN -->
@@ -382,7 +373,6 @@
     </div>
 
     <div id="coup-turn-indicator" class="coup-turn-indicator hidden">
-        <div id="chkobba-turn-timer" class="chkobba-turn-timer hidden">00:45</div>
         <span class="cti-label">الدور على:</span>
         <strong id="cti-player-name">...</strong>
     </div>
