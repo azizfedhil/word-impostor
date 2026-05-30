@@ -999,7 +999,7 @@ body:not(.game-coup) .coup-only-btn { display: none !important; }
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
     color: #fff;
     font-weight: 700;
-    font-size: 0.95rem;
+    font-size: 14px;
     pointer-events: none;
     transition: opacity 0.3s ease, transform 0.3s ease;
 }
