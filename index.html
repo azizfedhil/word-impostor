@@ -273,15 +273,12 @@
         <!-- CHKOBBA SCREEN -->
         <section id="chkobba-screen" class="screen chkobba-screen" aria-label="شكبّة" hidden aria-hidden="true">
             <div id="chkobba-deal-layer" class="chkobba-deal-layer" aria-hidden="true"></div>
-            
-            <div id="chkobba-victory-screen" class="chkobba-victory-screen hidden">
-                <div class="victory-header">
-                    <span class="victory-icon">🏆</span>
-                    <h2 id="chkobba-winner-name">الرابح!</h2>
-                </div>
-                <div id="chkobba-final-scoreboard" class="chkobba-scoreboard"></div>
-                <button id="chkobba-reset-btn" class="primary-btn hidden">🔄 عاود انده</button>
-                <p id="chkobba-reset-wait" class="wait-msg">⏳ نستناو مولى الروم يعاود...</p>
+
+            <div class="chkobba-header">
+                <button id="chkobba-menu-btn" class="chkobba-menu-btn" type="button">القائمة</button>
+                <button id="chkobba-voice-toggle-btn" class="chkobba-voice-btn" type="button">
+                    <span class="voice-status-icon">🎙️</span>
+                </button>
             </div>
 
             <div class="chkobba-stage" id="chkobba-main-stage">
@@ -295,21 +292,48 @@
                     </div>
                     <div class="chkobba-table" id="chkobba-table"></div>
                 </div>
-
-                <div class="chkobba-info" id="chkobba-round-info"></div>
             </div>
 
-            <div class="chkobba-hand-dock" aria-live="polite">
-                <div class="not-your-turn-pill">⏳ دورك مازال...</div>
-                <div class="chkobba-reactions-bar" id="chkobba-reactions">
-                    <button aria-label="ضحك" data-reaction="laugh">😂</button>
-                    <button aria-label="غش" data-reaction="angry">😤</button>
-                    <button aria-label="تصفيق" data-reaction="clap">👏</button>
-                    <button aria-label="تخمام" data-reaction="think">🤔</button>
+            <div class="chkobba-hand-area">
+                <div class="chkobba-hand-dock" aria-live="polite">
+                    <div class="not-your-turn-pill">⏳ دورك مازال...</div>
+                    <div class="chkobba-hand" id="chkobba-my-hand"></div>
                 </div>
-                <div class="chkobba-hand" id="chkobba-my-hand"></div>
+            </div>
+
+            <div class="chkobba-bottom-bar" id="chkobba-bottom-bar">
+                <!-- Populated by online.js: Avatar | Name | Cards | Diamonds | Chkobba | State -->
+            </div>
+
+            <div id="chkobba-victory-screen" class="chkobba-victory-screen hidden">
+                <div class="victory-header">
+                    <span class="victory-icon">🏆</span>
+                    <h2 id="chkobba-winner-name">الرابح!</h2>
+                </div>
+                <div id="chkobba-final-scoreboard" class="chkobba-scoreboard"></div>
+                <div class="victory-actions">
+                    <button id="chkobba-reset-btn" class="primary-btn hidden" disabled>الجولة الموالية</button>
+                    <p id="chkobba-reset-wait" class="wait-msg">⏳ نستناو مولى الروم يعاود...</p>
+                </div>
             </div>
         </section>
+
+        <!-- CHKOBBA MENU MODAL -->
+        <div id="chkobba-menu-modal" class="modal hidden">
+            <div class="modal-content chkobba-menu-content">
+                <h3 style="margin-top:0; color:var(--primary-color);">القائمة</h3>
+                <div class="chkobba-menu-grid">
+                    <button id="menu-show-scoreboard" class="secondary-btn">📊 جدول النقاط</button>
+                    <button id="menu-show-history" class="secondary-btn">📜 تاريخ الماكلة</button>
+                    <button id="menu-deck-info" class="secondary-btn">🎴 معلومات الكومة</button>
+                    <button id="menu-voice-toggle-menu" class="secondary-btn">🎙️ الصوت</button>
+                    <div class="divider"></div>
+                    <button id="menu-return-home" class="secondary-btn">🏠 الرئيسية</button>
+                    <button id="menu-leave-room" class="danger-btn">🚪 خروج من الغرفة</button>
+                    <button id="menu-back-to-game" class="primary-btn">🎮 رجوع للعب</button>
+                </div>
+            </div>
+        </div>
 
         <!-- ONLINE CARD SCREEN -->
         <section id="online-card-screen" class="screen" style="text-align:center;" aria-label="كارتة الأونلاين" hidden aria-hidden="true">
