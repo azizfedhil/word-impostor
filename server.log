@@ -1,0 +1,17 @@
+127.0.0.1 - - [29/May/2026 18:20:44] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [29/May/2026 18:20:44] "GET /chkobba.css HTTP/1.1" 200 -
+127.0.0.1 - - [29/May/2026 18:20:44] "GET /style.css HTTP/1.1" 200 -
+127.0.0.1 - - [29/May/2026 18:20:44] "GET /adult_words_data.js HTTP/1.1" 200 -
+127.0.0.1 - - [29/May/2026 18:20:44] "GET /sounds.js HTTP/1.1" 200 -
+127.0.0.1 - - [29/May/2026 18:20:44] "GET /voice.js HTTP/1.1" 200 -
+127.0.0.1 - - [29/May/2026 18:20:44] "GET /online.js HTTP/1.1" 200 -
+127.0.0.1 - - [29/May/2026 18:20:44] "GET /app.js HTTP/1.1" 200 -
+127.0.0.1 - - [29/May/2026 18:20:44] "GET /chkobba_logic.js HTTP/1.1" 200 -
+127.0.0.1 - - [29/May/2026 18:20:44] code 404, message File not found
+127.0.0.1 - - [29/May/2026 18:20:44] "GET /analytics.js HTTP/1.1" 404 -
+127.0.0.1 - - [29/May/2026 18:20:44] "GET /spyfall_tunisia_100_locations.json HTTP/1.1" 200 -
+127.0.0.1 - - [29/May/2026 18:20:44] "GET /word%20list.json HTTP/1.1" 200 -
+127.0.0.1 - - [29/May/2026 18:20:44] "GET /spyfall_tunisia_100_locations.json HTTP/1.1" 200 -
+127.0.0.1 - - [29/May/2026 18:20:45] "GET /assets/chkobba/diamonds/diamond-07.webp HTTP/1.1" 200 -
+127.0.0.1 - - [29/May/2026 18:20:45] "GET /assets/chkobba/Hearts/hearts-01.webp HTTP/1.1" 200 -
+127.0.0.1 - - [29/May/2026 18:20:45] "GET /assets/chkobba/Chkobba_dos.webp HTTP/1.1" 200 -
