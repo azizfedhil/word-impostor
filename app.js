@@ -1906,9 +1906,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     function _resizeGame() {
         const shell = document.getElementById('app-shell');
         if (!shell) return;
-        const factor = Math.min(window.innerWidth / 480, window.innerHeight / 1040);
+        const factor = window.innerWidth / 480;
         window._gameScale = factor;
         shell.style.transform = `scale(${factor})`;
+        document.body.style.height = (1040 * factor) + 'px';
     }
     window.addEventListener('resize', _resizeGame);
     _resizeGame();
