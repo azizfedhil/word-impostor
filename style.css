@@ -22,13 +22,13 @@
 * { box-sizing: border-box; font-family: 'Baloo Bhaijaan 2', cursive; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
 input, textarea { user-select: auto; -webkit-user-select: auto; }
 html { scroll-behavior: smooth; }
-body { background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 0;
-       display: flex; justify-content: center; min-height: 100vh;
-       transition: background-color 0.4s ease, color 0.4s ease; overflow-x: hidden; }
-.bg-orb { position: fixed; border-radius: 50%; filter: blur(80px); opacity: 0.3; z-index: -1; pointer-events: none; }
+body { background-color: #111; color: var(--text-main); margin: 0; padding: 0;
+       display: flex; justify-content: center; align-items: center; height: 100vh;
+       transition: background-color 0.4s ease, color 0.4s ease; overflow: hidden; }
+.bg-orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.3; z-index: -1; pointer-events: none; }
 .orb-1 { width: 350px; height: 350px; background: var(--surface-color); top: -80px; right: -80px; }
 .orb-2 { width: 300px; height: 300px; background: rgba(241,192,81,0.12); bottom: 12%; left: -80px; }
-.container { width: 100%; max-width: 480px; padding: 24px; position: relative; z-index: 1; }
+.container { width: 480px; height: 853.33px; padding: 24px; position: relative; z-index: 1; background-color: var(--bg-color); overflow: hidden; transform-origin: center center; flex-shrink: 0; }
 header { text-align: center; margin-bottom: 24px; position: relative; }
 h1 { font-size: 2.2rem; font-weight: 800; margin: 0; color: var(--text-main);
      display: flex; align-items: center; justify-content: center; gap: 10px; }
@@ -185,7 +185,7 @@ input[type="text"]:focus, input[type="password"]:focus { border-color: var(--pri
 .reaction-btn:active { transform: scale(0.94); }
 .reaction-emoji { font-size: 1.55rem; line-height: 1; }
 .reaction-text { font-size: .82rem; font-weight: 800; line-height: 1.1; white-space: nowrap; }
-.reaction-float { position: fixed; left: 50%; transform: translateX(-50%); font-size: 2.2rem;
+.reaction-float { position: absolute; left: 50%; transform: translateX(-50%); font-size: 2.2rem;
                   pointer-events: none; z-index: 9900; white-space: nowrap;
                   animation: floatUp 1.8s ease-out forwards; font-weight: 700; }
 @keyframes floatUp {
@@ -282,7 +282,7 @@ input[type="text"]:focus, input[type="password"]:focus { border-color: var(--pri
 .code-input-lg { text-align: center; font-size: 1.7rem !important; letter-spacing: 5px;
                  font-family: monospace; text-transform: uppercase; font-weight: 800; }
 .join-flow-group { display: flex; gap: 10px; width: 100%; align-items: stretch; }
-.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000;
+.modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000;
          display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none;
          transition: opacity 0.3s ease; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
 .modal.active { opacity: 1; pointer-events: auto; }
@@ -290,7 +290,7 @@ input[type="text"]:focus, input[type="password"]:focus { border-color: var(--pri
                  max-width: 360px; transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.16,1,0.3,1);
                  box-shadow: 0 20px 50px rgba(0,0,0,0.3); border: 1px solid var(--border-color); text-align: center; }
 .modal.active .modal-content { transform: scale(1); }
-.toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px);
+.toast { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px);
          background: var(--text-main); color: var(--bg-color); padding: 12px 24px; border-radius: var(--radius-pill);
          font-weight: 700; font-size: 1rem; box-shadow: 0 10px 30px rgba(0,0,0,0.15);
          transition: transform 0.4s cubic-bezier(0.16,1,0.3,1); z-index: 3000; pointer-events: none; white-space: nowrap; max-width: 90vw; text-align: center; }
@@ -358,7 +358,7 @@ input[type="text"]:focus, input[type="password"]:focus { border-color: var(--pri
 
 /* Center-screen figured-out announcement — matches game modal UX */
 .figured-center-announce {
-    position: fixed;
+    position: absolute;
     inset: 0;
     display: flex;
     align-items: center;
@@ -501,7 +501,7 @@ input[type="text"]:focus, input[type="password"]:focus { border-color: var(--pri
 
 .question-picker-overlay,
 .question-challenge-overlay {
-    position: fixed;
+    position: absolute;
     inset: 0;
     z-index: 8200;
     display: flex;
@@ -760,7 +760,7 @@ body:not(.game-coup) .coup-only-btn { display: none !important; }
 .coup-pending-countdown { color: var(--primary-color); direction: ltr; display: inline-block; min-width: 34px; }
 .coup-pending-countdown.urgent { color: var(--danger-color); animation: coupTimerPulse .8s ease-in-out infinite; }
 .coup-decision-hint { margin: -2px 0 2px; color: var(--text-main); font-weight: 750; font-size: .96rem; }
-.coup-modal-overlay { position: fixed; inset: 0; z-index: 10020; display: grid; place-items: center; padding: 18px;
+.coup-modal-overlay { position: absolute; inset: 0; z-index: 10020; display: grid; place-items: center; padding: 18px;
                       background: rgba(0,0,0,.48); opacity: 0; pointer-events: none; transition: opacity .2s ease; }
 .coup-modal-overlay.show { opacity: 1; pointer-events: auto; }
 .coup-modal-card { width: min(440px, 100%); position: relative; overflow: hidden; padding: 22px; border-radius: var(--radius-lg);
@@ -777,8 +777,8 @@ body:not(.game-coup) .coup-only-btn { display: none !important; }
 .coup-card-desc-line { display: block; }
 .coup-modal-card-info { display: grid; gap: 12px; justify-items: center; }
 .coup-card-portrait { width: min(180px, 52vw); aspect-ratio: 1; object-fit: contain; border-radius: 22px; }
-.coup-event-toast { position: fixed; z-index: 10030; left: 50%; top: 18%; transform: translateX(-50%);
-                    width: min(440px, calc(100vw - 28px)); padding: 14px 16px; border-radius: var(--radius-lg);
+.coup-event-toast { position: absolute; z-index: 10030; left: 50%; top: 18%; transform: translateX(-50%);
+                    width: min(440px, calc(100% - 28px)); padding: 14px 16px; border-radius: var(--radius-lg);
                     background: var(--surface-color); border: 1px solid var(--border-color); box-shadow: 0 18px 52px rgba(0,0,0,.3);
                     display: flex; align-items: center; justify-content: center; gap: 10px; text-align: center; font-weight: 950;
                     animation: coupEventIn 2.6s cubic-bezier(.16,1,.3,1) forwards; }
@@ -786,7 +786,7 @@ body:not(.game-coup) .coup-only-btn { display: none !important; }
 .coup-event-toast.good { border-color: rgba(82,140,113,.42); color: var(--primary-color); }
 .coup-event-icon { font-size: 1.45rem; }
 .coup-flash { animation: coupFlash .7s cubic-bezier(0.16,1,0.3,1); }
-.coup-loss-overlay { position: fixed; inset: 0; z-index: 10040; display: grid; place-items: center; pointer-events: none;
+.coup-loss-overlay { position: absolute; inset: 0; z-index: 10040; display: grid; place-items: center; pointer-events: none;
                      background: rgba(0,0,0,.62); animation: coupLossFade 1.95s ease forwards; overflow: hidden; }
 .coup-loss-card { position: relative; width: min(220px, 58vw); aspect-ratio: 2.5 / 3.5; animation: coupLossSpin 1.7s cubic-bezier(.16,1,.3,1) forwards; }
 .coup-loss-card-face { width: 100%; height: 100%; border-radius: 14px; background: var(--surface-color); border: 2px solid rgba(212,107,90,.55);
@@ -796,7 +796,7 @@ body:not(.game-coup) .coup-only-btn { display: none !important; }
 .coup-loss-cut { position: absolute; left: -10%; top: 48%; width: 120%; height: 5px; border-radius: 999px;
                  background: var(--danger-color); box-shadow: 0 0 18px rgba(212,107,90,.7); transform: rotate(-18deg) scaleX(0);
                  animation: coupLossCut .45s ease .55s forwards; }
-.coup-loss-text { position: fixed; left: 50%; bottom: 16%; width: min(520px, calc(100vw - 30px)); transform: translateX(-50%);
+.coup-loss-text { position: absolute; left: 50%; bottom: 16%; width: min(520px, calc(100% - 30px)); transform: translateX(-50%);
                   padding: 14px 16px; border-radius: var(--radius-lg); background: var(--surface-color); border: 1px solid rgba(212,107,90,.45);
                   color: var(--danger-color); box-shadow: var(--shadow-soft); text-align: center; font-weight: 950; animation: coupLossText 1.8s ease forwards; }
 @keyframes coupTimerPulse { 50% { transform: scale(1.04); box-shadow: 0 0 0 4px rgba(212,107,90,.12); } }
@@ -860,7 +860,7 @@ body:not(.game-coup) .coup-only-btn { display: none !important; }
 #password-error { display: none; color: var(--danger-color); font-weight: 700; margin-top: 8px; font-size: 0.95rem; }
 
 /* ===== WIN / LOSE ANIMATIONS ===== */
-.anim-win-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 9999; animation: winFlash 2.6s ease-out forwards; }
+.anim-win-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; animation: winFlash 2.6s ease-out forwards; }
 @keyframes winFlash { 0% { background: rgba(46,204,113,0); } 8% { background: rgba(46,204,113,0.35); } 35% { background: rgba(46,204,113,0.1); } 100% { background: rgba(46,204,113,0); } }
 
 .winner-announcement {
@@ -951,7 +951,7 @@ body:not(.game-coup) .coup-only-btn { display: none !important; }
 @keyframes winCenterPop { 0% { transform: translate(-50%,-50%) scale(0) rotate(-15deg); opacity: 0; } 18% { transform: translate(-50%,-50%) scale(1.35) rotate(6deg); opacity: 1; } 55% { transform: translate(-50%,-50%) scale(1.08) rotate(1deg); opacity: 1; } 75% { transform: translate(-50%,-50%) scale(1) rotate(0deg); opacity: 1; } 100% { transform: translate(-50%,-50%) scale(0.7) rotate(0deg); opacity: 0; } }
 .win-particle { position: absolute; top: 50%; left: 50%; font-size: 26px; line-height: 1; animation: winParticleFly 1.5s cubic-bezier(0.25,0.46,0.45,0.94) forwards; animation-delay: var(--delay,0s); }
 @keyframes winParticleFly { 0% { transform: translate(-50%,-50%) scale(0); opacity: 1; } 25% { transform: translate(calc(-50% + var(--dx)*0.35), calc(-50% + var(--dy)*0.35)) scale(1.5); opacity: 1; } 100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy) + 55px)) scale(0.4) rotate(var(--rot)); opacity: 0; } }
-.anim-lose-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 9999; animation: loseFlash 2.6s ease-out forwards; }
+.anim-lose-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; animation: loseFlash 2.6s ease-out forwards; }
 @keyframes loseFlash { 0% { background: rgba(180,80,60,0); } 6% { background: rgba(180,80,60,0.55); } 18% { background: rgba(180,80,60,0.22); } 45% { background: rgba(180,80,60,0.07); } 100% { background: rgba(180,80,60,0); } }
 .lose-center { position: absolute; top: 50%; left: 50%; font-size: 110px; line-height: 1; animation: loseCenterDrop 2.5s cubic-bezier(0.34,1.2,0.64,1) forwards; filter: drop-shadow(0 0 22px rgba(180,80,60,0.9)); }
 @keyframes loseCenterDrop { 0% { transform: translate(-50%,-160%) rotate(-8deg); opacity: 0; } 12% { transform: translate(-50%,-50%) rotate(10deg); opacity: 1; } 55% { transform: translate(-50%,-50%) rotate(0deg); opacity: 1; } 100% { transform: translate(-50%,calc(-50% + 40px)) rotate(0deg); opacity: 0; } }
@@ -961,7 +961,7 @@ body:not(.game-coup) .coup-only-btn { display: none !important; }
 .shake-input { animation: shakeInput 0.4s ease; }
 
 /* ===== VOICE PANEL ===== */
-#voice-panel { position: fixed; bottom: calc(env(safe-area-inset-bottom,0px) + 18px); left: 50%; transform: translateX(-50%); z-index: 9990; display: flex; align-items: center; gap: 14px; padding: 10px 14px 10px 18px; background: rgba(28,28,30,0.82); backdrop-filter: saturate(180%) blur(24px); -webkit-backdrop-filter: saturate(180%) blur(24px); border: 1px solid rgba(255,255,255,0.1); border-radius: 999px; box-shadow: 0 8px 32px rgba(0,0,0,0.45); animation: voicePanelIn 0.42s cubic-bezier(0.34,1.56,0.64,1) both; user-select: none; transition: bottom 0.3s ease; }
+#voice-panel { position: absolute; bottom: calc(env(safe-area-inset-bottom,0px) + 18px); left: 50%; transform: translateX(-50%); z-index: 9990; display: flex; align-items: center; gap: 14px; padding: 10px 14px 10px 18px; background: rgba(28,28,30,0.82); backdrop-filter: saturate(180%) blur(24px); -webkit-backdrop-filter: saturate(180%) blur(24px); border: 1px solid rgba(255,255,255,0.1); border-radius: 999px; box-shadow: 0 8px 32px rgba(0,0,0,0.45); animation: voicePanelIn 0.42s cubic-bezier(0.34,1.56,0.64,1) both; user-select: none; transition: bottom 0.3s ease; }
 body.game-chkobba #voice-panel { bottom: calc(env(safe-area-inset-bottom,0px) + 180px); }
 @keyframes voicePanelIn { from { opacity:0; transform:translateX(-50%) translateY(24px) scale(0.88); } to { opacity:1; transform:translateX(-50%) translateY(0) scale(1); } }
 #voice-panel .vc-live { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.55); white-space: nowrap; }
@@ -983,7 +983,7 @@ body.game-chkobba #voice-panel { bottom: calc(env(safe-area-inset-bottom,0px) + 
 #join-voice-btn[data-active="1"] { background: linear-gradient(145deg,#8a2020,#6e1515) !important; box-shadow: 0 3px 12px rgba(138,32,32,0.4) !important; }
 
 .coup-turn-indicator {
-    position: fixed;
+    position: absolute;
     top: 18px;
     left: 50%;
     transform: translateX(-50%);

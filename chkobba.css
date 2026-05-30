@@ -21,8 +21,7 @@
     flex-direction: column;
     align-items: stretch;
     justify-content: flex-end;
-    min-height: calc(100vh - 48px);
-    min-height: calc(100dvh - 48px);
+    height: calc(100% - 48px);
     padding: 8px 0 0;
     margin: -8px -24px 0;
     width: calc(100% + 48px);
@@ -523,7 +522,7 @@ body.game-chkobba header.app-header {
 }
 
 .chkobba-drag-ghost {
-    position: fixed;
+    position: absolute;
     width: var(--chkobba-card-w);
     height: var(--chkobba-card-h);
     z-index: 9999;
@@ -541,7 +540,7 @@ body.game-chkobba header.app-header {
 }
 
 .chkobba-capture-ready-bar {
-    position: fixed;
+    position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
@@ -581,7 +580,7 @@ body.game-chkobba header.app-header {
 }
 
 .chkobba-capture-stack {
-    position: fixed;
+    position: absolute;
     z-index: 10001;
     pointer-events: none;
     left: 0;
@@ -607,14 +606,14 @@ body.game-chkobba header.app-header {
 }
 
 .chkobba-deal-layer {
-    position: fixed;
+    position: absolute;
     inset: 0;
     pointer-events: none;
     z-index: 9998;
 }
 
 .chkobba-deal-flyer {
-    position: fixed;
+    position: absolute;
     width: var(--chkobba-card-w);
     height: var(--chkobba-card-h);
     transform: translate(-50%, -50%);
@@ -636,7 +635,7 @@ body.game-chkobba header.app-header {
 }
 
 .chkobba-flight-card {
-    position: fixed;
+    position: absolute;
     top: 0; left: 0; /* Anchor to top-left so translate3d maps to clientX/Y */
     width: var(--chkobba-card-w);
     height: var(--chkobba-card-h);
@@ -655,7 +654,7 @@ body.game-chkobba header.app-header {
 
 /* Ghost trail element for captures */
 .chkobba-ghost-trail {
-    position: fixed; top: 0; left: 0;
+    position: absolute; top: 0; left: 0;
     width: var(--chkobba-card-w); height: var(--chkobba-card-h);
     z-index: 9998;
     pointer-events: none;
@@ -854,7 +853,7 @@ body.game-chkobba header.app-header {
 }
 
 .chkobba-celebration-wrap {
-    position: fixed;
+    position: absolute;
     inset: 0;
     z-index: 10000;
     pointer-events: none;
@@ -918,7 +917,7 @@ body.game-chkobba header.app-header {
 }
 
 .chkobba-confetti-bit {
-    position: fixed;
+    position: absolute;
     width: 8px;
     height: 8px;
     border-radius: 2px;
@@ -933,7 +932,7 @@ body.game-chkobba header.app-header {
 }
 
 .chkobba-announcement {
-    position: fixed;
+    position: absolute;
     top: 58%;
     left: 50%;
     transform: translate(-50%, -50%);

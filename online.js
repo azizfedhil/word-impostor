@@ -612,6 +612,16 @@ function _generateQRCode(code) {
 
 let _chkobbaDragData = null;
 let _chkobbaPointerDrag = null;
+
+function _toVirtual(clientX, clientY) {
+    const shell = document.getElementById('app-shell');
+    const rect = shell.getBoundingClientRect();
+    const scale = window._gameScale || 1;
+    return {
+        x: (clientX - rect.left) / scale,
+        y: (clientY - rect.top) / scale
+    };
+}
 let _chkobbaTableListenersBound = false;
 let _chkobbaCapturePileBound = false;
 let _lastChkobbaAnnounced = null;
@@ -690,11 +700,15 @@ function _animateChkobbaFlight({ fromRect, toRect, imgSrc, duration = 260, rotat
     const flyer = document.createElement('div');
     flyer.className = 'chkobba-flight-card';
 
-    // Calculate offsets based on top-left anchor
-    const fx = fromRect.left + fromRect.width / 2;
-    const fy = fromRect.top + fromRect.height / 2;
-    const tx = toRect.left + toRect.width / 2;
-    const ty = toRect.top + toRect.height / 2;
+    const shell = document.getElementById('app-shell');
+    const sRect = shell.getBoundingClientRect();
+    const scale = window._gameScale || 1;
+
+    // Calculate offsets relative to the virtual container
+    const fx = (fromRect.left - sRect.left + fromRect.width / 2) / scale;
+    const fy = (fromRect.top - sRect.top + fromRect.height / 2) / scale;
+    const tx = (toRect.left - sRect.left + toRect.width / 2) / scale;
+    const ty = (toRect.top - sRect.top + toRect.height / 2) / scale;
 
     // Start position
     flyer.style.transform = `translate3d(${fx}px, ${fy}px, 0) scale(1) rotate(${rotate}deg) translate(-50%, -50%)`;
@@ -959,25 +973,28 @@ function _onChkobbaPointerDown(e) {
     const cardEl = e.currentTarget;
     if (!cardEl.classList.contains('hand-card')) return;
     const rect = cardEl.getBoundingClientRect();
-    const startX = e.clientX;
-    const startY = e.clientY;
+    const virtStart = _toVirtual(e.clientX, e.clientY);
+    const startX = virtStart.x;
+    const startY = virtStart.y;
     let moved = false;
 
+    const scale = window._gameScale || 1;
     _chkobbaPointerDrag = {
         cardEl,
         pointerId: e.pointerId,
         startX,
         startY,
-        offsetX: e.clientX - rect.left - rect.width / 2,
-        offsetY: e.clientY - rect.top - rect.height / 2,
+        offsetX: (e.clientX - rect.left - rect.width / 2) / scale,
+        offsetY: (e.clientY - rect.top - rect.height / 2) / scale,
         ghost: null,
         moved: false
     };
 
     const move = (ev) => {
         if (!_chkobbaPointerDrag) return;
-        const dx = ev.clientX - startX;
-        const dy = ev.clientY - startY;
+        const virt = _toVirtual(ev.clientX, ev.clientY);
+        const dx = virt.x - startX;
+        const dy = virt.y - startY;
         if (!moved && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
             moved = true;
             _chkobbaPointerDrag.moved = true;
@@ -988,7 +1005,7 @@ function _onChkobbaPointerDown(e) {
             const ghostImg = document.createElement('img');
             ghostImg.src = img?.src || '';
             ghost.appendChild(ghostImg);
-            document.body.appendChild(ghost);
+            document.getElementById("app-shell").appendChild(ghost);
             _chkobbaPointerDrag.ghost = ghost;
             cardEl.classList.add('is-dragging');
         }
@@ -1013,10 +1030,11 @@ function _onChkobbaPointerMove(e) {
     const { ghost, offsetX, offsetY, moved } = _chkobbaPointerDrag;
     if (!moved || !ghost) return;
 
-    const tilt = (e.clientX - (ghost._lastX || e.clientX)) * 0.15;
-    ghost._lastX = e.clientX;
-    ghost.style.left = `${e.clientX - offsetX}px`;
-    ghost.style.top = `${e.clientY - offsetY}px`;
+    const virt = _toVirtual(e.clientX, e.clientY);
+    const tilt = (virt.x - (ghost._lastVirtX || virt.x)) * 0.15;
+    ghost._lastVirtX = virt.x;
+    ghost.style.left = `${virt.x - offsetX}px`;
+    ghost.style.top = `${virt.y - offsetY}px`;
     ghost.style.setProperty('--ghost-tilt', `${Math.max(-12, Math.min(12, tilt))}deg`);
 
     const cap = document.getElementById('chkobba-my-capture-pile');
@@ -1348,7 +1366,7 @@ function _showFiguredOutAnnounce(name, subtitle = 'عرف الكذاب!') {
             <span class="figured-center-announce-sub">${subtitle}</span>
         </div>
     `;
-    document.body.appendChild(el);
+    document.getElementById("app-shell").appendChild(el);
     // Auto-remove after animation completes (2.4s in + 0.4s out)
     setTimeout(() => el.remove(), 2900);
 }
@@ -1547,7 +1565,7 @@ function _openQuestionTargetPicker(room) {
     });
     overlay.querySelector('.question-picker-close').addEventListener('click', () => overlay.remove());
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
-    document.body.appendChild(overlay);
+    document.getElementById("app-shell").appendChild(overlay);
 }
 
 async function _askPlayerQuestion(targetId) {
@@ -1591,7 +1609,7 @@ function _showQuestionChallenge(payload) {
             <div class="question-challenge-text"></div>
         </div>
     `;
-    document.body.appendChild(overlay);
+    document.getElementById("app-shell").appendChild(overlay);
     overlay.querySelector('.question-challenge-meta').textContent = `${payload.fromName} يسأل ${payload.toName}`;
     const textEl = overlay.querySelector('.question-challenge-text');
     _animateQuestionText(textEl, payload.question);
@@ -4613,7 +4631,7 @@ function _handleChkobbaBroadcastEvent(event) {
     announce.innerText = isBerria ? 'السبعة الحية!' : 'شكبّة!';
     wrap.appendChild(announce);
 
-    document.body.appendChild(wrap);
+    document.getElementById("app-shell").appendChild(wrap);
     _spawnChkobbaConfetti(layer, isBerria ? 'berria' : 'gold');
     _sfx.win();
 
