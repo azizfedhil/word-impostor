@@ -4220,6 +4220,35 @@ async function _chkobbaDeclineStarter() {
     });
 }
 
+async function _chkobbaPerformCutAI() {
+    if (!_room?.word_obj) return;
+    const logic = window.ChkobbaLogic;
+    const s = _room.word_obj;
+    const cutIndex = 5 + Math.floor(Math.random() * Math.max(1, s.deck.length - 10));
+    await _mutatePlayers(_room.code, (players, room) => {
+        if (!logic.performDeckCut(room.word_obj, cutIndex)) return null;
+        return players;
+    }, null, (room) => ({ word_obj: room.word_obj }));
+}
+
+async function _chkobbaAcceptStarterAI() {
+    if (!_room?.word_obj) return;
+    const logic = window.ChkobbaLogic;
+    await _mutatePlayers(_room.code, (players, room) => {
+        if (!logic.acceptStarterCard(room.word_obj)) return null;
+        return players;
+    }, null, (room) => ({ word_obj: room.word_obj }));
+}
+
+async function _chkobbaDeclineStarterAI() {
+    if (!_room?.word_obj) return;
+    const logic = window.ChkobbaLogic;
+    await _mutatePlayers(_room.code, (players, room) => {
+        if (!logic.declineStarterCard(room.word_obj)) return null;
+        return players;
+    }, null, (room) => ({ word_obj: room.word_obj }));
+}
+
 async function _chkobbaPerformCut() {
     if (!_room?.word_obj) return;
     const logic = window.ChkobbaLogic;
@@ -4545,12 +4574,13 @@ function _startOnlineChkobbaTimer(room) {
     const timerEl = document.getElementById('chkobba-turn-timer');
     if (!timerEl) return;
 
-    if (!room.timer_end_at || room.word_obj?.phase !== 'playing') {
+    if (!room.timer_end_at) {
         timerEl.classList.add('hidden');
         return;
     }
 
-    timerEl.classList.remove('hidden');
+    const isPlaying = room.word_obj?.phase === 'playing';
+    timerEl.classList.toggle('hidden', !isPlaying);
 
     const tick = () => {
         const endTime = new Date(room.timer_end_at).getTime();
@@ -4564,6 +4594,22 @@ function _startOnlineChkobbaTimer(room) {
         else timerEl.style.color = '';
 
         const s = room.word_obj;
+        if (!s) return;
+
+        // Setup AI actions
+        if (_isHost && !_chkobbaTimingOut && s.phase === 'setup') {
+            const cutter = s.players[s.cutterIndex];
+            if (cutter?.isAI) {
+                if (s.setupPhase === window.ChkobbaLogic.SETUP_PHASES.SHUFFLED) {
+                    _chkobbaPerformCutAI();
+                } else if (s.setupPhase === window.ChkobbaLogic.SETUP_PHASES.REVEALED) {
+                    // Randomly accept/decline starter card
+                    if (Math.random() > 0.5) _chkobbaAcceptStarterAI();
+                    else _chkobbaDeclineStarterAI();
+                }
+            }
+        }
+
         const p = s?.players?.[s.turnIndex];
         const isAI = p?.isAI;
 
