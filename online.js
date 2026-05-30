@@ -941,15 +941,29 @@ function _playCardToTable(cardEl, card, index) {
     // Arm the card first to set up the play session
     _resetChkobbaPlaySession();
     
-    _chkobbaPlaySession = {
-        phase: 'armed',
-        handIndex: index,
-        playedCard: card,
-        selectedTableIds: new Set()
-    };
+    const captures = logic.getValidCaptures(card, state.table);
     
-    // Always play to table (bypass capture check)
-    _commitChkobbaPlayToTableSkipCaptureCheck();
+    if (captures.length > 0) {
+        // If a capture is possible, we must perform it!
+        // We'll automatically pick the first capture set (which prioritizes direct matches if available)
+        _chkobbaPlaySession = {
+            phase: 'readyCapture',
+            handIndex: index,
+            playedCard: card,
+            captureSet: captures[0],
+            selectedTableIds: new Set(captures[0].map(c => c.id))
+        };
+        _commitChkobbaCapture();
+    } else {
+        // No capture possible, play to table
+        _chkobbaPlaySession = {
+            phase: 'armed',
+            handIndex: index,
+            playedCard: card,
+            selectedTableIds: new Set()
+        };
+        _commitChkobbaPlayToTableSkipCaptureCheck();
+    }
 }
 
 async function _commitChkobbaPlayToTableSkipCaptureCheck() {

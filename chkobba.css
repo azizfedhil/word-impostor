@@ -394,7 +394,7 @@ body.game-chkobba header.app-header {
     background: center / cover no-repeat;
     position: absolute;
     top: 3px;
-    left: -30px;
+    left: -110px;
     transform: rotate(5deg);
 }
 
@@ -406,7 +406,7 @@ body.game-chkobba header.app-header {
     justify-content: center;
     position: absolute;
     top: 3px;
-    right: -30px;
+    right: -110px;
     transform: rotate(5deg);
 }
 
@@ -1049,6 +1049,12 @@ body.game-chkobba header.app-header {
     .chkobba-pile {
         width: 79px;
         height: 103px;
+    }
+    .chkobba-pile.deck-pile {
+        left: -35px;
+    }
+    .chkobba-pile.capture-pile {
+        right: -35px;
     }
 }
 
