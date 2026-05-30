@@ -3636,36 +3636,76 @@ function _onlineCoupWrong() {
     return ['عمل روحو حاكم وطلع غلط.','تكذب؟ لا يا خويا، إنت الي تخلص.','دخل في حيط بيديه.'][Math.floor(Math.random()*3)];
 }
 
+async function _onlineCoupAIStartPending(action, aiId, targetId) {
+    await _onlineCoupMutateState(async state => {
+        if (state.pending || state.pendingLoss || state.pendingExchange) return null;
+        const actor = state.players[state.turnIndex || 0];
+        if (!actor || actor.id !== aiId || !_onlineCoupLiveCards(actor).length) return null;
+        if ((actor.coins || 0) >= 10 && action !== 'coup') return null;
+        if (action === 'assassinate' && actor.coins < 3) return null;
+        if (action === 'coup' && actor.coins < 7) return null;
+        if (['assassinate', 'coup', 'steal'].includes(action)) {
+            const target = _onlineCoupAlive(state).find(p => p.id === targetId && p.id !== actor.id);
+            if (!target) return null;
+        }
+        const claims = { tax: 'duke', assassinate: 'assassin', exchange: 'ambassador', steal: 'captain' };
+        const blockRoles = action === 'foreignAid' ? ['duke'] : action === 'assassinate' ? ['contessa'] : action === 'steal' ? ['captain', 'ambassador'] : [];
+        const blockable = blockRoles.length > 0;
+        const claim = claims[action] || null;
+        if (!claim && !blockable) return _onlineCoupApplyActionLocal(state, action, targetId);
+        if (action === 'assassinate') {
+            actor.coins -= 3;
+            _onlineCoupPayBank(state, 3);
+        }
+        state.pending = { id: `p_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, action, actorId: actor.id, targetId, claim, blockable, blockRoles, passes: [] };
+        _onlineCoupSetResponseDeadline(state.pending);
+        state.log = `${actor.name} قال يعمل ${_onlineCoupActionName(action)}. قولولو "تكذب!" كان شاكين.`;
+        _onlineCoupEvent(state, `${actor.name} عمل ${_onlineCoupActionName(action)}`, 'notice');
+        return state;
+    });
+}
+
 async function _onlineCoupAIAction(state, ai) {
     if (!ai || ai.hand.every(c => c.lost)) return;
-    const aliveOpponents = state.players.filter(p => p.id !== ai.id && p.hand.some(c => !c.lost));
-    if (!aliveOpponents.length) return;
-    const randomOpponent = aliveOpponents[Math.floor(Math.random() * aliveOpponents.length)];
+    if (_onlineCoupTimingOut) return;
+    _onlineCoupTimingOut = true;
+    try {
+        const aliveOpponents = state.players.filter(p => p.id !== ai.id && p.hand.some(c => !c.lost));
+        if (!aliveOpponents.length) return;
+        const randomOpponent = aliveOpponents[Math.floor(Math.random() * aliveOpponents.length)];
 
-    if (ai.coins >= 10) {
-        await _onlineCoupApplyAction(state, 'coup', randomOpponent.id);
-        return;
-    }
-
-    const possible = ['income', 'foreignAid', 'tax', 'exchange'];
-    if (ai.coins >= 3) possible.push('assassinate');
-    if (aliveOpponents.some(p => p.coins > 0)) possible.push('steal');
-    if (ai.coins >= 7) possible.push('coup');
-
-    const weights = { income: 10, foreignAid: 15, tax: 25, steal: 20, assassinate: 15, exchange: 5, coup: 10 };
-    const pool = [];
-    possible.forEach(act => { for (let i = 0; i < (weights[act] || 10); i++) pool.push(act); });
-    const action = pool[Math.floor(Math.random() * pool.length)];
-
-    if (['coup', 'assassinate', 'steal'].includes(action)) {
-        let targetId = randomOpponent.id;
-        if (action === 'steal') {
-            const hasMoney = aliveOpponents.filter(p => p.coins > 0);
-            if (hasMoney.length) targetId = hasMoney[Math.floor(Math.random() * hasMoney.length)].id;
+        if (ai.coins >= 10) {
+            await _onlineCoupAIStartPending('coup', ai.id, randomOpponent.id);
+            return;
         }
-        await _onlineCoupStartPending(action, targetId);
-    } else {
-        await _onlineCoupApplyAction(state, action, null);
+
+        const possible = ['income', 'foreignAid', 'tax', 'exchange'];
+        if (ai.coins >= 3) possible.push('assassinate');
+        if (aliveOpponents.some(p => p.coins > 0)) possible.push('steal');
+        if (ai.coins >= 7) possible.push('coup');
+
+        const weights = { income: 10, foreignAid: 15, tax: 25, steal: 20, assassinate: 15, exchange: 5, coup: 10 };
+        const pool = [];
+        possible.forEach(act => { for (let i = 0; i < (weights[act] || 10); i++) pool.push(act); });
+        const action = pool[Math.floor(Math.random() * pool.length)];
+
+        if (['coup', 'assassinate', 'steal'].includes(action)) {
+            let targetId = randomOpponent.id;
+            if (action === 'steal') {
+                const hasMoney = aliveOpponents.filter(p => p.coins > 0);
+                if (hasMoney.length) targetId = hasMoney[Math.floor(Math.random() * hasMoney.length)].id;
+            }
+            await _onlineCoupAIStartPending(action, ai.id, targetId);
+        } else {
+            await _onlineCoupMutateState(async state => {
+                if (state.pending || state.pendingLoss || state.pendingExchange) return null;
+                const actor = state.players[state.turnIndex || 0];
+                if (!actor || actor.id !== ai.id) return null;
+                return _onlineCoupApplyActionLocal(state, action, null);
+            });
+        }
+    } finally {
+        _onlineCoupTimingOut = false;
     }
 }
 
@@ -3674,15 +3714,19 @@ async function _onlineCoupAIResponse(state, ai) {
     if (!p || p.passes.includes(ai.id)) return;
 
     const roll = Math.random();
-    // 80% pass, 10% challenge, 10% block (if target)
+    const isTarget = p.targetId === ai.id;
+    const canBlock = !p.stage || p.stage === 'action';
+
     if (p.stage === 'action') {
-        const isTarget = p.targetId === ai.id;
-        if (isTarget && p.blockRoles && roll < 0.3) {
+        // Target can block with an appropriate role
+        if (isTarget && p.blockRoles?.length && roll < 0.3) {
             await _onlineCoupBlock(ai.id, p.blockRoles[0], p.id);
-        } else if (roll < 0.1 && p.action !== 'income' && p.action !== 'foreignAid' && p.action !== 'coup') {
-            await _onlineCoupChallenge(ai.id, p.id);
-        } else if (roll < 0.05 && p.action === 'foreignAid') {
+        // Any player can block foreignAid with duke
+        } else if (canBlock && p.action === 'foreignAid' && !isTarget && roll < 0.15) {
             await _onlineCoupBlock(ai.id, 'duke', p.id);
+        // Challenge the claim (not on income/foreignAid/coup which have no claim)
+        } else if (roll < 0.1 && p.claim && p.action !== 'income' && p.action !== 'foreignAid' && p.action !== 'coup') {
+            await _onlineCoupChallenge(ai.id, p.id);
         } else {
             await _onlineCoupPass(ai.id, p.id);
         }
@@ -3700,22 +3744,47 @@ async function _onlineCoupAILoss(state, ai) {
     if (!p || p.playerId !== ai.id) return;
     const live = ai.hand.map((c, i) => ({ c, i })).filter(x => !x.c.lost);
     if (!live.length) return;
-    await _onlineCoupChooseLoss(live[Math.floor(Math.random() * live.length)].i, p.id);
+    const chosenIndex = live[Math.floor(Math.random() * live.length)].i;
+    const lossId = p.id;
+    // AI bypasses the _myId guard by running its own mutation
+    await _onlineCoupMutateState(async state => {
+        const loss = state.pendingLoss;
+        if (!loss || loss.playerId !== ai.id) return null;
+        if (lossId && loss.id !== lossId) return null;
+        if (!_onlineCoupMarkLoss(state, loss.playerId, chosenIndex)) return null;
+        const next = loss.next || { type: 'nextTurn' };
+        _onlineCoupContinueAfterLoss(state, next);
+        return state;
+    });
 }
 
 async function _onlineCoupAIExchange(state, ai) {
     const p = state.pendingExchange;
     if (!p || p.playerId !== ai.id) return;
-    const indices = [];
-    const pool = [...p.pool];
-    for (let i = 0; i < p.keep; i++) {
-        const idx = Math.floor(Math.random() * pool.length);
-        indices.push(pool.splice(idx, 1)[0].handIndex ?? (ai.hand.length + indices.filter(x => x >= ai.hand.length).length));
-        // This index logic for new cards is tricky, but _onlineCoupChooseExchange handles it.
-        // Actually, let's just pick first N indices.
-    }
+    const exchangeId = p.id;
+    // Pick the first `keep` cards from the pool (AI bypasses _myId guard)
     const finalIndices = Array.from({ length: p.keep }, (_, i) => i);
-    await _onlineCoupChooseExchange(finalIndices, p.id);
+    await _onlineCoupMutateState(async state => {
+        const exchange = state.pendingExchange;
+        if (!exchange || exchange.playerId !== ai.id) return null;
+        if (exchangeId && exchange.id !== exchangeId) return null;
+        const chosen = finalIndices;
+        if (chosen.length !== exchange.keep) return null;
+        const player = state.players.find(pl => pl.id === exchange.playerId);
+        if (!player) return null;
+        const liveSlots = player.hand.map((card, index) => ({ card, index })).filter(x => !x.card.lost);
+        const chosenSet = new Set(chosen);
+        const kept = chosen.map(idx => exchange.pool[idx]).filter(Boolean);
+        if (kept.length !== exchange.keep) return null;
+        liveSlots.forEach((slot, idx) => { slot.card.type = kept[idx].type; slot.card.lost = false; });
+        exchange.pool.filter((_, idx) => !chosenSet.has(idx)).forEach(item => state.deck.unshift(item.type));
+        state.deck.sort(() => 0.5 - Math.random());
+        state.pendingExchange = null;
+        state.log = `${player.name} بدّل كوارطو مع الدكّة.`;
+        _onlineCoupEvent(state, state.log, 'good');
+        _onlineCoupNextTurn(state);
+        return state;
+    });
 }
 
 async function _disconnectForReconnect() {
@@ -4568,6 +4637,7 @@ function _showOnlineChkobba(room) {
 
 let _chkobbaTimer = null;
 let _chkobbaTimingOut = false;
+let _chkobbaSetupAIBusy = false;
 
 function _startOnlineChkobbaTimer(room) {
     clearInterval(_chkobbaTimer);
@@ -4597,15 +4667,22 @@ function _startOnlineChkobbaTimer(room) {
         if (!s) return;
 
         // Setup AI actions
-        if (_isHost && !_chkobbaTimingOut && s.phase === 'setup') {
+        if (_isHost && !_chkobbaTimingOut && !_chkobbaSetupAIBusy && s.phase === 'setup') {
             const cutter = s.players[s.cutterIndex];
             if (cutter?.isAI) {
                 if (s.setupPhase === window.ChkobbaLogic.SETUP_PHASES.SHUFFLED) {
-                    _chkobbaPerformCutAI();
+                    _chkobbaSetupAIBusy = true;
+                    setTimeout(async () => {
+                        try { await _chkobbaPerformCutAI(); } finally { _chkobbaSetupAIBusy = false; }
+                    }, 800 + Math.random() * 800);
                 } else if (s.setupPhase === window.ChkobbaLogic.SETUP_PHASES.REVEALED) {
-                    // Randomly accept/decline starter card
-                    if (Math.random() > 0.5) _chkobbaAcceptStarterAI();
-                    else _chkobbaDeclineStarterAI();
+                    _chkobbaSetupAIBusy = true;
+                    setTimeout(async () => {
+                        try {
+                            if (Math.random() > 0.5) await _chkobbaAcceptStarterAI();
+                            else await _chkobbaDeclineStarterAI();
+                        } finally { _chkobbaSetupAIBusy = false; }
+                    }, 800 + Math.random() * 800);
                 }
             }
         }
@@ -4676,6 +4753,7 @@ async function _chkobbaTimeout() {
         const cardToPlay = p.hand[chosenCardIndex];
 
         const runActualMutate = async () => {
+            const bestMatchIds = bestMatch ? bestMatch.map(c => c.id) : null;
             await _mutatePlayers(_room.code, (players, room) => {
                 const rs = room.word_obj;
                 if (rs.phase !== 'playing') return null;
@@ -4685,8 +4763,19 @@ async function _chkobbaTimeout() {
                 let cIdx = rp.hand.findIndex(c => c.id === cardToPlay.id);
                 if (cIdx === -1) cIdx = 0;
                 const card = rp.hand.splice(cIdx, 1)[0];
-                const matches = logic.getValidCaptures(card, rs.table);
-                const match = matches.length > 0 ? matches[0] : null;
+
+                // Prefer the pre-scored best match; fall back to first valid capture
+                let match = null;
+                if (bestMatchIds) {
+                    const allCaptures = logic.getValidCaptures(card, rs.table);
+                    match = allCaptures.find(set =>
+                        set.length === bestMatchIds.length &&
+                        set.every(c => bestMatchIds.includes(c.id))
+                    ) || allCaptures[0] || null;
+                } else {
+                    const allCaptures = logic.getValidCaptures(card, rs.table);
+                    match = allCaptures.length > 0 ? allCaptures[0] : null;
+                }
 
                 if (match) {
                     const capturedIds = match.map(c => c.id);
@@ -4698,7 +4787,7 @@ async function _chkobbaTimeout() {
                     if (rs.table.length === 0 && rs.deck.length > 0) {
                         rp.chkobbas++;
                         rs.chkobbaEvent = { type: 'chkobba', playerId: rp.id, name: rp.name };
-                    } else if (allCaptured.some(c => c.id === 'diamonds_7') && capturedCards.some(c => c.id === 'diamonds_7')) {
+                    } else if (allCaptured.some(c => c.id === 'diamonds_7')) {
                         rs.chkobbaEvent = { type: 'berria', playerId: rp.id, name: rp.name };
                     }
                 } else {
@@ -4870,8 +4959,7 @@ async function _commitChkobbaCapture() {
             if (s.table.length === 0 && s.deck.length > 0) {
                 p.chkobbas++;
                 s.chkobbaEvent = { type: 'chkobba', playerId: _myId, name: p.name };
-            } else if (allCaptured.some(c => c.id === 'diamonds_7') && capturedCards.some(c => c.id === 'diamonds_7')) {
-                // Trigger Berria ONLY if it was taken from the TABLE
+            } else if (allCaptured.some(c => c.id === 'diamonds_7')) {
                 s.chkobbaEvent = { type: 'berria', playerId: _myId, name: p.name };
             }
 
