@@ -1906,9 +1906,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     function _resizeGame() {
         const shell = document.getElementById('app-shell');
         if (!shell) return;
-        const factor = Math.min(window.innerWidth / 480, window.innerHeight / 1040);
+
+        // Base scaling on width primarily, but cap it for very wide screens (desktop)
+        // to keep the app centered and looking like a phone app.
+        const maxWidth = 600;
+        const effectiveWidth = Math.min(window.innerWidth, maxWidth);
+        const factor = effectiveWidth / 480;
         window._gameScale = factor;
+
+        // Dynamically calculate the virtual height based on the device's aspect ratio
+        // instead of locking it to 1040px.
+        const virtualHeight = window.innerHeight / factor;
+
         shell.style.transform = `scale(${factor})`;
+        shell.style.height = `${virtualHeight}px`;
+
+        // Ensure the body background stretches if content is taller than the viewport
+        document.body.style.minHeight = `${window.innerHeight}px`;
     }
     window.addEventListener('resize', _resizeGame);
     _resizeGame();
