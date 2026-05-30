@@ -1907,24 +1907,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         const shell = document.getElementById('app-shell');
         if (!shell) return;
 
-        // Base scaling on width primarily, but cap it for very wide screens (desktop)
-        // to keep the app centered and looking like a phone app.
-        const maxWidth = 600;
-        const effectiveWidth = Math.min(window.innerWidth, maxWidth);
-        const factor = effectiveWidth / 480;
+        const BASE_W = 480;
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+
+        // Scale to fill width (capped at 560px for desktop)
+        const maxWidth = Math.min(vw, 560);
+        const factor = maxWidth / BASE_W;
         window._gameScale = factor;
 
-        // Dynamically calculate the virtual height based on the device's aspect ratio
-        // instead of locking it to 1040px.
-        // We use Math.max with 1040 to ensure we have enough vertical space for content
-        // even on very wide viewports where factor is high but height is relatively small.
-        const virtualHeight = Math.max(1040, window.innerHeight / factor);
+        // Virtual height fills the real viewport
+        const virtualHeight = vh / factor;
 
         shell.style.transform = `scale(${factor})`;
+        shell.style.transformOrigin = 'top center';
         shell.style.height = `${virtualHeight}px`;
+        shell.style.width = `${BASE_W}px`;
 
-        // Ensure the body background stretches if content is taller than the viewport
-        document.body.style.minHeight = `${window.innerHeight}px`;
+        // Center horizontally on wide screens
+        const scaledW = BASE_W * factor;
+        const leftOffset = Math.max(0, (vw - scaledW) / 2);
+        shell.style.position = 'absolute';
+        shell.style.left = `${leftOffset}px`;
+        shell.style.top = '0';
+
+        document.body.style.minHeight = `${vh}px`;
     }
     window.addEventListener('resize', _resizeGame);
     _resizeGame();
