@@ -1909,33 +1909,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const vw = window.innerWidth;
         const vh = window.innerHeight;
+        const VIRTUAL_W = 480;
+        const VIRTUAL_H = 1040;
 
-        // On mobile: fill full width. On desktop: cap at 480px and center.
-        if (vw <= 520) {
-            // Mobile: no scaling, just fill the screen naturally
-            window._gameScale = 1;
-            shell.style.transform = '';
-            shell.style.transformOrigin = '';
-            shell.style.width = '100%';
-            shell.style.height = '100%';
-            shell.style.position = '';
-            shell.style.left = '';
-            shell.style.top = '';
-        } else {
-            // Desktop: scale a 480px virtual shell to fit, centered
-            const factor = Math.min(vw, 560) / 480;
-            window._gameScale = factor;
-            const virtualH = vh / factor;
-            shell.style.width = '480px';
-            shell.style.height = virtualH + 'px';
-            shell.style.transformOrigin = 'top left';
-            shell.style.transform = 'scale(' + factor + ')';
-            shell.style.position = 'absolute';
-            shell.style.left = ((vw - 480 * factor) / 2) + 'px';
-            shell.style.top = '0';
-        }
+        // Scale to fit both width and height within the viewport
+        const scaleX = vw / VIRTUAL_W;
+        const scaleY = vh / VIRTUAL_H;
+        const factor = Math.min(scaleX, scaleY);
+        window._gameScale = factor;
 
-        document.body.style.height = vh + 'px';
+        // Center the scaled shell
+        const scaledW = VIRTUAL_W * factor;
+        const scaledH = VIRTUAL_H * factor;
+        const offsetX = (vw - scaledW) / 2;
+        const offsetY = (vh - scaledH) / 2;
+
+        shell.style.width  = VIRTUAL_W + 'px';
+        shell.style.height = VIRTUAL_H + 'px';
+        shell.style.transformOrigin = '0 0';
+        shell.style.transform = 'translate(' + offsetX + 'px, ' + offsetY + 'px) scale(' + factor + ')';
+        shell.style.position = 'fixed';
+        shell.style.left = '0';
+        shell.style.top  = '0';
     }
     window.addEventListener('resize', _resizeGame);
     _resizeGame();
