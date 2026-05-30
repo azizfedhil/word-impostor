@@ -648,19 +648,16 @@ function _resetChkobbaPlaySession() {
 function _setupChkobbaMenuButtons() {
     const menuBtn = document.getElementById('chkobba-menu-btn');
     const menuDropdown = document.getElementById('chkobba-menu-dropdown');
-    const voiceBtn = document.getElementById('chkobba-voice-btn');
+    const voiceToggleBtn = document.getElementById('chkobba-voice-toggle-btn');
     const backToMainBtn = document.getElementById('chkobba-back-to-main-btn');
     const leaveBtn = document.getElementById('chkobba-leave-btn');
     const reconnectBtn = document.getElementById('chkobba-reconnect-btn');
 
-    if (!menuBtn || !menuDropdown || !voiceBtn) return;
+    if (!menuBtn || !menuDropdown) return;
 
     // Remove existing listeners to avoid duplicates
     const newMenuBtn = menuBtn.cloneNode(true);
     menuBtn.parentNode.replaceChild(newMenuBtn, menuBtn);
-    
-    const newVoiceBtn = voiceBtn.cloneNode(true);
-    voiceBtn.parentNode.replaceChild(newVoiceBtn, voiceBtn);
 
     // Menu button toggle
     newMenuBtn.addEventListener('click', (e) => {
@@ -674,6 +671,29 @@ function _setupChkobbaMenuButtons() {
             menuDropdown.classList.add('hidden');
         }
     });
+
+    // Voice toggle button in dropdown
+    if (voiceToggleBtn) {
+        voiceToggleBtn.addEventListener('click', () => {
+            menuDropdown.classList.add('hidden');
+            if (_voiceOn) {
+                stopVoice();
+                voiceToggleBtn.textContent = '🎙️ تفعيل المايكروفون';
+            } else {
+                if (_room && _room.code) {
+                    initVoice(_room.code);
+                    voiceToggleBtn.textContent = '🔊 إيقاف المايكروفون';
+                } else {
+                    showToast('ما ينجمش تفعيل الصوت في هاد اللعبة');
+                }
+            }
+        });
+
+        // Update voice button state based on current voice status
+        if (_voiceOn) {
+            voiceToggleBtn.textContent = '🔊 إيقاف المايكروفون';
+        }
+    }
 
     // Back to main menu
     if (backToMainBtn) {
@@ -704,29 +724,6 @@ function _setupChkobbaMenuButtons() {
             showToast('جاري إعادة الاتصال...');
             _subscribe(_room.code);
         });
-    }
-
-    // Voice button toggle
-    newVoiceBtn.addEventListener('click', () => {
-        if (_voiceOn) {
-            stopVoice();
-            newVoiceBtn.classList.remove('voice-active');
-            newVoiceBtn.textContent = '🎙️';
-        } else {
-            if (_room && _room.code) {
-                initVoice(_room.code);
-                newVoiceBtn.classList.add('voice-active');
-                newVoiceBtn.textContent = '🔊';
-            } else {
-                showToast('ما ينجمش تفعيل الصوت في هاد اللعبة');
-            }
-        }
-    });
-
-    // Update voice button state based on current voice status
-    if (_voiceOn) {
-        newVoiceBtn.classList.add('voice-active');
-        newVoiceBtn.textContent = '🔊';
     }
 }
 
