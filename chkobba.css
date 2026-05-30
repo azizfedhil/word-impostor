@@ -25,10 +25,10 @@
     flex-direction: column;
     align-items: stretch;
     justify-content: flex-end;
-    height: calc(100% - 48px);
-    padding: 8px 0 0;
-    margin: -8px -24px 0;
-    width: calc(100% + 48px);
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    width: 100%;
     max-width: none;
     background: url('assets/chkobba/chkobba-background-new.webp') center center / cover no-repeat;
     color: var(--text-main);
@@ -994,19 +994,12 @@ body.game-chkobba header.app-header {
 /* Hand dock */
 .chkobba-hand-dock {
     width: 100%;
-    padding: 12px 8px 16px;
-    flex-shrink: 0;
-    position: relative;
-}
-
-.chkobba-hand-dock {
-    width: 100%;
-    padding: 0 8px 40px;
+    padding: 0 8px 12px;
     flex-shrink: 0;
     position: relative;
     display: flex;
     justify-content: center;
-    transform: translateY(-15%);
+    transform: translateY(-5%);
     overflow: hidden;
     z-index: 10;
 }
@@ -1394,34 +1387,7 @@ body.game-chkobba header.app-header {
     color: var(--text-main);
 }
 
-/* Responsive */
-@media (max-width: 600px) {
-    :root {
-        --chkobba-card-w: 62px;
-        --chkobba-card-h: 92px;
-    }
-    .chkobba-table {
-        min-height: 170px;
-        padding-top: 44px;
-    }
-    .chkobba-pile {
-        width: 38px;
-        height: 54px;
-    }
-}
-
-@media (max-height: 700px) {
-    :root {
-        --chkobba-card-w: 56px;
-        --chkobba-card-h: 82px;
-    }
-    .chkobba-stage {
-        gap: 6px;
-    }
-    .chkobba-hand-dock {
-        padding-bottom: 8px;
-    }
-}
+/* Responsive - Removed mobile-shrinking media queries as we now use shell scaling */
 
 /* Mobile Compact Mode — Must come last for precedence */
 @media (max-width: 480px) {
