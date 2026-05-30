@@ -21,25 +21,23 @@
 }
 * { box-sizing: border-box; font-family: 'Baloo Bhaijaan 2', cursive; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
 input, textarea { user-select: auto; -webkit-user-select: auto; }
-html { scroll-behavior: smooth; height: 100%; width: 100%; }
-body { background-color: #111; color: var(--text-main); margin: 0; padding: 0;
-       display: flex; justify-content: center; align-items: flex-start; min-height: 100%; width: 100%;
-       transition: background-color 0.4s ease, color 0.4s ease; overflow-y: auto; overflow-x: hidden;
-       overscroll-behavior: none; -webkit-overflow-scrolling: touch; }
-.bg-orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.3; z-index: -1; pointer-events: none; display: none; }
+html { scroll-behavior: smooth; height: 100%; overflow: hidden; }
+body { background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 0;
+       display: flex; justify-content: center; align-items: center; height: 100%; width: 100%;
+       transition: background-color 0.4s ease, color 0.4s ease; overflow: hidden;
+       overscroll-behavior: none; position: fixed; }
+.bg-orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.3; z-index: -1; pointer-events: none; }
 .orb-1 { width: 350px; height: 350px; background: var(--surface-color); top: -80px; right: -80px; }
 .orb-2 { width: 300px; height: 300px; background: rgba(241,192,81,0.12); bottom: 12%; left: -80px; }
-.container { width: 480px; min-height: 100%; padding: 24px; position: relative; z-index: 1; background-color: var(--bg-color); overflow: visible; transform-origin: top center; flex-shrink: 0; will-change: transform; transition: padding 0.3s ease; }
-body.game-chkobba .container { padding: 0; background-color: transparent; }
+.container { width: 480px; height: 1040px; padding: 24px; position: relative; z-index: 1; background-color: var(--bg-color); overflow: hidden; transform-origin: center center; flex-shrink: 0; }
 header { text-align: center; margin-bottom: 24px; position: relative; }
-body.game-chkobba .app-header { display: none; }
 h1 { font-size: 2.2rem; font-weight: 800; margin: 0; color: var(--text-main);
      display: flex; align-items: center; justify-content: center; gap: 10px; }
 .game-title-btn { width: auto; margin: 0 auto; padding: 0 8px; background: transparent; color: var(--text-main); box-shadow: none; }
 .game-title-btn:hover { transform: none; }
 .game-title-chevron { color: var(--text-muted); font-size: .9rem; margin-inline-start: 2px; }
 .game-switch-menu { position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%); z-index: 5000;
-                    width: min(92%, 330px); background: var(--surface-color); border: 1px solid var(--border-color);
+                    width: min(92vw, 330px); background: var(--surface-color); border: 1px solid var(--border-color);
                     border-radius: var(--radius-md); box-shadow: 0 18px 45px rgba(0,0,0,0.18); padding: 8px;
                     transform-origin: top center; animation: switchMenuIn .22s cubic-bezier(.16,1,.3,1) both; }
 .game-switch-option { width: 100%; justify-content: flex-start; background: transparent; color: var(--text-main);
@@ -296,7 +294,7 @@ input[type="text"]:focus, input[type="password"]:focus { border-color: var(--pri
 .toast { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px);
          background: var(--text-main); color: var(--bg-color); padding: 12px 24px; border-radius: var(--radius-pill);
          font-weight: 700; font-size: 1rem; box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-         transition: transform 0.4s cubic-bezier(0.16,1,0.3,1); z-index: 3000; pointer-events: none; white-space: nowrap; max-width: 90%; text-align: center; }
+         transition: transform 0.4s cubic-bezier(0.16,1,0.3,1); z-index: 3000; pointer-events: none; white-space: nowrap; max-width: 90vw; text-align: center; }
 .toast.show { transform: translateX(-50%) translateY(0); }
 .hidden { display: none !important; }
 .disabled-ui { opacity: 0.4; pointer-events: none; }
@@ -517,7 +515,7 @@ input[type="text"]:focus, input[type="password"]:focus { border-color: var(--pri
 }
 .question-picker-card,
 .question-challenge-card {
-    width: min(92%, 360px);
+    width: min(92vw, 360px);
     background: var(--bg-color);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
@@ -779,7 +777,7 @@ body:not(.game-coup) .coup-only-btn { display: none !important; }
 .coup-card-desc { margin: 0; font-weight: 800; line-height: 1.6; display: grid; gap: 6px; }
 .coup-card-desc-line { display: block; }
 .coup-modal-card-info { display: grid; gap: 12px; justify-items: center; }
-.coup-card-portrait { width: min(180px, 52%); aspect-ratio: 1; object-fit: contain; border-radius: 22px; }
+.coup-card-portrait { width: min(180px, 52vw); aspect-ratio: 1; object-fit: contain; border-radius: 22px; }
 .coup-event-toast { position: absolute; z-index: 10030; left: 50%; top: 18%; transform: translateX(-50%);
                     width: min(440px, calc(100% - 28px)); padding: 14px 16px; border-radius: var(--radius-lg);
                     background: var(--surface-color); border: 1px solid var(--border-color); box-shadow: 0 18px 52px rgba(0,0,0,.3);
@@ -791,7 +789,7 @@ body:not(.game-coup) .coup-only-btn { display: none !important; }
 .coup-flash { animation: coupFlash .7s cubic-bezier(0.16,1,0.3,1); }
 .coup-loss-overlay { position: absolute; inset: 0; z-index: 10040; display: grid; place-items: center; pointer-events: none;
                      background: rgba(0,0,0,.62); animation: coupLossFade 1.95s ease forwards; overflow: hidden; }
-.coup-loss-card { position: relative; width: min(220px, 58%); aspect-ratio: 2.5 / 3.5; animation: coupLossSpin 1.7s cubic-bezier(.16,1,.3,1) forwards; }
+.coup-loss-card { position: relative; width: min(220px, 58vw); aspect-ratio: 2.5 / 3.5; animation: coupLossSpin 1.7s cubic-bezier(.16,1,.3,1) forwards; }
 .coup-loss-card-face { width: 100%; height: 100%; border-radius: 14px; background: var(--surface-color); border: 2px solid rgba(212,107,90,.55);
                        box-shadow: 0 28px 80px rgba(0,0,0,.48); display: grid; place-items: center; align-content: center; gap: 10px;
                        color: var(--text-main); font-weight: 950; text-align: center; padding: 18px; }
@@ -799,7 +797,7 @@ body:not(.game-coup) .coup-only-btn { display: none !important; }
 .coup-loss-cut { position: absolute; left: -10%; top: 48%; width: 120%; height: 5px; border-radius: 999px;
                  background: var(--danger-color); box-shadow: 0 0 18px rgba(212,107,90,.7); transform: rotate(-18deg) scaleX(0);
                  animation: coupLossCut .45s ease .55s forwards; }
-.coup-loss-text { position: absolute; left: 50%; bottom: 16%; width: min(450px, calc(100% - 30px)); transform: translateX(-50%);
+.coup-loss-text { position: absolute; left: 50%; bottom: 16%; width: min(520px, calc(100% - 30px)); transform: translateX(-50%);
                   padding: 14px 16px; border-radius: var(--radius-lg); background: var(--surface-color); border: 1px solid rgba(212,107,90,.45);
                   color: var(--danger-color); box-shadow: var(--shadow-soft); text-align: center; font-weight: 950; animation: coupLossText 1.8s ease forwards; }
 @keyframes coupTimerPulse { 50% { transform: scale(1.04); box-shadow: 0 0 0 4px rgba(212,107,90,.12); } }
@@ -844,7 +842,7 @@ body:not(.game-coup) .coup-only-btn { display: none !important; }
                   color: var(--text-main); font-weight: 800; }
 .coup-guide-card-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
 .coup-guide-role-card { display: grid; gap: 8px; justify-items: center; color: var(--text-main); }
-.coup-guide-role-card .coup-card-portrait { width: min(128px, 36%); }
+.coup-guide-role-card .coup-card-portrait { width: min(128px, 36vw); }
 .coup-guide-role-card span { display: block; color: var(--text-muted); font-size: .86rem; line-height: 1.45; }
 @media (max-width: 560px) {
     .coup-status-wrap { grid-template-columns: minmax(82px, .29fr) minmax(0, .71fr); }
@@ -991,7 +989,7 @@ body.game-chkobba #voice-panel { bottom: calc(env(safe-area-inset-bottom,0px) + 
     left: 50%;
     transform: translateX(-50%);
     z-index: 9991;
-    display: flex;
+    display: none;
     align-items: center;
     gap: 8px;
     padding: 8px 16px;
@@ -1006,6 +1004,12 @@ body.game-chkobba #voice-panel { bottom: calc(env(safe-area-inset-bottom,0px) + 
     font-size: 0.95rem;
     pointer-events: none;
     transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.coup-turn-indicator:not(.hidden) {
+    display: flex;
+}
+.coup-turn-indicator.hidden {
+    display: none !important;
 }
 
 .chkobba-turn-timer {
@@ -1025,10 +1029,6 @@ body.game-chkobba #voice-panel { bottom: calc(env(safe-area-inset-bottom,0px) + 
     padding-left: 8px;
     border-right: none;
     border-left: 1.5px solid var(--border-color);
-}
-.coup-turn-indicator.hidden {
-    opacity: 0;
-    transform: translateX(-50%) translateY(-20px);
 }
 .cti-label {
     color: var(--text-muted);
@@ -1318,35 +1318,4 @@ body.lang-x18 #nohint-row, body.lang-x18 #allhint-row { opacity: 0.35; pointer-e
 
 .option-check {
     font-size: 0.9rem;
-}
-
-/* Landscape warning overlay */
-#landscape-warning {
-    position: fixed;
-    inset: 0;
-    background: #111;
-    color: #fff;
-    z-index: 99999;
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 30px;
-}
-
-@media (orientation: landscape) and (max-height: 520px) {
-    #landscape-warning {
-        display: flex;
-    }
-}
-
-#landscape-warning h2 {
-    font-size: 1.8rem;
-    color: var(--accent-color);
-    margin-bottom: 12px;
-}
-#landscape-warning p {
-    color: #eee;
-    font-size: 1.1rem;
 }
