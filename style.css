@@ -64,7 +64,7 @@ h3 { font-size: 1.3rem; margin: 0 0 12px 0; }
 p { color: var(--text-muted); font-size: 1.05rem; line-height: 1.5; margin-top: 0; }
 .screen { display: none; opacity: 0; transform: translateY(15px) scale(0.99); contain: layout paint style; }
 .screen[hidden] { display: none !important; }
-.screen.active { display: block; animation: fluidEntry 0.32s cubic-bezier(0.16,1,0.3,1) forwards; }
+.screen.active { display: block; animation: fluidEntry 0.32s cubic-bezier(0.16,1,0.3,1) forwards; overflow-y: auto; overflow-x: hidden; max-height: 100%; -webkit-overflow-scrolling: touch; }
 .screen.exiting { display: block; position: absolute; inset: 0 24px auto 24px; pointer-events: none; animation: screenExit .18s cubic-bezier(.7,0,.84,0) forwards; }
 @keyframes fluidEntry { to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes screenExit { to { opacity: 0; transform: translateY(-18px) scale(.98); filter: blur(3px); } }
