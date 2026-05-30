@@ -23,13 +23,13 @@
 input, textarea { user-select: auto; -webkit-user-select: auto; }
 html { scroll-behavior: smooth; height: 100%; overflow: hidden; }
 body { background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 0;
-       display: flex; justify-content: center; height: 100%; width: 100%;
+       height: 100%; width: 100%;
        transition: background-color 0.4s ease, color 0.4s ease; overflow: hidden;
        overscroll-behavior: none; position: fixed; top: 0; left: 0; }
 .bg-orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.3; z-index: -1; pointer-events: none; }
 .orb-1 { width: 350px; height: 350px; background: var(--surface-color); top: -80px; right: -80px; }
 .orb-2 { width: 300px; height: 300px; background: rgba(241,192,81,0.12); bottom: 12%; left: -80px; }
-.container { width: 480px; height: 100%; padding: 24px; position: relative; z-index: 1; background-color: var(--bg-color); overflow: hidden; transform-origin: top center; flex-shrink: 0; }
+.container { width: 100%; height: 100%; padding: 24px; position: relative; z-index: 1; background-color: var(--bg-color); overflow: hidden; transform-origin: top left; flex-shrink: 0; }
 header { text-align: center; margin-bottom: 24px; position: relative; }
 h1 { font-size: 2.2rem; font-weight: 800; margin: 0; color: var(--text-main);
      display: flex; align-items: center; justify-content: center; gap: 10px; }
