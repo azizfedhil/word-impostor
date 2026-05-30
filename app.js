@@ -281,7 +281,7 @@ function triggerAnimation(type) {
     const overlay = document.createElement('div');
     if (type === 'win') {
         overlay.className = 'anim-win-overlay';
-        document.getElementById("app-shell").appendChild(overlay);
+        document.body.appendChild(overlay);
         const emojis = ['🎉','🏆','🎊','⭐','✨','🎈','🥳','🌟','💫','🎆','🎇','🏅','🌈','💥'];
         for (let i = 0; i < 14; i++) {
             const p = document.createElement('div'); p.className = 'win-particle';
@@ -299,7 +299,7 @@ function triggerAnimation(type) {
         _sfx.win();
     } else {
         overlay.className = 'anim-lose-overlay';
-        document.getElementById("app-shell").appendChild(overlay);
+        document.body.appendChild(overlay);
         const center = document.createElement('div'); center.className = 'lose-center'; center.innerText = '💀';
         overlay.appendChild(center);
         const cont = document.querySelector('.container');
@@ -314,7 +314,7 @@ window.triggerAnimation = triggerAnimation;
 function triggerNotLyingAnimation(playerName) {
     const overlay = document.createElement('div');
     overlay.className = 'anim-win-overlay not-lying-announcement';
-    document.getElementById("app-shell").appendChild(overlay);
+    document.body.appendChild(overlay);
 
     const content = document.createElement('div');
     content.className = 'not-lying-content';
@@ -337,7 +337,7 @@ window.triggerNotLyingAnimation = triggerNotLyingAnimation;
 function triggerWinnerAnnouncement(winnerName) {
     const overlay = document.createElement('div');
     overlay.className = 'anim-win-overlay winner-announcement';
-    document.getElementById("app-shell").appendChild(overlay);
+    document.body.appendChild(overlay);
 
     const emojis = ['🎉','🏆','🎊','⭐','✨','🎈','🥳','🌟','💫','🎆','🎇','🏅','🌈','💥'];
     for (let i = 0; i < 30; i++) {
@@ -858,7 +858,7 @@ function _showCoupModal(title, bodyHtml, setup) {
             <h3>${_escapeHtml(title)}</h3>
             <div class="coup-modal-body">${bodyHtml}</div>
         </div>`;
-    document.getElementById("app-shell").appendChild(overlay);
+    document.body.appendChild(overlay);
     requestAnimationFrame(() => overlay.classList.add('show'));
     overlay.querySelector('.coup-modal-close')?.addEventListener('click', () => _closeCoupModal());
     overlay.addEventListener('click', e => { if (e.target === overlay) _closeCoupModal(); });
@@ -912,7 +912,7 @@ function _showCoupEvent(text, kind = 'notice') {
     const el = document.createElement('div');
     el.className = `coup-event-toast ${kind}`;
     el.innerHTML = `<div class="coup-event-icon">${kind === 'bad' ? '💥' : kind === 'good' ? '✨' : '🎭'}</div><div>${_escapeHtml(text)}</div>`;
-    document.getElementById("app-shell").appendChild(el);
+    document.body.appendChild(el);
     _sfx.reaction(kind === 'bad' ? 'caught' : 'fire');
     setTimeout(() => el.remove(), 2600);
 }
@@ -931,7 +931,7 @@ function _showCoupLossAnimation(playerName, cardMeta, out = false) {
         </div>
         <div class="coup-loss-text">${_escapeHtml(playerName || '')} خسر ${_escapeHtml(cardMeta?.name || 'كارتة')}${out ? '<br><strong>خرج من الطرح.</strong>' : ''}</div>
     `;
-    document.getElementById("app-shell").appendChild(el);
+    document.body.appendChild(el);
     _sfx.lose();
     setTimeout(() => el.remove(), 2000);
 }
@@ -1807,8 +1807,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const float = document.createElement('div');
         float.className = 'reaction-float';
         float.textContent = text;
-        float.style.top = Math.max(60, 1040 * 0.45) + 'px';
-        document.getElementById("app-shell").appendChild(float);
+        float.style.top = Math.max(60, window.innerHeight * 0.45) + 'px';
+        document.body.appendChild(float);
         setTimeout(() => float.remove(), 1900);
     }
     // Expose for online.js to call
@@ -1904,27 +1904,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     window._gameScale = 1;
     function _resizeGame() {
-        const shell = document.getElementById('app-shell');
-        if (!shell) return;
-
-        const vw = window.innerWidth;
-        const vh = window.innerHeight;
-        const VIRTUAL_W = 480;
-        const VIRTUAL_H = 1040;
-
-        // Scale only by width — height scrolls inside .screen if needed
-        const factor = vw / VIRTUAL_W;
-        window._gameScale = factor;
-
-        const offsetY = Math.max(0, (vh - VIRTUAL_H * factor) / 2);
-
-        shell.style.width  = VIRTUAL_W + 'px';
-        shell.style.height = VIRTUAL_H + 'px';
-        shell.style.transformOrigin = '0 0';
-        shell.style.transform = 'translate(0px, ' + offsetY + 'px) scale(' + factor + ')';
-        shell.style.position = 'fixed';
-        shell.style.left = '0';
-        shell.style.top  = '0';
+        // No virtual canvas scaling — layout is natural/responsive.
+        // _gameScale stays 1 so touch coordinate helpers in online.js work correctly.
+        window._gameScale = 1;
     }
     window.addEventListener('resize', _resizeGame);
     _resizeGame();
