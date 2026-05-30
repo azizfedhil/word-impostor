@@ -1916,7 +1916,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Dynamically calculate the virtual height based on the device's aspect ratio
         // instead of locking it to 1040px.
-        const virtualHeight = window.innerHeight / factor;
+        // We use Math.max with 1040 to ensure we have enough vertical space for content
+        // even on very wide viewports where factor is high but height is relatively small.
+        const virtualHeight = Math.max(1040, window.innerHeight / factor);
 
         shell.style.transform = `scale(${factor})`;
         shell.style.height = `${virtualHeight}px`;
