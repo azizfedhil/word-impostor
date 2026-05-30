@@ -4557,8 +4557,8 @@ function _startOnlineChkobbaTimer(room) {
         const left = Math.max(0, Math.ceil((endTime - _syncedNow()) / 1000));
 
         const m = Math.floor(left / 60).toString().padStart(2, '0');
-        const s = (left % 60).toString().padStart(2, '0');
-        timerEl.innerText = `${m}:${s}`;
+        const sec = (left % 60).toString().padStart(2, '0');
+        timerEl.innerText = `${m}:${sec}`;
 
         if (left <= 10) timerEl.style.color = 'var(--danger-color)';
         else timerEl.style.color = '';
