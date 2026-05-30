@@ -1807,7 +1807,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const float = document.createElement('div');
         float.className = 'reaction-float';
         float.textContent = text;
-        float.style.top = Math.max(60, 853.33 * 0.45) + 'px';
+        float.style.top = Math.max(60, 1040 * 0.45) + 'px';
         document.getElementById("app-shell").appendChild(float);
         setTimeout(() => float.remove(), 1900);
     }
@@ -1906,7 +1906,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     function _resizeGame() {
         const shell = document.getElementById('app-shell');
         if (!shell) return;
-        const factor = Math.min(window.innerWidth / 480, window.innerHeight / 853.33);
+        const factor = Math.min(window.innerWidth / 480, window.innerHeight / 1040);
         window._gameScale = factor;
         shell.style.transform = `scale(${factor})`;
     }
