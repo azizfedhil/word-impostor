@@ -1278,10 +1278,157 @@ async function _animateChkobbaDeal(deckEl, handEl, count, onDone) {
     }
 }
 
+/**
+ * Render an overlay scoreboard (round_score or finished phase).
+ */
+function _renderChkobbaScoreboard(state, isFinal, onContinue) {
+    document.getElementById('chkobba-scoreboard-overlay')?.remove();
+
+    const scores = state.roundScores || {};
+    const winner = isFinal
+        ? state.players.reduce((best, p) => (!best || p.totalScore > best.totalScore ? p : best), null)
+        : null;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'chkobba-scoreboard-overlay';
+    overlay.style.cssText = `
+        position:fixed;inset:0;z-index:9999;
+        display:flex;align-items:center;justify-content:center;
+        background:rgba(0,0,0,0.78);backdrop-filter:blur(6px);
+        font-family:var(--font-arabic,sans-serif);direction:rtl;
+    `;
+
+    const card = document.createElement('div');
+    card.style.cssText = `
+        background:var(--surface-2,#1e2130);
+        border:2px solid var(--gold,#f1c051);
+        border-radius:20px;padding:28px 24px 20px;
+        min-width:min(90vw,380px);max-width:92vw;
+        box-shadow:0 8px 40px rgba(0,0,0,0.6);
+        color:var(--text-1,#fff);text-align:center;
+    `;
+
+    const titleIcon = isFinal ? '🏆' : '📊';
+    const titleText = isFinal
+        ? `نهاية اللعبة — الفائز: ${_esc(winner?.name || '؟')}`
+        : `نهاية الطرح ${state.round || ''}`;
+
+    let rowsHtml = '';
+    const sorted = [...state.players].sort((a, b) => b.totalScore - a.totalScore);
+    sorted.forEach(p => {
+        const rs = scores[p.id];
+        const details = rs?.details || {};
+        const roundPts = rs?.total ?? 0;
+        const isWinnerRow = isFinal && winner && p.id === winner.id;
+
+        const detailItems = [
+            details.carti   ? 'الكارطة ✅'            : '',
+            details.dinari  ? 'الديناري ✅'           : '',
+            details.berria  ? 'السبعة الحية ✅'       : '',
+            details.basila  ? 'الباسيلة ✅'           : '',
+            details.chkobba ? `شكبّة ×${details.chkobba}` : '',
+        ].filter(Boolean).join(' · ') || '—';
+
+        rowsHtml += `
+        <div style="
+            display:flex;align-items:center;gap:10px;
+            padding:10px 12px;margin-bottom:8px;
+            background:${isWinnerRow ? 'rgba(241,192,81,0.18)' : 'rgba(255,255,255,0.05)'};
+            border-radius:12px;
+            border:${isWinnerRow ? '1.5px solid var(--gold,#f1c051)' : '1px solid rgba(255,255,255,0.07)'};
+        ">
+            <div style="font-size:1.5rem;">${isWinnerRow ? '👑' : '🃏'}</div>
+            <div style="flex:1;text-align:right;">
+                <div style="font-weight:700;font-size:1.05rem;">${_esc(p.name)}</div>
+                <div style="font-size:.75rem;opacity:.65;margin-top:2px;">${detailItems}</div>
+            </div>
+            <div style="text-align:left;min-width:80px;">
+                ${rs ? `<div style="font-size:.85rem;opacity:.7;">+${roundPts} نقطة</div>` : ''}
+                <div style="font-size:1.15rem;font-weight:800;color:var(--gold,#f1c051);">${p.totalScore} / ${state.targetScore}</div>
+            </div>
+        </div>`;
+    });
+
+    card.innerHTML = `
+        <div style="font-size:1.6rem;margin-bottom:4px;">${titleIcon}</div>
+        <h2 style="margin:0 0 16px;font-size:1.15rem;color:var(--gold,#f1c051);">${titleText}</h2>
+        <div style="margin-bottom:16px;">${rowsHtml}</div>
+        ${isFinal
+            ? `<button id="chkobba-sb-newgame" style="
+                margin-top:4px;padding:12px 32px;border-radius:12px;border:none;cursor:pointer;
+                background:var(--gold,#f1c051);color:#1e1e2e;font-weight:800;font-size:1rem;
+              ">لعبة جديدة</button>`
+            : `<button id="chkobba-sb-continue" style="
+                margin-top:4px;padding:12px 32px;border-radius:12px;border:none;cursor:pointer;
+                background:var(--gold,#f1c051);color:#1e1e2e;font-weight:800;font-size:1rem;
+              ">${_isHost ? 'واصل ▶' : 'في انتظار المضيف…'}</button>`
+        }
+    `;
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+
+    if (isFinal) {
+        card.querySelector('#chkobba-sb-newgame')?.addEventListener('click', () => {
+            overlay.remove();
+            if (typeof _leaveRoom === 'function') _leaveRoom();
+            if (typeof showScreen === 'function') showScreen('mode-select-screen');
+        });
+    } else {
+        const btn = card.querySelector('#chkobba-sb-continue');
+        if (btn) {
+            if (_isHost) {
+                btn.addEventListener('click', async () => {
+                    btn.disabled = true;
+                    btn.textContent = 'جاري التحضير…';
+                    overlay.remove();
+                    await _chkobbaStartNextRound();
+                    onContinue?.();
+                });
+                // Auto-advance after 15 s
+                setTimeout(() => {
+                    if (document.body.contains(btn) && !btn.disabled) btn.click();
+                }, 15000);
+            } else {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+            }
+        }
+    }
+}
+
 function _showOnlineChkobba(room) {
     showScreen('chkobba-screen');
     const state = room.word_obj;
     if (!state) return;
+
+    // ── FINISHED phase: show final scoreboard overlay ──────────────────
+    if (state.phase === 'finished') {
+        _renderChkobbaOpponentPills(
+            room, state,
+            state.players.find(p => p.id === _myId),
+            state.mode || '1v1',
+            (_room?.players || []).reduce((m, p) => { m[p.id] = p; return m; }, {})
+        );
+        _renderChkobbaScoreboard(state, true, null);
+        clearInterval(_chkobbaTimer);
+        return;
+    }
+
+    // ── ROUND_SCORE phase: show round scoreboard overlay ───────────────
+    if (state.phase === 'round_score') {
+        _renderChkobbaOpponentPills(
+            room, state,
+            state.players.find(p => p.id === _myId),
+            state.mode || '1v1',
+            (_room?.players || []).reduce((m, p) => { m[p.id] = p; return m; }, {})
+        );
+        // Only show one overlay even if _showOnlineChkobba is called multiple times
+        if (!document.getElementById('chkobba-scoreboard-overlay')) {
+            _renderChkobbaScoreboard(state, false, null);
+        }
+        clearInterval(_chkobbaTimer);
+        return;
+    }
 
     const me = state.players.find(p => p.id === _myId);
     const isMyTurn = state.players[state.turnIndex].id === _myId;
@@ -1341,9 +1488,19 @@ function _showOnlineChkobba(room) {
             });
             tableCont.appendChild(cardEl);
         } else {
-            // Existing card - update its index/rotation
-            cardEl.dataset.index = String(idx);
-            cardEl.style.setProperty('--rot', `${_tableCardRotation(idx, card.id)}deg`);
+            // Existing card - update its index/rotation.
+            // IMPORTANT: replace the element entirely so click listeners are always
+            // fresh (the old element may have been created without canInteract=true,
+            // meaning it has no click listener; cloning and re-adding fixes that).
+            const fresh = _renderChkobbaCard(card, {
+                zone: 'table',
+                index: idx,
+                interactive: canInteract
+            });
+            // Preserve any visual selection state carried over from the play-session
+            if (cardEl.classList.contains('is-selected')) fresh.classList.add('is-selected');
+            if (cardEl.classList.contains('is-invalid'))  fresh.classList.add('is-invalid');
+            tableCont.replaceChild(fresh, cardEl);
         }
     });
 
@@ -1883,40 +2040,64 @@ function _endChkobbaRound(state, roomObj) {
 
     const scores = logic.calculateScores(capturedMap, chkobbaMap, state.teams);
 
-    let gameOver = false;
+    // Apply round scores to totalScore but keep captured/chkobbas for the scoreboard
     state.players.forEach(p => {
-        const roundScore = scores[p.id].total;
-        p.totalScore += roundScore;
-        p.captured = [];
-        p.chkobbas = 0;
+        p.totalScore += scores[p.id].total;
     });
 
-    // Check game over based on team or individual score
+    // Store round scores so the scoreboard overlay can display them
+    state.roundScores = scores;
+
+    // Check game over
+    let gameOver = false;
     state.players.forEach(p => {
         if (p.totalScore >= state.targetScore) gameOver = true;
     });
 
     if (gameOver) {
+        // Show final scoreboard first, then mark finished
         state.phase = 'finished';
         state.log = 'الطرح وفى!';
+        // Clear captures/chkobbas after we've stored scores above
+        state.players.forEach(p => { p.captured = []; p.chkobbas = 0; });
     } else {
-        // Reset for next round
-        const deck = logic.createDeck();
-        state.deck = deck;
-        state.table = [state.deck.pop(), state.deck.pop(), state.deck.pop(), state.deck.pop()];
-        state.players.forEach(p => {
-            p.hand = [state.deck.pop(), state.deck.pop(), state.deck.pop()];
-        });
-        state.round++;
-        state.turnIndex = 0; // Usually dealer moves, but we'll keep it simple
-
-        const actualRoom = roomObj || _room;
-        if (actualRoom && _isHost) {
-            const turnTime = actualRoom.config?.chkobbaTurnTime || 45;
-            const timerEndAt = new Date(_syncedNow() + turnTime * 1000).toISOString();
-            actualRoom.timer_end_at = timerEndAt;
-        }
+        // Pause at round_score phase — a continue button will advance to next round
+        state.phase = 'round_score';
+        state.log = 'نهاية الطرح — شوف النقاط!';
     }
+}
+
+/**
+ * Called by the host (or auto-timeout) after the round scoreboard is acknowledged.
+ * Deals a fresh deck and resumes playing.
+ */
+async function _chkobbaStartNextRound(roomObj) {
+    const actualRoom = roomObj || _room;
+    if (!actualRoom || !_isHost) return;
+    await _mutatePlayers(actualRoom.code, (players, room) => {
+        const s = room.word_obj;
+        if (s.phase !== 'round_score') return null;
+
+        const logic = window.ChkobbaLogic;
+        // Clear accumulated per-round data now that scoreboard was shown
+        s.players.forEach(p => { p.captured = []; p.chkobbas = 0; });
+
+        const deck = logic.createDeck();
+        s.deck = deck;
+        s.table = [s.deck.pop(), s.deck.pop(), s.deck.pop(), s.deck.pop()];
+        s.players.forEach(p => {
+            p.hand = [s.deck.pop(), s.deck.pop(), s.deck.pop()];
+        });
+        s.round++;
+        s.turnIndex = 0;
+        s.roundScores = null;
+        s.phase = 'playing';
+        s.log = 'طرح جديد — بالتوفيق!';
+
+        const turnTime = room.config?.chkobbaTurnTime || 45;
+        room.timer_end_at = new Date(_syncedNow() + turnTime * 1000).toISOString();
+        return players;
+    }, null, (room, players) => ({ word_obj: room.word_obj, timer_end_at: room.timer_end_at }));
 }
 
 function _spawnChkobbaConfetti(layer, variant = 'gold') {
@@ -1971,8 +2152,7 @@ function _handleChkobbaBroadcastEvent(event) {
     setTimeout(() => wrap.remove(), isBerria ? 1850 : 2000);
 }
 
-// Expose for verification/debugging
-window._showOnlineChkobba = _showOnlineChkobba;
+// (exported in the block at the bottom of this file)
 
 /**
  * QUEUE & TOURNAMENT BRACKET SYSTEM
@@ -2111,3 +2291,4 @@ window._startTournament             = _startTournament;
 window._setupChkobbaMenuButtons     = _setupChkobbaMenuButtons;
 window._commitChkobbaCapture        = _commitChkobbaCapture;
 window._commitChkobbaPlayToTable    = _commitChkobbaPlayToTable;
+window._chkobbaStartNextRound       = _chkobbaStartNextRound;
