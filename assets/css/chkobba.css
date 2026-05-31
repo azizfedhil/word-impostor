@@ -208,7 +208,7 @@ body.game-chkobba header.app-header {
     border-radius: var(--radius-pill);
     box-shadow: var(--chkobba-surface-shadow);
     cursor: pointer;
-    transition: transform 507ms var(--ease-pop), border-color 507ms ease, box-shadow 507ms ease;
+    transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
     overflow: hidden;
     will-change: transform;
     min-width: 140px;
@@ -288,7 +288,7 @@ body.game-chkobba header.app-header {
     border-top: 1px solid var(--border-color);
     background: var(--bg-color);
     border-radius: 0 0 var(--radius-md) var(--radius-md);
-    animation: chkobbaPillExpand 1.02s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+    animation: chkobbaPillExpand 180ms cubic-bezier(0.22, 0.9, 0.3, 1) both;
     overflow: hidden;
 }
 
@@ -318,7 +318,7 @@ body.game-chkobba header.app-header {
 }
 
 .chkobba-player-pill.is-entering {
-    animation: chkobbaPillDropIn 1.926s cubic-bezier(0.34, 1.35, 0.64, 1) both;
+    animation: chkobbaPillDropIn 320ms cubic-bezier(0.22, 0.9, 0.3, 1) both;
 }
 
 @keyframes chkobbaPillDropIn {
@@ -333,7 +333,7 @@ body.game-chkobba header.app-header {
 }
 
 .chkobba-info-pill .info-pill-hint {
-    animation: chkobbaPillExpand 1.725s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+    animation: chkobbaPillExpand 200ms cubic-bezier(0.22, 0.9, 0.3, 1) both;
 }
 
 /* Table surface */
@@ -359,7 +359,7 @@ body.game-chkobba header.app-header {
     align-content: center;
     gap: 10px;
     padding: 52px 16px 16px;
-    transition: box-shadow 0.7605s var(--chkobba-ease);
+    transition: box-shadow 160ms ease;
 }
 
 .chkobba-table-wrap {
@@ -444,12 +444,12 @@ body.game-chkobba header.app-header {
 }
 
 .chkobba-pile.deck-pile.is-dealing {
-    animation: chkobbaDeckPulse 2.535s var(--chkobba-ease);
+    animation: chkobbaDeckPulse 400ms ease;
 }
 
 @keyframes chkobbaDeckPulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.06); }
+    0%, 100% { transform: scale(1) rotate(5deg); }
+    50% { transform: scale(1.06) rotate(5deg); }
 }
 
 /* Round info chips */
@@ -575,7 +575,7 @@ body.game-chkobba header.app-header {
     gap: 4px;
     cursor: pointer;
     font-family: inherit;
-    transition: border-radius 0.558s var(--chkobba-ease), padding 0.558s var(--chkobba-ease);
+    transition: border-radius 140ms ease, padding 140ms ease;
 }
 
 .chkobba-info-pill.is-expanded {
@@ -610,7 +610,7 @@ body.game-chkobba header.app-header {
     height: var(--chkobba-card-h);
     position: relative;
     transform-style: preserve-3d;
-    transition: transform 0.7095s var(--chkobba-ease), box-shadow 0.7095s var(--chkobba-ease);
+    transition: transform 180ms cubic-bezier(0.22, 0.9, 0.3, 1), box-shadow 180ms ease;
     cursor: grab;
     user-select: none;
     touch-action: none;
@@ -650,13 +650,13 @@ body.game-chkobba header.app-header {
 }
 
 .chkobba-card.is-invalid {
-    animation: chkobbaCardShake 1.776s ease;
+    animation: chkobbaCardShake 340ms ease;
 }
 
 @keyframes chkobbaCardShake {
     0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-4px); }
-    75% { transform: translateX(4px); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
 }
 
 .chkobba-card.table-card,
@@ -664,14 +664,14 @@ body.game-chkobba header.app-header {
     transform: rotate(var(--rot, 0deg)) translateY(14px);
     width: 95.60176621875px;
     height: 140.93868628125px;
-    transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.4s ease, height 0.4s ease;
-    animation: tableCardEnter 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transition: transform 180ms cubic-bezier(0.22, 0.9, 0.3, 1), width 180ms ease, height 180ms ease, opacity 120ms ease;
+    animation: tableCardEnter 220ms cubic-bezier(0.22, 0.9, 0.3, 1) both;
 }
 
 @keyframes tableCardEnter {
     from {
         opacity: 0;
-        transform: rotate(var(--rot, 0deg)) translateY(14px) scale(0.8);
+        transform: rotate(var(--rot, 0deg)) translateY(20px) scale(0.88);
     }
     to {
         opacity: 1;
@@ -706,7 +706,7 @@ body.game-chkobba header.app-header {
     box-shadow:
         0 4px 10px rgba(0,0,0,.28),
         0 18px 36px rgba(0,0,0,.28);
-    transition: box-shadow 0.7095s var(--chkobba-ease), filter 0.7095s var(--chkobba-ease);
+    transition: box-shadow 180ms ease, filter 180ms ease;
 }
 
 .chkobba-card.hand-card:not(.is-armed):not(.is-lifted) img {
@@ -840,10 +840,9 @@ body.game-chkobba header.app-header {
     width: var(--chkobba-card-w); height: var(--chkobba-card-h);
     z-index: 9998;
     pointer-events: none;
-    opacity: 0.7;
-    transition: opacity 1.1415s ease-out, transform 811.5ms var(--ease-out-cubic);
+    opacity: 0;
     will-change: transform, opacity;
-    filter: drop-shadow(0 0 15px var(--primary-color)) brightness(1.2) contrast(1.1);
+    filter: drop-shadow(0 0 12px var(--primary-color)) brightness(1.15);
 }
 .chkobba-ghost-trail img {
     width: 100%; height: 100%; border-radius: 12px;
@@ -868,13 +867,13 @@ body.game-chkobba header.app-header {
     border: none;
     border-radius: 0;
     box-shadow: none;
-    transition: background 0.888s var(--chkobba-ease), box-shadow 0.888s var(--chkobba-ease);
+    transition: background 220ms ease, box-shadow 220ms ease;
 }
 
 .chkobba-hand-dock.is-inactive-turn {
     opacity: 0.7;
     filter: grayscale(60%) saturate(40%);
-    transition: opacity 0.888s var(--chkobba-ease), filter 0.888s var(--chkobba-ease);
+    transition: opacity 220ms ease, filter 220ms ease;
     position: relative;
 }
 
@@ -1037,7 +1036,7 @@ body.game-chkobba header.app-header {
     display: flex;
     justify-content: center;
     margin: 12px 0;
-    animation: chkobbaStarterReveal 2.283s var(--chkobba-ease) both;
+    animation: chkobbaStarterReveal 360ms cubic-bezier(0.22, 0.9, 0.3, 1) both;
 }
 
 .chkobba-opening-starter .chkobba-card {
