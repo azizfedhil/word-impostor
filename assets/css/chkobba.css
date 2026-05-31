@@ -669,6 +669,15 @@ body.game-chkobba header.app-header {
        reflows and produce janky size-change animations. Size class changes
        (is-stacked-*) now snap instantly; only transform/opacity animate. */
     transition: transform 260ms cubic-bezier(0.22, 0.9, 0.3, 1), opacity 120ms ease;
+    /* NOTE: animation removed from base rule — it re-fired on every repaint,
+       causing the table blink. JS adds .is-new-card to trigger entry only once. */
+    will-change: transform, opacity;
+}
+
+/* Entry animation fires ONLY when JS adds .is-new-card to a freshly-inserted card.
+   JS removes the class after the animation completes (animationend). */
+.chkobba-card.table-card.is-new-card,
+.chkobba-card.is-table.is-new-card {
     animation: tableCardEnter 260ms cubic-bezier(0.22, 0.9, 0.3, 1) both;
 }
 
@@ -718,6 +727,7 @@ body.game-chkobba header.app-header {
         translateY(var(--stack-lift, 0px))
         rotate(var(--tilt, 0deg));
     margin-left: calc(var(--stack-overlap, 0px) * -1);
+    will-change: transform, opacity;
 }
 
 /* Phase 3 – when FLIP is active, transition smoothly to identity.
@@ -894,14 +904,15 @@ body.game-chkobba header.app-header {
     border: none;
     border-radius: 0;
     box-shadow: none;
-    transition: background 220ms ease, box-shadow 220ms ease;
+}
+
+.chkobba-hand-dock {
+    transition: opacity 300ms ease, filter 300ms ease;
 }
 
 .chkobba-hand-dock.is-inactive-turn {
-    opacity: 0.7;
-    filter: grayscale(60%) saturate(40%);
-    transition: opacity 220ms ease, filter 220ms ease;
-    position: relative;
+    opacity: 0.72;
+    filter: grayscale(50%) saturate(50%);
 }
 
 
@@ -1218,7 +1229,9 @@ body.game-chkobba header.app-header {
     .chkobba-announcement,
     .chkobba-celebration-card,
     .chkobba-confetti-bit,
-    .chkobba-player-pill.is-entering {
+    .chkobba-player-pill.is-entering,
+    .chkobba-card.table-card.is-new-card,
+    .chkobba-card.is-table.is-new-card {
         animation-duration: 0.001ms !important;
     }
 }
