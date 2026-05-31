@@ -2241,7 +2241,7 @@ function _advanceChkobbaTurn(state, roomObj) {
     state.turnIndex = (state.turnIndex + 1) % state.players.length;
 
     const actualRoom = roomObj || _room;
-    if (actualRoom && _isHost) {
+    if (actualRoom) {
         const turnTime = actualRoom.config?.chkobbaTurnTime || 45;
         const timerEndAt = new Date(_syncedNow() + turnTime * 1000).toISOString();
         actualRoom.timer_end_at = timerEndAt;
