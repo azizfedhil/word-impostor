@@ -214,9 +214,13 @@ function _animateChkobbaFlight({ fromRect, toRect, imgSrc, duration = 380, rotat
         requestAnimationFrame(() => {
             const endTransform = `translate3d(${tx}px, ${ty}px, 0) rotate(${rotate * 0.2}deg) translate(-50%, -50%)`;
 
+            // Phase 4/5 – scale up slightly mid-flight so the card feels physically lifted,
+            // then settle back to 1× at destination via the cubic-bezier overshoot.
             flyer.style.transition = `transform ${duration}ms cubic-bezier(0.22, 0.9, 0.3, 1), opacity 60ms ease-out`;
             flyer.style.opacity = '1';
             flyer.style.transform = endTransform;
+            // Add flight class for CSS scale/shadow enhancement (see chkobba.css)
+            flyer.classList.add('is-in-flight');
 
             if (ghost) {
                 // Ghost starts with same position, fades out at 40% of flight
@@ -232,7 +236,7 @@ function _animateChkobbaFlight({ fromRect, toRect, imgSrc, duration = 380, rotat
             }, { once: true });
 
             // Safety fallback — fires slightly after expected end
-            setTimeout(finish, duration + 80);
+            setTimeout(finish, duration + 60);
         });
     });
 }
@@ -289,55 +293,62 @@ function _renderChkobbaCard(card, opts = {}) {
 
     if (zone === 'table') {
         div.style.setProperty('--rot', `${_tableCardRotation(index, card.id)}deg`);
-        if (interactive) {
-            div.addEventListener('click', (e) => {
-                e.stopPropagation();
-                _onChkobbaTableCardTap(div);
-            });
-        }
+        // NOTE: click handling for table cards is done via event delegation
+        // on the table container in _ensureChkobbaTableListeners.
+        // Per-card listeners are intentionally omitted to allow DOM node reuse.
     } else {
         const tilt = _handCardTilt(index, total);
         div.style.setProperty('--tilt', `${tilt}deg`);
         div.style.setProperty('--stack-offset', `${tilt * 0.45}px`);
         div.style.setProperty('--hand-z', String(10 + index));
         if (index > 0) div.style.setProperty('--stack-overlap', '20');
-        if (interactive) {
-            div.draggable = true;
-            div.addEventListener('dragstart', _onChkobbaDragStart);
-            div.addEventListener('dragend', _onChkobbaDragEnd);
-            
-            // Double-tap handler
-            // We use a single-click timer so the first tap arms the card
-            // (visual feedback) and the second tap within 320 ms commits the play.
-            // Guard against firing while an animation is in progress.
+        // Always attach interactive listeners on hand cards.
+        // Actual interactivity is gated at runtime via _getChkobbaPlayContext().
+        // This ensures reused DOM nodes from a previous non-interactive render
+        // gain full interactivity as soon as it becomes the player's turn,
+        // without needing to recreate DOM elements.
+        {
+            if (interactive) {
+                div.draggable = true;
+                div.addEventListener('dragstart', _onChkobbaDragStart);
+                div.addEventListener('dragend', _onChkobbaDragEnd);
+                _bindChkobbaPointerDrag(div);
+            }
+
+            // Phase 6 – arm immediately on first tap (no deferred timer).
+            // Double-tap within 320 ms commits the play.
+            // Index and card are read fresh from dataset/state at event time so
+            // reused DOM nodes always act on their current position in hand.
             let lastTap = 0;
-            let singleTapTimer = null;
+            let doubleTapGuard = null;
             div.addEventListener('click', (e) => {
                 e.stopPropagation();
                 if (_chkobbaAnimating) return;
+                const ctx = _getChkobbaPlayContext();
+                if (!ctx) return;
+                const idx = parseInt(div.dataset.index, 10);
+                const c = ctx.me.hand[idx];
+                if (!c) return;
                 const now = Date.now();
                 if (now - lastTap < 320) {
-                    // Double-tap: cancel the pending single-tap arm and play immediately
-                    clearTimeout(singleTapTimer);
-                    singleTapTimer = null;
+                    // Double-tap → play immediately
+                    clearTimeout(doubleTapGuard);
+                    doubleTapGuard = null;
                     lastTap = 0;
-                    _playCardToTable(div, card, index);
+                    _playCardToTable(div, c, idx);
                 } else {
                     lastTap = now;
-                    // Defer single-tap arm so a fast second tap can cancel it
-                    clearTimeout(singleTapTimer);
-                    singleTapTimer = setTimeout(() => {
-                        singleTapTimer = null;
-                        if (!_chkobbaAnimating) _armChkobbaHandCard(div);
-                    }, 180);
+                    // Arm instantly — no 180 ms delay
+                    _armChkobbaHandCard(div);
+                    clearTimeout(doubleTapGuard);
+                    doubleTapGuard = setTimeout(() => { doubleTapGuard = null; }, 320);
                 }
             });
-            
+
             div.addEventListener('pointerdown', () => div.classList.add('is-lifted'));
-            div.addEventListener('pointerup', () => div.classList.remove('is-lifted'));
-            div.addEventListener('pointercancel', () => div.classList.remove('is-lifted'));
+            div.addEventListener('pointerup',   () => div.classList.remove('is-lifted'));
+            div.addEventListener('pointercancel',() => div.classList.remove('is-lifted'));
             div.addEventListener('pointerleave', () => div.classList.remove('is-lifted'));
-            _bindChkobbaPointerDrag(div);
         }
     }
 
@@ -555,8 +566,19 @@ function _ensureChkobbaTableListeners() {
         if (!tableCont.contains(e.relatedTarget)) tableCont.classList.remove('is-drop-target');
     });
     tableCont.addEventListener('drop', _onChkobbaTableDrop);
+
+    // Phase 2 – delegated click handler covers both table-card taps and
+    // "play to empty table" clicks.  The canInteract flag is stored as a
+    // data attribute on the container so it stays current across renders
+    // without recreating card DOM nodes.
     tableCont.addEventListener('click', (e) => {
-        if (_chkobbaPlaySession?.phase === 'armed' && !e.target.closest('.table-card')) {
+        const tableCard = e.target.closest('.table-card');
+        if (tableCard && tableCont.dataset.canInteract === 'true' && _chkobbaPlaySession) {
+            e.stopPropagation();
+            _onChkobbaTableCardTap(tableCard);
+            return;
+        }
+        if (_chkobbaPlaySession?.phase === 'armed' && !tableCard) {
             _commitChkobbaPlayToTable();
         }
     });
@@ -1304,8 +1326,9 @@ async function _animateChkobbaDeal(deckEl, handEl, count, onDone) {
     const back = window.ChkobbaLogic.ASSETS.BACK;
     let finished = 0;
 
-    // Tight stagger — entire sequence ≤ 500ms
-    const staggerMs = count > 2 ? 60 : 80;
+    // Phase 4 – target feel: 350–500ms travel, ease-out, slight stagger between cards.
+    // Tight stagger — entire sequence ≤ 600ms even for 4+ cards.
+    const staggerMs = count > 2 ? 90 : 110;
 
     for (let i = 0; i < count; i++) {
         setTimeout(() => {
@@ -1321,7 +1344,7 @@ async function _animateChkobbaDeal(deckEl, handEl, count, onDone) {
                 toRect: targetRect,
                 imgSrc: back,
                 rotate: (Math.random() - 0.5) * 8,
-                duration: 220,
+                duration: 380,   // Phase 4: was 220ms — now feels physically dealt
                 onDone: () => {
                     finished++;
                     if (finished >= count) onDone?.();
@@ -1536,44 +1559,38 @@ function _showOnlineChkobba(room) {
     _renderChkobbaOpponentPills(room, state, me, mode, roomPlayerMeta);
 
     const tableCont = document.getElementById('chkobba-table');
-    
-    // Get existing cards to preserve them for animation
-    const existingCards = Array.from(tableCont.querySelectorAll('.table-card'));
-    const existingCardIds = new Set(existingCards.map(el => el.dataset.cardId));
-    
-    // Clear only cards that are no longer on the table
-    const newCardIds = new Set(state.table.map(c => c.id));
-    existingCards.forEach(el => {
-        if (!newCardIds.has(el.dataset.cardId)) {
-            el.remove();
-        }
+
+    // Phase 2 – store canInteract on container so the delegated click handler
+    // can gate interactivity without per-card listener rebuilds.
+    tableCont.dataset.canInteract = String(canInteract);
+
+    // Phase 2 – true diff: keep existing card DOM nodes alive.
+    // Only create a new element when a card genuinely wasn't on the table before.
+    // This prevents the tableCardEnter animation from re-firing on every render
+    // and eliminates the blink caused by replaceChild.
+    const existingTableEls = Array.from(tableCont.querySelectorAll('.table-card'));
+    const newTableIds = new Set(state.table.map(c => c.id));
+
+    // Remove cards that left the table
+    existingTableEls.forEach(el => {
+        if (!newTableIds.has(el.dataset.cardId)) el.remove();
     });
-    
-    // Add or update cards
+
+    // Add new cards / update existing
     state.table.forEach((card, idx) => {
         let cardEl = tableCont.querySelector(`.table-card[data-card-id="${card.id}"]`);
         if (!cardEl) {
-            // New card - render it
+            // Genuinely new card — create it (tableCardEnter fires once here)
             cardEl = _renderChkobbaCard(card, {
                 zone: 'table',
                 index: idx,
-                interactive: canInteract
+                interactive: false   // interactivity is handled by delegation
             });
             tableCont.appendChild(cardEl);
         } else {
-            // Existing card - update its index/rotation.
-            // IMPORTANT: replace the element entirely so click listeners are always
-            // fresh (the old element may have been created without canInteract=true,
-            // meaning it has no click listener; cloning and re-adding fixes that).
-            const fresh = _renderChkobbaCard(card, {
-                zone: 'table',
-                index: idx,
-                interactive: canInteract
-            });
-            // Preserve any visual selection state carried over from the play-session
-            if (cardEl.classList.contains('is-selected')) fresh.classList.add('is-selected');
-            if (cardEl.classList.contains('is-invalid'))  fresh.classList.add('is-invalid');
-            tableCont.replaceChild(fresh, cardEl);
+            // Existing card — update rotation/index in-place, no DOM recreation
+            cardEl.dataset.index = String(idx);
+            cardEl.style.setProperty('--rot', `${_tableCardRotation(idx, card.id)}deg`);
         }
     });
 
@@ -1598,19 +1615,86 @@ function _showOnlineChkobba(room) {
     _renderChkobbaPlayerInfo(state, me, isMyTurn);
 
     const handCont = document.getElementById('chkobba-my-hand');
+
+    // Phase 2 – track whether interactivity changed since last render.
+    // Hand card DOM nodes are reused across renders; when canInteract transitions
+    // from false→true (start of player's turn) we recreate them once so that
+    // drag and pointer-drag listeners are properly attached.
+    const prevHandInteract = handCont.dataset.canInteract === 'true';
+    const handInteractChanged = prevHandInteract !== canInteract;
+    handCont.dataset.canInteract = String(canInteract);
+
     const renderHand = () => {
-        handCont.innerHTML = '';
+        const total = me ? me.hand.length : 0;
+        const existingHandEls = Array.from(handCont.querySelectorAll('.hand-card'));
+        const existingHandById = new Map(existingHandEls.map(el => [el.dataset.cardId, el]));
+        const newHandIds = me ? new Set(me.hand.map(c => c.id)) : new Set();
+
+        // Phase 3 – record old positions for FLIP before any DOM changes
+        const flipOldRects = new Map();
+        existingHandEls.forEach(el => {
+            if (newHandIds.has(el.dataset.cardId) && !handInteractChanged) {
+                flipOldRects.set(el.dataset.cardId, el.getBoundingClientRect());
+            }
+        });
+
+        // Remove cards no longer in hand
+        existingHandEls.forEach(el => {
+            if (!newHandIds.has(el.dataset.cardId)) el.remove();
+        });
+
         if (me) {
-            const total = me.hand.length;
             me.hand.forEach((card, idx) => {
-                handCont.appendChild(_renderChkobbaCard(card, {
-                    zone: 'hand',
-                    index: idx,
-                    total,
-                    interactive: canInteract
-                }));
+                const tilt = _handCardTilt(idx, total);
+                let cardEl = !handInteractChanged ? existingHandById.get(card.id) : null;
+
+                if (!cardEl) {
+                    // New card (or interactivity changed) — create fresh element
+                    cardEl = _renderChkobbaCard(card, { zone: 'hand', index: idx, total, interactive: canInteract });
+                    handCont.appendChild(cardEl);
+                } else {
+                    // Reuse existing element — update CSS vars for new position
+                    cardEl.dataset.index = String(idx);
+                    cardEl.style.setProperty('--tilt', `${tilt}deg`);
+                    cardEl.style.setProperty('--stack-offset', `${tilt * 0.45}px`);
+                    cardEl.style.setProperty('--hand-z', String(10 + idx));
+                    if (idx > 0) cardEl.style.setProperty('--stack-overlap', '20');
+                    else         cardEl.style.removeProperty('--stack-overlap');
+                    handCont.appendChild(cardEl); // re-append to maintain DOM order
+                }
             });
         }
+
+        // Phase 3 – FLIP: animate cards that moved to a new position in hand
+        // (e.g. the card after a played one slides left to fill the gap).
+        if (!_prefersReducedMotion() && flipOldRects.size) {
+            requestAnimationFrame(() => {
+                me?.hand.forEach((card) => {
+                    const el = handCont.querySelector(`.hand-card[data-card-id="${card.id}"]`);
+                    if (!el || !flipOldRects.has(card.id)) return;
+                    const oldR = flipOldRects.get(card.id);
+                    const newR = el.getBoundingClientRect();
+                    const dx = oldR.left - newR.left;
+                    const dy = oldR.top  - newR.top;
+                    if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+                    // Apply inverted offset with no transition, then remove it
+                    el.style.setProperty('--flip-dx', `${dx}px`);
+                    el.style.setProperty('--flip-dy', `${dy}px`);
+                    el.classList.add('is-flip-animating');
+                    requestAnimationFrame(() => {
+                        el.style.setProperty('--flip-dx', '0px');
+                        el.style.setProperty('--flip-dy', '0px');
+                        // Remove helper class after transition settles
+                        el.addEventListener('transitionend', () => {
+                            el.classList.remove('is-flip-animating');
+                            el.style.removeProperty('--flip-dx');
+                            el.style.removeProperty('--flip-dy');
+                        }, { once: true });
+                    });
+                });
+            });
+        }
+
         if (_chkobbaPlaySession) {
             const armedIdx = _chkobbaPlaySession.handIndex;
             handCont.querySelectorAll('.hand-card').forEach((el, i) => {
