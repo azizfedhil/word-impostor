@@ -21,34 +21,45 @@ const COUP_RESPONSE_SECONDS       = 45;
 // ── Card definitions ─────────────────────────────────────────
 // Single source of truth — replaces the definitions in both
 // shared.js and online.js (_coupCards).
+
+// Resolve asset base path relative to the current page location so that
+// coup_logic.js works whether the page is served from the project root
+// (e.g. /games/coup.html → ../assets/coup/) or from inside the games/
+// folder directly (e.g. /coup.html → assets/coup/).
+const _coupAssetBase = (() => {
+    const path = window.location.pathname;          // e.g. /games/coup.html or /coup.html
+    const inGamesFolder = /\/games\/[^/]*$/.test(path);
+    return inGamesFolder ? '../assets/coup/' : 'assets/coup/';
+})();
+
 const coupCards = {
     duke: {
         name: 'الشلغمي', icon: '👑',
-        img: '../assets/coup/duke.png', img512: '../assets/coup/duke512.png',
+        img: _coupAssetBase + 'duke.png', img512: _coupAssetBase + 'duke512.png',
         attack:  'هجوم: ياخو 3 فلوس من البنك.',
         defense: 'دفاع: يسكّر اعانة +2 متاع أي لاعب.',
     },
     assassin: {
         name: 'حفار القبور', icon: '🗡️',
-        img: '../assets/coup/assassin.png', img512: '../assets/coup/assassin512.png',
+        img: _coupAssetBase + 'assassin.png', img512: _coupAssetBase + 'assassin512.png',
         attack:  'هجوم: يدفع 3 فلوس ويخلي لاعب يختار كارتة يخسرها.',
         defense: 'دفاع: ما عندوش دفاع، أما claim متاعو ينجم يتكذّب.',
     },
     contessa: {
         name: 'البية', icon: '💃',
-        img: '../assets/coup/contessa.png', img512: '../assets/coup/contessa512.png',
+        img: _coupAssetBase + 'contessa.png', img512: _coupAssetBase + 'contessa512.png',
         attack:  'هجوم: ما عندهاش هجوم.',
         defense: 'دفاع: تسكّر الاغتيال متاع حفار القبور.',
     },
     ambassador: {
         name: 'السمسار', icon: '🤝',
-        img: '../assets/coup/ambassador.png', img512: '../assets/coup/ambassador512.png',
+        img: _coupAssetBase + 'ambassador.png', img512: _coupAssetBase + 'ambassador512.png',
         attack:  'هجوم: يبدّل كوارطو الحيّة مع الدكّة، أو يعمل روحو بدّل.',
         defense: 'دفاع: يسكّر سرقة الرايس.',
     },
     captain: {
         name: 'الرايس', icon: '⚓',
-        img: '../assets/coup/captain.png', img512: '../assets/coup/captain512.png',
+        img: _coupAssetBase + 'captain.png', img512: _coupAssetBase + 'captain512.png',
         attack:  'هجوم: يسرق حتى زوز فلوس من لاعب آخر.',
         defense: 'دفاع: يسكّر سرقة الرايس.',
     },

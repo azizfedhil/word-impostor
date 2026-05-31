@@ -1,11 +1,6 @@
 'use strict';
 
-// Double-load guard — if the browser parses this file twice (duplicate
-// <script> tag), skip re-execution so const/let declarations don't throw
-// "already been declared".
-if (typeof window.__coupOnlineLoaded !== 'undefined') {
-    throw new Error('[coup_online] skipping duplicate load — remove the extra <script> tag');
-}
+// Note: coup_online.js must only appear once in the HTML script list.
 window.__coupOnlineLoaded = true;
 
 // ============================================================
@@ -31,7 +26,7 @@ let _onlineCoupResponseSync = null, _onlineCoupTurnSync = null;
 let _coupWinnerAnnounced = false;
 
 const ONLINE_COUP_RESPONSE_SECONDS = 30;
-const COUP_DEFAULT_ACTION_MINUTES = 1;
+// COUP_DEFAULT_ACTION_MINUTES is declared in coup_logic.js — do not re-declare here.
 
 // ── Tunisian names for AI players ─────────────────────────────
 const _TUNISIAN_NAMES = ["حمادي", "فوزية", "بلقاسم", "منجي", "نجاة", "مبروكة", "الصادق", "بشيرة", "عياشي", "زهيرة", "فرحات", "لطيفة", "توفيق", "منيرة", "الشاذلي", "عزيزة"];
@@ -121,9 +116,11 @@ function _showMyCard(room) {
 function _renderOnlineCoupPlayersSummary(state) {
     const wrapper = document.createElement("div");
     wrapper.className = "coup-summary-wrapper";
+    wrapper.style.cssText = "max-width:100%; overflow:hidden; box-sizing:border-box;";
 
     const container = document.createElement("div");
     container.className = "coup-pills-container";
+    container.style.cssText = "overflow-x:auto; overflow-y:visible; max-width:100%; box-sizing:border-box; -webkit-overflow-scrolling:touch; scrollbar-width:none;";
     
     const leftInd = document.createElement("div");
     leftInd.className = "scroll-indicator left";

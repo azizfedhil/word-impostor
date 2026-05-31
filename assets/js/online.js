@@ -16,11 +16,9 @@
 // ============================================================
 
 let _startingOnlineGame = false;
-let _onlineCoupTimer = null, _onlineCoupTimingOut = false;
-let _onlineCoupFocusedPlayerId = null, _onlineCoupSummaryExpandedId = null, _lastCoupEventId = null, _lastCoupLossEventId = null, _lastCoupPendingKey = null, _lastCoupPromptId = null, _onlineCoupResponseTimer = null;
-const ONLINE_COUP_RESPONSE_SECONDS = 45;
-let _onlineCoupOtherDecksCollapsed = false;
-let _onlineCoupResponseSync = null, _onlineCoupTurnSync = null;
+let _localCardRevealed = false;
+// Coup state vars are declared in coup_online.js (authoritative).
+// Keeping references here for IDE clarity only — do NOT re-declare.
 // _onlineCoupActionHelp is defined below as an alias to coup_online.js
 
 // Figured-out tracking (broadcast-based, per round)
@@ -763,11 +761,11 @@ async function _startOnlineGame() {
     if (startBtn) startBtn.disabled = true;
     try {
     if (_isChkobbaRoom(_room)) {
-        if (_room.config?.chkobbaTournament) { await _startTournament(_room); }
-        else { await _startOnlineChkobbaGame(); }
+        if (_room.config?.chkobbaTournament) { await window._startTournament(_room); }
+        else { await window._startOnlineChkobbaGame(); }
         return;
     }
-    if (_isCoupRoom(_room))    { await _startOnlineCoupGame();    return; }
+    if (_isCoupRoom(_room))    { await window._startOnlineCoupGame();    return; }
     if (_isThiefRoom(_room))   { await _startOnlineThiefGame();   return; }
     if (_isSpyfallRoom(_room)) { await _startOnlineSpyfallGame(); return; }
     // Impostor-mode: needs word list
