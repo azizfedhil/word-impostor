@@ -824,7 +824,7 @@ body.game-chkobba header.app-header {
     z-index: 9999;
     pointer-events: none;
     will-change: transform, opacity;
-    transition: transform 658.5ms var(--ease-out-cubic), opacity 304.5ms ease-out;
+    /* transition is set dynamically by JS per-flight duration — no CSS override here */
 }
 
 .chkobba-flight-card img {
@@ -908,7 +908,7 @@ body.game-chkobba header.app-header {
     width: min(28vw, 100px);
     aspect-ratio: 2.5 / 3.5;
     transform-style: preserve-3d;
-    animation: chkobbaCelebrateFlip 5.832s var(--chkobba-ease) forwards;
+    animation: chkobbaCelebrateFlip 2s var(--chkobba-ease) forwards;
     filter: drop-shadow(0 0 24px rgba(241, 192, 81, 0.45));
 }
 
@@ -938,7 +938,7 @@ body.game-chkobba header.app-header {
     border-radius: 2px;
     z-index: 10001;
     pointer-events: none;
-    animation: chkobbaConfetti 5.577s var(--chkobba-ease) forwards;
+    animation: chkobbaConfetti 1.4s var(--chkobba-ease) forwards;
 }
 
 @keyframes chkobbaConfetti {
@@ -955,7 +955,7 @@ body.game-chkobba header.app-header {
     font-weight: 900;
     z-index: 10002;
     pointer-events: none;
-    animation: chkobba-flash 10.14s forwards;
+    animation: chkobba-flash 2s forwards;
     white-space: nowrap;
     color: var(--accent-color);
     text-shadow: 0 4px 24px rgba(241, 192, 81, 0.4);
@@ -964,7 +964,7 @@ body.game-chkobba header.app-header {
 .chkobba-announcement.is-berria {
     color: var(--primary-color);
     text-shadow: 0 4px 28px rgba(82, 140, 113, 0.45);
-    animation: chkobbaBerriaFlash 9.381s forwards;
+    animation: chkobbaBerriaFlash 1.85s forwards;
 }
 
 @keyframes chkobbaBerriaFlash {
