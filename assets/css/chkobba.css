@@ -142,7 +142,7 @@
     margin: -8px -24px 0;
     width: calc(100% + 48px);
     max-width: none;
-    background: url('../assets/chkobba/chkobba-background-new.webp') center/cover no-repeat;
+    background: url('/assets/chkobba/chkobba-background-new.webp') center/cover no-repeat;
     color: var(--text-main);
     overflow: hidden;
     gap: 0;

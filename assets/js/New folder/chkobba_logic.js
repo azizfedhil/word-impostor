@@ -204,8 +204,8 @@ const ChkobbaLogic = {
      * Centralized Asset Mapping
      */
     ASSETS: {
-        BACK: 'assets/chkobba/Chkobba_dos.webp',
-        POINT: 'assets/chkobba/Chkobba_point.webp',
+        BACK: '../assets/images/assets/chkobba/Chkobba_dos.webp',
+        POINT: '../assets/images/assets/chkobba/Chkobba_point.webp',
         MAPPING: {
             'hearts':   { folder: 'Hearts',   filePrefix: 'hearts' },
             'spades':   { folder: 'Sapdes',   filePrefix: 'spades' },
@@ -215,7 +215,7 @@ const ChkobbaLogic = {
     },
 
     /**
-     * Map card to its asset path (assets/chkobba/{folder}/{filePrefix}-NN.webp)
+     * Map card to its asset path (../assets/images/assets/chkobba/{folder}/{filePrefix}-NN.webp)
      * Folder/filePrefix table is the single source of truth for asset renames.
      */
     getCardAsset: function(card) {
@@ -226,7 +226,7 @@ const ChkobbaLogic = {
         if (!suitData) return this.ASSETS.BACK;
 
         const valStr = String(card.value).padStart(2, '0');
-        return `assets/chkobba/${suitData.folder}/${suitData.filePrefix}-${valStr}.webp`;
+        return `../assets/images/assets/chkobba/${suitData.folder}/${suitData.filePrefix}-${valStr}.webp`;
     },
 
     resolveCardAsset: function(card) {
