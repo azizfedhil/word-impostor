@@ -835,8 +835,14 @@ function _getRandomTunisianName() { return _TUNISIAN_NAMES[Math.floor(Math.rando
 
 async function _startOnlineChkobbaGame() {
     if (!_isHost || !_room) return;
-    let allP = [...(_room.players || [])];
     const cfg = _room.config || {};
+
+    // Delegate to tournament flow if enabled
+    if (cfg.chkobbaTournament) {
+        return _startTournament(_room);
+    }
+
+    let allP = [...(_room.players || [])];
     const mode = cfg.chkobbaMode || '1v1';
     const turnTime = cfg.chkobbaTurnTime || 45;
 
@@ -1399,7 +1405,13 @@ function _renderChkobbaScoreboard(state, isFinal, onContinue) {
 function _showOnlineChkobba(room) {
     showScreen('chkobba-screen');
     const state = room.word_obj;
-    if (!state) return;
+
+    // ── TOURNAMENT OVER: show bracket with champion ────────────────────
+    if (room.state === 'chkobba_tournament_over' || !state) {
+        _showTournamentBracket(room);
+        clearInterval(_chkobbaTimer);
+        return;
+    }
 
     // ── FINISHED phase: show final scoreboard overlay ──────────────────
     if (state.phase === 'finished') {
@@ -1411,6 +1423,10 @@ function _showOnlineChkobba(room) {
         );
         _renderChkobbaScoreboard(state, true, null);
         clearInterval(_chkobbaTimer);
+        // If this is a tournament match, the host advances the bracket
+        if (_isHost && room.config?.chkobbaTournament) {
+            setTimeout(() => _updateChkobbaTournament(room), 800);
+        }
         return;
     }
 
@@ -1575,6 +1591,20 @@ function _showOnlineChkobba(room) {
     _renderChkobbaInfoPills(state, me);
 
     _ensureChkobbaTableListeners();
+
+    // ── Tournament: show bracket button in info bar ─────────────────────
+    if (state.tournament && room.config?.chkobbaTournament) {
+        const infoBar = document.getElementById('chkobba-round-info');
+        if (infoBar && !infoBar.querySelector('#chk-bracket-pill')) {
+            const bracketBtn = document.createElement('button');
+            bracketBtn.id = 'chk-bracket-pill';
+            bracketBtn.type = 'button';
+            bracketBtn.className = 'chkobba-info-pill';
+            bracketBtn.innerHTML = '<span class="info-pill-collapsed">🏆 <span class="info-pill-label">الجدول</span></span>';
+            bracketBtn.onclick = () => _showTournamentBracket(room);
+            infoBar.appendChild(bracketBtn);
+        }
+    }
 
     const indicator = document.getElementById('coup-turn-indicator');
     if (indicator) {
@@ -2154,130 +2184,372 @@ function _handleChkobbaBroadcastEvent(event) {
 
 // (exported in the block at the bottom of this file)
 
+// ============================================================
+// TOURNAMENT SYSTEM
+//
+// Architecture: Sequential bracket stored in room.config.tournamentBracket.
+// Each match runs as a normal state:'chkobba' game in room.word_obj.
+// When a match ends (phase:'finished') the host advances the bracket,
+// starts the next match, and updates word_obj with the new game state.
+// A full-screen bracket overlay renders over the game UI and auto-dismisses
+// when the next match begins.
+//
+// Bracket format (stored in room.config.tournamentBracket):
+// {
+//   rounds: [ [ { players:[{id,name}], winnerId:null }, … ], … ],
+//   currentRound: 0,
+//   currentMatch: 0,
+//   status: 'ongoing' | 'finished',
+//   champion: { id, name } | null
+// }
+// ============================================================
+
 /**
- * QUEUE & TOURNAMENT BRACKET SYSTEM
+ * Build the initial single-elimination bracket from the player list and
+ * write it + the first match into the room.
  */
-
-async function _updateChkobbaTournament(room) {
-    if (!_isHost || !room.config.chkobbaTournament) return;
-    const state = room.word_obj;
-    if (state.phase !== 'finished') return;
-
-    // Check if there are other matches in this "Tournament Room"
-    // For now, let's assume one room = one tournament bracket.
-    // If we have more than 4 players, they should be split into matches.
-}
-
-function _renderMatchmakingQueue(room) {
-    // Basic queue UI if needed
-}
-
-/**
- * SCALABLE TOURNAMENT & MATCHMAKING
- * Handles splitting players into parallel matches and advancing winners.
- */
-
 async function _startTournament(room) {
     if (!_isHost || !room) return;
-    const allPlayers = room.players || [];
-    if (allPlayers.length < 2) return;
+    const cfg = room.config || {};
+    const mode = cfg.chkobbaMode || '1v1';
+    const playersPerMatch = mode === '1v1' ? 2 : mode === '1v1v1' ? 3 : 4;
+    const turnTime = cfg.chkobbaTurnTime || 45;
+    const targetScore = cfg.chkobbaTarget || 21;
 
-    const matches = [];
-    const playersPerMatch = room.config.chkobbaMode === '1v1' ? 2 : room.config.chkobbaMode === '1v1v1' ? 3 : 4;
-
-    const shuffled = [...allPlayers].sort(() => 0.5 - Math.random());
-    for (let i = 0; i < shuffled.length; i += playersPerMatch) {
-        const matchPlayers = shuffled.slice(i, i + playersPerMatch);
-        if (matchPlayers.length < 2 && matches.length > 0) {
-            // Add lone player to last match or handle bye
-            matches[matches.length-1].players.push(...matchPlayers.map(p => ({id:p.id, name:p.name, totalScore:0, hand:[], captured:[], chkobbas:0})));
-        } else {
-            matches.push({
-                id: `m_${Date.now()}_${i}`,
-                players: matchPlayers.map(p => ({ id: p.id, name: p.name, totalScore: 0, hand: [], captured: [], chkobbas: 0 })),
-                state: 'playing',
-                winner: null
-            });
-        }
+    let allP = [...(room.players || [])];
+    if (allP.length < playersPerMatch) {
+        showToast(`يلزم على الأقل ${playersPerMatch} لاعبين للتورنوا.`);
+        return;
     }
 
-    matches.forEach(m => _initMatch(m, room.config));
+    // Shuffle and pad to the next power-of-match-size with byes
+    const shuffled = [...allP].sort(() => 0.5 - Math.random());
+    while (shuffled.length % playersPerMatch !== 0) {
+        shuffled.push({ id: `bye_${shuffled.length}`, name: 'BYE', isBye: true });
+    }
 
-    const tournamentState = { matches, round: 1, status: 'ongoing' };
+    // Build round-1 match list
+    const firstRoundMatches = [];
+    for (let i = 0; i < shuffled.length; i += playersPerMatch) {
+        firstRoundMatches.push({
+            players: shuffled.slice(i, i + playersPerMatch).map(p => ({
+                id: p.id, name: p.name, isBye: !!p.isBye
+            })),
+            winnerId: null,
+            winnerName: null
+        });
+    }
+
+    const bracket = {
+        rounds: [firstRoundMatches],
+        currentRound: 0,
+        currentMatch: 0,
+        status: 'ongoing',
+        champion: null,
+        playersPerMatch,
+        targetScore,
+        mode
+    };
+
+    // Auto-advance past BYE matches
+    _resolveByes(bracket);
+
+    // Start the first non-BYE match
+    const firstMatch = _currentBracketMatch(bracket);
+    if (!firstMatch) {
+        showToast('خطأ في التورنوا: ما لقيناش مباراة.');
+        return;
+    }
+
+    const logic = window.ChkobbaLogic;
+    const gameState = _buildMatchGameState(firstMatch, bracket, cfg, logic);
+    if (!gameState) return;
+
     try {
-        await _update(room.code, { state: 'chkobba_tournament', word_obj: tournamentState });
+        const timerEndAt = new Date(_syncedNow() + turnTime * 1000).toISOString();
+        await _update(room.code, {
+            state: 'chkobba',
+            timer_end_at: timerEndAt,
+            word_obj: gameState,
+            config: { ...cfg, tournamentBracket: bracket }
+        });
     } catch(e) { console.error(e); }
 }
 
-function _showTournamentBracket(room) {
-    showScreen('chkobba-screen');
-    const state = room.word_obj;
-    const container = document.getElementById('chkobba-table');
+/** Return the match object for (currentRound, currentMatch). */
+function _currentBracketMatch(bracket) {
+    return bracket.rounds[bracket.currentRound]?.[bracket.currentMatch] || null;
+}
 
-    // Clear styles that might interfere
-    container.style.aspectRatio = 'auto';
-    container.style.width = '100%';
-    container.style.height = 'auto';
-    container.style.borderRadius = 'var(--radius-lg)';
+/** Resolve any BYE matches synchronously (no card game needed). */
+function _resolveByes(bracket) {
+    let m = _currentBracketMatch(bracket);
+    while (m && m.players.every(p => p.isBye)) {
+        // All-BYE match — skip, no winner
+        m.winnerId = 'bye';
+        m.winnerName = 'BYE';
+        _advanceBracketPointer(bracket);
+        m = _currentBracketMatch(bracket);
+    }
+    // Also resolve matches with only one real player
+    while (m && m.players.filter(p => !p.isBye).length === 1) {
+        const real = m.players.find(p => !p.isBye);
+        m.winnerId = real.id;
+        m.winnerName = real.name;
+        _advanceBracketPointer(bracket);
+        m = _currentBracketMatch(bracket);
+    }
+}
 
-    container.innerHTML = '<div class="tournament-bracket"></div>';
-    const bracket = container.querySelector('.tournament-bracket');
+/**
+ * Move bracket pointer to next match; build next round if current round is done.
+ * Returns true if there are more matches, false if tournament is over.
+ */
+function _advanceBracketPointer(bracket) {
+    const round = bracket.rounds[bracket.currentRound];
+    bracket.currentMatch++;
 
-    state.matches.forEach((m, idx) => {
-        const matchEl = document.createElement('div');
-        matchEl.className = 'tournament-match';
-        const isMyMatch = m.players.some(p => p.id === _myId);
+    if (bracket.currentMatch >= round.length) {
+        // Current round finished — build next round
+        const winners = round
+            .filter(m => m.winnerId && m.winnerId !== 'bye')
+            .map(m => ({ id: m.winnerId, name: m.winnerName }));
 
-        matchEl.innerHTML = `
-            <div class="match-header">طرح ${idx + 1} - ${m.state === 'finished' ? 'وفى' : 'يخدم'}</div>
-            <div class="match-players">
-                ${m.players.map(p => `
-                    <div class="match-player ${m.winner === p.id ? 'winner' : ''}">
-                        <span>${_esc(p.name)}</span>
-                        <span>${p.totalScore}</span>
-                    </div>
-                `).join('')}
-            </div>
-            ${isMyMatch && m.state === 'playing' ? `<button class="primary-btn join-match-btn" data-mid="${m.id}">ادخل العب</button>` : ''}
-        `;
-
-        if (isMyMatch && m.state === 'playing') {
-            matchEl.querySelector('.join-match-btn').onclick = () => _enterTournamentMatch(m.id);
+        if (winners.length <= 1) {
+            bracket.status = 'finished';
+            bracket.champion = winners[0] || null;
+            return false;
         }
-        bracket.appendChild(matchEl);
+
+        // Pad to multiple of playersPerMatch with byes if needed
+        while (winners.length % bracket.playersPerMatch !== 0) {
+            winners.push({ id: `bye_${winners.length}`, name: 'BYE', isBye: true });
+        }
+
+        const nextRound = [];
+        for (let i = 0; i < winners.length; i += bracket.playersPerMatch) {
+            nextRound.push({
+                players: winners.slice(i, i + bracket.playersPerMatch),
+                winnerId: null,
+                winnerName: null
+            });
+        }
+        bracket.rounds.push(nextRound);
+        bracket.currentRound++;
+        bracket.currentMatch = 0;
+    }
+    return true;
+}
+
+/** Build a ready-to-play (phase:'playing') game state for a bracket match. */
+function _buildMatchGameState(match, bracket, cfg, logic) {
+    const realPlayers = match.players.filter(p => !p.isBye);
+    if (realPlayers.length < 2) return null;
+
+    const deck = logic.createDeck();
+    const table = [deck.pop(), deck.pop(), deck.pop(), deck.pop()];
+    const players = realPlayers.map(p => ({
+        id: p.id,
+        name: p.name,
+        hand: [deck.pop(), deck.pop(), deck.pop()],
+        captured: [],
+        chkobbas: 0,
+        totalScore: 0
+    }));
+
+    return {
+        deck,
+        table,
+        players,
+        teams: null,
+        dealerIndex: 0,
+        cutterIndex: 0,
+        cutIndex: null,
+        starterCard: null,
+        setupPhase: logic.SETUP_PHASES.DEAL_COMPLETE,
+        turnIndex: 0,
+        lastCaptureId: null,
+        round: 1,
+        phase: 'playing',
+        targetScore: bracket.targetScore || cfg.chkobbaTarget || 21,
+        mode: bracket.mode || cfg.chkobbaMode || '1v1',
+        tournament: true,
+        log: 'بدا الطرح — بالتوفيق!'
+    };
+}
+
+/**
+ * Called (by host) when a tournament match game ends (phase:'finished').
+ * Records the winner, advances the bracket, and starts the next match or
+ * announces the champion.
+ */
+async function _updateChkobbaTournament(room) {
+    if (!_isHost || !room?.config?.chkobbaTournament) return;
+    const state = room.word_obj;
+    if (!state || state.phase !== 'finished') return;
+    const bracket = room.config.tournamentBracket;
+    if (!bracket || bracket.status === 'finished') return;
+
+    // Identify winner of the just-completed match
+    const winnerPlayer = state.players.reduce(
+        (best, p) => (!best || p.totalScore > best.totalScore ? p : best), null
+    );
+    if (!winnerPlayer) return;
+
+    const currentMatch = _currentBracketMatch(bracket);
+    if (!currentMatch) return;
+    currentMatch.winnerId   = winnerPlayer.id;
+    currentMatch.winnerName = winnerPlayer.name;
+
+    const hasMore = _advanceBracketPointer(bracket);
+    _resolveByes(bracket);
+
+    const cfg = room.config;
+    const logic = window.ChkobbaLogic;
+    const turnTime = cfg.chkobbaTurnTime || 45;
+
+    if (!hasMore || bracket.status === 'finished') {
+        // Tournament over
+        bracket.status = 'finished';
+        try {
+            await _update(room.code, {
+                state: 'chkobba_tournament_over',
+                config: { ...cfg, tournamentBracket: bracket }
+            });
+        } catch(e) { console.error(e); }
+        return;
+    }
+
+    // Start next match
+    const nextMatch = _currentBracketMatch(bracket);
+    if (!nextMatch) return;
+    const gameState = _buildMatchGameState(nextMatch, bracket, cfg, logic);
+    if (!gameState) return;
+
+    try {
+        const timerEndAt = new Date(_syncedNow() + turnTime * 1000).toISOString();
+        await _update(room.code, {
+            state: 'chkobba',
+            timer_end_at: timerEndAt,
+            word_obj: gameState,
+            config: { ...cfg, tournamentBracket: bracket }
+        });
+    } catch(e) { console.error(e); }
+}
+
+/**
+ * Show the tournament bracket overlay.
+ * Renders over the existing chkobba-screen without touching chkobba-table.
+ * Automatically removes itself when a new match starts (state change).
+ */
+function _showTournamentBracket(room) {
+    // Remove existing bracket overlay if any
+    document.getElementById('chkobba-tournament-overlay')?.remove();
+
+    const bracket = room.config?.tournamentBracket;
+    const isOver  = room.state === 'chkobba_tournament_over';
+
+    const overlay = document.createElement('div');
+    overlay.id = 'chkobba-tournament-overlay';
+    overlay.style.cssText = `
+        position:fixed;inset:0;z-index:9990;
+        display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+        padding:20px 12px;overflow-y:auto;
+        background:rgba(0,0,0,0.88);backdrop-filter:blur(8px);
+        font-family:var(--font-arabic,sans-serif);direction:rtl;color:var(--text-1,#fff);
+    `;
+
+    const champion = bracket?.champion;
+    const titleHtml = isOver && champion
+        ? `<div style="font-size:2rem;margin-bottom:4px;">🏆</div>
+           <h2 style="margin:0 0 4px;color:var(--gold,#f1c051);">البطل: ${_esc(champion.name)}</h2>`
+        : `<h2 style="margin:0 0 4px;color:var(--gold,#f1c051);">🏆 جدول التورنوا</h2>`;
+
+    let roundsHtml = '';
+    if (bracket) {
+        bracket.rounds.forEach((round, rIdx) => {
+            const isCurrentRound = rIdx === bracket.currentRound;
+            roundsHtml += `<div style="margin-bottom:20px;width:100%;max-width:440px;">
+                <div style="font-weight:700;font-size:.9rem;opacity:.6;margin-bottom:8px;text-align:center;">
+                    ${bracket.rounds.length > 1
+                        ? (rIdx === bracket.rounds.length - 1 ? 'النهائي' : `الدور ${rIdx + 1}`)
+                        : 'الدور الأول'}
+                </div>`;
+            round.forEach((m, mIdx) => {
+                const isCurrentMatch = isCurrentRound && mIdx === bracket.currentMatch && !isOver;
+                const rowBg = isCurrentMatch ? 'rgba(241,192,81,0.15)' : 'rgba(255,255,255,0.04)';
+                const rowBorder = isCurrentMatch ? '1.5px solid var(--gold,#f1c051)' : '1px solid rgba(255,255,255,0.08)';
+                const realPlayers = m.players.filter(p => !p.isBye);
+                roundsHtml += `<div style="
+                    display:flex;align-items:center;gap:10px;
+                    padding:10px 14px;margin-bottom:6px;
+                    background:${rowBg};border-radius:12px;border:${rowBorder};
+                ">
+                    <div style="flex:1;">
+                        ${realPlayers.map(p => `
+                            <div style="
+                                font-weight:${m.winnerId === p.id ? '800' : '400'};
+                                color:${m.winnerId === p.id ? 'var(--gold,#f1c051)' : 'inherit'};
+                                font-size:.95rem;
+                            ">${m.winnerId === p.id ? '👑 ' : ''}${_esc(p.name)}</div>
+                        `).join('<div style="font-size:.7rem;opacity:.4;text-align:center;">ضد</div>')}
+                    </div>
+                    <div style="font-size:.8rem;opacity:.55;white-space:nowrap;">
+                        ${isCurrentMatch ? '▶ جاري' : m.winnerId ? (m.winnerId === 'bye' ? 'بای' : 'وفى') : '—'}
+                    </div>
+                </div>`;
+            });
+            roundsHtml += '</div>';
+        });
+    }
+
+    const myMatchNow = bracket && !isOver && (() => {
+        const m = _currentBracketMatch(bracket);
+        return m && m.players.some(p => p.id === _myId);
+    })();
+
+    overlay.innerHTML = `
+        ${titleHtml}
+        <div style="width:100%;max-width:440px;margin-bottom:16px;">${roundsHtml}</div>
+        ${myMatchNow
+            ? `<div style="background:rgba(241,192,81,0.12);border:1.5px solid var(--gold,#f1c051);
+                border-radius:14px;padding:14px 20px;text-align:center;margin-bottom:16px;max-width:440px;width:100%;">
+                <div style="font-weight:700;margin-bottom:6px;">دورك في الملعب! 🎯</div>
+                <button id="chk-tourn-play-btn" style="
+                    padding:12px 32px;border-radius:12px;border:none;cursor:pointer;
+                    background:var(--gold,#f1c051);color:#1e1e2e;font-weight:800;font-size:1rem;
+                ">العب</button>
+               </div>`
+            : (isOver ? '' : `<div style="opacity:.55;font-size:.9rem;margin-bottom:16px;">انتظر دورك…</div>`)
+        }
+        ${isOver
+            ? `<button id="chk-tourn-done-btn" style="
+                padding:12px 32px;border-radius:12px;border:none;cursor:pointer;
+                background:var(--gold,#f1c051);color:#1e1e2e;font-weight:800;font-size:1rem;
+              ">العب مجددًا</button>`
+            : `<button id="chk-tourn-close-btn" style="
+                margin-top:4px;padding:10px 24px;border-radius:10px;border:1px solid rgba(255,255,255,0.15);
+                background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;font-size:.9rem;
+              ">إخفاء الجدول</button>`
+        }
+    `;
+
+    document.body.appendChild(overlay);
+
+    overlay.querySelector('#chk-tourn-play-btn')?.addEventListener('click', () => {
+        overlay.remove();
+        _showOnlineChkobba(room);
+    });
+    overlay.querySelector('#chk-tourn-close-btn')?.addEventListener('click', () => overlay.remove());
+    overlay.querySelector('#chk-tourn-done-btn')?.addEventListener('click', () => {
+        overlay.remove();
+        if (typeof _leaveRoom === 'function') _leaveRoom();
+        if (typeof showScreen === 'function') showScreen('mode-select-screen');
     });
 }
 
-async function _enterTournamentMatch(matchId) {
-    // Concept: Temporary state swap or sub-room logic
-    // For now, let's keep it simple: the UI switches to playing view if your match is active
-    _renderActiveTournamentMatch(matchId);
-}
-
-function _renderActiveTournamentMatch(matchId) {
-    const state = _room.word_obj;
-    const match = state.matches.find(m => m.id === matchId);
-    if (!match) return;
-
-    // Use _showOnlineChkobba with a proxy object
-    const proxyRoom = { ..._room, word_obj: match };
-    _showOnlineChkobba(proxyRoom);
-
-    // Add "Back to Bracket" button
-    const backBtn = document.createElement('button');
-    backBtn.className = 'secondary-btn';
-    backBtn.innerText = 'الجدول';
-    backBtn.onclick = () => _showTournamentBracket(_room);
-    document.getElementById('chkobba-round-info').appendChild(backBtn);
-}
-
-function _initMatch(match, config) {
-    const logic = window.ChkobbaLogic;
-    const gameState = logic.createNewGameState(
-        match.players.map(p => ({ id: p.id, name: p.name })),
-        { mode: config.chkobbaMode || '1v1', targetScore: config.chkobbaTarget || 21 }
-    );
-    Object.assign(match, gameState);
+function _renderMatchmakingQueue(room) {
+    // placeholder — matchmaking not used in sequential bracket mode
 }
 
 // ── Expose for shared scope ────────────────────────────────────
