@@ -1,23 +1,24 @@
 // Bump this cache name whenever cached app files change.
-const CACHE_NAME = 'dakheel-v53';
+const CACHE_NAME = 'dakheel-v60';
 
 // All files to be cached for offline use
 const ASSETS = [
   './',
   './index.html',
-  './style.css',
-  './chkobba.css',
-  './app.js',
+  './assets/css/style.css',
+  './assets/css/chkobba.css',
+  './assets/js/app.js',
+  './assets/js/main.js',
   './manifest.json',
-  './icon192.png',
-  './icon512.png',
-  './word list.json',
-  './adult_words_data.js',
-  './spyfall_tunisia_100_locations.json',
-  './sounds.js',
-  './online.js',
-  './voice.js',
-  './analytics.js',
+  './assets/images/icon192.png',
+  './assets/images/icon512.png',
+  './assets/images/word list.json',
+  './assets/js/adult_words_data.js',
+  './assets/images/spyfall_tunisia_100_locations.json',
+  './assets/js/sounds.js',
+  './assets/js/online.js',
+  './assets/js/voice.js',
+  './assets/js/analytics.js',
   './assets/coup/duke.png',
   './assets/coup/duke512.png',
   './assets/coup/assassin.png',
@@ -28,7 +29,12 @@ const ASSETS = [
   './assets/coup/ambassador512.png',
   './assets/coup/captain.png',
   './assets/coup/captain512.png',
-  './assets/coup/how-to-play.txt'
+  './assets/coup/how-to-play.txt',
+  './games/impostor.html',
+  './games/thief.html',
+  './games/spyfall.html',
+  './games/coup.html',
+  './games/chkobba.html'
 ];
 
 // Install: Cache the files

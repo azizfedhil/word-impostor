@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>كول وبوّع</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script defer src="https://unpkg.com/html5-qrcode"></script>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/chkobba.css">
+</head>
+
+<body>
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+    <main class="container" id="app-shell">
+        <header class="app-header">
+            <button id="game-title-btn" class="game-title-btn" type="button">
+                <h1 data-i18n="title">🕵️‍♂️ شكونو هو؟</h1>
+                <span class="game-title-chevron">▼</span>
+            </button>
+            <nav id="game-switch-menu" class="game-switch-menu hidden" aria-label="Game switcher">
+                <button type="button" class="game-switch-option game-switch-home" id="back-to-mode-select-btn">🎲 اختار لعبة أخرى</button>
+                <button type="button" class="game-switch-option" data-game-mode="impostor">🕵️‍♂️ شكونو هو؟</button>
+                <button type="button" class="game-switch-option" data-game-mode="thief">🗝️ سارق، حاكم، جلّاد</button>
+                <button type="button" class="game-switch-option" data-game-mode="spyfall">🕶️ ماناش هوني</button>
+                <button type="button" class="game-switch-option" data-game-mode="coup">👑 كول وبوّع</button>
+                <button type="button" class="game-switch-option" data-game-mode="chkobba">🃏 شكبّة</button>
+            </nav>
+        </header>
+        <section id="setup-screen" class="screen" aria-label="إعدادات اللعبة" hidden aria-hidden="true">
+            <div class="lang-pill-selector">
+                <button class="lang-pill-btn active" data-lang="tn">🇹🇳 تونسي</button>
+                <button class="lang-pill-btn x18-btn" data-lang="x18">🔞 +18</button>
+            </div>
+            <h3 data-i18n="players_label">👥 اساميكم:</h3>
+            <div id="players-inputs-container"></div>
+            <div class="add-player-row">
+                <button id="add-player-btn" class="add-player-btn" data-i18n="add_player_btn">➕ زيد واحد اخر</button>
+                <button id="reset-settings-btn" class="icon-btn" title="إعادة ضبط">🔄</button>
+            </div>
+            <div class="divider"></div>
+            <div class="surface-card" style="padding: 10px 24px;">
+                <div class="setting-row impostor-only">
+                    <div class="setting-info"><span class="setting-title" data-i18n="impostors_label">🎭 قداش من كذاب</span></div>
+                    <div class="counter-group" id="imp-control">
+                        <button class="counter-btn" id="imp-minus">−</button>
+                        <span class="counter-value" id="val-impostors">1</span>
+                        <button class="counter-btn" id="imp-plus">+</button>
+                    </div>
+                </div>
+                <div class="setting-row" style="border-bottom:none;">
+                    <div class="setting-info"><span class="setting-title" data-i18n="timer_label">⏱️ وقت الطرح</span></div>
+                    <div class="counter-group">
+                        <button class="counter-btn" id="timer-minus">−</button>
+                        <span class="counter-value" id="val-timer">3</span>
+                        <button class="counter-btn" id="timer-plus">+</button>
+                    </div>
+                </div>
+            </div>
+            <div class="advanced-header impostor-only" id="adv-toggle-btn">
+                <span data-i18n="advanced_btn">🔧 زيد بربش</span>
+                <span id="adv-chevron">▼</span>
+            </div>
+            <div class="advanced-content impostor-only" id="adv-panel">
+                <div class="toggle-row">
+                    <span class="toggle-label"><span class="info-icon" data-info="random">ℹ️</span> <span data-i18n="adv_random">🎲 كذابين على كيف اللعبة</span></span>
+                    <div class="toggle-switch" id="t-random"><div class="toggle-thumb"></div></div>
+                </div>
+                <div class="toggle-row">
+                    <span class="toggle-label"><span class="info-icon" data-info="chaos">ℹ️</span> <span data-i18n="adv_chaos">😈 خلوضها</span></span>
+                    <div class="toggle-switch" id="t-chaos"><div class="toggle-thumb"></div></div>
+                </div>
+                <div class="toggle-row">
+                    <span class="toggle-label"><span class="info-icon" data-info="elimination">ℹ️</span> <span data-i18n="adv_elimination">⚔️ نقص بالواحد بالواحد</span></span>
+                    <div class="toggle-switch" id="t-elimination"><div class="toggle-thumb"></div></div>
+                </div>
+                <div class="toggle-row" id="nohint-row">
+                    <span class="toggle-label"><span class="info-icon" data-info="nohint">ℹ️</span> <span data-i18n="adv_nohint">🙈 سبورة كحلة مع الكذاب</span></span>
+                    <div class="toggle-switch" id="t-nohint"><div class="toggle-thumb"></div></div>
+                </div>
+                <div class="toggle-row" id="allhint-row">
+                    <span class="toggle-label"><span class="info-icon" data-info="allhint">ℹ️</span> <span data-i18n="adv_allhint">💡 الكذابين الكل ياخذو نفس التلميح</span></span>
+                    <div class="toggle-switch" id="t-allhint"><div class="toggle-thumb"></div></div>
+                </div>
+            </div>
+            <br>
+            <button id="start-game-btn" class="primary-btn" data-i18n="start_btn">🚀 انافا</button>
+            <button id="coup-guide-from-setup-btn" class="secondary-btn coup-only-btn" type="button" style="margin-top:10px;">📖 دليل اللعب</button>
+            <div class="divider">أو</div>
+            <button id="open-online-btn" class="secondary-btn">🌐 العب أونلاين مع أصحابك</button>
+            <p id="setup-error" style="color:var(--danger-color); font-weight:700; margin-top:10px; text-align:center;"></p>
+        </section>
+<section id="online-setup-screen" class="screen" aria-label="إعدادات الأونلاين" hidden aria-hidden="true">
+            <h2>🌐 العب أونلاين</h2>
+            <p style="margin-bottom:24px;">كل واحد يلعب من تلفونو 📱</p>
+            <div style="margin-bottom:20px;">
+                <label style="font-weight:700; margin-bottom:8px; display:block;">اسمك في اللعبة:</label>
+                <input type="text" id="online-player-name" placeholder="اسمك" maxlength="20" autocomplete="off"/>
+            </div>
+            <button id="create-room-btn" class="primary-btn">🏠 اعمل روم جديدة</button>
+            <div class="divider">ادخل لروم موجودة</div>
+            <div class="join-flow-group">
+                <input type="text" id="room-code-input" class="code-input-lg" placeholder="ABCD12" maxlength="6" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" style="flex:2; min-width:0;"/>
+                <button id="join-room-btn" class="primary-btn" style="flex:1; margin:0; padding:14px 10px; font-size:1.1rem;">🚪 انضم</button>
+            </div>
+            <div class="divider">أو امسح كود QR</div>
+            <button id="open-scanner-btn" class="secondary-btn" style="margin-bottom:16px;">📷 امسح الكود</button>
+            <div id="reader-container" style="display: none; margin-bottom: 20px;">
+                <div id="reader" style="width: 100%; border-radius: 20px; overflow: hidden; border: 1px solid var(--border-color);"></div>
+            </div>
+            <button id="back-to-setup-btn" class="danger-btn" style="margin-top:10px; background:transparent; color:var(--danger-color); border:none; box-shadow:none;">↩️ ارجع للإعدادات</button>
+            <p id="online-setup-error" style="color:var(--danger-color); font-weight:700; margin-top:10px; text-align:center;"></p>
+        </section>
+<section id="online-lobby-screen" class="screen" aria-label="لوبي الأونلاين" hidden aria-hidden="true">
+            <h2>🕹️ الغرفة</h2>
+            <div class="room-code-box">
+                <span style="color:var(--text-muted); font-weight:700;">كود الروم:</span>
+                <span id="display-room-code" class="room-code">------</span>
+                <div id="qrcode-container" style="display:flex; justify-content:center; margin: 10px 0; display: none;">
+                    <div id="qrcode" style="padding: 10px; background: white; border-radius: 12px; border: 1px solid #eee;"></div>
+                </div>
+                <div style="display:flex; gap:10px; justify-content:center; margin-top:16px;">
+                    <button id="copy-code-btn" class="icon-btn" style="width:auto; padding:0 20px; font-size:1rem;">📋 كوبي</button>
+                    <button id="share-code-btn" class="primary-btn" style="width:auto; padding:10px 20px; font-size:1rem; margin:0;">📤 شارك</button>
+                </div>
+            </div>
+            <div id="lobby-players-list" class="lobby-list"></div>
+            <p id="lobby-wait-msg" style="text-align:center; font-weight:700;">⏳ نستنا لاعبين...</p>
+            <button id="online-start-btn" class="primary-btn hidden">🚀 ابدأ اللعبة</button>
+            <button id="leave-room-btn" class="danger-btn" style="margin-top:16px;">🚪 اخرج من الغرفة</button>
+        </section>
+<section id="coup-screen" class="screen" aria-label="كول وبوع" hidden aria-hidden="true">
+            <div class="coup-topline">
+                <div>
+                    <h2 id="coup-title">👑 كول وبوّع</h2>
+                    <p id="coup-subtitle">استنى دورك، كول، وبوّع كان تنجم.</p>
+                </div>
+                <div id="coup-deck-pill" class="coup-deck-pill"><span>🏦</span><strong>–</strong><span>🂠</span><strong>–</strong></div>
+            </div>
+            <div class="coup-status-wrap">
+                <div id="coup-status" class="coup-status"></div>
+                <div id="coup-action-timer" class="coup-action-timer">02:00</div>
+            </div>
+
+            <div id="coup-my-board" class="coup-player-board"></div>
+            <div id="coup-10-coin-warning" class="coup-10-coin-warning hidden">عندك اكثر من 10 فرنك، لازم تعمل انقلاب</div>
+            <div id="coup-action-panel" class="coup-action-panel"></div>
+            <div id="coup-others-board" class="coup-player-board" style="margin-top: 10px;"></div>
+
+            <button id="coup-guide-btn" class="coup-guide-btn" type="button" style="margin-top: 20px;">كيفاش تلعب</button>
+            <button id="coup-help-toggle" class="advanced-header coup-help-toggle" type="button">
+                <span>ℹ️ شنوّة تعمل الكوارط؟</span><span id="coup-help-chevron">▼</span>
+            </button>
+            <div id="coup-role-help" class="coup-role-help advanced-content"></div>
+        </section>
+<section id="coup-guide-screen" class="screen" aria-label="دليل كول وبوع" hidden aria-hidden="true">
+            <div class="coup-guide-top">
+                <button id="coup-guide-back-btn" class="coup-guide-back" type="button">↩ ارجع</button>
+                <h2>دليل كول وبوّع</h2>
+            </div>
+            <div id="coup-guide-tabs" class="coup-guide-tabs"></div>
+            <div id="coup-guide-content" class="coup-guide-content"></div>
+        </section>
+    </main>
+    
+    <!-- INFO MODAL -->
+    <div id="info-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3 data-i18n="info_title" style="margin-top:0; color:var(--primary-color); font-size:1.6rem;">ℹ️ معلومة</h3>
+            <p id="info-modal-text" style="font-size:1.15rem; line-height:1.6; margin-bottom:24px; color:var(--text-main);"></p>
+            <button id="close-info-btn" class="primary-btn" data-i18n="close_btn">فهمت</button>
+        </div>
+    </div>
+
+    <!-- PASSWORD MODAL -->
+    <div id="password-modal" class="modal hidden">
+        <div class="modal-content">
+            <div style="font-size:3rem; margin-bottom:10px;">🔞</div>
+            <h3 style="margin-top:0; font-size:1.5rem; color:var(--danger-color);">محتوى للكبار فقط</h3>
+            <p style="color:var(--text-muted); font-size:1rem; margin-bottom:20px;">أدخل الكلمة السرية باش تكمل</p>
+            <input type="password" id="password-input" placeholder="🔑 الكلمة السرية" style="text-align:center; letter-spacing:4px;" autocomplete="off"/>
+            <p id="password-error">❌ كلمة سرية غلط!</p>
+            <div class="pw-remember-row">
+                <input type="checkbox" id="pw-remember-toggle"/>
+                <label for="pw-remember-toggle">ابقالي فاتح +18</label>
+            </div>
+            <button id="password-confirm-btn" class="primary-btn" style="margin-top:20px;">تأكيد</button>
+            <button id="password-cancel-btn" class="secondary-btn" style="margin-top:10px; border:none; background:transparent; color:var(--text-muted);">إلغاء</button>
+        </div>
+    </div>
+
+    <div id="toast-msg" class="toast"></div>
+
+
+    <script defer src="../assets/js/adult_words_data.js"></script>
+    <script defer src="../assets/js/sounds.js"></script>
+    <script defer src="../assets/js/shared.js"></script>
+    <script defer src="../assets/js/online.js"></script>
+    <script defer src="../assets/js/voice.js"></script>
+    <script defer src="../assets/js/chkobba_logic.js"></script>
+    <script defer src="../assets/js/analytics.js"></script>
+    <script defer src="../assets/js/coup_init.js"></script>
+</body>
+
+</html>
