@@ -222,13 +222,24 @@
     <div id="toast-msg" class="toast"></div>
 
 
-    <script defer src="../assets/js/adult_words_data.js"></script>
+
     <script defer src="../assets/js/sounds.js"></script>
+    <!-- Core platform -->
+    <script defer src="../assets/js/core/state.js"></script>
+    <script defer src="../assets/js/core/storage.js"></script>
+    <script defer src="../assets/js/core/i18n.js"></script>
+    <script defer src="../assets/js/game_registry.js"></script>
+    <!-- Game logic modules -->
+    <script defer src="../assets/js/games/spyfall/spyfall_logic.js"></script>
+
+    <!-- Game online modules: none needed for this game -->
+    <!-- Networking layer -->
+    <script defer src="../assets/js/net/sync.js"></script>
+    <script defer src="../assets/js/net/room.js"></script>
+    <!-- Platform coordinator -->
     <script defer src="../assets/js/shared.js"></script>
     <script defer src="../assets/js/online.js"></script>
     <script defer src="../assets/js/voice.js"></script>
-    <script defer src="../assets/js/chkobba_logic.js"></script>
-    <script defer src="../assets/js/analytics.js"></script>
     <script defer src="../assets/js/spyfall_init.js"></script>
 </body>
 
