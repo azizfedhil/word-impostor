@@ -193,32 +193,35 @@ function _animateChkobbaFlight({ fromRect, toRect, imgSrc, duration = 600, rotat
         layer.appendChild(ghost);
     }
 
-    // Trigger GPU animation with fade-in
+    // Trigger GPU animation — single rAF + forced reflow to guarantee Safari paints
+    // the start state before we set the end state (fixes iOS batching bug).
     requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-            // Fade in first
-            flyer.style.opacity = '1';
-            
-            // Then animate to target position
-            requestAnimationFrame(() => {
-                const endTransform = `translate3d(${tx}px, ${ty}px, 0) scale(1) rotate(${rotate * 0.35}deg) translate(-50%, -50%)`;
-                flyer.style.transform = endTransform;
+        // Force reflow so the browser registers the start position
+        void flyer.offsetHeight; // eslint-disable-line no-void
 
-                if (ghost) {
-                    // Ghost lags slightly behind visually via timing
-                    setTimeout(() => {
-                        ghost.style.opacity = '0.5';
-                        ghost.style.transform = endTransform;
-                        setTimeout(() => {
-                            ghost.style.opacity = '0';
-                        }, duration * 0.5);
-                    }, 60);
-                }
-            });
-        });
+        // Fade in and fly to target in one frame
+        flyer.style.opacity = '1';
+        const endTransform = `translate3d(${tx}px, ${ty}px, 0) scale(1) rotate(${rotate * 0.35}deg) translate(-50%, -50%)`;
+        flyer.style.transform = endTransform;
+
+        if (ghost) {
+            void ghost.offsetHeight;
+            setTimeout(() => {
+                ghost.style.opacity = '0.5';
+                ghost.style.transform = endTransform;
+                setTimeout(() => {
+                    ghost.style.opacity = '0';
+                }, duration * 0.5);
+            }, 60);
+        }
     });
 
+    // done-guard: prevents finish() being called twice when both transitionend
+    // and the safety timeout fire (e.g. transition completes then timeout fires).
+    let _done = false;
     const finish = () => {
+        if (_done) return;
+        _done = true;
         flyer.style.opacity = '0';
         setTimeout(() => {
             flyer.remove();
@@ -226,8 +229,12 @@ function _animateChkobbaFlight({ fromRect, toRect, imgSrc, duration = 600, rotat
             onDone?.();
         }, 150);
     };
-    flyer.addEventListener('transitionend', finish, { once: true });
-    // Safety fallback
+    // Filter to only the transform property — opacity ends first on iOS and would
+    // fire finish() mid-flight if we don't guard by propertyName.
+    flyer.addEventListener('transitionend', (e) => {
+        if (e.propertyName === 'transform') finish();
+    }, { once: false });
+    // Safety fallback in case transitionend never fires (e.g. element removed early)
     setTimeout(finish, duration + 200);
 }
 
@@ -236,24 +243,33 @@ function _animateChkobbaFlightsSequential(flights, onDone) {
         onDone?.();
         return;
     }
+    const total = flights.length;
     let started = 0;
     let finished = 0;
-    const total = flights.length;
+    // allStarted ensures we never call onDone before the last stagger fires
+    // (fixes premature completion when a fast early flight finishes before the
+    // final stagger delay elapses).
+    let allStarted = false;
+
+    const maybeFinish = () => {
+        finished++;
+        if (allStarted && finished >= total) onDone?.();
+    };
 
     const startNext = () => {
-        if (started >= total) return;
+        if (started >= total) {
+            allStarted = true;
+            if (finished >= total) onDone?.();
+            return;
+        }
         const { staggerAfter, ...flightOpts } = flights[started++];
-
-        _animateChkobbaFlight({
-            ...flightOpts,
-            onDone: () => {
-                finished++;
-                if (finished >= total) onDone?.();
-            }
-        });
+        _animateChkobbaFlight({ ...flightOpts, onDone: maybeFinish });
 
         if (started < total) {
             setTimeout(startNext, staggerAfter || 0);
+        } else {
+            allStarted = true;
+            if (finished >= total) onDone?.();
         }
     };
     startNext();
@@ -1191,12 +1207,18 @@ function _renderChkobbaOpponentPills(room, state, me, mode, roomPlayerMeta) {
     });
 }
 
-function _maybeShowChkobbaAnnouncement(state) {
+function _maybeShowChkobbaAnnouncement(state, duringDeal) {
     if (!state?.chkobbaEvent) return;
-    const key = `${state.chkobbaEvent.playerId}-${state.round}-${state.chkobbaEvent.type}`;
+    const key = `${state.chkobbaEvent.playerId}-${state.round}-${state.chkobbaEvent.type}-${state.chkobbaEvent.seq ?? 0}`;
     if (_lastChkobbaAnnounced === key) return;
     _lastChkobbaAnnounced = key;
-    _handleChkobbaBroadcastEvent(state.chkobbaEvent);
+    // If card-flight animations are still running (or a deal anim is about to
+    // start), wait for them to settle before showing the celebration overlay.
+    if (_chkobbaAnimating || duringDeal) {
+        setTimeout(() => _handleChkobbaBroadcastEvent(state.chkobbaEvent), 750);
+    } else {
+        _handleChkobbaBroadcastEvent(state.chkobbaEvent);
+    }
 }
 
 function _renderChkobbaInfoPills(state, me) {
@@ -1474,7 +1496,7 @@ function _showOnlineChkobba(room) {
         round: state.round
     };
 
-    _maybeShowChkobbaAnnouncement(state);
+    _maybeShowChkobbaAnnouncement(state, shouldDealAnim);
 
     _renderChkobbaOpponentPills(room, state, me, mode, roomPlayerMeta);
 
@@ -1769,9 +1791,9 @@ async function _chkobbaTimeout() {
                     rs.lastCaptureId = rp.id;
                     if (rs.table.length === 0 && rs.deck.length > 0) {
                         rp.chkobbas++;
-                        rs.chkobbaEvent = { type: 'chkobba', playerId: rp.id, name: rp.name };
+                        rs.chkobbaEvent = { type: 'chkobba', playerId: rp.id, name: rp.name, seq: Date.now() };
                     } else if (allCaptured.some(c => c.id === 'diamonds_7')) {
-                        rs.chkobbaEvent = { type: 'berria', playerId: rp.id, name: rp.name };
+                        rs.chkobbaEvent = { type: 'berria', playerId: rp.id, name: rp.name, seq: Date.now() };
                     }
                 } else {
                     rs.table.push(card);
@@ -1941,9 +1963,9 @@ async function _commitChkobbaCapture() {
 
             if (s.table.length === 0 && s.deck.length > 0) {
                 p.chkobbas++;
-                s.chkobbaEvent = { type: 'chkobba', playerId: _myId, name: p.name };
+                s.chkobbaEvent = { type: 'chkobba', playerId: _myId, name: p.name, seq: Date.now() };
             } else if (allCaptured.some(c => c.id === 'diamonds_7')) {
-                s.chkobbaEvent = { type: 'berria', playerId: _myId, name: p.name };
+                s.chkobbaEvent = { type: 'berria', playerId: _myId, name: p.name, seq: Date.now() };
             }
 
             _advanceChkobbaTurn(s, room);
