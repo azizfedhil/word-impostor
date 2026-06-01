@@ -827,11 +827,14 @@ function _onChkobbaPointerDown(e) {
         if (!moved && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
             moved = true;
             _chkobbaPointerDrag.moved = true;
-            // Always re-arm to the card being dragged.
-            // Without this, if card A was tapped first (session = card A) and the
-            // player then drags card B, the session stays on card A and the wrong
-            // card gets played on drop.
-            _armChkobbaHandCard(cardEl);
+            // Re-arm to the dragged card, but only if it differs from the current
+            // armed card. If the player tapped card A (session = card A) and then
+            // drags card A again, we keep the existing session (preserving any
+            // selectedTableIds already built up). If they drag a different card B,
+            // we reset and arm card B so the wrong card isn't played.
+            const draggedIndex = parseInt(cardEl.dataset.index, 10);
+            const alreadyArmed = _chkobbaPlaySession?.handIndex === draggedIndex;
+            if (!alreadyArmed) _armChkobbaHandCard(cardEl);
             const img = cardEl.querySelector('img');
             const ghost = document.createElement('div');
             ghost.className = 'chkobba-drag-ghost';
@@ -2469,9 +2472,12 @@ function _onChkobbaDragStart(e) {
         e.preventDefault();
         return;
     }
-    // Always re-arm to the card being dragged, not just when no session exists.
-    // Fixes: click card A, then drag card B — without this the session stays on A.
-    _armChkobbaHandCard(cardEl);
+    // Re-arm only if dragging a different card than the currently armed one.
+    // If the same card is dragged again (e.g. to drop on a second table card),
+    // keep the existing session so selectedTableIds is preserved.
+    const draggedIndex = parseInt(cardEl.dataset.index, 10);
+    const alreadyArmed = _chkobbaPlaySession?.handIndex === draggedIndex;
+    if (!alreadyArmed) _armChkobbaHandCard(cardEl);
     e.dataTransfer?.setData('text/plain', cardEl.dataset.index);
     cardEl.classList.add('is-dragging');
 }
@@ -2668,11 +2674,15 @@ async function _commitChkobbaPlayToTable() {
 function _advanceChkobbaTurn(state, roomObj) {
     state.turnIndex = (state.turnIndex + 1) % state.players.length;
 
+    // Always reset the timer for the next turn, regardless of whether this client
+    // is the host. _advanceChkobbaTurn runs inside _mutatePlayers on whichever
+    // client commits the move — if only the host reset the timer, a non-host
+    // timeout commit would write back the old expired timer_end_at and every
+    // client would see left=0 forever, looping the autoplay.
     const actualRoom = roomObj || _room;
-    if (actualRoom && _isHost) {
+    if (actualRoom) {
         const turnTime = actualRoom.config?.chkobbaTurnTime || 45;
-        const timerEndAt = new Date(_syncedNow() + turnTime * 1000).toISOString();
-        actualRoom.timer_end_at = timerEndAt;
+        actualRoom.timer_end_at = new Date(_syncedNow() + turnTime * 1000).toISOString();
     }
 
     // Check if everyone played their 3 cards
