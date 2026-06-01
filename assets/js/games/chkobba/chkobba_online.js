@@ -1153,7 +1153,7 @@ function _renderChkobbaPlayerInfo(state, me, isMyTurn) {
     const capturedCount = me.captured?.length || 0;
     const diamondCount = me.captured?.filter(c => c.suit === 'diamonds').length || 0;
     const chkobbaCount = me.chkobbas || 0;
-    const firstLetter = me.name ? me.name.charAt(0).toUpperCase() : '?';
+    const totalScore = me.totalScore ?? 0;
 
     const details = `
         <div class="chkobba-stat-item">
@@ -1177,7 +1177,7 @@ function _renderChkobbaPlayerInfo(state, me, isMyTurn) {
             <span class="chkobba-player-name">${me.name}</span>
             <div class="chkobba-player-details">${details}</div>
         </div>
-        <div class="chkobba-player-circle ${isMyTurn ? 'is-turn' : ''}">${firstLetter}</div>
+        <div class="chkobba-player-circle ${isMyTurn ? 'is-turn' : ''}">${totalScore}</div>
     `;
 }
 
@@ -1578,12 +1578,14 @@ function _renderChkobbaScoreboard(state, isFinal, onContinue) {
 
     const card = document.createElement('div');
     card.style.cssText = `
-        background:var(--surface-2,#1e2130);
-        border:2px solid var(--gold,#f1c051);
+        background:rgba(255,255,255,0.15);
+        backdrop-filter:blur(20px) saturate(180%);
+        -webkit-backdrop-filter:blur(20px) saturate(180%);
+        border:1px solid rgba(255,255,255,0.25);
         border-radius:20px;padding:28px 24px 20px;
         min-width:min(90vw,380px);max-width:92vw;
-        box-shadow:0 8px 40px rgba(0,0,0,0.6);
-        color:var(--text-1,#fff);text-align:center;
+        box-shadow:0 8px 40px rgba(0,0,0,0.4),0 0 24px rgba(255,255,255,0.08);
+        color:#fff;text-align:center;
     `;
 
     const titleIcon = isFinal ? '🏆' : '📊';
@@ -1611,9 +1613,9 @@ function _renderChkobbaScoreboard(state, isFinal, onContinue) {
         <div style="
             display:flex;align-items:center;gap:10px;
             padding:10px 12px;margin-bottom:8px;
-            background:${isWinnerRow ? 'rgba(241,192,81,0.18)' : 'rgba(255,255,255,0.05)'};
+            background:${isWinnerRow ? 'rgba(241,192,81,0.22)' : 'rgba(255,255,255,0.1)'};
             border-radius:12px;
-            border:${isWinnerRow ? '1.5px solid var(--gold,#f1c051)' : '1px solid rgba(255,255,255,0.07)'};
+            border:${isWinnerRow ? '1.5px solid rgba(241,192,81,0.7)' : '1px solid rgba(255,255,255,0.15)'};
         ">
             <div style="font-size:1.5rem;">${isWinnerRow ? '👑' : '🃏'}</div>
             <div style="flex:1;text-align:right;">
