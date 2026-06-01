@@ -1482,25 +1482,28 @@ async function _animateChkobbaDeal(deckEl, handEl, count, onDone) {
         onDone?.(); return;
     }
 
-    // Brief deck pulse to simulate the physical "thwack" of pulling cards
+    // Brief deck pulse
     deckEl.classList.add('is-dealing');
-    setTimeout(() => deckEl.classList.remove('is-dealing'), 450);
+    setTimeout(() => deckEl.classList.remove('is-dealing'), 400);
 
     const from = deckEl.getBoundingClientRect();
     const back = window.ChkobbaLogic.ASSETS.BACK;
     let finished = 0;
 
+    // Pre-populate the hand with invisible face-down placeholder slots.
+    // Each slot becomes the ghost's landing target AND flips face-up when the
+    // ghost arrives, so there's never a flash of empty space or sudden appearance.
     const placeholders = [];
     for (let i = 0; i < count; i++) {
         const ph = document.createElement('div');
         ph.className = 'chkobba-card hand-card chkobba-deal-placeholder';
+        // Mirror the tilt CSS vars so placeholders sit in their real fan position
         const fakeTilt = _handCardTilt(i, count);
         ph.style.setProperty('--tilt', `${fakeTilt}deg`);
         ph.style.setProperty('--stack-offset', `${fakeTilt * 0.45}px`);
         ph.style.setProperty('--hand-z', String(10 + i));
         if (i > 0) ph.style.setProperty('--stack-overlap', '20');
-        ph.style.opacity = '0'; 
-        
+        ph.style.opacity = '0'; // invisible until the ghost arrives
         const phImg = document.createElement('img');
         phImg.src = back;
         phImg.alt = '';
@@ -1508,116 +1511,6 @@ async function _animateChkobbaDeal(deckEl, handEl, count, onDone) {
         handEl.appendChild(ph);
         placeholders.push(ph);
     }
-
-    // Force reflow so placeholders are laid out before we measure them
-    void handEl.offsetWidth;
-
-    const layer = document.getElementById('chkobba-deal-layer') || document.body;
-
-    for (let i = 0; i < count; i++) {
-        // Human-like stagger: slight acceleration curve + random micro-jitter
-        const delay = i * 75 + (Math.random() * 25);
-        
-        setTimeout(() => {
-            const ph = placeholders[i];
-            if (!ph.isConnected) { finished++; return; } // safety
-            
-            const to = ph.getBoundingClientRect();
-            
-            const fx = from.left + from.width / 2;
-            const fy = from.top + from.height / 2;
-            const tx = to.left + to.width / 2;
-            const ty = to.top + to.height / 2;
-
-            const dx = tx - fx;
-            const dy = ty - fy;
-            const dist = Math.hypot(dx, dy);
-
-            const flyer = document.createElement('div');
-            flyer.className = 'chkobba-flight-card chkobba-deal-flyer';
-            flyer.style.width = `${from.width}px`;
-            flyer.style.height = `${from.height}px`;
-            flyer.style.left = '0';
-            flyer.style.top = '0';
-            
-            const img = document.createElement('img');
-            img.src = back;
-            img.draggable = false;
-            flyer.appendChild(img);
-            layer.appendChild(flyer);
-
-            // Physics parameters
-            const startRot = (Math.random() - 0.5) * 15;
-            const endRot = parseFloat(ph.style.getPropertyValue('--tilt')) || 0;
-            // Add a slight spin/flipping motion mid-air
-            const midRot = startRot + (endRot - startRot) * 0.5 + (Math.random() > 0.5 ? 25 : -25); 
-            
-            // Arc height: higher for longer distances to simulate a wrist flick
-            const arcHeight = Math.max(60, dist * 0.35);
-            const midX = fx + dx * 0.5;
-            const midY = Math.min(fy, ty) - arcHeight;
-
-            const duration = Math.max(380, Math.min(550, 320 + dist * 0.25));
-
-            // WAAPI Keyframes for Parabolic Arc + Weight
-            const animation = flyer.animate([
-                { 
-                    transform: `translate3d(${fx}px, ${fy}px, 0) rotate(${startRot}deg) scale(0.85)`,
-                    filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.4))',
-                    opacity: 0,
-                    offset: 0
-                },
-                { 
-                    // Mid-air: Lifted scale + softer, wider shadow
-                    transform: `translate3d(${midX}px, ${midY}px, 0) rotate(${midRot}deg) scale(1.08)`,
-                    filter: 'drop-shadow(0 28px 32px rgba(0,0,0,0.15))',
-                    opacity: 1,
-                    offset: 0.45,
-                    easing: 'cubic-bezier(0.25, 0.1, 0.25, 1.0)' // smooth acceleration
-                },
-                { 
-                    // Landing: Snap into place with overshoot (weight)
-                    transform: `translate3d(${tx}px, ${ty}px, 0) rotate(${endRot}deg) scale(1)`,
-                    filter: 'drop-shadow(0 8px 12px rgba(0,0,0,0.25))',
-                    opacity: 1,
-                    offset: 1,
-                    easing: 'cubic-bezier(0.175, 0.885, 0.32, 1.275)' // Back-out easing for the "snap"
-                }
-            ], {
-                duration: duration,
-                fill: 'forwards',
-                easing: 'linear'
-            });
-
-            animation.onfinish = () => {
-                flyer.remove();
-                // Reveal placeholder with matching shadow depth
-                ph.style.transition = 'opacity 100ms cubic-bezier(0.25, 0.1, 0.25, 1)';
-                ph.style.opacity = '1';
-                ph.classList.add('chkobba-deal-arrived');
-                
-                finished++;
-                if (finished >= count) {
-                    setTimeout(() => {
-                        placeholders.forEach(p => p.isConnected && p.remove());
-                        onDone?.();
-                    }, 60);
-                }
-            };
-
-            animation.oncancel = () => {
-                flyer.remove();
-                ph.style.opacity = '1';
-                finished++;
-                if (finished >= count) {
-                    placeholders.forEach(p => p.isConnected && p.remove());
-                    onDone?.();
-                }
-            };
-
-        }, delay);
-    }
-}
 
     // Phase 4 – target feel: 350–500ms travel, ease-out, slight stagger between cards.
     // Tight stagger — entire sequence ≤ 600ms even for 4+ cards.
