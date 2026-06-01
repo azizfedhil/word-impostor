@@ -2244,6 +2244,10 @@ async function _chkobbaTimeout() {
 
         const runActualMutate = async () => {
             const bestMatchIds = bestMatch ? bestMatch.map(c => c.id) : null;
+            // _chkobbaTimingOut stays true until this mutation resolves so the
+            // 500 ms tick loop cannot queue another autoplay while we are still
+            // mid-animation or waiting for the Supabase round-trip.
+            try {
             await _mutatePlayers(_room.code, (players, room) => {
                 const rs = room.word_obj;
                 if (rs.phase !== 'playing') return null;
@@ -2307,6 +2311,12 @@ async function _chkobbaTimeout() {
                 room.word_obj = rs;
                 return players;
             }, null, (room, players) => ({ word_obj: room.word_obj, timer_end_at: room.timer_end_at }));
+            } finally {
+                // Release the guard now that the network round-trip is done.
+                // The server push that follows will install a fresh timer_end_at,
+                // so the tick loop will no longer see left <= 0.
+                _chkobbaTimingOut = false;
+            }
         };
 
         const isMe    = p.id === _myId;
@@ -2357,8 +2367,14 @@ async function _chkobbaTimeout() {
             cardIds:  inFlightIds,
             onCommit: runActualMutate
         });
-    } catch(e) { console.error(e); }
-    finally { _chkobbaTimingOut = false; }
+        // _chkobbaTimingOut is released by runActualMutate's own finally block
+        // after the network round-trip completes.  Do NOT reset it here.
+    } catch(e) {
+        // An unexpected exception escaped before schedule() could be called —
+        // release the guard so the game isn't permanently locked.
+        console.error(e);
+        _chkobbaTimingOut = false;
+    }
 }
 
 function _onChkobbaDragStart(e) {
@@ -2658,6 +2674,7 @@ async function _chkobbaStartNextRound(roomObj) {
         s.round++;
         s.turnIndex = 0;
         s.roundScores = null;
+        s.chkobbaEvent = null;   // prevent last round's event from re-animating at round start
         s.phase = 'playing';
         s.log = 'طرح جديد — بالتوفيق!';
 
