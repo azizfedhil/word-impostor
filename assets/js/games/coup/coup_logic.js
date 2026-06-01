@@ -89,6 +89,7 @@ let coupFocusedPlayerId    = null;
 let coupTimerInterval      = null;
 let coupResponseInterval   = null;
 let coupOtherDecksCollapsed = false;
+let coupMyCardsHidden       = false;
 
 // ─────────────────────────────────────────────────────────────
 // Pure utilities (no DOM, no state mutation)
@@ -371,7 +372,8 @@ function renderCoupScreen(state = coupState, myId = null) {
 
     const renderPlayerCard = (p, idx) => {
         const isMe    = myId ? p.id === myId : idx === state.turnIndex;
-        const visible = isMe;
+        const hidden  = isMe && coupMyCardsHidden;
+        const visible = isMe && !hidden;
         const focused = coupFocusedPlayerId === p.id || (!coupFocusedPlayerId && isMe);
         const dimmed  = !!coupFocusedPlayerId && coupFocusedPlayerId !== p.id;
         const out     = !p.hand.some(c => !c.lost);
@@ -383,16 +385,24 @@ function renderCoupScreen(state = coupState, myId = null) {
             + (dimmed  ? ' is-dimmed'  : '')
             + (out     ? ' is-out'     : '');
         div.dataset.playerId = p.id;
+        const toggleBtn = isMe && !out
+            ? `<button class="coup-hide-cards-btn" type="button" data-hide-toggle="1">${hidden ? '👁 ورّي كوارطك' : '🙈 خبي كوارطك'}</button>`
+            : '';
         div.innerHTML = `<div class="coup-player-head"><span>${_escHtml(p.name)}${isMe && myId ? ' <span class="you-tag">أنا</span>' : ''}</span><span class="coup-coins">🪙 ${p.coins}</span></div>
             <div class="coup-influence-row">${p.hand.map(c => {
                 const meta  = coupCards[c.type] || coupCards.duke;
                 const label = (visible || c.lost) ? _coupCardLabelHtml(meta) : '<span>🂠 مخبية</span>';
                 const info  = (visible || c.lost) ? `<button class="coup-card-info" type="button" data-card-type="${c.type}" aria-label="info">ℹ️</button>` : '';
-                const bgStyle = (visible || c.lost) ? ` style="--card-bg:url('${_coupImgBase}${c.type}_horizontal.webp')"` : '';
+                const bgStyle = (visible || c.lost) ? ` style="background-image:url('${_coupImgBase}${c.type}_horizontal.webp');background-size:cover;background-position:center top;" data-has-bg="1"` : '';
                 return `<div class="coup-influence ${c.lost ? 'lost' : ''}" data-card-type="${c.type}"${bgStyle}><span>${label}</span>${info}</div>`;
-            }).join('')}</div>`;
+            }).join('')}</div>${toggleBtn}`;
         div.addEventListener('click', e => {
             if (e.target.closest('.coup-card-info')) return;
+            if (e.target.closest('[data-hide-toggle]')) {
+                coupMyCardsHidden = !coupMyCardsHidden;
+                renderCoupScreen(state, myId);
+                return;
+            }
             coupFocusedPlayerId = coupFocusedPlayerId === p.id ? null : p.id;
             renderCoupScreen(state, myId);
         });
@@ -457,7 +467,7 @@ function renderCoupActions(state = coupState, myId = null) {
         const disabled     = actionLocked ? 'is-action-disabled' : '';
         const finalHint    = mustCoup && action !== 'coup' ? 'عندك 10+ فلوس، لازم Coup' : hint;
         const bgFile       = _actionBgMap[action];
-        const bgStyle      = bgFile ? ` style="--action-bg:url('${_coupImgBase}${bgFile}.webp')"` : '';
+        const bgStyle      = bgFile ? ` style="background-image:url('${_coupImgBase}${bgFile}.webp');background-size:cover;background-position:center;" data-has-bg="1"` : '';
         return `<button class="coup-action-btn ${cls} ${disabled}" data-action="${action}"${bgStyle} aria-disabled="${actionLocked ? 'true' : 'false'}"><strong>${txt}<span class="coup-action-info" data-action-info="${action}">ℹ️</span></strong><small>${finalHint}</small></button>`;
     };
     panel.innerHTML += `<div class="coup-action-grid ${isTurn ? '' : 'is-disabled'}">
