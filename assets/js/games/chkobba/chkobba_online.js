@@ -962,13 +962,9 @@ function _initChkobbaReactions() {
         });
     }
 }
-
 document.addEventListener('DOMContentLoaded', () => {
-    const scanBtn = document.getElementById('open-scanner-btn');
-    if (scanBtn) scanBtn.addEventListener('click', _startScanner);
     _initChkobbaReactions();
 });
-
 // NOTE: _handleStateChange is exported by online.js; _syncedNow by room.js.
 // Do not re-export here — those files load after this one.
 

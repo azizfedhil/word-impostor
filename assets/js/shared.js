@@ -470,6 +470,7 @@ async function initSharedSetup(gameMode) {
     document.getElementById('back-to-setup-btn')?.addEventListener('click',()=>showScreen('setup-screen'));
     document.getElementById('create-room-btn')?.addEventListener('click', () => { if(typeof _createRoom==='function') _createRoom(); });
     document.getElementById('join-room-btn')?.addEventListener('click', () => { if(typeof _joinRoom==='function') _joinRoom(); });
+    document.getElementById('open-scanner-btn')?.addEventListener('click', () => { if(typeof _startScanner === 'function') _startScanner(); });
     if (typeof _restoreOnlineName === 'function') _restoreOnlineName();
 
     const codeInput = document.getElementById('room-code-input');

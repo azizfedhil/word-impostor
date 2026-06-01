@@ -404,7 +404,7 @@ async function _joinRoom() {
             const nameInput = document.getElementById('online-player-name');
             if (nameInput) nameInput.value = _myName;
             _rememberLastRoom(code);
-            window.onlineMode = true; _subscribe(code); showScreen('online-lobby-screen'); _handleStateChange(room); return;
+            window.onlineMode = true; _subscribe(code); _handleStateChange(room); return;
         }
         const updated = await _mutatePlayers(
             code,

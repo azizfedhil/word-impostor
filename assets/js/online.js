@@ -1315,22 +1315,36 @@ async function _leaveRoom() {
 let _html5QrCode = null;
 
 async function _startScanner() {
-    const btn = document.getElementById('open-scanner-btn');
-    const container = document.getElementById('reader-container');
-    if (!btn || !container) return;
+    _clearErr();
+    let modal = document.getElementById('scanner-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'scanner-modal';
+        modal.className = 'modal hidden';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 400px; width: 92%; padding: 24px;">
+                <h3 style="margin-top:0; color:var(--primary-color); font-size:1.5rem; margin-bottom:16px;">📷 امسح كود QR</h3>
+                <div id="scanner-modal-reader" style="width: 100%; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border-color); margin-bottom: 20px; background:#000; aspect-ratio: 1/1;"></div>
+                <button id="close-scanner-modal-btn" class="danger-btn" style="background:transparent; color:var(--danger-color); border:none; box-shadow:none; margin:0 auto; font-size:1.1rem; cursor:pointer;">❌ سكر الكاميرا</button>
+            </div>
+        `;
+        document.body.appendChild(modal);
 
-    if (_html5QrCode && _html5QrCode.isScanning) {
-        await _html5QrCode.stop();
-        container.style.display = 'none';
-        btn.innerText = '📷 امسح الكود';
-        return;
+        document.getElementById('close-scanner-modal-btn').addEventListener('click', _stopScanner);
+        modal.addEventListener('click', e => {
+            if (e.target === modal) _stopScanner();
+        });
     }
 
-    container.style.display = 'block';
-    btn.innerText = '❌ سكر الكاميرا';
+    if (typeof openModal === 'function') {
+        openModal('scanner-modal');
+    } else {
+        modal.classList.remove('hidden');
+        modal.classList.add('active');
+    }
 
     if (!_html5QrCode) {
-        _html5QrCode = new Html5Qrcode("reader");
+        _html5QrCode = new Html5Qrcode("scanner-modal-reader");
     }
 
     const config = { fps: 10, qrbox: { width: 250, height: 250 } };
@@ -1350,9 +1364,10 @@ async function _startScanner() {
             }
 
             if (code && code.length >= 4) {
-                document.getElementById('room-code-input').value = code.toUpperCase();
+                const codeInput = document.getElementById('room-code-input');
+                if (codeInput) codeInput.value = code.toUpperCase();
                 _stopScanner();
-                _joinRoom();
+                if (typeof _joinRoom === 'function') _joinRoom();
             }
         },
         (errorMessage) => {
@@ -1365,19 +1380,27 @@ async function _startScanner() {
             msg = 'لازم تعطي صلاحية الكاميرا باش تنجم تمسح الكود';
         }
         _err(msg);
-        container.style.display = 'none';
-        btn.innerText = '📷 امسح الكود';
+        _stopScanner();
     });
 }
 
 async function _stopScanner() {
     if (_html5QrCode && _html5QrCode.isScanning) {
-        await _html5QrCode.stop();
+        try {
+            await _html5QrCode.stop();
+        } catch(e) {
+            console.error(e);
+        }
     }
-    const container = document.getElementById('reader-container');
-    const btn = document.getElementById('open-scanner-btn');
-    if (container) container.style.display = 'none';
-    if (btn) btn.innerText = '📷 امسح الكود';
+    if (typeof closeModal === 'function') {
+        closeModal('scanner-modal');
+    } else {
+        const modal = document.getElementById('scanner-modal');
+        if (modal) {
+            modal.classList.remove('active');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+    }
 }
 
 
