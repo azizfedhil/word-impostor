@@ -827,7 +827,11 @@ function _onChkobbaPointerDown(e) {
         if (!moved && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
             moved = true;
             _chkobbaPointerDrag.moved = true;
-            if (!_chkobbaPlaySession) _armChkobbaHandCard(cardEl);
+            // Always re-arm to the card being dragged.
+            // Without this, if card A was tapped first (session = card A) and the
+            // player then drags card B, the session stays on card A and the wrong
+            // card gets played on drop.
+            _armChkobbaHandCard(cardEl);
             const img = cardEl.querySelector('img');
             const ghost = document.createElement('div');
             ghost.className = 'chkobba-drag-ghost';
@@ -2137,6 +2141,7 @@ function _applyFlipAnimations(tableRects, handRects, state, me) {
 
 let _chkobbaTimer = null;
 let _chkobbaTimingOut = false;
+let _chkobbaLastTimedOutTurn = -1; // turnIndex+round key of the last timeout commit
 let _chkobbaSetupAIBusy = false;
 
 function _startOnlineChkobbaTimer(room) {
@@ -2151,6 +2156,16 @@ function _startOnlineChkobbaTimer(room) {
         const freshEnd = new Date(room.timer_end_at).getTime();
         if (freshEnd > _syncedNow() + 500) {
             _chkobbaTimingOut = false;
+        }
+    }
+
+    // Reset the per-turn timeout guard when the turn or round changes so the
+    // next player's timeout can fire normally.
+    const curState = room.word_obj;
+    if (curState) {
+        const curTurnKey = `${curState.turnIndex}-${curState.round || 0}`;
+        if (_chkobbaLastTimedOutTurn !== curTurnKey) {
+            _chkobbaLastTimedOutTurn = -1; // allow timeout for this new turn
         }
     }
 
@@ -2187,7 +2202,13 @@ function _startOnlineChkobbaTimer(room) {
     timerEl.classList.toggle('hidden', !isPlaying);
 
     const tick = () => {
-        const endTime = new Date(room.timer_end_at).getTime();
+        // Always read timer and state from the live _room, not the stale closure.
+        // The closure `room` is only used for initial config — after any commit the
+        // server pushes a new room which _startOnlineChkobbaTimer closes over; but
+        // until that push arrives the interval is still running with the old `room`.
+        // Reading _room here ensures the display and guard checks are always current.
+        const liveRoom = _room || room;
+        const endTime = new Date(liveRoom.timer_end_at).getTime();
         const left = Math.max(0, Math.ceil((endTime - _syncedNow()) / 1000));
 
         const m = Math.floor(left / 60).toString().padStart(2, '0');
@@ -2197,7 +2218,7 @@ function _startOnlineChkobbaTimer(room) {
         if (left <= 10) timerEl.style.color = 'var(--danger-color)';
         else timerEl.style.color = '';
 
-        const s = room.word_obj;
+        const s = liveRoom.word_obj;
         if (!s) return;
 
         const p = s?.players?.[s.turnIndex];
@@ -2205,16 +2226,6 @@ function _startOnlineChkobbaTimer(room) {
 
         if (!_chkobbaTimingOut && s?.phase === 'playing') {
             if (left <= 0) {
-                // Guard: if the turn has already advanced on the server (e.g. another
-                // client already committed a timeout move) the timer_end_at will have
-                // been refreshed. Re-check the live _room value before acting to avoid
-                // double-committing after a reconnect.
-                if (_room?.timer_end_at) {
-                    const liveEnd = new Date(_room.timer_end_at).getTime();
-                    const liveLeft = Math.max(0, Math.ceil((liveEnd - _syncedNow()) / 1000));
-                    if (liveLeft > 0) return; // timer already reset — another client acted
-                }
-
                 // Anyone can trigger timeout now (decentralized authoritative timer).
                 // We stagger based on role to reduce mutation collisions:
                 // 1. Host (0ms)
@@ -2236,9 +2247,15 @@ function _startOnlineChkobbaTimer(room) {
                     }, stagger);
                 }
             } else if (isAI && _isHost) {
-                // AI move after a short delay
-                const turnTime = room.config?.chkobbaTurnTime || 45;
-                if (left < (turnTime - 2 - Math.random() * 2)) {
+                // AI move: trigger once when the remaining time drops below the
+                // threshold. Use a per-turn random offset stored on the room so
+                // the same threshold is not re-evaluated every 500ms tick.
+                const turnTime = liveRoom.config?.chkobbaTurnTime || 45;
+                const aiThresholdKey = `_aiThreshold_${s.turnIndex}_${s.round || 0}`;
+                if (!liveRoom[aiThresholdKey]) {
+                    liveRoom[aiThresholdKey] = turnTime - 2 - Math.random() * 3;
+                }
+                if (left <= liveRoom[aiThresholdKey]) {
                     _chkobbaTimeout();
                 }
             }
@@ -2251,18 +2268,27 @@ function _startOnlineChkobbaTimer(room) {
 
 async function _chkobbaTimeout() {
     if (!_room || _chkobbaTimingOut) return;
+    const s = _room.word_obj;
+    if (!s || s.phase !== 'playing') return;
+    // Per-turn guard: don't commit a timeout for the same turn+round twice.
+    // This prevents the loop where the interval fires again after _chkobbaTimingOut
+    // is released in the finally block but before the server push arrives.
+    const turnKey = `${s.turnIndex}-${s.round || 0}`;
+    if (_chkobbaLastTimedOutTurn === turnKey) return;
     _chkobbaTimingOut = true;
+    _chkobbaLastTimedOutTurn = turnKey;
     // Safety net: if the network call or animation never completes, release the
     // guard after 6 s so the timer loop can retry on the next server push.
     const timingOutGuard = setTimeout(() => {
         if (_chkobbaTimingOut) {
             console.warn('[chkobbaTimeout] safety timeout — releasing _chkobbaTimingOut');
             _chkobbaTimingOut = false;
+            // Don't reset _chkobbaLastTimedOutTurn — if we timed out once for this
+            // turn, we don't want to commit a second timeout on retry. The server
+            // push (or reconnect) will install a new turnIndex which resets it.
         }
     }, 6000);
     try {
-        const s = _room.word_obj;
-        if (!s || s.phase !== 'playing') return;
         const p = s.players[s.turnIndex];
         if (!p || p.hand.length === 0) return;
 
@@ -2443,7 +2469,9 @@ function _onChkobbaDragStart(e) {
         e.preventDefault();
         return;
     }
-    if (!_chkobbaPlaySession) _armChkobbaHandCard(cardEl);
+    // Always re-arm to the card being dragged, not just when no session exists.
+    // Fixes: click card A, then drag card B — without this the session stays on A.
+    _armChkobbaHandCard(cardEl);
     e.dataTransfer?.setData('text/plain', cardEl.dataset.index);
     cardEl.classList.add('is-dragging');
 }
