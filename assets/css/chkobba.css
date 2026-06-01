@@ -543,12 +543,14 @@ body.game-chkobba header.app-header {
     background: rgba(82, 140, 113, 0.3);
     border: 2px solid rgba(255, 255, 255, 0.2);
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    font-size: 1.1rem;
-    font-weight: 700;
+    font-size: 0.92rem;
+    font-weight: 800;
     color: #fff;
     flex-shrink: 0;
+    line-height: 1;
     transition: border-color 0.45s ease, box-shadow 0.45s ease;
 }
 
