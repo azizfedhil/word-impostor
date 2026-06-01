@@ -281,7 +281,7 @@ function _handCardTilt(index, total) {
 }
 
 /** GPU-friendly card flight; calls onDone when finished (or immediately if reduced motion). */
-function _animateChkobbaFlight({ fromRect, toRect, imgSrc, imgSrcBack, duration = 380, rotate = 6, withGhost = false, persistAtEnd = false, onDone }) {
+function _animateChkobbaFlight({ fromRect, toRect, imgSrc, imgSrcBack, duration = 220, rotate = 6, withGhost = false, persistAtEnd = false, onDone }) {
     if (_prefersReducedMotion() || !fromRect || !toRect) {
         onDone?.();
         return;
@@ -319,17 +319,7 @@ function _animateChkobbaFlight({ fromRect, toRect, imgSrc, imgSrcBack, duration 
     const finish = () => {
         if (_done) return;
         _done = true;
-        if (persistAtEnd) {
-            ChkobbaAnimator.getPersistentGhosts().add(flyer);
-            // Settle down towards table (simulate gravity/landing seating)
-            flyer.style.transition = 'transform 380ms cubic-bezier(0.34, 1.56, 0.64, 1)';
-            const curTransform = flyer.style.transform;
-            // Cards land at their final spot but slightly lifted, then settle down.
-            // (Note: translateY(14px) matches the seat position in chkobba.css)
-            flyer.style.transform = `${curTransform} translateY(14px)`;
-        } else {
-            flyer.remove();
-        }
+        flyer.remove();
         ghost?.remove();
         onDone?.();
     };
@@ -358,7 +348,7 @@ function _animateChkobbaFlight({ fromRect, toRect, imgSrc, imgSrcBack, duration 
             const endTransform = `translate3d(${tx}px, ${ty}px, 0) rotate(${rotate * 0.2}deg) translate(-50%, -50%)`;
 
             // Enhanced physics: use a slight back-out overshoot and lift the card via scale
-            flyer.style.transition = `transform ${duration}ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 80ms ease-out`;
+            flyer.style.transition = `transform ${duration}ms cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 60ms ease-out`;
             flyer.style.opacity = '1';
             flyer.style.transform = endTransform;
             // Add flight class for CSS scale/shadow enhancement (see chkobba.css)
@@ -622,9 +612,9 @@ async function _commitChkobbaPlayToTableSkipCaptureCheck() {
             fromRect,
             toRect: toRect || tableEl.getBoundingClientRect(),
             imgSrc,
-            duration: 420,
+            duration: 240,
             rotate: -5,
-            withGhost: true,
+            withGhost: false,
             persistAtEnd: true
         }] : [],
         cardIds: [playedCard.id],
@@ -1274,7 +1264,7 @@ async function _chkobbaDeclineStarter() {
             toRect,
             imgSrc: cardImg,
             rotate: -8,
-            persistAtEnd: true
+            persistAtEnd: false
         }] : [],
         cardIds: state.starterCard ? [state.starterCard.id] : [],
         onCommit: runMutate
@@ -1428,7 +1418,7 @@ function _maybeShowChkobbaAnnouncement(state, duringDeal) {
     // Wait for any in-flight ghost animations (or a deal) to settle before
     // showing the celebration overlay, so it doesn't pop over a flying card.
     if (ChkobbaAnimator.isBusy() || duringDeal) {
-        setTimeout(() => _handleChkobbaBroadcastEvent(state.chkobbaEvent), 750);
+        setTimeout(() => _handleChkobbaBroadcastEvent(state.chkobbaEvent), 250);
     } else {
         _handleChkobbaBroadcastEvent(state.chkobbaEvent);
     }
@@ -1514,7 +1504,7 @@ async function _animateChkobbaDeal(deckEl, handEl, count, onDone) {
 
     // Phase 4 – target feel: 350–500ms travel, ease-out, slight stagger between cards.
     // Tight stagger — entire sequence ≤ 600ms even for 4+ cards.
-    const staggerMs = count > 2 ? 90 : 110;
+    const staggerMs = count > 2 ? 55 : 70;
 
     for (let i = 0; i < count; i++) {
         setTimeout(() => {
@@ -1533,7 +1523,7 @@ async function _animateChkobbaDeal(deckEl, handEl, count, onDone) {
                 toRect: targetRect,
                 imgSrc: back,
                 rotate: (Math.random() - 0.5) * 8,
-                duration: 380,
+                duration: 220,
                 onDone: () => {
                     // Ghost landed — flip the placeholder face-down → visible
                     // The actual face image is set by renderHand() after all arrive,
@@ -1946,7 +1936,7 @@ function _renderChkobbaMain(room) {
     if (shouldDealAnim) {
         _chkobbaSkipDealAnim = true;
         Array.from(handCont.querySelectorAll('.hand-card')).forEach(el => {
-            el.style.transition = 'opacity 120ms ease';
+            el.style.transition = 'opacity 60ms ease';
             el.style.opacity = '0';
         });
         setTimeout(() => {
@@ -1961,7 +1951,7 @@ function _renderChkobbaMain(room) {
                     _applyFlipAnimations(tableFlipOldRects, handFlipOldRects, state, me);
                 }
             );
-        }, 130);
+        }, 40);
     } else {
         renderHand();
         _applyFlipAnimations(tableFlipOldRects, handFlipOldRects, state, me);
@@ -2019,8 +2009,8 @@ function _applyFlipAnimations(tableRects, handRects, state, me) {
                 void el.offsetWidth;
 
                 requestAnimationFrame(() => {
-                    // Table shifting glide: smooth physical glide with overshoot
-                    el.style.transition = 'transform 600ms cubic-bezier(0.34, 1.56, 0.64, 1)';
+                    // Table shifting glide: fast snap
+                    el.style.transition = 'transform 220ms cubic-bezier(0.25, 0.46, 0.45, 0.94)';
                     el.style.setProperty('--flip-dx', '0px');
                     el.style.setProperty('--flip-dy', '0px');
                     el.addEventListener('transitionend', () => {
@@ -2075,17 +2065,11 @@ function _applyFlipAnimations(tableRects, handRects, state, me) {
                     // When a card is played, remaining cards shift to close the gap.
                     // We stagger based on their index relative to the played card's position.
                     let staggerDelay = 0;
-                    const baseStagger = 35;
-                    
-                    // Use idx as a fallback for stagger direction
-                    if (dx > 0) staggerDelay = idx * baseStagger;
-                    else if (dx < 0) staggerDelay = (me.hand.length - 1 - idx) * baseStagger;
-                    else staggerDelay = idx * 10; // Small default stagger for tilt-only moves
+                    // No stagger — just animate all cards simultaneously for snappy feel
                     
                     setTimeout(() => {
-                        // Hand re-centering bounce physics: physically-weighted overshoot.
-                        // 850ms with a high overshoot factor (1.9) for a very fluid organic feel.
-                        el.style.transition = `transform 850ms cubic-bezier(0.34, 1.9, 0.64, 1)`;
+                        // Hand re-centering: fast and clean
+                        el.style.transition = `transform 280ms cubic-bezier(0.25, 0.46, 0.45, 0.94)`;
                         
                         // Glide both position and rotation deltas to 0
                         el.style.setProperty('--flip-dx', '0px');
@@ -2340,9 +2324,9 @@ async function _chkobbaTimeout() {
                 toRect,
                 imgSrc:       logic.getCardAsset(cardToPlay),
                 rotate:       bestMatch ? 4 : -5,
-                withGhost:    true,
-                staggerAfter: bestMatch ? 50 : 0,
-                duration:     320
+                withGhost:    false,
+                staggerAfter: bestMatch ? 30 : 0,
+                duration:     200
             });
             if (isMe) inFlightIds.push(cardToPlay.id);
         }
@@ -2356,8 +2340,8 @@ async function _chkobbaTimeout() {
                         toRect,
                         imgSrc:       logic.getCardAsset(c),
                         rotate:       (i % 2 === 0 ? 1 : -1) * (4 + i * 2),
-                        withGhost:    true,
-                        staggerAfter: 50
+                        withGhost:    false,
+                        staggerAfter: 30
                     });
                     inFlightIds.push(c.id);
                 }
@@ -2492,8 +2476,8 @@ async function _commitChkobbaCapture() {
             imgSrc:       logic.getCardAsset(playedCard),
             imgSrcBack:   logic.ASSETS.BACK,
             rotate:       4,
-            withGhost:    true,
-            staggerAfter: 50
+            withGhost:    false,
+            staggerAfter: 30
         });
         inFlightCardIds.push(playedCard.id);
     }
@@ -2508,8 +2492,8 @@ async function _commitChkobbaCapture() {
                 imgSrc:       logic.getCardAsset(card),
                 imgSrcBack:   logic.ASSETS.BACK,
                 rotate:       (i % 2 === 0 ? 1 : -1) * (4 + i * 2),
-                withGhost:    true,
-                staggerAfter: 50
+                withGhost:    false,
+                staggerAfter: 30
             });
             inFlightCardIds.push(id);
         }
@@ -2571,9 +2555,9 @@ async function _commitChkobbaPlayToTable() {
             fromRect,
             toRect:   toRect || tableRect,
             imgSrc,
-            duration: 320,
+            duration: 200,
             rotate:   -5,
-            withGhost: true
+            withGhost: false
         }] : [],
         cardIds:  [playedCard.id],
         onCommit: runMutate
