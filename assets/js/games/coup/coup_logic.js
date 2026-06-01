@@ -32,6 +32,12 @@ const _coupAssetBase = (() => {
     return inGamesFolder ? '../assets/coup/' : 'assets/coup/';
 })();
 
+const _coupImgBase = (() => {
+    const path = window.location.pathname;
+    const inGamesFolder = /\/games\/[^/]*$/.test(path);
+    return inGamesFolder ? '../assets/images/' : 'assets/images/';
+})();
+
 const coupCards = {
     duke: {
         name: 'الشلغمي', icon: '👑',
@@ -382,7 +388,8 @@ function renderCoupScreen(state = coupState, myId = null) {
                 const meta  = coupCards[c.type] || coupCards.duke;
                 const label = (visible || c.lost) ? _coupCardLabelHtml(meta) : '<span>🂠 مخبية</span>';
                 const info  = (visible || c.lost) ? `<button class="coup-card-info" type="button" data-card-type="${c.type}" aria-label="info">ℹ️</button>` : '';
-                return `<div class="coup-influence ${c.lost ? 'lost' : ''}"><span>${label}</span>${info}</div>`;
+                const bgStyle = (visible || c.lost) ? ` style="--card-bg:url('${_coupImgBase}${c.type}_horizontal.webp')"` : '';
+                return `<div class="coup-influence ${c.lost ? 'lost' : ''}" data-card-type="${c.type}"${bgStyle}><span>${label}</span>${info}</div>`;
             }).join('')}</div>`;
         div.addEventListener('click', e => {
             if (e.target.closest('.coup-card-info')) return;
@@ -444,11 +451,14 @@ function renderCoupActions(state = coupState, myId = null) {
     const current = state.players[state.turnIndex];
     if (!isTurn) { panel.innerHTML = `<div class="coup-panel-card">استنى دورك. الدور توّة على ${_escHtml(current?.name || '')}.</div>`; }
     const mustCoup = isTurn && (me?.coins || 0) >= 10;
+    const _actionBgMap = { income:'plusone', foreignAid:'plustwo', tax:'tax', steal:'steal', assassinate:'assassinate', exchange:'exchange', coup:'coup' };
     const mk = (txt, action, cls = '', hint = '') => {
         const actionLocked = !isTurn || (mustCoup && action !== 'coup');
         const disabled     = actionLocked ? 'is-action-disabled' : '';
         const finalHint    = mustCoup && action !== 'coup' ? 'عندك 10+ فلوس، لازم Coup' : hint;
-        return `<button class="coup-action-btn ${cls} ${disabled}" data-action="${action}" aria-disabled="${actionLocked ? 'true' : 'false'}"><strong>${txt}<span class="coup-action-info" data-action-info="${action}">ℹ️</span></strong><small>${finalHint}</small></button>`;
+        const bgFile       = _actionBgMap[action];
+        const bgStyle      = bgFile ? ` style="--action-bg:url('${_coupImgBase}${bgFile}.webp')"` : '';
+        return `<button class="coup-action-btn ${cls} ${disabled}" data-action="${action}"${bgStyle} aria-disabled="${actionLocked ? 'true' : 'false'}"><strong>${txt}<span class="coup-action-info" data-action-info="${action}">ℹ️</span></strong><small>${finalHint}</small></button>`;
     };
     panel.innerHTML += `<div class="coup-action-grid ${isTurn ? '' : 'is-disabled'}">
         ${mk('🪙 شهرية +1','income','','مضمون وما يتكذبش')}
