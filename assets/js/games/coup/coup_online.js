@@ -1142,7 +1142,9 @@ async function _onlineCoupStartPending(action, targetId) {
         const blockable = blockRoles.length > 0;
         const claim = claims[action] || null;
         if (!claim && !blockable) return _onlineCoupApplyActionLocal(state, action, targetId);
-        // Deduct assassination fee immediately on declaration (not refunded if caught bluffing or blocked).
+        // Deduct assassination fee immediately on declaration.
+        // Refunded if the assassin claim is successfully challenged (caught bluffing).
+        // NOT refunded if the assassination is blocked (Contessa) or the block claim is challenged and block holds.
         if (action === 'assassinate') {
             actor.coins -= 3;
             _onlineCoupPayBank(state, 3);
@@ -1171,6 +1173,12 @@ async function _onlineCoupChallenge(challengerId, pendingId = null) {
             const next = p.blockable ? _onlineCoupResumeBlockNext(p, actor.name) : { type:'applyAction', action:p.action, targetId:p.targetId };
             _onlineCoupRequestLoss(state, challengerId, 'طلعت غالط في التكذيب. اختار كارتة تخسرها.', next);
         } else {
+            // Rulebook: "If an action is successfully challenged the entire action fails,
+            // and any coins paid as the cost of the action are returned to the player."
+            if (p.action === 'assassinate') {
+                actor.coins += 3;
+                _onlineCoupTakeFromBank(state, 3);
+            }
             state.log = `${actor.name} تڨبض يبوّع! ${_onlineCoupCaught()}`;
             _onlineCoupEvent(state, state.log, 'bad');
             _onlineCoupRequestLoss(state, actor.id, 'تكذّبت وما عندكش الكارتة. اختار كارتة تكشفها.', { type:'nextTurn' });
