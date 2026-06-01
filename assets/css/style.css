@@ -726,19 +726,20 @@ body:not(.game-coup) .coup-only-btn { display: none !important; }
     background-position: center top !important;
     position: relative;
     overflow: hidden;
+    border-color: rgba(255,255,255,0.95) !important;
 }
 .coup-influence[data-has-bg]::before {
     content: '';
     position: absolute;
     inset: 0;
-    background: rgba(0,0,0,0.42);
+    background: rgba(0,0,0,0.20);
     border-radius: inherit;
 }
 .coup-influence[data-has-bg] > * {
     position: relative;
     z-index: 1;
     color: #fff;
-    text-shadow: 0 1px 4px rgba(0,0,0,0.7);
+    text-shadow: 0 1px 4px rgba(0,0,0,0.55);
 }
 .coup-influence[data-has-bg] .coup-card-info {
     background: rgba(255,255,255,0.22);
@@ -790,17 +791,18 @@ body:not(.game-coup) .coup-only-btn { display: none !important; }
     position: relative;
     overflow: hidden;
     color: #fff;
+    border-color: rgba(255,255,255,0.95) !important;
 }
 .coup-action-btn[data-has-bg]::before {
     content: '';
     position: absolute;
     inset: 0;
-    background: rgba(0,0,0,0.52);
+    background: rgba(0,0,0,0.28);
     border-radius: inherit;
     transition: background 0.2s ease;
 }
 .coup-action-btn[data-has-bg]:hover:not(:disabled):not(.is-action-disabled)::before {
-    background: rgba(0,0,0,0.38);
+    background: rgba(0,0,0,0.18);
 }
 .coup-action-btn[data-has-bg] > * {
     position: relative;
@@ -815,7 +817,7 @@ body:not(.game-coup) .coup-only-btn { display: none !important; }
 }
 /* Primary action (duke tax, captain steal) — green tint over bg */
 .coup-action-btn.primary-action[data-has-bg]::before {
-    background: rgba(36, 90, 60, 0.60);
+    background: rgba(36, 90, 60, 0.35);
 }
 /* Danger action (assassin, coup) — red tint */
 .coup-action-btn.danger-action[data-has-bg] {
@@ -823,11 +825,11 @@ body:not(.game-coup) .coup-only-btn { display: none !important; }
     border-color: rgba(212,107,90,0.55);
 }
 .coup-action-btn.danger-action[data-has-bg]::before {
-    background: rgba(120, 30, 20, 0.62);
+    background: rgba(120, 30, 20, 0.38);
 }
 /* Coup gets strongest red overlay */
 .coup-action-btn[data-action="coup"][data-has-bg]::before {
-    background: rgba(160, 30, 20, 0.70);
+    background: rgba(160, 30, 20, 0.45);
 }
 .coup-action-grid.is-disabled .coup-action-btn,
 .coup-action-btn.is-action-disabled,
