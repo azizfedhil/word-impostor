@@ -606,7 +606,7 @@ function _showOnlineCoup(room) {
         const focused = _onlineCoupFocusedPlayerId === p.id || (!_onlineCoupFocusedPlayerId && isMe);
         const dimmed = !!_onlineCoupFocusedPlayerId && _onlineCoupFocusedPlayerId !== p.id;
         const out = !p.hand.some(c=>!c.lost);
-        const imgBase = (() => { const path = window.location.pathname; return /\/games\/[^/]*$/.test(path) ? '../assets/images/' : 'assets/images/'; })();
+        const imgBase = (window.CoupGame?.cards?.duke?.img || '').replace(/coup\/[^/]+$/, '') + 'images/';
         const div = document.createElement('div');
         div.className = 'coup-player-card' + (idx===(state.turnIndex||0)?' is-turn':'') + (isMe?' is-me':'') + (focused?' is-focused':'') + (dimmed?' is-dimmed':'') + (out?' is-out':'');
         div.dataset.playerId = p.id;
@@ -972,7 +972,7 @@ function _renderOnlineCoupActions(room, state, me) {
     }
     const isTurn = me.id === current?.id;
     const mustCoup = isTurn && (me.coins || 0) >= 10;
-    const _onlineImgBase = (() => { const p = window.location.pathname; return /\/games\/[^/]*$/.test(p) ? '../assets/images/' : 'assets/images/'; })();
+    const _onlineImgBase = (window.CoupGame?.cards?.duke?.img || '').replace(/coup\/[^/]+$/, '') + 'images/';
     const _onlineActionBgMap = { income:'plusone', foreignAid:'plustwo', tax:'tax', steal:'steal', assassinate:'assassinate', exchange:'exchange', coup:'coup' };
     const mk = (txt, action, cls='', hint='') => {
         const actionLocked = !isTurn || (mustCoup && action !== 'coup');
