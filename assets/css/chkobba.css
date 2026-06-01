@@ -222,6 +222,7 @@ body.game-chkobba header.app-header {
     transform: scale(0.98);
 }
 
+
 .chkobba-player-pill.is-turn {
     border-color: var(--primary-color);
     box-shadow: 0 0 0 2px rgba(82, 140, 113, 0.18), var(--chkobba-surface-shadow);
@@ -407,6 +408,7 @@ body.game-chkobba header.app-header {
     transform: rotate(5deg);
 }
 
+
 .chkobba-pile .pile-count {
     position: absolute;
     bottom: -6px;
@@ -439,14 +441,12 @@ body.game-chkobba header.app-header {
 }
 
 .chkobba-pile.deck-pile.is-dealing {
-    animation: chkobbaDeckPulse 450ms cubic-bezier(0.25, 0.1, 0.25, 1);
+    animation: chkobbaDeckPulse 400ms ease;
 }
 
 @keyframes chkobbaDeckPulse {
-    0% { transform: scale(1) rotate(5deg); }
-    15% { transform: scale(0.96) rotate(4deg) translateY(2px); }
-    40% { transform: scale(1.02) rotate(5.5deg) translateY(-1px); }
-    100% { transform: scale(1) rotate(5deg); }
+    0%, 100% { transform: scale(1) rotate(5deg); }
+    50% { transform: scale(1.06) rotate(5deg); }
 }
 
 /* Round info chips */
@@ -466,9 +466,11 @@ body.game-chkobba header.app-header {
     align-items: center;
     justify-content: center;
     gap: 8px;
+
     width: 360px;
-    height: 95px;
+    height: 95spx;
     padding: 20px;
+
     background: rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(16px) saturate(180%);
     -webkit-backdrop-filter: blur(16px) saturate(180%);
@@ -670,6 +672,7 @@ body.game-chkobba header.app-header {
     box-shadow: 0 0 0 2px var(--primary-color), var(--chkobba-card-shadow);
 }
 
+
 /* In-place selection: keep table rotation, avoid translateY jump */
 .chkobba-card.table-card.is-selected,
 .chkobba-card.is-table.is-selected {
@@ -806,6 +809,7 @@ body.game-chkobba header.app-header {
         0 24px 48px rgba(0,0,0,.35);
 }
 
+
 .chkobba-card.hand-card:first-child {
     margin-left: 0;
 }
@@ -845,6 +849,7 @@ body.game-chkobba header.app-header {
     border-radius: 12px;
 }
 
+
 .chkobba-capture-stack {
     position: fixed;
     z-index: 10001;
@@ -882,11 +887,10 @@ body.game-chkobba header.app-header {
     position: fixed;
     width: var(--chkobba-card-w);
     height: var(--chkobba-card-h);
+    transform: translate(-50%, -50%);
+    transition: left 1.1415s var(--chkobba-ease), top 1.1415s var(--chkobba-ease), opacity 0.507s ease;
     z-index: 9999;
     opacity: 1;
-    pointer-events: none;
-    will-change: transform, filter, opacity;
-    transform-origin: center center;
 }
 
 .chkobba-deal-flyer.is-flying {
@@ -898,7 +902,7 @@ body.game-chkobba header.app-header {
     height: 100%;
     object-fit: cover;
     border-radius: 12px;
-    box-shadow: none !important;
+    box-shadow: var(--chkobba-card-shadow);
 }
 
 .chkobba-flight-card {
@@ -932,7 +936,6 @@ body.game-chkobba header.app-header {
     will-change: transform, opacity;
     filter: drop-shadow(0 0 12px var(--primary-color)) brightness(1.15);
 }
-
 .chkobba-ghost-trail img {
     width: 100%; height: 100%; border-radius: 12px;
 }
@@ -942,6 +945,7 @@ body.game-chkobba header.app-header {
    launch.  They sit in the correct fan positions so each ghost has a precise
    landing target, and they fade visible on arrival — eliminating the blank-hand
    flash that occurred when renderHand() fired after all ghosts had already landed.
+
    JS creates these with class chkobba-deal-placeholder and removes them once
    renderHand() has inserted the real face-up cards. */
 .chkobba-deal-placeholder {
@@ -955,12 +959,10 @@ body.game-chkobba header.app-header {
     will-change: opacity;
 }
 
+/* JS sets opacity:1 + transition:'opacity 80ms ease-out' inline on arrival.
+   This rule is a no-op anchor so the class exists in the cascade. */
 .chkobba-deal-placeholder.chkobba-deal-arrived {
     opacity: 1;
-}
-
-.chkobba-deal-placeholder img {
-    box-shadow: 0 8px 12px rgba(0,0,0,0.25) !important;
 }
 
 /* Hand dock */
@@ -992,6 +994,8 @@ body.game-chkobba header.app-header {
     opacity: 0.72;
     filter: grayscale(50%) saturate(50%);
 }
+
+
 
 .chkobba-hand-dock.is-inactive-turn .chkobba-hand {
     box-shadow: none;
