@@ -1613,10 +1613,14 @@ async function _animateChkobbaDeal(deckEl, handEl, count, onDone) {
     function finishFlip() {
         flipsFinished++;
         if (flipsFinished >= count) {
-            setTimeout(() => {
+            // All flips done. Call onDone (renderHand) first so the real face
+            // cards are painted before we remove the placeholders — this closes
+            // the one-frame gap that caused the blink.
+            onDone?.();
+            // Remove placeholders on the next frame, after renderHand has run.
+            requestAnimationFrame(() => {
                 placeholders.forEach(p => p.remove());
-                onDone?.();
-            }, 40);
+            });
         } else {
             flipNext();
         }
@@ -1989,11 +1993,11 @@ function _renderChkobbaMain(room) {
                 if (!cardEl) {
                     cardEl = _renderChkobbaCard(card, { zone: 'hand', index: idx, total, interactive: canInteract });
                     if (shouldDealAnim) {
-                        cardEl.style.opacity = '0';
-                        cardEl.style.transition = 'opacity 120ms ease-out';
+                        // The flip animation already revealed the card — append
+                        // fully visible so there's no fade-in blink on handoff.
+                        cardEl.style.opacity = '1';
+                        cardEl.style.transition = 'none';
                         handCont.appendChild(cardEl);
-                        const delay = idx * 40;
-                        setTimeout(() => { cardEl.style.opacity = '1'; }, delay);
                     } else {
                         handCont.appendChild(cardEl);
                     }
