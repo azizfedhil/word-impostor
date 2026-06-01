@@ -339,8 +339,10 @@ body.game-chkobba header.app-header {
 /* Table surface */
 .chkobba-table-wrap {
     position: relative;
-    width: min(88vw, 320px);
+    /* Slightly narrower to encourage wrapping at 3-4 cards */
+    width: min(92vw, 360px);
     flex-shrink: 0;
+    padding: 10px;
 }
 
 .chkobba-table {
@@ -356,17 +358,12 @@ body.game-chkobba header.app-header {
     flex-wrap: wrap;
     align-items: center;
     justify-content: center;
+    /* align-content center ensures that when rows wrap, the entire block
+       stays centered, making cards "move up" to accommodate new rows. */
     align-content: center;
-    gap: 10px;
-    padding: 52px 16px 16px;
+    gap: 12px;
+    padding: 52px 24px 24px;
     transition: box-shadow 160ms ease;
-}
-
-.chkobba-table-wrap {
-    position: relative;
-    width: min(88vw, 320px);
-    flex-shrink: 0;
-    padding: 20px;
 }
 
 .chkobba-table.is-drop-target {
@@ -610,14 +607,44 @@ body.game-chkobba header.app-header {
     height: var(--chkobba-card-h);
     position: relative;
     transform-style: preserve-3d;
-    transition: transform 180ms cubic-bezier(0.22, 0.9, 0.3, 1), box-shadow 180ms ease;
+    /* Phase 8 — 260ms is the sweet spot for card repositioning (250–350ms target) */
+    transition: transform 260ms cubic-bezier(0.22, 0.9, 0.3, 1), box-shadow 200ms ease;
     cursor: grab;
     user-select: none;
     touch-action: none;
     flex-shrink: 0;
 }
 
-.chkobba-card img {
+.chkobba-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Hand cards arriving face-down then flipping */
+.chkobba-card.hand-card .chkobba-card-inner {
+    transform: rotateY(180deg); /* Start face-down */
+    animation: chkobbaHandReveal 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s forwards;
+}
+
+/* Table cards are always face-up */
+.chkobba-card.table-card .chkobba-card-inner {
+    transform: rotateY(0deg);
+}
+
+@keyframes chkobbaHandReveal {
+    from { transform: rotateY(180deg); }
+    to   { transform: rotateY(0deg); }
+}
+
+.chkobba-card img,
+.chkobba-card .card-face,
+.chkobba-card .card-back {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -625,7 +652,16 @@ body.game-chkobba header.app-header {
     box-shadow: var(--chkobba-card-shadow);
     backface-visibility: hidden;
     pointer-events: none;
-    border: 1px solid var(--border-color);
+}
+
+/* Zoom in on card faces to crop out transparent asset padding */
+.chkobba-card .card-face {
+    transform: scale(1.08);
+}
+
+/* Card backs fit perfectly; keep them at identity */
+.chkobba-card .card-back {
+    transform: rotateY(180deg) scale(1);
 }
 
 .chkobba-card.is-armed {
@@ -661,45 +697,96 @@ body.game-chkobba header.app-header {
 
 .chkobba-card.table-card,
 .chkobba-card.is-table {
-    transform: rotate(var(--rot, 0deg)) translateY(14px);
+    transform:
+        translate(var(--flip-dx, 0px), var(--flip-dy, 0px))
+        translate(var(--offset-x, 0px), var(--offset-y, 0px))
+        rotate(var(--rot, 0deg))
+        translateY(14px);
     width: 95.60176621875px;
     height: 140.93868628125px;
-    transition: transform 180ms cubic-bezier(0.22, 0.9, 0.3, 1), width 180ms ease, height 180ms ease, opacity 120ms ease;
-    animation: tableCardEnter 220ms cubic-bezier(0.22, 0.9, 0.3, 1) both;
+    /* Phase 7 — width/height removed from transition: they trigger full layout
+       reflows and produce janky size-change animations. Size class changes
+       (is-stacked-*) now snap instantly; only transform/opacity animate. */
+    transition: transform 600ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 120ms ease;
+    /* NOTE: animation removed from base rule — it re-fired on every repaint,
+       causing the table blink. JS adds .is-new-card to trigger entry only once. */
+    will-change: transform, opacity;
+}
+
+/* Entry animation fires ONLY when JS adds .is-new-card to a freshly-inserted card.
+   JS removes the class after the animation completes (animationend). */
+.chkobba-card.table-card.is-new-card,
+.chkobba-card.is-table.is-new-card {
+    animation: tableCardEnter 450ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
 @keyframes tableCardEnter {
     from {
         opacity: 0;
-        transform: rotate(var(--rot, 0deg)) translateY(20px) scale(0.88);
+        /* Start slightly lower and smaller for a weighty "drop" feel */
+        transform:
+            translate(var(--flip-dx, 0px), var(--flip-dy, 0px))
+            translate(var(--offset-x, 0px), var(--offset-y, 0px))
+            rotate(var(--rot, 0deg))
+            translateY(32px)
+            scale(0.75);
     }
     to {
         opacity: 1;
-        transform: rotate(var(--rot, 0deg)) translateY(14px) scale(1);
+        transform:
+            translate(var(--flip-dx, 0px), var(--flip-dy, 0px))
+            translate(var(--offset-x, 0px), var(--offset-y, 0px))
+            rotate(var(--rot, 0deg))
+            translateY(14px)
+            scale(1);
     }
+}
+
+/* Phase 4/5 – mid-flight visual enhancement: the is-in-flight class is added
+   by JS when the flight transition begins.  A subtle scale-up and shadow boost
+   make the card feel physically lifted off the surface. */
+.chkobba-flight-card.is-in-flight img {
+    animation: chkobbaCardLift 0.4s var(--ease-out-cubic) forwards;
+}
+
+@keyframes chkobbaCardLift {
+    0%   { transform: scale(1); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+    40%  { transform: scale(1.12); box-shadow: 0 32px 64px rgba(0,0,0,0.35); }
+    100% { transform: scale(1); box-shadow: 0 14px 32px rgba(45, 42, 38, 0.22); }
 }
 
 /* When more than 4 cards on table, reduce size by 30% */
 .chkobba-table.is-stacked-30 .chkobba-card.table-card,
 .chkobba-table.is-stacked-30 .chkobba-card.is-table {
-    width: 66.92123633125px;
-    height: 98.657080396875px;
+    width: 82px;
+    height: 121px;
 }
 
 /* When more than 6 cards on table, reduce size by 60% */
 .chkobba-table.is-stacked-60 .chkobba-card.table-card,
 .chkobba-table.is-stacked-60 .chkobba-card.is-table {
-    width: 38.2407064875px;
-    height: 56.3754745125px;
+    width: 60px;
+    height: 88px;
 }
 
 .chkobba-card.hand-card {
     z-index: var(--hand-z, 10);
+    /* Phase 3 – FLIP: --flip-dx/--flip-dy hold the inverted offset while the
+       card slides from its old position to the new one.  They are set/cleared
+       by JS and only active during the FLIP animation. */
     transform:
+        translate(var(--flip-dx, 0px), var(--flip-dy, 0px))
         translateX(var(--stack-offset, 0px))
         translateY(var(--stack-lift, 0px))
-        rotate(var(--tilt, 0deg));
+        rotate(calc(var(--tilt, 0deg) + var(--tilt-extra, 0deg)));
     margin-left: calc(var(--stack-overlap, 0px) * -1);
+    will-change: transform, opacity;
+}
+
+/* Phase 3 – when FLIP is active, JS manages the transition inline for physics-based
+   control over stagger and overshoot. */
+.chkobba-card.hand-card.is-flip-animating {
+    z-index: 100 !important;
 }
 
 .chkobba-card.hand-card img {
@@ -832,6 +919,9 @@ body.game-chkobba header.app-header {
     object-fit: cover;
     border-radius: 12px;
     box-shadow: 0 14px 32px rgba(45, 42, 38, 0.22);
+    /* Allow the JS back→face flip (scaleX 0→1 swap at midpoint of capture flights).
+       transform transitions are set per-element by JS; will-change hints the GPU. */
+    will-change: transform;
 }
 
 /* Ghost trail element for captures */
@@ -846,6 +936,31 @@ body.game-chkobba header.app-header {
 }
 .chkobba-ghost-trail img {
     width: 100%; height: 100%; border-radius: 12px;
+}
+
+/* ── Deal placeholders ───────────────────────────────────────────────────────
+   Invisible face-down card shapes pre-inserted into the hand before deal flights
+   launch.  They sit in the correct fan positions so each ghost has a precise
+   landing target, and they fade visible on arrival — eliminating the blank-hand
+   flash that occurred when renderHand() fired after all ghosts had already landed.
+
+   JS creates these with class chkobba-deal-placeholder and removes them once
+   renderHand() has inserted the real face-up cards. */
+.chkobba-deal-placeholder {
+    /* Inherits .chkobba-card sizing — only override what needs suppressing */
+    opacity: 0;
+    pointer-events: none;
+    cursor: default;
+    /* Kill any entry keyframe — placeholders must be invisible until JS reveals them */
+    animation: none !important;
+    /* Prevent the normal hand-card hover lift while invisible */
+    will-change: opacity;
+}
+
+/* JS sets opacity:1 + transition:'opacity 80ms ease-out' inline on arrival.
+   This rule is a no-op anchor so the class exists in the cascade. */
+.chkobba-deal-placeholder.chkobba-deal-arrived {
+    opacity: 1;
 }
 
 /* Hand dock */
@@ -867,14 +982,15 @@ body.game-chkobba header.app-header {
     border: none;
     border-radius: 0;
     box-shadow: none;
-    transition: background 220ms ease, box-shadow 220ms ease;
+}
+
+.chkobba-hand-dock {
+    transition: opacity 300ms ease, filter 300ms ease;
 }
 
 .chkobba-hand-dock.is-inactive-turn {
-    opacity: 0.7;
-    filter: grayscale(60%) saturate(40%);
-    transition: opacity 220ms ease, filter 220ms ease;
-    position: relative;
+    opacity: 0.72;
+    filter: grayscale(50%) saturate(50%);
 }
 
 
@@ -1104,8 +1220,9 @@ body.game-chkobba header.app-header {
         height: 36px;
     }
     .chkobba-top-controls .coup-turn-indicator {
-        padding: 3px 31px;
-        height: 36px;
+        padding: 6px 20px;
+        height: auto;
+        min-height: 36px;
     }
 }
 
@@ -1176,21 +1293,5 @@ body.game-chkobba header.app-header {
     .chkobba-pile {
         width: 79px;
         height: 103px;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .chkobba-card,
-    .chkobba-player-pill,
-    .chkobba-drag-ghost,
-    .chkobba-flight-card,
-    .chkobba-hand-dock {
-        transition-duration: 0.001ms !important;
-    }
-    .chkobba-announcement,
-    .chkobba-celebration-card,
-    .chkobba-confetti-bit,
-    .chkobba-player-pill.is-entering {
-        animation-duration: 0.001ms !important;
     }
 }
