@@ -1192,7 +1192,25 @@ function _renderChkobbaPlayerInfo(state, me, isMyTurn) {
     const capturedCount = me.captured?.length || 0;
     const diamondCount = me.captured?.filter(c => c.suit === 'diamonds').length || 0;
     const chkobbaCount = me.chkobbas || 0;
-    const totalScore = me.totalScore || 0;
+
+    // Compute live round points from current captured cards so the circle
+    // updates in real time instead of only after the round ends.
+    let liveRoundScore = 0;
+    try {
+        const logic = window.ChkobbaLogic;
+        if (logic?.calculateScores) {
+            const capturedMap = {};
+            const chkobbaMap = {};
+            state.players.forEach(p => {
+                capturedMap[p.id] = p.captured || [];
+                chkobbaMap[p.id] = p.chkobbas || 0;
+            });
+            const scores = logic.calculateScores(capturedMap, chkobbaMap, state.teams);
+            liveRoundScore = scores[me.id]?.total ?? 0;
+        }
+    } catch(e) { /* fall back to 0 if logic unavailable */ }
+
+    const totalScore = (me.totalScore || 0) + liveRoundScore;
 
     const details = `
         <div class="chkobba-stat-item">
@@ -1552,28 +1570,17 @@ async function _animateChkobbaDeal(deckEl, handEl, count, onDone) {
     }
 
     // Cards fly in with a tight stagger, then each flips one-by-one back→face.
-    // We call onDone() (renderHand) immediately so the real face-up card elements
-    // exist in the DOM — hidden behind the placeholders — letting us read their
-    // face image src for the midpoint swap during each flip.
+    // Face srcs are read directly from ChkobbaLogic so we never need to call
+    // onDone() early (which would bypass the animation entirely).
+    const logic = window.ChkobbaLogic;
     const flipHalfDur = 110; // ms per half of the scaleX flip
     const flightDur = 220;
     const staggerMs = count > 2 ? 55 : 70;
 
-    // Call renderHand() now so face cards are in the DOM (opacity:0, behind placeholders).
-    // onDone sets _chkobbaSkipDealAnim=false and calls renderHand() + _applyFlipAnimations.
-    // We call it early just for the face srcs; placeholders still sit on top visually.
-    onDone?.();
-
-    // Build a map of slot-index → face image src from the newly rendered hand cards.
-    const faceCards = Array.from(handEl.querySelectorAll('.hand-card:not(.chkobba-deal-placeholder)'));
-    const faceSrcByIndex = {};
-    faceCards.forEach((el, idx) => {
-        const img = el.querySelector('img');
-        if (img) faceSrcByIndex[idx] = img.src;
-        // Keep them invisible — placeholders cover them during the animation
-        el.style.opacity = '0';
-        el.style.transition = 'none';
-    });
+    // Get the face image src for each card being dealt from game state
+    const meState = _room?.word_obj?.players?.find(p => p.id === _myId);
+    const handCards = meState?.hand || [];
+    const newCards = handCards.slice(-count); // newly dealt cards are last in hand
 
     // Queue of landed placeholders waiting to flip, in arrival order.
     const flipQueue = [];
@@ -1582,10 +1589,9 @@ async function _animateChkobbaDeal(deckEl, handEl, count, onDone) {
 
     function flipNext() {
         if (flipsStarted >= flipQueue.length) return;
-        const { ph, index } = flipQueue[flipsStarted++];
+        const { ph, faceSrc } = flipQueue[flipsStarted++];
         const phImg = ph.querySelector('img');
-        const faceSrc = faceSrcByIndex[index];
-        if (!phImg) { finishFlip(index); return; }
+        if (!phImg) { finishFlip(); return; }
 
         // Fold down (showing back → hidden)
         phImg.style.transition = `transform ${flipHalfDur}ms ease-in`;
@@ -1599,31 +1605,27 @@ async function _animateChkobbaDeal(deckEl, handEl, count, onDone) {
             setTimeout(() => {
                 phImg.style.transition = '';
                 phImg.style.transform = '';
-                finishFlip(index);
+                finishFlip();
             }, flipHalfDur + 20);
         }, flipHalfDur);
     }
 
-    function finishFlip(index) {
-        // The placeholder that just finished flipping is the one at flipsStarted-1
-        const ph = flipQueue[flipsStarted - 1]?.ph;
-        if (ph) ph.style.opacity = '0';
-        // Reveal the real face card that was sitting hidden underneath
-        const realCard = faceCards[index];
-        if (realCard) {
-            realCard.style.transition = 'none';
-            realCard.style.opacity = '1';
-        }
+    function finishFlip() {
         flipsFinished++;
         if (flipsFinished >= count) {
-            // All flips done — clean up any remaining placeholder shells
-            setTimeout(() => placeholders.forEach(p => p.remove()), 40);
+            setTimeout(() => {
+                placeholders.forEach(p => p.remove());
+                onDone?.();
+            }, 40);
         } else {
             flipNext();
         }
     }
 
     for (let i = 0; i < count; i++) {
+        const card = newCards[i];
+        const faceSrc = card && logic ? logic.getCardAsset(card) : null;
+
         setTimeout(() => {
             const ph = placeholders[i];
             const to = ph.getBoundingClientRect();
@@ -1648,7 +1650,7 @@ async function _animateChkobbaDeal(deckEl, handEl, count, onDone) {
                     finished++;
 
                     // Queue for flip; kick off if nothing is flipping yet
-                    flipQueue.push({ ph, index: i });
+                    flipQueue.push({ ph, faceSrc });
                     if (flipsStarted === 0) flipNext();
                 }
             });
