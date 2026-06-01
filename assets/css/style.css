@@ -698,7 +698,28 @@ body:not(.game-coup) .coup-only-btn { display: none !important; }
 .is-me .coup-influence { min-height: 76px; font-size: 1.18rem; }
 .is-focused .coup-influence { min-height: 62px; font-size: 1.08rem; }
 .coup-influence.lost { opacity: .45; text-decoration: line-through; }
-/* Card background images — shown when card is revealed */
+/* Hide/show cards toggle pill */
+.coup-hide-cards-btn {
+    display: block;
+    margin: 10px auto 0;
+    padding: 6px 18px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border-color);
+    background: var(--surface-color);
+    color: var(--text-muted);
+    font-size: .82rem;
+    font-weight: 800;
+    box-shadow: none;
+    width: auto;
+    transition: background .18s, color .18s, border-color .18s;
+}
+.coup-hide-cards-btn:hover {
+    background: rgba(82,140,113,0.10);
+    color: var(--primary-color);
+    border-color: rgba(82,140,113,0.35);
+    transform: none;
+    box-shadow: none;
+}
 .coup-influence[data-has-bg] {
     position: relative;
     overflow: hidden;
