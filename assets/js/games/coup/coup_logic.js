@@ -304,7 +304,30 @@ function _closeCoupModal() {
 
 function _showCoupCardInfo(type, cards = coupCards) {
     const meta = cards[type] || cards.duke;
-    _showCoupModal(meta.name, `<div class="coup-modal-card-info">${_coupCardLargeHtml(meta)}<p class="coup-card-desc">${_coupCardDescHtml(meta)}</p></div>`);
+    const cardType = type || Object.keys(coupCards).find(k => coupCards[k] === meta) || 'duke';
+    const fullCardSrc = _coupImgBase + cardType + '_full_card.webp';
+
+    // Show full-card flip overlay for 1 second, then open the info modal
+    const flipEl = document.createElement('div');
+    flipEl.className = 'coup-card-info-flip-overlay';
+    flipEl.innerHTML = `
+        <div class="coup-card-info-flip-scene">
+            <div class="coup-card-info-flip-inner">
+                <div class="coup-card-info-flip-front">
+                    <img src="${_escHtml(fullCardSrc)}" alt="${_escHtml(meta?.name || '')}">
+                </div>
+                <div class="coup-card-info-flip-back">
+                    ${_coupCardLargeHtml(meta)}
+                    <p class="coup-card-desc">${_coupCardDescHtml(meta)}</p>
+                </div>
+            </div>
+        </div>`;
+    document.body.appendChild(flipEl);
+    // After 1s the CSS flip triggers; remove overlay at ~2.1s and open the real modal
+    setTimeout(() => {
+        flipEl.remove();
+        _showCoupModal(meta.name, `<div class="coup-modal-card-info">${_coupCardLargeHtml(meta)}<p class="coup-card-desc">${_coupCardDescHtml(meta)}</p></div>`);
+    }, 2000);
 }
 
 function _showCoupEvent(text, kind = 'notice') {
@@ -320,15 +343,48 @@ function _showCoupEvent(text, kind = 'notice') {
 
 function _showCoupLossAnimation(playerName, cardMeta, out = false) {
     document.querySelector('.coup-loss-overlay')?.remove();
+    const cardType = Object.keys(coupCards).find(k => coupCards[k] === cardMeta) || 'duke';
+    const fullCardSrc = _coupImgBase + cardType + '_full_card.webp';
     const el = document.createElement('div');
     el.className = 'coup-loss-overlay';
-    el.innerHTML = `<div class="coup-loss-card"><div class="coup-loss-card-face">${_coupCardLargeHtml(cardMeta, 'coup-loss-icon')}<strong>${_escHtml(cardMeta?.name || '')}</strong></div><div class="coup-loss-cut"></div></div><div class="coup-loss-text">${_escHtml(playerName || '')} خسر ${_escHtml(cardMeta?.name || 'كارتة')}${out ? '<br><strong>خرج من الطرح.</strong>' : ''}</div>`;
+    el.innerHTML = `
+        <div class="coup-loss-card">
+            <div class="coup-loss-card-face">
+                <img class="coup-loss-card-img" src="${_escHtml(fullCardSrc)}" alt="${_escHtml(cardMeta?.name || '')}">
+                <div class="coup-loss-overlay-red"></div>
+                <div class="coup-loss-slash-1"></div>
+                <div class="coup-loss-slash-2"></div>
+            </div>
+        </div>
+        <div class="coup-loss-text">${_escHtml(playerName || '')} خسر كارتة${out ? '<br><strong>خرج من الطرح! 💀</strong>' : ''}</div>`;
     document.body.appendChild(el);
     _sfx.lose();
-    setTimeout(() => el.remove(), 2000);
+    setTimeout(() => el.remove(), 3000);
 }
 
-function _renderCoupRoleHelp(cards = coupCards) {
+function _showCoupNotLyingAnimation(playerName, cardType) {
+    document.querySelector('.coup-not-lying-overlay')?.remove();
+    const ct = cardType || 'duke';
+    const fullCardSrc = _coupImgBase + ct + '_full_card.webp';
+    const el = document.createElement('div');
+    el.className = 'coup-not-lying-overlay';
+    el.innerHTML = `
+        <div class="coup-not-lying-card">
+            <img src="${_escHtml(fullCardSrc)}" alt="">
+            <div class="coup-not-lying-card-glow"></div>
+        </div>
+        <div class="coup-not-lying-banner">
+            <span class="coup-nly-player">✅ ${_escHtml(playerName || '')}</span>
+            <span class="coup-nly-label">ما كانش يبوّع! 🎉</span>
+        </div>`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+}
+
+// Exposed globally so online.js can call it
+window.triggerNotLyingAnimation = function(playerName, cardType) {
+    _showCoupNotLyingAnimation(playerName, cardType);
+};
     const help = document.getElementById('coup-role-help');
     if (!help) return;
     help.innerHTML = Object.values(cards).map(c =>
@@ -658,6 +714,7 @@ function coupChallenge(challengerId) {
         const originalPending = { ...p };
         _coupProveAndReplace(actor, p.claim);
         coupState.log = `${challenger.name} طلع غالط! ${actor.name} ورّى الكارتة و${funWrongAccuser()}`;
+        _showCoupNotLyingAnimation(actor.name, p.claim);
         _showCoupEvent(coupState.log, 'bad');
         coupLoseInfluence(challengerId, () => {
             if (originalPending.blockable) _coupOpenBlockWindowAfterChallenge(originalPending, actor);
@@ -744,6 +801,7 @@ function coupChallengeBlock(challengerId = null) {
         _coupProveAndReplace(blocker, p.blockRole);
         coupState.log = `${challenger.name} اتهم البلوك وطلع غالط. ${blocker.name} عندو ${_coupBlockRoleLabel(p.blockRole)}.`;
         coupState.pending = null;
+        _showCoupNotLyingAnimation(blocker.name, p.blockRole);
         _showCoupEvent(coupState.log, 'bad');
         coupLoseInfluence(challenger.id, () => { _coupNextTurn(); renderCoupScreen(); }, 'طلعت غالط في تكذيب البلوك. اختار كارتة تخسرها.');
     } else {
