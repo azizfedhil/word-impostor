@@ -1148,10 +1148,9 @@ async function _startOnlineChkobbaGame() {
     );
 
     try {
-        const timerEndAt = new Date(_syncedNow() + turnTime * 1000).toISOString();
         await _update(_room.code, {
             state: 'chkobba',
-            timer_end_at: timerEndAt,
+            timer_end_at: null,   // timer starts only once setup completes and 'playing' begins
             word_obj: state,
             config: { ...cfg, gameMode: 'chkobba' }
         });
@@ -1318,8 +1317,11 @@ async function _chkobbaDeclineStarter() {
         await _mutatePlayers(_room.code, (players, room) => {
             const s = room.word_obj;
             if (!logic.declineStarterCard(s)) return null;
+            // Ensure the very first playing turn has a timer running
+            const turnTime = room.config?.chkobbaTurnTime || 45;
+            room.timer_end_at = new Date(_syncedNow() + turnTime * 1000).toISOString();
             return players;
-        }, null, (room, players) => ({ word_obj: room.word_obj }));
+        }, null, (room, players) => ({ word_obj: room.word_obj, timer_end_at: room.timer_end_at }));
         _chkobbaLastSnapshot = null;
     };
 
@@ -1389,8 +1391,11 @@ async function _chkobbaAcceptStarter() {
     await _mutatePlayers(_room.code, (players, room) => {
         const s = room.word_obj;
         if (!logic.acceptStarterCard(s)) return null;
+        // Ensure the very first playing turn has a timer running
+        const turnTime = room.config?.chkobbaTurnTime || 45;
+        room.timer_end_at = new Date(_syncedNow() + turnTime * 1000).toISOString();
         return players;
-    }, null, (room, players) => ({ word_obj: room.word_obj }));
+    }, null, (room, players) => ({ word_obj: room.word_obj, timer_end_at: room.timer_end_at }));
 
     _chkobbaLastSnapshot = null;
 }
@@ -2245,12 +2250,13 @@ function _startOnlineChkobbaTimer(room) {
         const s = room.word_obj;
         if (s?.phase === 'setup') {
             const cutter = s.players[s.cutterIndex];
+            // isAI is now persisted on the player object in word_obj (fixed in chkobba_logic.js)
             if (cutter?.isAI) {
                 if (s.setupPhase === window.ChkobbaLogic.SETUP_PHASES.SHUFFLED) {
                     _chkobbaSetupAIBusy = true;
                     setTimeout(async () => {
                         try { await _chkobbaPerformCutAI(); } finally { _chkobbaSetupAIBusy = false; }
-                    }, 800 + Math.random() * 800);
+                    }, 600 + Math.random() * 600);
                 } else if (s.setupPhase === window.ChkobbaLogic.SETUP_PHASES.REVEALED) {
                     _chkobbaSetupAIBusy = true;
                     setTimeout(async () => {
@@ -2258,9 +2264,12 @@ function _startOnlineChkobbaTimer(room) {
                             if (Math.random() > 0.5) await _chkobbaAcceptStarterAI();
                             else await _chkobbaDeclineStarterAI();
                         } finally { _chkobbaSetupAIBusy = false; }
-                    }, 800 + Math.random() * 800);
+                    }, 600 + Math.random() * 600);
                 }
             }
+        } else if (s?.phase === 'playing' || s?.phase === 'round_score') {
+            // Phase left setup — release any stale busy flag from a previous round
+            _chkobbaSetupAIBusy = false;
         }
     }
 
@@ -2318,16 +2327,20 @@ function _startOnlineChkobbaTimer(room) {
                     }, stagger);
                 }
             } else if (isAI && _isHost) {
-                // AI move: trigger once when the remaining time drops below the
-                // threshold. Use a per-turn random offset stored on the room so
-                // the same threshold is not re-evaluated every 500ms tick.
-                const turnTime = liveRoom.config?.chkobbaTurnTime || 45;
-                const aiThresholdKey = `_aiThreshold_${s.turnIndex}_${s.round || 0}`;
-                if (!liveRoom[aiThresholdKey]) {
-                    liveRoom[aiThresholdKey] = turnTime - 2 - Math.random() * 3;
-                }
-                if (left <= liveRoom[aiThresholdKey]) {
-                    _chkobbaTimeout();
+                // AI move: trigger once at the START of the AI's turn (after a brief
+                // human-feel delay) rather than waiting near the end of the timer.
+                // Store a fired-flag keyed by turn+round so the interval doesn't
+                // re-trigger on every 500 ms tick.
+                const aiFireKey = `_aiFired_${s.turnIndex}_${s.round || 0}`;
+                if (!liveRoom[aiFireKey]) {
+                    liveRoom[aiFireKey] = true;
+                    setTimeout(() => {
+                        // Double-check still the AI's turn before committing
+                        if (_room?.word_obj?.players?.[_room.word_obj.turnIndex]?.isAI &&
+                            _room.word_obj.phase === 'playing') {
+                            _chkobbaTimeout();
+                        }
+                    }, 800 + Math.random() * 700);
                 }
             }
         }
