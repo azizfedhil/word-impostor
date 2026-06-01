@@ -723,6 +723,12 @@ function coupChallenge(challengerId) {
             else coupResolveAction(originalPending.action, originalPending.targetId);
         }, 'طلعت غالط في التكذيب. اختار كارتة تخسرها.');
     } else {
+        // Rulebook: "If an action is successfully challenged the entire action fails,
+        // and any coins paid as the cost of the action are returned to the player."
+        if (p.action === 'assassinate') {
+            actor.coins += 3;
+            _coupTakeFromBank(coupState, 3);
+        }
         coupState.log = `${actor.name} تڨبض يبوّع! ${funCaughtBluff()}`;
         coupState.pending = null;
         coupLoseInfluence(actor.id, () => { _coupNextTurn(); renderCoupScreen(); }, 'تكذّبت وما عندكش الكارتة. اختار كارتة تكشفها.');
