@@ -385,6 +385,8 @@ function _showCoupNotLyingAnimation(playerName, cardType) {
 window.triggerNotLyingAnimation = function(playerName, cardType) {
     _showCoupNotLyingAnimation(playerName, cardType);
 };
+
+function _renderCoupRoleHelp(cards = coupCards) {
     const help = document.getElementById('coup-role-help');
     if (!help) return;
     help.innerHTML = Object.values(cards).map(c =>
