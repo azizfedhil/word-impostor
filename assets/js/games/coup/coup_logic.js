@@ -33,11 +33,8 @@ const _coupAssetBase = (() => {
     return inGamesFolder ? '../assets/coup/' : 'assets/coup/';
 })();
 
-const _coupImgBase = (() => {
-    const path = window.location.pathname;
-    const inGamesFolder = /\/games\/[^/]*$/.test(path);
-    return inGamesFolder ? '../assets/images/' : 'assets/images/';
-})();
+// _coupImgBase: sibling of coup/ inside the same assets tree
+const _coupImgBase = _coupAssetBase.replace(/coup\/$/, '') + 'images/';
 
 const coupCards = {
     duke: {
