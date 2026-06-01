@@ -60,10 +60,29 @@ const ChkobbaAnimator = (() => {
     let _inputLocked = false;       // prevents double-submitting our own move
     const _inFlightIds = new Set(); // card IDs whose ghosts are mid-air
     const _persistentGhosts = new Set(); // ghosts that stay until room update
+    let _busySince   = 0;           // timestamp (ms) when _busy last became true
+
+    // Hard cap on how long we stay in _busy=true.
+    // Background tabs throttle/freeze setTimeout & transitionend, so without this
+    // a disconnected player's animation can lock the UI permanently.
+    const BUSY_TIMEOUT_MS = 1500;
+
+    /** Force-unlock and render the latest snapshot. */
+    function _forceUnlock(reason) {
+        if (!_busy) return;
+        console.warn('[ChkobbaAnimator] force-unlock:', reason);
+        _busy        = false;
+        _inputLocked = false;
+    }
 
     /** Always store latest room; render immediately only when idle. */
     function notifyRoom(room) {
         _latestRoom = room;
+        // Watchdog: if we have been busy longer than BUSY_TIMEOUT_MS the animation
+        // is stuck (tab was backgrounded, transitionend never fired, etc.).
+        if (_busy && (Date.now() - _busySince) > BUSY_TIMEOUT_MS) {
+            _forceUnlock('busy watchdog on notifyRoom');
+        }
         if (!_busy) _flush();
     }
 
@@ -98,6 +117,7 @@ const ChkobbaAnimator = (() => {
         }
 
         _busy        = true;
+        _busySince   = Date.now();
         _inputLocked = true;
         cardIds?.forEach(id => _inFlightIds.add(id));
 
@@ -114,7 +134,22 @@ const ChkobbaAnimator = (() => {
             return;
         }
 
+        // Hard watchdog: even if transitionend never fires (background tab, etc.)
+        // unlock after the animation duration ceiling + generous buffer.
+        const totalDuration = flights.reduce((sum, f) => sum + (f.duration || 220) + (f.staggerAfter || 0), 0);
+        const watchdogMs = totalDuration + 800;
+        const watchdog = setTimeout(() => {
+            if (_busy) {
+                _forceUnlock('per-schedule watchdog');
+                _inFlightIds.clear();
+                // Don't call onCommit here — the timer tick will re-trigger
+                // _chkobbaTimeout on the next server push.
+                if (_latestRoom) _flush();
+            }
+        }, watchdogMs);
+
         _animateChkobbaFlightsSequential(flights, async () => {
+            clearTimeout(watchdog);
             // Ghost(s) have landed. Unlock, commit, wait for server push.
             _busy        = false;
             _inputLocked = false;
@@ -296,10 +331,17 @@ function _animateChkobbaFlight({ fromRect, toRect, imgSrc, imgSrcBack, duration 
     flyer.style.width = `${fromRect.width}px`;
     flyer.style.height = `${fromRect.height}px`;
 
-    const fx = fromRect.left + fromRect.width / 2;
-    const fy = fromRect.top + fromRect.height / 2;
-    const tx = toRect.left + toRect.width / 2;
-    const ty = toRect.top + toRect.height / 2;
+    // Subtract the layer's own origin so coords are relative to the layer,
+    // not the viewport. This fixes positioning when an ancestor has a CSS
+    // transform (e.g. a centered desktop container) that breaks position:fixed.
+    const layerRect = layer.getBoundingClientRect();
+    const ox = layerRect.left;
+    const oy = layerRect.top;
+
+    const fx = fromRect.left + fromRect.width / 2 - ox;
+    const fy = fromRect.top + fromRect.height / 2 - oy;
+    const tx = toRect.left + toRect.width / 2 - ox;
+    const ty = toRect.top + toRect.height / 2 - oy;
 
     // Set start transform — NO transition yet so browser paints it before animating
     flyer.style.cssText = `
@@ -2102,6 +2144,16 @@ function _startOnlineChkobbaTimer(room) {
     const timerEl = document.getElementById('chkobba-turn-timer');
     if (!timerEl) return;
 
+    // If the server pushed a fresh timer_end_at that is still in the future,
+    // it means another client already handled the previous timeout.
+    // Release any stale _chkobbaTimingOut lock so this client can act normally.
+    if (_chkobbaTimingOut && room.timer_end_at) {
+        const freshEnd = new Date(room.timer_end_at).getTime();
+        if (freshEnd > _syncedNow() + 500) {
+            _chkobbaTimingOut = false;
+        }
+    }
+
     // Setup AI must run even when there is no timer (timer_end_at is null during setup phase)
     if (_isHost && !_chkobbaSetupAIBusy) {
         const s = room.word_obj;
@@ -2153,6 +2205,16 @@ function _startOnlineChkobbaTimer(room) {
 
         if (!_chkobbaTimingOut && s?.phase === 'playing') {
             if (left <= 0) {
+                // Guard: if the turn has already advanced on the server (e.g. another
+                // client already committed a timeout move) the timer_end_at will have
+                // been refreshed. Re-check the live _room value before acting to avoid
+                // double-committing after a reconnect.
+                if (_room?.timer_end_at) {
+                    const liveEnd = new Date(_room.timer_end_at).getTime();
+                    const liveLeft = Math.max(0, Math.ceil((liveEnd - _syncedNow()) / 1000));
+                    if (liveLeft > 0) return; // timer already reset — another client acted
+                }
+
                 // Anyone can trigger timeout now (decentralized authoritative timer).
                 // We stagger based on role to reduce mutation collisions:
                 // 1. Host (0ms)
@@ -2167,6 +2229,7 @@ function _startOnlineChkobbaTimer(room) {
                 } else {
                     setTimeout(() => {
                         if (!_room) return;
+                        if (_chkobbaTimingOut) return; // already being handled
                         const reEnd = new Date(_room.timer_end_at).getTime();
                         const reLeft = Math.max(0, Math.ceil((reEnd - _syncedNow()) / 1000));
                         if (reLeft <= 0) _chkobbaTimeout();
@@ -2189,6 +2252,14 @@ function _startOnlineChkobbaTimer(room) {
 async function _chkobbaTimeout() {
     if (!_room || _chkobbaTimingOut) return;
     _chkobbaTimingOut = true;
+    // Safety net: if the network call or animation never completes, release the
+    // guard after 6 s so the timer loop can retry on the next server push.
+    const timingOutGuard = setTimeout(() => {
+        if (_chkobbaTimingOut) {
+            console.warn('[chkobbaTimeout] safety timeout — releasing _chkobbaTimingOut');
+            _chkobbaTimingOut = false;
+        }
+    }, 6000);
     try {
         const s = _room.word_obj;
         if (!s || s.phase !== 'playing') return;
@@ -2298,6 +2369,7 @@ async function _chkobbaTimeout() {
                 return players;
             }, null, (room, players) => ({ word_obj: room.word_obj, timer_end_at: room.timer_end_at }));
             } finally {
+                clearTimeout(timingOutGuard);
                 // Release the guard now that the network round-trip is done.
                 // The server push that follows will install a fresh timer_end_at,
                 // so the tick loop will no longer see left <= 0.
@@ -2359,6 +2431,7 @@ async function _chkobbaTimeout() {
         // An unexpected exception escaped before schedule() could be called —
         // release the guard so the game isn't permanently locked.
         console.error(e);
+        clearTimeout(timingOutGuard);
         _chkobbaTimingOut = false;
     }
 }
