@@ -440,19 +440,13 @@ body.game-chkobba header.app-header {
     transform: scale(1.05);
 }
 
-/* Deck pulse is now driven by JS Web Animations API (organic compress-rebound).
-   The is-dealing class is no longer applied, but the keyframes are kept as
-   a graceful fallback for any external callers. */
 .chkobba-pile.deck-pile.is-dealing {
-    animation: chkobbaDeckPulse 420ms ease-out;
+    animation: chkobbaDeckPulse 400ms ease;
 }
 
 @keyframes chkobbaDeckPulse {
-    0%   { transform: scale(1)    rotate(5deg); }
-    18%  { transform: scale(0.93) rotate(4.2deg); }
-    45%  { transform: scale(1.07) rotate(5.4deg); }
-    72%  { transform: scale(0.99) rotate(4.9deg); }
-    100% { transform: scale(1)    rotate(5deg); }
+    0%, 100% { transform: scale(1) rotate(5deg); }
+    50% { transform: scale(1.06) rotate(5deg); }
 }
 
 /* Round info chips */
@@ -750,13 +744,17 @@ body.game-chkobba header.app-header {
     }
 }
 
-/* Flight card visual — scale and shadow are now driven entirely by the
-   Web Animations API in _animateChkobbaFlight (parabolic arc keyframes).
-   The is-in-flight class is no longer applied to avoid competing transitions
-   that caused the old jerky, robotic feel. Left here as a no-op so any
-   lingering references don't break styling. */
+/* Phase 4/5 – mid-flight visual enhancement: the is-in-flight class is added
+   by JS when the flight transition begins.  A subtle scale-up and shadow boost
+   make the card feel physically lifted off the surface. */
 .chkobba-flight-card.is-in-flight img {
-    /* intentionally empty — all animation via JS Web Animations API */
+    animation: chkobbaCardLift 0.4s var(--ease-out-cubic) forwards;
+}
+
+@keyframes chkobbaCardLift {
+    0%   { transform: scale(1); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+    40%  { transform: scale(1.12); box-shadow: 0 32px 64px rgba(0,0,0,0.35); }
+    100% { transform: scale(1); box-shadow: 0 14px 32px rgba(45, 42, 38, 0.22); }
 }
 
 /* When more than 4 cards on table, reduce size by 30% */
