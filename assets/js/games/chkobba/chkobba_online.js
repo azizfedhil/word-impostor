@@ -1192,7 +1192,7 @@ function _renderChkobbaPlayerInfo(state, me, isMyTurn) {
     const capturedCount = me.captured?.length || 0;
     const diamondCount = me.captured?.filter(c => c.suit === 'diamonds').length || 0;
     const chkobbaCount = me.chkobbas || 0;
-    const totalScore = me.totalScore ?? 0;
+    const totalScore = me.totalScore || 0;
 
     const details = `
         <div class="chkobba-stat-item">
@@ -1551,13 +1551,55 @@ async function _animateChkobbaDeal(deckEl, handEl, count, onDone) {
         placeholders.push(ph);
     }
 
-    // Phase 4 – target feel: 350–500ms travel, ease-out, slight stagger between cards.
-    // Tight stagger — entire sequence ≤ 600ms even for 4+ cards.
+    // Cards fly in with a tight stagger, then each flips only after the previous
+    // one has fully flipped — giving a clean one-by-one reveal.
+    const flipHalfDur = 110; // ms for each half of the scaleX flip
+    const flipTotalDur = flipHalfDur * 2 + 20; // fold + unfold + small buffer
+    const flightDur = 220;
     const staggerMs = count > 2 ? 55 : 70;
+
+    // Queue of landed placeholders waiting to flip, in arrival order.
+    // Each entry: { ph, index }
+    const flipQueue = [];
+    let flipsStarted = 0; // how many flips have been kicked off
+    let flipsFinished = 0;
+
+    function flipNext() {
+        if (flipsStarted >= flipQueue.length) return;
+        const { ph } = flipQueue[flipsStarted++];
+        const phImg = ph.querySelector('img');
+        if (!phImg) { checkAllDone(); return; }
+
+        // Fold down (back → hidden)
+        phImg.style.transition = `transform ${flipHalfDur}ms ease-in`;
+        phImg.style.transform = 'scaleX(0)';
+        setTimeout(() => {
+            // At midpoint, swap to face image — but we don't have it yet
+            // (renderHand runs after all flips). Keep back image; the real
+            // swap happens when renderHand replaces the placeholder.
+            phImg.style.transition = `transform ${flipHalfDur}ms ease-out`;
+            phImg.style.transform = 'scaleX(1)';
+            setTimeout(() => {
+                phImg.style.transition = '';
+                phImg.style.transform = '';
+                flipsFinished++;
+                checkAllDone();
+                flipNext(); // start the next card's flip
+            }, flipHalfDur + 20);
+        }, flipHalfDur);
+    }
+
+    function checkAllDone() {
+        if (flipsFinished >= count) {
+            setTimeout(() => {
+                placeholders.forEach(p => p.remove());
+                onDone?.();
+            }, 40);
+        }
+    }
 
     for (let i = 0; i < count; i++) {
         setTimeout(() => {
-            // Measure placeholder position now (it's already in the DOM at its fan slot)
             const ph = placeholders[i];
             const to = ph.getBoundingClientRect();
             const targetRect = {
@@ -1572,23 +1614,17 @@ async function _animateChkobbaDeal(deckEl, handEl, count, onDone) {
                 toRect: targetRect,
                 imgSrc: back,
                 rotate: (Math.random() - 0.5) * 8,
-                duration: 220,
+                duration: flightDur,
                 onDone: () => {
-                    // Ghost landed — flip the placeholder face-down → visible
-                    // The actual face image is set by renderHand() after all arrive,
-                    // but for now show the card back so there's no blank frame.
-                    ph.style.transition = 'opacity 80ms ease-out';
+                    // Ghost landed — make the placeholder visible (face-down)
+                    ph.style.transition = 'opacity 60ms ease-out';
                     ph.style.opacity = '1';
                     ph.classList.add('chkobba-deal-arrived');
                     finished++;
-                    if (finished >= count) {
-                        // All cards arrived — remove placeholders and run the real render
-                        // with a tiny delay so the last card's fade-in finishes first
-                        setTimeout(() => {
-                            placeholders.forEach(p => p.remove());
-                            onDone?.();
-                        }, 60);
-                    }
+
+                    // Push into queue and kick off the first flip if nothing is flipping yet
+                    flipQueue.push({ ph, index: i });
+                    if (flipsStarted === 0) flipNext();
                 }
             });
         }, i * staggerMs);
@@ -2374,7 +2410,7 @@ async function _chkobbaTimeout() {
 
                     // CHKOBBA detection: Clearing the table counts except on the very last move of the game.
                     // The last move is when the deck is empty AND all players have played their last cards.
-                    const isLastMove = rs.deck.length === 0 && players.every(pl => pl.hand.length === 0);
+                    const isLastMove = rs.deck.length === 0 && rs.players.every(pl => pl.hand.length === 0);
                     
                     if (rs.table.length === 0 && !isLastMove) {
                         rp.chkobbas++;
@@ -2546,7 +2582,7 @@ async function _commitChkobbaCapture() {
 
             // CHKOBBA detection: Clearing the table counts except on the very last move of the game.
             // The last move is when the deck is empty AND all players have played their last cards.
-            const isLastMove = s.deck.length === 0 && players.every(pl => pl.hand.length === 0);
+            const isLastMove = s.deck.length === 0 && s.players.every(pl => pl.hand.length === 0);
 
             if (s.table.length === 0 && !isLastMove) {
                 p.chkobbas++;
@@ -2722,7 +2758,7 @@ function _endChkobbaRound(state, roomObj) {
 
     // Apply round scores to totalScore but keep captured/chkobbas for the scoreboard
     state.players.forEach(p => {
-        p.totalScore += scores[p.id].total;
+        p.totalScore = (p.totalScore ?? 0) + (scores[p.id]?.total ?? 0);
     });
 
     // Store round scores so the scoreboard overlay can display them
@@ -2731,7 +2767,7 @@ function _endChkobbaRound(state, roomObj) {
     // Check game over
     let gameOver = false;
     state.players.forEach(p => {
-        if (p.totalScore >= state.targetScore) gameOver = true;
+        if ((p.totalScore ?? 0) >= state.targetScore) gameOver = true;
     });
 
     if (gameOver) {
