@@ -699,31 +699,28 @@ body:not(.game-coup) .coup-only-btn { display: none !important; }
 .is-focused .coup-influence { min-height: 62px; font-size: 1.08rem; }
 .coup-influence.lost { opacity: .45; text-decoration: line-through; }
 /* Card background images — shown when card is revealed */
-.coup-influence[data-card-type][style*="--card-bg"] {
-    background-image: var(--card-bg);
-    background-size: cover;
-    background-position: center top;
+.coup-influence[data-has-bg] {
     position: relative;
     overflow: hidden;
 }
-.coup-influence[data-card-type][style*="--card-bg"]::before {
+.coup-influence[data-has-bg]::before {
     content: '';
     position: absolute;
     inset: 0;
     background: rgba(0,0,0,0.42);
     border-radius: inherit;
 }
-.coup-influence[data-card-type][style*="--card-bg"] > * {
+.coup-influence[data-has-bg] > * {
     position: relative;
     z-index: 1;
     color: #fff;
     text-shadow: 0 1px 4px rgba(0,0,0,0.7);
 }
-.coup-influence[data-card-type][style*="--card-bg"] .coup-card-info {
+.coup-influence[data-has-bg] .coup-card-info {
     background: rgba(255,255,255,0.22);
     color: #fff;
 }
-.is-me .coup-influence[data-card-type][style*="--card-bg"] {
+.is-me .coup-influence[data-has-bg] {
     min-height: 90px;
 }
 .coup-card-info { all: unset; width: 25px; height: 25px; border-radius: 50%; display: inline-grid; place-items: center;
@@ -762,15 +759,12 @@ body:not(.game-coup) .coup-only-btn { display: none !important; }
 .coup-action-btn.primary-action small { color: rgba(255,255,255,.82); }
 .coup-action-btn.danger-action { background: rgba(212,107,90,0.14); color: var(--danger-color); border-color: rgba(212,107,90,0.35); }
 /* Action button background images */
-.coup-action-btn[style*="--action-bg"] {
-    background-image: var(--action-bg);
-    background-size: cover;
-    background-position: center;
+.coup-action-btn[data-has-bg] {
     position: relative;
     overflow: hidden;
     color: #fff;
 }
-.coup-action-btn[style*="--action-bg"]::before {
+.coup-action-btn[data-has-bg]::before {
     content: '';
     position: absolute;
     inset: 0;
@@ -778,34 +772,34 @@ body:not(.game-coup) .coup-only-btn { display: none !important; }
     border-radius: inherit;
     transition: background 0.2s ease;
 }
-.coup-action-btn[style*="--action-bg"]:hover:not(:disabled):not(.is-action-disabled)::before {
+.coup-action-btn[data-has-bg]:hover:not(:disabled):not(.is-action-disabled)::before {
     background: rgba(0,0,0,0.38);
 }
-.coup-action-btn[style*="--action-bg"] > * {
+.coup-action-btn[data-has-bg] > * {
     position: relative;
     z-index: 1;
 }
-.coup-action-btn[style*="--action-bg"] small {
+.coup-action-btn[data-has-bg] small {
     color: rgba(255,255,255,0.82);
 }
-.coup-action-btn[style*="--action-bg"] .coup-action-info {
+.coup-action-btn[data-has-bg] .coup-action-info {
     background: rgba(255,255,255,0.2);
     border-color: rgba(255,255,255,0.3);
 }
-/* Primary action (duke tax, captain steal) — keep green tint over bg */
-.coup-action-btn.primary-action[style*="--action-bg"]::before {
+/* Primary action (duke tax, captain steal) — green tint over bg */
+.coup-action-btn.primary-action[data-has-bg]::before {
     background: rgba(36, 90, 60, 0.60);
 }
-/* Danger action (assassin, coup) — red tint; coup keeps stronger overlay */
-.coup-action-btn.danger-action[style*="--action-bg"] {
+/* Danger action (assassin, coup) — red tint */
+.coup-action-btn.danger-action[data-has-bg] {
     color: #fff;
     border-color: rgba(212,107,90,0.55);
 }
-.coup-action-btn.danger-action[style*="--action-bg"]::before {
+.coup-action-btn.danger-action[data-has-bg]::before {
     background: rgba(120, 30, 20, 0.62);
 }
-/* Coup gets a strong red overlay as originally designed */
-.coup-action-btn[data-action="coup"][style*="--action-bg"]::before {
+/* Coup gets strongest red overlay */
+.coup-action-btn[data-action="coup"][data-has-bg]::before {
     background: rgba(160, 30, 20, 0.70);
 }
 .coup-action-grid.is-disabled .coup-action-btn,
