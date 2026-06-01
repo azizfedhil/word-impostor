@@ -394,7 +394,7 @@ function renderCoupScreen(state = coupState, myId = null) {
                 const meta  = coupCards[c.type] || coupCards.duke;
                 const label = (visible || c.lost) ? _coupCardLabelHtml(meta) : '<span>🂠 مخبية</span>';
                 const info  = (visible || c.lost) ? `<button class="coup-card-info" type="button" data-card-type="${c.type}" aria-label="info">ℹ️</button>` : '';
-                const bgStyle = (visible || c.lost) ? ` style="background-image:url('${_coupImgBase}${c.type}_horizontal.webp');background-size:cover;background-position:center top;" data-has-bg="1"` : '';
+                const bgStyle = (visible || c.lost) ? ` style="--card-img:url('${_coupImgBase}${c.type}_horizontal.webp')" data-has-bg="1"` : '';
                 return `<div class="coup-influence ${c.lost ? 'lost' : ''}" data-card-type="${c.type}"${bgStyle}><span>${label}</span>${info}</div>`;
             }).join('')}</div>${toggleBtn}`;
         div.addEventListener('click', e => {
@@ -468,7 +468,7 @@ function renderCoupActions(state = coupState, myId = null) {
         const disabled     = actionLocked ? 'is-action-disabled' : '';
         const finalHint    = mustCoup && action !== 'coup' ? 'عندك 10+ فلوس، لازم Coup' : hint;
         const bgFile       = _actionBgMap[action];
-        const bgStyle      = bgFile ? ` style="background-image:url('${_coupImgBase}${bgFile}.webp');background-size:cover;background-position:center;" data-has-bg="1"` : '';
+        const bgStyle      = bgFile ? ` style="--action-img:url('${_coupImgBase}${bgFile}.webp')" data-has-bg="1"` : '';
         return `<button class="coup-action-btn ${cls} ${disabled}" data-action="${action}"${bgStyle} aria-disabled="${actionLocked ? 'true' : 'false'}"><strong>${txt}<span class="coup-action-info" data-action-info="${action}">ℹ️</span></strong><small>${finalHint}</small></button>`;
     };
     panel.innerHTML += `<div class="coup-action-grid ${isTurn ? '' : 'is-disabled'}">
