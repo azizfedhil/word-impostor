@@ -80,6 +80,7 @@ const ChkobbaLogic = {
             players: playerDefs.map((p, idx) => ({
                 id: p.id,
                 name: p.name,
+                isAI: !!p.isAI,
                 team: p.team ?? null,
                 hand: [],
                 captured: [],
