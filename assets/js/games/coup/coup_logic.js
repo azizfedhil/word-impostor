@@ -1,6 +1,7 @@
 'use strict';
 
 // ============================================================
+// WARNING: THE OFFLINE COUP IS DEPRECATED. IF YOU ARE MAKING CODE EDITS TO THIS FILE YOU HAVE TO CHECK coup_online.js as well. It is no an option.
 // COUP (كول وبوّع) — Game logic, card data, and rendering
 //
 // This file is the single source of truth for:
