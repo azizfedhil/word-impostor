@@ -1560,7 +1560,7 @@ async function _animateChkobbaDeal(deckEl, handEl, count, onDone) {
         ph.style.setProperty('--stack-offset', `${fakeTilt * 0.45}px`);
         ph.style.setProperty('--hand-z', String(10 + i));
         if (i > 0) ph.style.setProperty('--stack-overlap', '20');
-        ph.style.opacity = '0'; // invisible until the ghost arrives
+        ph.style.opacity = '1'; // visible beneath the ghost from the start — no pop-in
         const phImg = document.createElement('img');
         phImg.src = back;
         phImg.alt = '';
@@ -1647,8 +1647,9 @@ async function _animateChkobbaDeal(deckEl, handEl, count, onDone) {
                 rotate: (Math.random() - 0.5) * 8,
                 duration: flightDur,
                 onDone: () => {
-                    // Ghost landed — show placeholder face-down
-                    ph.style.transition = 'opacity 60ms ease-out';
+                    // Ghost landed — snap placeholder visible immediately,
+                    // no fade transition to avoid the back-side blink.
+                    ph.style.transition = 'none';
                     ph.style.opacity = '1';
                     ph.classList.add('chkobba-deal-arrived');
                     finished++;
