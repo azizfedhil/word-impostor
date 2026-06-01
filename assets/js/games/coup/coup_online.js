@@ -578,7 +578,7 @@ function _showOnlineCoup(room) {
         _lastCoupEventId = state.lastEvent.id;
         window.CoupUI?.showEvent?.(state.lastEvent.text, state.lastEvent.kind);
         if (state.lastEvent.triggerNotLying) {
-            window.triggerNotLyingAnimation(state.lastEvent.triggerNotLying);
+            window.triggerNotLyingAnimation(state.lastEvent.triggerNotLying, state.lastEvent.notLyingCardType);
         }
     }
     if (state.lastLossEvent?.id && state.lastLossEvent.id !== _lastCoupLossEventId) {
@@ -1167,7 +1167,7 @@ async function _onlineCoupChallenge(challengerId, pendingId = null) {
         if (hasIt) {
             _onlineCoupProveAndReplace(state, actor, p.claim);
             state.log = `${challenger.name} طلع غالط! ${actor.name} عندو الكارتة. ${_onlineCoupWrong()}`;
-        _onlineCoupEvent(state, state.log, 'bad', { triggerNotLying: actor.name });
+        _onlineCoupEvent(state, state.log, 'bad', { triggerNotLying: actor.name, notLyingCardType: p.claim });
             const next = p.blockable ? _onlineCoupResumeBlockNext(p, actor.name) : { type:'applyAction', action:p.action, targetId:p.targetId };
             _onlineCoupRequestLoss(state, challengerId, 'طلعت غالط في التكذيب. اختار كارتة تخسرها.', next);
         } else {
@@ -1245,7 +1245,7 @@ async function _onlineCoupChallengeBlock(challengerId = _myId, pendingId = null)
         if (hasIt) {
             _onlineCoupProveAndReplace(state, blocker, p.blockRole);
             state.log = `${challenger.name} اتهم البلوك وطلع غالط. ${blocker.name} عندو ${_onlineCoupBlockRoleLabel(p.blockRole)}.`;
-        _onlineCoupEvent(state, state.log, 'bad', { triggerNotLying: blocker.name });
+        _onlineCoupEvent(state, state.log, 'bad', { triggerNotLying: blocker.name, notLyingCardType: p.blockRole });
             _onlineCoupRequestLoss(state, challenger.id, 'طلعت غالط في تكذيب البلوك. اختار كارتة تخسرها.', { type:'nextTurn' });
         } else {
             state.log = `${blocker.name} حاول يسكّر وطلع يبوّع. الأكشن يكمل.`;
