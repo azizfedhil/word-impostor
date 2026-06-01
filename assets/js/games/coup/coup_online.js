@@ -22,6 +22,7 @@ let _lastCoupEventId = null, _lastCoupLossEventId = null;
 let _lastCoupPendingKey = null, _lastCoupPromptId = null;
 let _onlineCoupResponseTimer = null;
 let _onlineCoupOtherDecksCollapsed = false;
+let _onlineCoupMyCardsHidden = false;
 let _onlineCoupResponseSync = null, _onlineCoupTurnSync = null;
 let _coupWinnerAnnounced = false;
 
@@ -600,21 +601,33 @@ function _showOnlineCoup(room) {
     ];
     const renderCoupPlayerCard = (p, idx) => {
         const isMe = p.id === _myId;
+        const hidden = isMe && _onlineCoupMyCardsHidden;
+        const showCard = isMe && !hidden;
         const focused = _onlineCoupFocusedPlayerId === p.id || (!_onlineCoupFocusedPlayerId && isMe);
         const dimmed = !!_onlineCoupFocusedPlayerId && _onlineCoupFocusedPlayerId !== p.id;
         const out = !p.hand.some(c=>!c.lost);
+        const imgBase = (() => { const path = window.location.pathname; return /\/games\/[^/]*$/.test(path) ? '../assets/images/' : 'assets/images/'; })();
         const div = document.createElement('div');
         div.className = 'coup-player-card' + (idx===(state.turnIndex||0)?' is-turn':'') + (isMe?' is-me':'') + (focused?' is-focused':'') + (dimmed?' is-dimmed':'') + (out?' is-out':'');
         div.dataset.playerId = p.id;
+        const toggleBtn = isMe && !out
+            ? `<button class="coup-hide-cards-btn" type="button" data-hide-toggle="1">${hidden ? '👁 ورّي كوارطك' : '🙈 خبي كوارطك'}</button>`
+            : '';
         div.innerHTML = `<div class="coup-player-head"><span>${window.CoupUI?.escapeHtml?.(p.name) || p.name}${isMe?' <span class="you-tag">أنا</span>':''}</span><span class="coup-coins">🪙 ${p.coins}</span></div>
             <div class="coup-influence-row">${p.hand.map(c => {
                 const meta = _coupCards[c.type] || _coupCards.duke;
-                const label = isMe || c.lost ? (window.CoupUI?.cardLabelHtml?.(meta) || `${meta.icon} ${meta.name}`) : '<span>🂠 مخبية</span>';
-                const info = (isMe || c.lost) ? `<button class="coup-card-info" type="button" data-card-type="${c.type}" aria-label="info">ℹ️</button>` : '';
-                return `<div class="coup-influence ${c.lost?'lost':''}"><span>${label}</span>${info}</div>`;
-            }).join('')}</div>`;
+                const label = (showCard || c.lost) ? (window.CoupUI?.cardLabelHtml?.(meta) || `${meta.icon} ${meta.name}`) : '<span>🂠 مخبية</span>';
+                const info = (showCard || c.lost) ? `<button class="coup-card-info" type="button" data-card-type="${c.type}" aria-label="info">ℹ️</button>` : '';
+                const bgStyle = (showCard || c.lost) ? ` style="--card-img:url('${imgBase}${c.type}_horizontal.webp')" data-has-bg="1"` : '';
+                return `<div class="coup-influence ${c.lost?'lost':''}"${bgStyle}><span>${label}</span>${info}</div>`;
+            }).join('')}</div>${toggleBtn}`;
         div.addEventListener('click', e => {
             if (e.target.closest('.coup-card-info')) return;
+            if (e.target.closest('[data-hide-toggle]')) {
+                _onlineCoupMyCardsHidden = !_onlineCoupMyCardsHidden;
+                _showOnlineCoup(room);
+                return;
+            }
             _onlineCoupFocusedPlayerId = _onlineCoupFocusedPlayerId === p.id ? null : p.id;
             _showOnlineCoup(room);
         });
@@ -959,10 +972,14 @@ function _renderOnlineCoupActions(room, state, me) {
     }
     const isTurn = me.id === current?.id;
     const mustCoup = isTurn && (me.coins || 0) >= 10;
+    const _onlineImgBase = (() => { const p = window.location.pathname; return /\/games\/[^/]*$/.test(p) ? '../assets/images/' : 'assets/images/'; })();
+    const _onlineActionBgMap = { income:'plusone', foreignAid:'plustwo', tax:'tax', steal:'steal', assassinate:'assassinate', exchange:'exchange', coup:'coup' };
     const mk = (txt, action, cls='', hint='') => {
         const actionLocked = !isTurn || (mustCoup && action !== 'coup');
         const finalHint = mustCoup && action !== 'coup' ? 'عندك 10+ فلوس، لازم Coup' : hint;
-        return `<button class="coup-action-btn ${cls} ${actionLocked ? 'is-action-disabled' : ''}" data-coup-action="${action}" aria-disabled="${actionLocked ? 'true' : 'false'}"><strong>${txt}<span class="coup-action-info" data-action-info="${action}">ℹ️</span></strong><small>${finalHint}</small></button>`;
+        const bgFile = _onlineActionBgMap[action];
+        const bgStyle = bgFile ? ` style="--action-img:url('${_onlineImgBase}${bgFile}.webp')" data-has-bg="1"` : '';
+        return `<button class="coup-action-btn ${cls} ${actionLocked ? 'is-action-disabled' : ''}" data-coup-action="${action}"${bgStyle} aria-disabled="${actionLocked ? 'true' : 'false'}"><strong>${txt}<span class="coup-action-info" data-action-info="${action}">ℹ️</span></strong><small>${finalHint}</small></button>`;
     };
     panel.innerHTML += `<div class="coup-action-grid ${isTurn?'':'is-disabled'}">
         ${mk('🪙 شهرية +1','income','','مضمون وما يتكذبش')}
