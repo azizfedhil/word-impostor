@@ -584,7 +584,7 @@ function _showOnlineCoup(room) {
     if (state.lastLossEvent?.id && state.lastLossEvent.id !== _lastCoupLossEventId) {
         _lastCoupLossEventId = state.lastLossEvent.id;
         const meta = _coupCards[state.lastLossEvent.cardType] || { name:state.lastLossEvent.cardName, icon:'🂠' };
-        window.CoupUI?.showLossAnimation?.(state.lastLossEvent.playerName, meta, !!state.lastLossEvent.out);
+        window.CoupUI?.showLossAnimation?.(state.lastLossEvent.playerName, meta, !!state.lastLossEvent.out, state.lastLossEvent.cardType);
     }
 
     const myBoard = document.getElementById('coup-my-board');
