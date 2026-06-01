@@ -304,7 +304,7 @@ function _closeCoupModal() {
 
 function _showCoupCardInfo(type, cards = coupCards) {
     const meta = cards[type] || cards.duke;
-    const cardType = type || Object.keys(coupCards).find(k => coupCards[k] === meta) || 'duke';
+    const cardType = type;
     const fullCardSrc = _coupImgBase + cardType + '_full_card.webp';
 
     // Show full-card flip overlay for 1 second, then open the info modal
@@ -341,10 +341,10 @@ function _showCoupEvent(text, kind = 'notice') {
     setTimeout(() => el.remove(), 2600);
 }
 
-function _showCoupLossAnimation(playerName, cardMeta, out = false) {
+function _showCoupLossAnimation(playerName, cardMeta, out = false, cardType = null) {
     document.querySelector('.coup-loss-overlay')?.remove();
-    const cardType = Object.keys(coupCards).find(k => coupCards[k] === cardMeta) || 'duke';
-    const fullCardSrc = _coupImgBase + cardType + '_full_card.webp';
+    const ct = cardType || Object.keys(coupCards).find(k => coupCards[k] === cardMeta) || 'duke';
+    const fullCardSrc = _coupImgBase + ct + '_full_card.webp';
     const el = document.createElement('div');
     el.className = 'coup-loss-overlay';
     el.innerHTML = `
@@ -860,7 +860,7 @@ function coupLoseInfluence(playerId, onDone, promptMsg = 'اختار كارتة 
         const card    = liveCards[0]; card.lost = true;
         const cardMeta = coupCards[card.type] || coupCards.duke;
         const out      = !player.hand.some(c => !c.lost);
-        _showCoupLossAnimation(player.name, cardMeta, out);
+        _showCoupLossAnimation(player.name, cardMeta, out, card.type);
         onDone?.();
         return;
     }
@@ -871,7 +871,7 @@ function coupLoseInfluence(playerId, onDone, promptMsg = 'اختار كارتة 
             if (chosen) { chosen.lost = true; }
             const cardMeta = coupCards[btn.dataset.loseType] || coupCards.duke;
             const out      = !player.hand.some(c => !c.lost);
-            _showCoupLossAnimation(player.name, cardMeta, out);
+            _showCoupLossAnimation(player.name, cardMeta, out, btn.dataset.loseType);
             onDone?.();
         }));
     });
