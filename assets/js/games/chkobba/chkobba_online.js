@@ -1551,50 +1551,75 @@ async function _animateChkobbaDeal(deckEl, handEl, count, onDone) {
         placeholders.push(ph);
     }
 
-    // Cards fly in with a tight stagger, then each flips only after the previous
-    // one has fully flipped — giving a clean one-by-one reveal.
-    const flipHalfDur = 110; // ms for each half of the scaleX flip
-    const flipTotalDur = flipHalfDur * 2 + 20; // fold + unfold + small buffer
+    // Cards fly in with a tight stagger, then each flips one-by-one back→face.
+    // We call onDone() (renderHand) immediately so the real face-up card elements
+    // exist in the DOM — hidden behind the placeholders — letting us read their
+    // face image src for the midpoint swap during each flip.
+    const flipHalfDur = 110; // ms per half of the scaleX flip
     const flightDur = 220;
     const staggerMs = count > 2 ? 55 : 70;
 
+    // Call renderHand() now so face cards are in the DOM (opacity:0, behind placeholders).
+    // onDone sets _chkobbaSkipDealAnim=false and calls renderHand() + _applyFlipAnimations.
+    // We call it early just for the face srcs; placeholders still sit on top visually.
+    onDone?.();
+
+    // Build a map of slot-index → face image src from the newly rendered hand cards.
+    const faceCards = Array.from(handEl.querySelectorAll('.hand-card:not(.chkobba-deal-placeholder)'));
+    const faceSrcByIndex = {};
+    faceCards.forEach((el, idx) => {
+        const img = el.querySelector('img');
+        if (img) faceSrcByIndex[idx] = img.src;
+        // Keep them invisible — placeholders cover them during the animation
+        el.style.opacity = '0';
+        el.style.transition = 'none';
+    });
+
     // Queue of landed placeholders waiting to flip, in arrival order.
-    // Each entry: { ph, index }
     const flipQueue = [];
-    let flipsStarted = 0; // how many flips have been kicked off
+    let flipsStarted = 0;
     let flipsFinished = 0;
 
     function flipNext() {
         if (flipsStarted >= flipQueue.length) return;
-        const { ph } = flipQueue[flipsStarted++];
+        const { ph, index } = flipQueue[flipsStarted++];
         const phImg = ph.querySelector('img');
-        if (!phImg) { checkAllDone(); return; }
+        const faceSrc = faceSrcByIndex[index];
+        if (!phImg) { finishFlip(index); return; }
 
-        // Fold down (back → hidden)
+        // Fold down (showing back → hidden)
         phImg.style.transition = `transform ${flipHalfDur}ms ease-in`;
         phImg.style.transform = 'scaleX(0)';
         setTimeout(() => {
-            // At midpoint, swap to face image — but we don't have it yet
-            // (renderHand runs after all flips). Keep back image; the real
-            // swap happens when renderHand replaces the placeholder.
+            // Midpoint: swap to face image
+            if (faceSrc) phImg.src = faceSrc;
+            // Unfold (revealing face)
             phImg.style.transition = `transform ${flipHalfDur}ms ease-out`;
             phImg.style.transform = 'scaleX(1)';
             setTimeout(() => {
                 phImg.style.transition = '';
                 phImg.style.transform = '';
-                flipsFinished++;
-                checkAllDone();
-                flipNext(); // start the next card's flip
+                finishFlip(index);
             }, flipHalfDur + 20);
         }, flipHalfDur);
     }
 
-    function checkAllDone() {
+    function finishFlip(index) {
+        // The placeholder that just finished flipping is the one at flipsStarted-1
+        const ph = flipQueue[flipsStarted - 1]?.ph;
+        if (ph) ph.style.opacity = '0';
+        // Reveal the real face card that was sitting hidden underneath
+        const realCard = faceCards[index];
+        if (realCard) {
+            realCard.style.transition = 'none';
+            realCard.style.opacity = '1';
+        }
+        flipsFinished++;
         if (flipsFinished >= count) {
-            setTimeout(() => {
-                placeholders.forEach(p => p.remove());
-                onDone?.();
-            }, 40);
+            // All flips done — clean up any remaining placeholder shells
+            setTimeout(() => placeholders.forEach(p => p.remove()), 40);
+        } else {
+            flipNext();
         }
     }
 
@@ -1616,13 +1641,13 @@ async function _animateChkobbaDeal(deckEl, handEl, count, onDone) {
                 rotate: (Math.random() - 0.5) * 8,
                 duration: flightDur,
                 onDone: () => {
-                    // Ghost landed — make the placeholder visible (face-down)
+                    // Ghost landed — show placeholder face-down
                     ph.style.transition = 'opacity 60ms ease-out';
                     ph.style.opacity = '1';
                     ph.classList.add('chkobba-deal-arrived');
                     finished++;
 
-                    // Push into queue and kick off the first flip if nothing is flipping yet
+                    // Queue for flip; kick off if nothing is flipping yet
                     flipQueue.push({ ph, index: i });
                     if (flipsStarted === 0) flipNext();
                 }
