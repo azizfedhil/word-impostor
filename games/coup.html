@@ -34,66 +34,13 @@
             </nav>
         </header>
         <section id="setup-screen" class="screen" aria-label="إعدادات اللعبة" hidden aria-hidden="true">
-            <div class="lang-pill-selector">
-                <button class="lang-pill-btn active" data-lang="tn">🇹🇳 تونسي</button>
-                <button class="lang-pill-btn x18-btn" data-lang="x18">🔞 +18</button>
+            <div style="text-align:center; padding: 30px 0 10px;">
+                <div style="font-size: 3.5rem; margin-bottom: 12px;">👑</div>
+                <h2 style="margin: 0 0 6px;">كول وبوّع</h2>
+                <p style="color: var(--text-muted); font-weight: 700; margin: 0 0 32px;">فلوس، تبلعيط، و"تكذب!"</p>
             </div>
-            <h3 data-i18n="players_label">👥 اساميكم:</h3>
-            <div id="players-inputs-container"></div>
-            <div class="add-player-row">
-                <button id="add-player-btn" class="add-player-btn" data-i18n="add_player_btn">➕ زيد واحد اخر</button>
-                <button id="reset-settings-btn" class="icon-btn" title="إعادة ضبط">🔄</button>
-            </div>
-            <div class="divider"></div>
-            <div class="surface-card" style="padding: 10px 24px;">
-                <div class="setting-row impostor-only">
-                    <div class="setting-info"><span class="setting-title" data-i18n="impostors_label">🎭 قداش من كذاب</span></div>
-                    <div class="counter-group" id="imp-control">
-                        <button class="counter-btn" id="imp-minus">−</button>
-                        <span class="counter-value" id="val-impostors">1</span>
-                        <button class="counter-btn" id="imp-plus">+</button>
-                    </div>
-                </div>
-                <div class="setting-row" style="border-bottom:none;">
-                    <div class="setting-info"><span class="setting-title" data-i18n="timer_label">⏱️ وقت الطرح</span></div>
-                    <div class="counter-group">
-                        <button class="counter-btn" id="timer-minus">−</button>
-                        <span class="counter-value" id="val-timer">3</span>
-                        <button class="counter-btn" id="timer-plus">+</button>
-                    </div>
-                </div>
-            </div>
-            <div class="advanced-header impostor-only" id="adv-toggle-btn">
-                <span data-i18n="advanced_btn">🔧 زيد بربش</span>
-                <span id="adv-chevron">▼</span>
-            </div>
-            <div class="advanced-content impostor-only" id="adv-panel">
-                <div class="toggle-row">
-                    <span class="toggle-label"><span class="info-icon" data-info="random">ℹ️</span> <span data-i18n="adv_random">🎲 كذابين على كيف اللعبة</span></span>
-                    <div class="toggle-switch" id="t-random"><div class="toggle-thumb"></div></div>
-                </div>
-                <div class="toggle-row">
-                    <span class="toggle-label"><span class="info-icon" data-info="chaos">ℹ️</span> <span data-i18n="adv_chaos">😈 خلوضها</span></span>
-                    <div class="toggle-switch" id="t-chaos"><div class="toggle-thumb"></div></div>
-                </div>
-                <div class="toggle-row">
-                    <span class="toggle-label"><span class="info-icon" data-info="elimination">ℹ️</span> <span data-i18n="adv_elimination">⚔️ نقص بالواحد بالواحد</span></span>
-                    <div class="toggle-switch" id="t-elimination"><div class="toggle-thumb"></div></div>
-                </div>
-                <div class="toggle-row" id="nohint-row">
-                    <span class="toggle-label"><span class="info-icon" data-info="nohint">ℹ️</span> <span data-i18n="adv_nohint">🙈 سبورة كحلة مع الكذاب</span></span>
-                    <div class="toggle-switch" id="t-nohint"><div class="toggle-thumb"></div></div>
-                </div>
-                <div class="toggle-row" id="allhint-row">
-                    <span class="toggle-label"><span class="info-icon" data-info="allhint">ℹ️</span> <span data-i18n="adv_allhint">💡 الكذابين الكل ياخذو نفس التلميح</span></span>
-                    <div class="toggle-switch" id="t-allhint"><div class="toggle-thumb"></div></div>
-                </div>
-            </div>
-            <br>
-            <button id="start-game-btn" class="primary-btn" data-i18n="start_btn">🚀 انافا</button>
+            <button id="open-online-btn" class="primary-btn">🌐 العب أونلاين مع أصحابك</button>
             <button id="coup-guide-from-setup-btn" class="secondary-btn coup-only-btn" type="button" style="margin-top:10px;">📖 دليل اللعب</button>
-            <div class="divider">أو</div>
-            <button id="open-online-btn" class="secondary-btn">🌐 العب أونلاين مع أصحابك</button>
             <p id="setup-error" style="color:var(--danger-color); font-weight:700; margin-top:10px; text-align:center;"></p>
         </section>
 <section id="online-setup-screen" class="screen" aria-label="إعدادات الأونلاين" hidden aria-hidden="true">
