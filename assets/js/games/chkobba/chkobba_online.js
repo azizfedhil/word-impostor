@@ -280,7 +280,21 @@ function _handCardTilt(index, total) {
     return (index - mid) * 4.5;
 }
 
-/** GPU-friendly card flight; calls onDone when finished (or immediately if reduced motion). */
+/** GPU-friendly card flight; calls onDone when finished (or immediately if reduced motion).
+ *
+ *  Uses the Web Animations API with parabolic-arc keyframes so the card follows a
+ *  natural curved trajectory instead of a stiff straight-line CSS transition.
+ *
+ *  Physics model:
+ *    • The card lifts off with a slight upward flick, arcs through a peak mid-flight,
+ *      then descends and snaps into the target with a micro-bounce (no overshoot on Y).
+ *    • Rotation follows the card's direction of travel: it tilts into the arc and
+ *      settles back flat, mimicking inertia.
+ *    • Scale grows as the card "rises" and shrinks back on landing — giving the
+ *      illusion of real Z-depth.
+ *    • Box-shadow deepens at peak height, fades on landing.
+ *    • Duration scales with distance so short trips feel snappy and long ones feel weighty.
+ */
 function _animateChkobbaFlight({ fromRect, toRect, imgSrc, imgSrcBack, duration = 380, rotate = 6, withGhost = false, persistAtEnd = false, onDone }) {
     if (_prefersReducedMotion() || !fromRect || !toRect) {
         onDone?.();
@@ -289,114 +303,207 @@ function _animateChkobbaFlight({ fromRect, toRect, imgSrc, imgSrcBack, duration 
     const layer = document.getElementById('chkobba-deal-layer');
     if (!layer) { onDone?.(); return; }
 
+    // Centre-point coordinates
+    const fx = fromRect.left + fromRect.width  / 2;
+    const fy = fromRect.top  + fromRect.height / 2;
+    const tx = toRect.left   + toRect.width    / 2;
+    const ty = toRect.top    + toRect.height   / 2;
+
+    const dx = tx - fx;
+    const dy = ty - fy;
+    const dist = Math.hypot(dx, dy);
+
+    // Scale duration with distance: short trips ≈ 300 ms, long ≈ 520 ms.
+    // Caller's `duration` is used as a baseline hint, clamped to feel right.
+    const naturalDur = Math.min(520, Math.max(300, dist * 0.9));
+    const dur = Math.round((duration * 0.4) + (naturalDur * 0.6));
+
+    // Arc height: proportional to distance, capped so it doesn't go off-screen.
+    // Negative = upward (screen-space Y inverted).
+    const arcH = Math.min(dist * 0.38, 160);
+
+    // Peak point sits at 42% along the flight path (slightly before midpoint for a
+    // natural "flick" where the card accelerates away and decelerates into landing).
+    const peakT  = 0.42;
+    const peakX  = fx + dx * peakT;
+    const peakY  = (fy + dy * peakT) - arcH;
+
+    // Landing point (same as destination but offset slightly for settle)
+    const settleY = ty + 4; // 4px below target — simulates the card touching down
+
+    // Rotation: starts at `rotate`, tilts extra in direction of travel at peak,
+    // settles to ~0 at landing.
+    const travelAngle = Math.atan2(dy, dx) * (180 / Math.PI);
+    const peakRotate  = rotate + travelAngle * 0.12; // subtle lean into arc
+    const endRotate   = rotate * 0.08; // nearly flat when settled
+
+    // Build the flyer element
     const flyer = document.createElement('div');
     flyer.className = 'chkobba-flight-card';
-
-    // Match flyer dimensions to the source rect so cards don't "pop" in size
-    flyer.style.width = `${fromRect.width}px`;
-    flyer.style.height = `${fromRect.height}px`;
-
-    const fx = fromRect.left + fromRect.width / 2;
-    const fy = fromRect.top + fromRect.height / 2;
-    const tx = toRect.left + toRect.width / 2;
-    const ty = toRect.top + toRect.height / 2;
-
-    // Set start transform — NO transition yet so browser paints it before animating
     flyer.style.cssText = `
-        transform: translate3d(${fx}px, ${fy}px, 0) rotate(${rotate}deg) translate(-50%, -50%);
+        position: fixed;
+        top: 0; left: 0;
+        width: ${fromRect.width}px;
+        height: ${fromRect.height}px;
+        pointer-events: none;
+        will-change: transform, opacity;
+        z-index: 9999;
+        transform: translate(${fx}px, ${fy}px) translate(-50%, -50%) rotate(${rotate}deg);
         opacity: 0;
-        transition: none;
     `;
 
     const img = document.createElement('img');
     img.src = imgSrc;
     img.draggable = false;
+    img.style.cssText = `
+        width: 100%; height: 100%;
+        object-fit: cover; border-radius: 12px;
+        display: block;
+        will-change: box-shadow;
+    `;
     flyer.appendChild(img);
     layer.appendChild(flyer);
 
-    // done-guard: prevents finish() being called twice
+    // done-guard: prevents finish() from being called twice
     let _done = false;
     const finish = () => {
         if (_done) return;
         _done = true;
         if (persistAtEnd) {
             ChkobbaAnimator.getPersistentGhosts().add(flyer);
-            // Settle down towards table (simulate gravity/landing seating)
-            flyer.style.transition = 'transform 380ms cubic-bezier(0.34, 1.56, 0.64, 1)';
-            const curTransform = flyer.style.transform;
-            // Cards land at their final spot but slightly lifted, then settle down.
-            // (Note: translateY(14px) matches the seat position in chkobba.css)
-            flyer.style.transform = `${curTransform} translateY(14px)`;
+            // Settle card down with a brief gravity-drop feel
+            flyer.animate(
+                [
+                    { transform: `translate(${tx}px, ${ty}px) translate(-50%, -50%) rotate(${endRotate}deg) scaleX(1)`, opacity: 1 },
+                    { transform: `translate(${tx}px, ${ty + 10}px) translate(-50%, -50%) rotate(${endRotate * 0.5}deg) scaleX(0.98)`, opacity: 1 }
+                ],
+                { duration: 280, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)', fill: 'forwards' }
+            );
         } else {
             flyer.remove();
         }
-        ghost?.remove();
         onDone?.();
     };
 
-    // Optional ghost trail — simpler: just a fading copy that fades out mid-flight
+    // ── Ghost trail (optional) ────────────────────────────────────────────────
+    // A faint echo that fades out in the first third of the flight.
     let ghost;
     if (withGhost) {
         ghost = document.createElement('div');
         ghost.className = 'chkobba-ghost-trail';
         ghost.style.cssText = `
-            transform: translate3d(${fx}px, ${fy}px, 0) rotate(${rotate}deg) translate(-50%, -50%);
+            position: fixed; top: 0; left: 0;
+            width: ${fromRect.width}px; height: ${fromRect.height}px;
+            pointer-events: none;
+            will-change: transform, opacity;
+            z-index: 9998;
+            transform: translate(${fx}px, ${fy}px) translate(-50%, -50%) rotate(${rotate}deg);
             opacity: 0;
-            transition: none;
         `;
         const gImg = document.createElement('img');
         gImg.src = imgSrc;
         gImg.draggable = false;
+        gImg.style.cssText = `width:100%;height:100%;object-fit:cover;border-radius:12px;
+            filter: drop-shadow(0 0 10px var(--primary-color)) brightness(1.2);`;
         ghost.appendChild(gImg);
         layer.appendChild(ghost);
+
+        // Ghost traces the early part of the arc then fades out
+        const ghostDur = dur * 0.55;
+        ghost.animate(
+            [
+                { transform: `translate(${fx}px, ${fy}px) translate(-50%, -50%) rotate(${rotate}deg) scale(1)`, opacity: 0, offset: 0 },
+                { transform: `translate(${fx}px, ${fy}px) translate(-50%, -50%) rotate(${rotate}deg) scale(1)`, opacity: 0.45, offset: 0.05 },
+                { transform: `translate(${peakX}px, ${peakY + arcH * 0.3}px) translate(-50%, -50%) rotate(${peakRotate}deg) scale(1.06)`, opacity: 0.15, offset: 0.7 },
+                { transform: `translate(${peakX}px, ${peakY + arcH * 0.5}px) translate(-50%, -50%) rotate(${peakRotate}deg) scale(1.04)`, opacity: 0, offset: 1 },
+            ],
+            { duration: ghostDur, easing: 'ease-out', fill: 'forwards' }
+        ).onfinish = () => ghost?.remove();
     }
 
-    // Two-rAF pattern: first rAF paints start state, second rAF starts transition
-    // This reliably prevents Safari/Chrome from skipping the start frame.
-    requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-            const endTransform = `translate3d(${tx}px, ${ty}px, 0) rotate(${rotate * 0.2}deg) translate(-50%, -50%)`;
+    // ── Back→face flip at midpoint (capture animations) ───────────────────────
+    if (imgSrcBack) {
+        img.src = imgSrcBack;
+        const flipDelay  = dur * 0.40;
+        const flipHalf   = dur * 0.14;
+        setTimeout(() => {
+            img.animate(
+                [{ transform: 'scaleX(1)' }, { transform: 'scaleX(0)' }],
+                { duration: flipHalf, easing: 'ease-in', fill: 'forwards' }
+            ).onfinish = () => {
+                img.src = imgSrc;
+                img.animate(
+                    [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }],
+                    { duration: flipHalf, easing: 'ease-out', fill: 'forwards' }
+                );
+            };
+        }, flipDelay);
+    }
 
-            // Enhanced physics: use a slight back-out overshoot and lift the card via scale
-            flyer.style.transition = `transform ${duration}ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 80ms ease-out`;
-            flyer.style.opacity = '1';
-            flyer.style.transform = endTransform;
-            // Add flight class for CSS scale/shadow enhancement (see chkobba.css)
-            flyer.classList.add('is-in-flight');
-
-            // If a back-image is supplied, flip from back→face at the midpoint of the flight
-            // This makes captures look like the card is physically scooped and flipped over
-            if (imgSrcBack) {
-                img.src = imgSrcBack; // start face-down
-                setTimeout(() => {
-                    // Quick horizontal scale-to-0 then back, swapping image at midpoint
-                    img.style.transition = `transform ${duration * 0.18}ms ease-in`;
-                    img.style.transform = 'scaleX(0)';
-                    setTimeout(() => {
-                        img.src = imgSrc; // reveal face
-                        img.style.transition = `transform ${duration * 0.18}ms ease-out`;
-                        img.style.transform = 'scaleX(1)';
-                    }, duration * 0.18);
-                }, duration * 0.38);
+    // ── Main flight — Web Animations API with parabolic arc keyframes ─────────
+    // 5-keyframe arc: liftoff → early arc → peak → descent → landing snap
+    const mainAnim = flyer.animate(
+        [
+            // 0% — Start: sitting at source, face-down opacity
+            {
+                transform: `translate(${fx}px, ${fy}px) translate(-50%, -50%) rotate(${rotate}deg) scale(0.96)`,
+                opacity: 0,
+                offset: 0
+            },
+            // 6% — Quick reveal: card becomes visible instantly (feels like it's "picked up")
+            {
+                transform: `translate(${fx}px, ${fy - arcH * 0.08}px) translate(-50%, -50%) rotate(${rotate + 1.5}deg) scale(1.0)`,
+                opacity: 1,
+                offset: 0.06
+            },
+            // 38% — Peak of arc: card is at highest point, slightly larger (looks closer)
+            {
+                transform: `translate(${peakX}px, ${peakY}px) translate(-50%, -50%) rotate(${peakRotate}deg) scale(1.08)`,
+                opacity: 1,
+                offset: 0.38
+            },
+            // 72% — Descending: card starts to shrink back down, still moving
+            {
+                transform: `translate(${tx + dx * 0.1}px, ${ty - arcH * 0.12}px) translate(-50%, -50%) rotate(${endRotate * 1.6}deg) scale(1.03)`,
+                opacity: 1,
+                offset: 0.72
+            },
+            // 90% — Pre-landing: card is almost at target, slight overshoot downward
+            {
+                transform: `translate(${tx}px, ${settleY + 3}px) translate(-50%, -50%) rotate(${endRotate * 0.8}deg) scale(1.0)`,
+                opacity: 1,
+                offset: 0.90
+            },
+            // 100% — Landing snap: snaps back up a touch (micro-bounce) and settles flat
+            {
+                transform: `translate(${tx}px, ${ty}px) translate(-50%, -50%) rotate(${endRotate}deg) scale(1.0)`,
+                opacity: 1,
+                offset: 1
             }
+        ],
+        {
+            duration: dur,
+            // Custom easing: fast exit from source (flick energy), smooth deceleration into landing
+            easing: 'cubic-bezier(0.22, 0.82, 0.38, 1.0)',
+            fill: 'forwards'
+        }
+    );
 
-            if (ghost) {
-                // Ghost starts with same position, fades out at 40% of flight
-                ghost.style.transition = `transform ${duration * 0.9}ms cubic-bezier(0.22, 0.9, 0.3, 1), opacity ${duration * 0.4}ms ease-in`;
-                ghost.style.opacity = '0.4';
-                ghost.style.transform = endTransform;
-                setTimeout(() => { if (ghost.parentNode) ghost.style.opacity = '0'; }, duration * 0.3);
-            }
+    // Simultaneously animate the shadow on the img to convey height
+    img.animate(
+        [
+            { boxShadow: '0 4px 10px rgba(0,0,0,0.22)',  offset: 0    },
+            { boxShadow: '0 4px 10px rgba(0,0,0,0.22)',  offset: 0.06 },
+            { boxShadow: '0 28px 56px rgba(0,0,0,0.42)', offset: 0.38 }, // peak — card is "high"
+            { boxShadow: '0 16px 32px rgba(0,0,0,0.30)', offset: 0.72 },
+            { boxShadow: '0 6px 16px rgba(0,0,0,0.24)',  offset: 1    }
+        ],
+        { duration: dur, easing: 'ease-in-out', fill: 'forwards' }
+    );
 
-            // Listen only to transform end on the flyer — once:true prevents leaks
-            flyer.addEventListener('transitionend', (e) => {
-                if (e.propertyName === 'transform') finish();
-            }, { once: true });
-
-            // Safety fallback — fires slightly after expected end
-            setTimeout(finish, duration + 60);
-        });
-    });
+    mainAnim.onfinish = finish;
+    // Safety fallback in case onfinish never fires (e.g. tab in background)
+    setTimeout(finish, dur + 80);
 }
 
 function _animateChkobbaFlightsSequential(flights, onDone) {
@@ -1482,28 +1589,37 @@ async function _animateChkobbaDeal(deckEl, handEl, count, onDone) {
         onDone?.(); return;
     }
 
-    // Brief deck pulse
-    deckEl.classList.add('is-dealing');
-    setTimeout(() => deckEl.classList.remove('is-dealing'), 400);
+    // ── Deck pulse: organic squeeze-and-release instead of a robotic scale bounce ──
+    // The deck "breathes" — a quick compress signals energy being released.
+    const layer = document.getElementById('chkobba-deal-layer');
+    deckEl.animate(
+        [
+            { transform: 'scale(1) rotate(5deg)',           offset: 0    },
+            { transform: 'scale(0.93) rotate(4.2deg)',      offset: 0.18 }, // compress
+            { transform: 'scale(1.07) rotate(5.4deg)',      offset: 0.45 }, // rebound
+            { transform: 'scale(0.99) rotate(4.9deg)',      offset: 0.72 }, // settle
+            { transform: 'scale(1)    rotate(5deg)',        offset: 1    }
+        ],
+        { duration: 420, easing: 'ease-out' }
+    );
 
     const from = deckEl.getBoundingClientRect();
     const back = window.ChkobbaLogic.ASSETS.BACK;
     let finished = 0;
 
     // Pre-populate the hand with invisible face-down placeholder slots.
-    // Each slot becomes the ghost's landing target AND flips face-up when the
-    // ghost arrives, so there's never a flash of empty space or sudden appearance.
+    // Each slot sits at its real fan position — the ghost lands there and the
+    // placeholder fades in on arrival, eliminating blank-hand flashes.
     const placeholders = [];
     for (let i = 0; i < count; i++) {
         const ph = document.createElement('div');
         ph.className = 'chkobba-card hand-card chkobba-deal-placeholder';
-        // Mirror the tilt CSS vars so placeholders sit in their real fan position
         const fakeTilt = _handCardTilt(i, count);
         ph.style.setProperty('--tilt', `${fakeTilt}deg`);
         ph.style.setProperty('--stack-offset', `${fakeTilt * 0.45}px`);
         ph.style.setProperty('--hand-z', String(10 + i));
         if (i > 0) ph.style.setProperty('--stack-overlap', '20');
-        ph.style.opacity = '0'; // invisible until the ghost arrives
+        ph.style.opacity = '0';
         const phImg = document.createElement('img');
         phImg.src = back;
         phImg.alt = '';
@@ -1512,47 +1628,65 @@ async function _animateChkobbaDeal(deckEl, handEl, count, onDone) {
         placeholders.push(ph);
     }
 
-    // Phase 4 – target feel: 350–500ms travel, ease-out, slight stagger between cards.
-    // Tight stagger — entire sequence ≤ 600ms even for 4+ cards.
-    const staggerMs = count > 2 ? 90 : 110;
+    // ── Organic stagger ────────────────────────────────────────────────────────
+    // Base interval scales with card count so the full sequence never feels too slow.
+    // Each card gets a tiny random jitter (±18 ms) so the rhythm feels human, not
+    // like a metronome. A dealer accelerates slightly through the deal, so later
+    // cards arrive with a shorter gap (multiplier < 1 for high i).
+    const baseInterval = count > 3 ? 82 : 105;
 
+    let elapsed = 0;
     for (let i = 0; i < count; i++) {
+        // Micro-jitter: random offset in ±18 ms range, seeded differently per card
+        const jitter = (Math.sin(i * 137.5) * 0.5 + 0.5) * 36 - 18; // deterministic but varied
+        // Slight acceleration: each subsequent card is 4% faster than the last
+        const accel  = Math.pow(0.96, i);
+        const delay  = elapsed;
+        elapsed += Math.round(baseInterval * accel + jitter);
+
+        // Per-card visual variation: tilt direction and arc height differ subtly
+        // so the fan of arriving cards looks naturally uneven.
+        const cardSeed = i * 31 + count * 7; // deterministic variation per slot
+        const rotateDeg = ((cardSeed % 14) - 7) + (Math.random() - 0.5) * 3; // ±~6°
+
+        // Duration also varies ±20 ms per card (same dealer-acceleration model)
+        const cardDur = Math.round(360 * accel + (Math.random() - 0.5) * 40);
+
         setTimeout(() => {
-            // Measure placeholder position now (it's already in the DOM at its fan slot)
             const ph = placeholders[i];
+            // Force layout so getBoundingClientRect is accurate
+            ph.getBoundingClientRect();
             const to = ph.getBoundingClientRect();
             const targetRect = {
-                left: to.left,
-                top: to.top,
-                width: to.width || from.width,
+                left:   to.left,
+                top:    to.top,
+                width:  to.width  || from.width,
                 height: to.height || from.height
             };
 
             _animateChkobbaFlight({
-                fromRect: from,
-                toRect: targetRect,
-                imgSrc: back,
-                rotate: (Math.random() - 0.5) * 8,
-                duration: 380,
+                fromRect:  from,
+                toRect:    targetRect,
+                imgSrc:    back,
+                rotate:    rotateDeg,
+                duration:  cardDur,
                 onDone: () => {
-                    // Ghost landed — flip the placeholder face-down → visible
-                    // The actual face image is set by renderHand() after all arrive,
-                    // but for now show the card back so there's no blank frame.
-                    ph.style.transition = 'opacity 80ms ease-out';
-                    ph.style.opacity = '1';
+                    // Card landed — reveal the placeholder (card back) immediately
+                    ph.style.transition = 'opacity 70ms ease-out';
+                    ph.style.opacity    = '1';
                     ph.classList.add('chkobba-deal-arrived');
                     finished++;
                     if (finished >= count) {
-                        // All cards arrived — remove placeholders and run the real render
-                        // with a tiny delay so the last card's fade-in finishes first
+                        // All cards home — tiny pause so the last fade-in completes,
+                        // then swap placeholders for the real face-up hand cards.
                         setTimeout(() => {
                             placeholders.forEach(p => p.remove());
                             onDone?.();
-                        }, 60);
+                        }, 55);
                     }
                 }
             });
-        }, i * staggerMs);
+        }, delay);
     }
 }
 
