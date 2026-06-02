@@ -478,8 +478,7 @@ body.game-chkobba header.app-header {
     gap: 8px;
 
     width: 360px;
-    height: 95spx;
-    padding: 20px;
+    padding: 14px 20px;
 
     background: rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(16px) saturate(180%);
@@ -497,14 +496,39 @@ body.game-chkobba header.app-header {
 .chkobba-player-info-content {
     flex: 1;
     display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.chkobba-player-name-row {
+    display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+    flex-wrap: nowrap;
+    min-width: 0;
 }
 
 .chkobba-player-name {
     font-size: 0.9rem;
     font-weight: 700;
     color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Compact team badge — team number only, no color names */
+.chkobba-team-badge {
+    flex-shrink: 0;
+    font-size: 0.68rem;
+    font-weight: 800;
+    background: rgba(241, 192, 81, 0.9);
+    color: rgba(0, 0, 0, 0.75);
+    border-radius: 999px;
+    padding: 1px 7px;
+    white-space: nowrap;
+    line-height: 1.6;
 }
 
 .chkobba-player-details {
