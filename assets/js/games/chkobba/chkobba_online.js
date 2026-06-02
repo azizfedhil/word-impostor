@@ -1216,6 +1216,7 @@ function _renderChkobbaPlayerInfo(state, me, isMyTurn) {
     const capturedCount = me.captured?.length || 0;
     const diamondCount = me.captured?.filter(c => c.suit === 'diamonds').length || 0;
     const chkobbaCount = me.chkobbas || 0;
+    const mode = state.mode || '1v1';
 
     // Compute live round points from current captured cards so the circle
     // updates in real time instead of only after the round ends.
@@ -1236,26 +1237,6 @@ function _renderChkobbaPlayerInfo(state, me, isMyTurn) {
 
     const totalScore = (me.totalScore || 0) + liveRoundScore;
 
-    // In 2v2, find teammate name to show in the info box
-    const mode = state.mode || '1v1';
-    let teamBannerHtml = '';
-    if (mode === '2v2' && me.team != null) {
-        const teammate = state.players.find(p => p.id !== me.id && p.team === me.team);
-        const teamNames = ['أزرق', 'أحمر'];
-        const teamColor = me.team === 0 ? 'var(--accent-color,#6c9eff)' : '#e07070';
-        teamBannerHtml = `
-            <div style="
-                font-size:.72rem;font-weight:700;
-                background:${teamColor};color:#fff;
-                border-radius:6px;padding:2px 8px;margin-bottom:4px;
-                text-align:center;letter-spacing:.02em;
-            ">
-                فريق ${teamNames[me.team] || (me.team + 1)}
-                ${teammate ? ` — زميلك: ${_esc(teammate.name)}` : ''}
-            </div>
-        `;
-    }
-
     const details = `
         <div class="chkobba-stat-item">
             <span class="chkobba-stat-value">${capturedCount}🃏</span>
@@ -1273,10 +1254,21 @@ function _renderChkobbaPlayerInfo(state, me, isMyTurn) {
         </div>
     `;
 
+    // Compact team badge for 2v2 — uses team numbers (1/2) instead of colors
+    let teamBadge = '';
+    if (mode === '2v2' && me.team !== null && me.team !== undefined) {
+        const teamNum = me.team === 0 ? '1' : '2';
+        const teammate = state.players.find(p => p.team === me.team && p.id !== me.id);
+        const teammatePart = teammate ? ` — ${_esc(teammate.name)}` : '';
+        teamBadge = `<span class="chkobba-team-badge">فريق ${teamNum}${teammatePart}</span>`;
+    }
+
     infoBox.innerHTML = `
         <div class="chkobba-player-info-content">
-            ${teamBannerHtml}
-            <span class="chkobba-player-name">${me.name}</span>
+            <div class="chkobba-player-name-row">
+                <span class="chkobba-player-name">${_esc(me.name)}</span>
+                ${teamBadge}
+            </div>
             <div class="chkobba-player-details">${details}</div>
         </div>
         <div class="chkobba-player-circle ${isMyTurn ? 'is-turn' : ''}">${totalScore}</div>
@@ -1448,12 +1440,9 @@ async function _chkobbaAcceptStarter() {
 
 function _buildChkobbaOpponentPillHtml(p, state, { active, isTeammate, isExpanded, offline, dinari }) {
     const isMe = p.id === _myId;
-    const teamLabel = isTeammate
-        ? ' <span style="font-size:.7rem;background:var(--accent-color,#6c9eff);color:#fff;border-radius:6px;padding:1px 5px;vertical-align:middle;">🤝 فريقك</span>'
-        : '';
     return `
         <div class="pill-main">
-            <div class="pill-name">${_esc(p.name)}${isMe ? ' <span class="you-tag">أنا</span>' : ''}${teamLabel}${active ? ' ●' : ''}</div>
+            <div class="pill-name">${_esc(p.name)}${isMe ? ' <span class="you-tag">أنا</span>' : ''}${active ? ' ●' : ''}</div>
             <div class="pill-stats-row">
                 <div class="pill-stat" title="كوارط في اليد">🃏 ${p.hand.length}</div>
                 <div class="pill-stat" title="الماكول">📥 ${p.captured?.length || 0}</div>
@@ -1493,7 +1482,7 @@ function _renderChkobbaOpponentPills(room, state, me, mode, roomPlayerMeta) {
     playersToRender.forEach(p => {
         const isMe = p.id === _myId;
         const active = state.players[state.turnIndex].id === p.id;
-        const isTeammate = mode === '2v2' && p.id !== _myId && p.team === me?.team;
+        const isTeammate = mode === '2v2' && p.team === me?.team;
         const isExpanded = _onlineCoupSummaryExpandedId === p.id;
         const meta = roomPlayerMeta[p.id];
         const offline = !isMe && meta && meta.connected === false;
@@ -1724,28 +1713,9 @@ function _renderChkobbaScoreboard(state, isFinal, onContinue) {
     document.getElementById('chkobba-scoreboard-overlay')?.remove();
 
     const scores = state.roundScores || {};
-    const mode = state.mode || '1v1';
-
-    // In 2v2, winner is determined by team total score
-    let winner = null;
-    if (isFinal) {
-        if (mode === '2v2' && state.teams && state.teams.length === 2) {
-            let bestTeamScore = -1, bestTeamIdx = -1;
-            state.teams.forEach((teamIds, tIdx) => {
-                const teamScore = teamIds.reduce((s, id) => {
-                    const p = state.players.find(x => x.id === id);
-                    return s + (p?.totalScore || 0);
-                }, 0);
-                if (teamScore > bestTeamScore) { bestTeamScore = teamScore; bestTeamIdx = tIdx; }
-            });
-            // Pick a representative player from winning team for display
-            if (bestTeamIdx !== -1) {
-                winner = state.players.find(p => state.teams[bestTeamIdx].includes(p.id)) || null;
-            }
-        } else {
-            winner = state.players.reduce((best, p) => (!best || p.totalScore > best.totalScore ? p : best), null);
-        }
-    }
+    const winner = isFinal
+        ? state.players.reduce((best, p) => (!best || p.totalScore > best.totalScore ? p : best), null)
+        : null;
 
     const overlay = document.createElement('div');
     overlay.id = 'chkobba-scoreboard-overlay';
@@ -1769,71 +1739,13 @@ function _renderChkobbaScoreboard(state, isFinal, onContinue) {
     `;
 
     const titleIcon = isFinal ? '🏆' : '📊';
-    let titleText;
-    if (isFinal) {
-        if (mode === '2v2' && state.teams && winner) {
-            const winnerTeamIdx = state.teams.findIndex(ids => ids.includes(winner.id));
-            const teamNames = ['أزرق', 'أحمر'];
-            const winnerTeamPlayers = (state.teams[winnerTeamIdx] || [])
-                .map(id => state.players.find(p => p.id === id)?.name)
-                .filter(Boolean);
-            titleText = `نهاية اللعبة — الفائز: فريق ${teamNames[winnerTeamIdx] || ''} (${winnerTeamPlayers.map(_esc).join(' & ')})`;
-        } else {
-            titleText = `نهاية اللعبة — الفائز: ${_esc(winner?.name || '؟')}`;
-        }
-    } else {
-        titleText = `نهاية الطرح ${state.round || ''}`;
-    }
+    const titleText = isFinal
+        ? `نهاية اللعبة — الفائز: ${_esc(winner?.name || '؟')}`
+        : `نهاية الطرح ${state.round || ''}`;
 
     let rowsHtml = '';
     const sorted = [...state.players].sort((a, b) => b.totalScore - a.totalScore);
-
-    if (mode === '2v2' && state.teams && state.teams.length === 2) {
-        // Group players by team and show team totals
-        const teamNames = ['أزرق', 'أحمر'];
-        const teamColors = ['var(--accent-color,#6c9eff)', '#e07070'];
-        state.teams.forEach((teamIds, tIdx) => {
-            const teamPlayers = teamIds.map(id => state.players.find(p => p.id === id)).filter(Boolean);
-            const teamTotal = teamPlayers.reduce((s, p) => s + (p.totalScore || 0), 0);
-            const teamRoundPts = teamPlayers.reduce((s, p) => s + (scores[p.id]?.total ?? 0), 0);
-            const isWinnerTeam = isFinal && teamPlayers.some(p => p.id === winner?.id);
-            rowsHtml += `
-            <div style="
-                padding:10px 12px;margin-bottom:10px;
-                background:${isWinnerTeam ? 'rgba(241,192,81,0.18)' : 'rgba(255,255,255,0.07)'};
-                border-radius:14px;
-                border:${isWinnerTeam ? '1.5px solid rgba(241,192,81,0.7)' : `1.5px solid ${teamColors[tIdx]}44`};
-            ">
-                <div style="font-weight:800;font-size:.95rem;color:${teamColors[tIdx]};margin-bottom:6px;">
-                    ${isWinnerTeam ? '👑 ' : ''}فريق ${teamNames[tIdx]}
-                    <span style="float:left;color:var(--gold,#f1c051);font-size:1rem;">
-                        ${teamTotal} / ${state.targetScore}
-                        ${teamRoundPts ? `<span style="font-size:.8rem;opacity:.7;"> (+${teamRoundPts})</span>` : ''}
-                    </span>
-                </div>`;
-            teamPlayers.forEach(p => {
-                const rs = scores[p.id];
-                const details = rs?.details || {};
-                const detailItems = [
-                    details.carti   ? 'الكارطة ✅'            : '',
-                    details.dinari  ? 'الديناري ✅'           : '',
-                    details.berria  ? 'السبعة الحية ✅'       : '',
-                    details.basila  ? 'الباسيلة ✅'           : '',
-                    details.chkobba ? `شكبّة ×${details.chkobba}` : '',
-                ].filter(Boolean).join(' · ') || '—';
-                rowsHtml += `
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;padding:4px 6px;border-radius:8px;background:rgba(255,255,255,0.05);">
-                    <div style="font-size:1.1rem;">🃏</div>
-                    <div style="flex:1;text-align:right;">
-                        <div style="font-weight:600;font-size:.95rem;">${_esc(p.name)}${p.id === _myId ? ' <span style="font-size:.7rem;opacity:.6;">(أنا)</span>' : ''}</div>
-                        <div style="font-size:.72rem;opacity:.65;">${detailItems}</div>
-                    </div>
-                </div>`;
-            });
-            rowsHtml += `</div>`;
-        });
-    } else {
-        sorted.forEach(p => {
+    sorted.forEach(p => {
         const rs = scores[p.id];
         const details = rs?.details || {};
         const roundPts = rs?.total ?? 0;
@@ -1865,8 +1777,7 @@ function _renderChkobbaScoreboard(state, isFinal, onContinue) {
                 <div style="font-size:1.15rem;font-weight:800;color:var(--gold,#f1c051);">${p.totalScore} / ${state.targetScore}</div>
             </div>
         </div>`;
-        });
-    }
+    });
 
     card.innerHTML = `
         <div style="font-size:1.6rem;margin-bottom:4px;">${titleIcon}</div>
