@@ -2800,6 +2800,10 @@ function _advanceChkobbaTurn(state, roomObj) {
 }
 
 function _endChkobbaRound(state, roomObj) {
+    state.nextRoundTurnIndex = Number.isInteger(state.turnIndex)
+        ? state.turnIndex % state.players.length
+        : 0;
+
     // Last capture takes leftovers
     if (state.table.length > 0 && state.lastCaptureId) {
         const winner = state.players.find(p => p.id === state.lastCaptureId);
@@ -2868,7 +2872,10 @@ async function _chkobbaStartNextRound(roomObj) {
             p.hand = [s.deck.pop(), s.deck.pop(), s.deck.pop()];
         });
         s.round++;
-        s.turnIndex = 0;
+        s.turnIndex = Number.isInteger(s.nextRoundTurnIndex)
+            ? s.nextRoundTurnIndex % s.players.length
+            : (Number.isInteger(s.turnIndex) ? s.turnIndex % s.players.length : 0);
+        s.nextRoundTurnIndex = null;
         s.roundScores = null;
         s.chkobbaEvent = null;   // prevent last round's event from re-animating at round start
         s.phase = 'playing';

@@ -38,7 +38,6 @@ const GAME_MODE_KEY     = 'dakheel_game_mode';
 // This replaces the hard-coded gameModes object in shared.js.
 const _gameModes = {
     impostor: { title: '🕵️‍♂️ شكونو هو؟',      start: '🚀 انافا',            online: '🌐 العب أونلاين مع أصحابك' },
-    thief:    { title: '🗝️ سارق، حاكم، جلّاد', start: '🚀 وزّع الكوارط',     online: '🌐 العب أونلاين مع أصحابك' },
     spyfall:  { title: 'ماناش هوني',            start: '🚀 وزّع الكوارط',     online: '🌐 العب أونلاين مع أصحابك' },
     coup:     { title: '👑 كول وبوّع',           start: '🚀 ابدا الكول',       online: '🌐 العب أونلاين مع أصحابك' },
     chkobba:  { title: '🃏 شكبّة',              start: '🚀 ابدا الشكبّة',     online: '🌐 العب أونلاين مع أصحابك' },
@@ -57,7 +56,7 @@ function setX18Unlocked(val)    { _x18Unlocked = !!val; }
 
 function getCurrentGameMode()   { return _currentGameMode; }
 function setCurrentGameMode(m)  {
-    _currentGameMode = ['impostor','thief','spyfall','coup','chkobba'].includes(m) ? m : 'impostor';
+    _currentGameMode = ['impostor','spyfall','coup','chkobba'].includes(m) ? m : 'impostor';
     try { localStorage.setItem(GAME_MODE_KEY, _currentGameMode); } catch(_) {}
 }
 

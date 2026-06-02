@@ -509,6 +509,7 @@ window.GameRegistry.register('spyfall', {
 window.GameRegistry.register('coup', {
     firstScreen:          'online-setup-screen',
     defaultTimerConfig:   1,
+    supportsOffline:      false,
     supportsLangVariants: false,
     voteBtnLabel:         null,
     voteBtnPrefix:        '🗳️ ',
@@ -540,6 +541,7 @@ window.GameRegistry.register('coup', {
 window.GameRegistry.register('chkobba', {
     firstScreen:          'online-setup-screen',
     defaultTimerConfig:   1,
+    supportsOffline:      false,
     supportsLangVariants: false,
     voteBtnLabel:         null,
     voteBtnPrefix:        '🗳️ ',

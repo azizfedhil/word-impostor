@@ -173,7 +173,7 @@ function updateGameModeUI() {
     const meta = GameState.getGameMeta(currentGameMode);
     const reg  = window.GameRegistry?.[currentGameMode] || {};
     // CSS game class — drive from registry or fall back to name
-    ['impostor','thief','spyfall','coup','chkobba'].forEach(g =>
+    ['impostor','spyfall','coup','chkobba'].forEach(g =>
         document.body.classList.toggle('game-' + g, currentGameMode === g));
     // Turn indicator only shown by coup
     document.getElementById('coup-turn-indicator')
@@ -190,6 +190,9 @@ function updateGameModeUI() {
     const onlineBtn = document.getElementById('open-online-btn');
     if (onlineBtn) onlineBtn.innerText = meta.online || '🌐 العب أونلاين مع أصحابك';
     // Game-specific vote/who labels — read from registry, fall back to i18n
+    const onlineOnly = reg.supportsOffline === false;
+    document.getElementById('back-to-setup-btn')?.classList.toggle('hidden', onlineOnly);
+    document.getElementById('setup-screen')?.classList.toggle('online-only-placeholder', onlineOnly);
     const voteBtn = document.getElementById('go-to-vote-btn');
     if (voteBtn) voteBtn.innerText = reg.voteBtnLabel || i18n[currentLang].vote_btn || '🗳️ صوّت';
     const who = document.querySelector('[data-i18n="who_impostor"]');
@@ -467,7 +470,10 @@ async function initSharedSetup(gameMode) {
 
     // Online setup buttons
     document.getElementById('open-online-btn')?.addEventListener('click',()=>{showScreen('online-setup-screen');});
-    document.getElementById('back-to-setup-btn')?.addEventListener('click',()=>showScreen('setup-screen'));
+    document.getElementById('back-to-setup-btn')?.addEventListener('click',()=>{
+        const reg = window.GameRegistry?.[currentGameMode];
+        showScreen(reg?.supportsOffline === false ? (reg.firstScreen || 'online-setup-screen') : 'setup-screen');
+    });
     document.getElementById('create-room-btn')?.addEventListener('click', () => { if(typeof _createRoom==='function') _createRoom(); });
     document.getElementById('join-room-btn')?.addEventListener('click', () => { if(typeof _joinRoom==='function') _joinRoom(); });
     document.getElementById('open-scanner-btn')?.addEventListener('click', () => { if(typeof _startScanner === 'function') _startScanner(); });
