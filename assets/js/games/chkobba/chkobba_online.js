@@ -1787,7 +1787,6 @@ function _renderChkobbaScoreboard(state, isFinal, onContinue) {
 
     let rowsHtml = '';
     const sorted = [...state.players].sort((a, b) => b.totalScore - a.totalScore);
-    const mode = state.mode || '1v1';
 
     if (mode === '2v2' && state.teams && state.teams.length === 2) {
         // Group players by team and show team totals
