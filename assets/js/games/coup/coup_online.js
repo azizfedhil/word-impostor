@@ -556,9 +556,9 @@ function _onlineCoupRequestTaxAssignment(state, playerId) {
 function _onlineCoupActionName(action) {
     return {
         income:'شهرية', foreignAid:'اعانة', tax:'ضريبة الشلغمي',
-        bureaucratTax:'تعاون الشيخ', speculatorGamble:'قامبل الكلاب',
+        bureaucratTax:'تعاون الشيخ', speculatorGamble:'قمّر يا الكُلّاب',
         assassinate:'اغتيال', exchange:'تبديل السمسار',
-        inquireExchange:'بدّل يا البحاث', inquireInspect:'فحص البحاث',
+        inquireExchange:'بدّل يا البحاث', inquireInspect:'تنتس يا البحّاث',
         jesterDisorder:'خربقها يا العمدة', socialistShare:'توزيع المدير',
         steal:'سرقة الرايس', invoice:'فاتورة الكبران', taxAssignment:'خطية سي فلان',
         coup:'Coup'
@@ -965,8 +965,8 @@ function _renderOnlineCoupTaxAssignmentBanner(state, me) {
     const wrap = document.createElement('div');
     wrap.className = 'coup-pending-banner';
     wrap.innerHTML = `
-        <div class="coup-pending-title">سي فلان: ضريبة</div>
-        <strong>${esc(player?.name || '')} يختار دور يفرض عليه ضريبة</strong>
+        <div class="coup-pending-title">خطية سي فلان</div>
+        <strong>${esc(player?.name || '')} يختار دور يفرض عليه خطية</strong>
         <p>${me?.id === player?.id ? `اختار دور من الأدوار الموجودة في اللعبة.` : `نستناو ${esc(player?.name || '')} يختار الدور.`}</p>
     `;
     return wrap;
@@ -1053,7 +1053,7 @@ function _renderOnlineCoupInspectBanner(state, me) {
     const cardMeta = window.coupCards[insp?.revealedCardType];
     const cardLabel = cardMeta ? (window.CoupUI?.cardLabelHtml?.(cardMeta) || `${cardMeta.icon} ${cardMeta.name}`) : '🂠';
     wrap.innerHTML = `
-        <div class="coup-pending-title">البحاث: فحص 🔍</div>
+        <div class="coup-pending-title">لوّج يا البحاث 🔍</div>
         <strong>${esc(actor?.name || '')} يفحص كارطة ${esc(target?.name || '')}</strong>
         <p>${isActor
             ? `كارطة ${esc(target?.name || '')}: <strong>${cardLabel}</strong>. تحب تجبرو يبدّلها؟`
@@ -1118,7 +1118,7 @@ function _renderOnlineCoupSocialistShareBanner(state, me) {
     wrap.className = 'coup-pending-banner';
     const isActor = me?.id === actor?.id;
     wrap.innerHTML = `
-        <div class="coup-pending-title">المدير: توزيع 🤝</div>
+        <div class="coup-pending-title">مشكي يا المدير 🤝</div>
         <strong>${esc(actor?.name || '')} يختار من كل لاعب</strong>
         <p>${isActor ? 'من كل لاعب، اختار: تاخو فلوس أو كارطة أو ما تاخوش شي.' : `نستناو ${esc(actor?.name || '')} يختار.`}</p>
     `;
@@ -1235,7 +1235,7 @@ function _renderOnlineCoupActions(room, state, me) {
                 _onlineCoupSkipEstateClaim(estate.id);
             });
         } else {
-            panel.innerHTML = `<div class="coup-panel-card">نستناو لاعب يطالب بالميراث.</div>`;
+            panel.innerHTML = `<div class="coup-panel-card">نستناو لاعب يطالب بالتركة.</div>`;
         }
         return;
     }
@@ -1474,9 +1474,9 @@ function _renderOnlineCoupActions(room, state, me) {
 
     let dukeBtn;
     if (dyn.dukeRole === 'bureaucrat') {
-        dukeBtn = mk(`${window.CoupUI?.cardLabelHtml?.(dukeCard) || '🏛 الشيخ'} +2`, 'bureaucratTax', 'primary-action', 'خذ 3، اعطي 1 للهدف');
+        dukeBtn = mk(`${window.CoupUI?.cardLabelHtml?.(dukeCard) || '🏛 الشيخ'} +2`, 'bureaucratTax', 'primary-action', 'خوذ 3، اعطي 1 للهدف');
     } else if (dyn.dukeRole === 'speculator') {
-        dukeBtn = mk(`${window.CoupUI?.cardLabelHtml?.(dukeCard) || '🎰 الكلاب'}: قامبل`, 'speculatorGamble', 'primary-action', `تضاعف فلوسك (${gain})`);
+        dukeBtn = mk(`${window.CoupUI?.cardLabelHtml?.(dukeCard) || '🎰 الكلاب'}: تقمير`, 'speculatorGamble', 'primary-action', `تدوبلي فلوسك (${gain})`);
     } else {
         dukeBtn = mk(`${window.CoupUI?.cardLabelHtml?.(dukeCard) || '👑 الشلغمي'} +3`, 'tax', 'primary-action', 'قول عندي الشلغمي');
     }
@@ -1485,7 +1485,7 @@ function _renderOnlineCoupActions(room, state, me) {
     if (dyn.captainRole === 'lawyer') {
         captainBtn = mk(`${window.CoupUI?.cardLabelHtml?.(captainCard) || '⚖️ الكبران'}: فاتورة`, 'invoice', 'primary-action', 'بعث فاتورة زوز فلوس');
     } else if (dyn.captainRole === 'customsOfficer') {
-        captainBtn = mk(`${window.CoupUI?.cardLabelHtml?.(captainCard) || '🛃 سي فلان'}: ضريبة`, 'taxAssignment', 'primary-action', 'فرض ضريبة على دور');
+        captainBtn = mk(`${window.CoupUI?.cardLabelHtml?.(captainCard) || '🛃 سي فلان'}: ضريبة`, 'taxAssignment', 'primary-action', 'افرض الخطية على دور');
     } else {
         captainBtn = mk(`${window.CoupUI?.cardLabelHtml?.(captainCard) || '⚓ الرايس'}: اسرق`, 'steal', 'primary-action', 'اسرق زوز فلوس');
     }
