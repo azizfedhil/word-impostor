@@ -505,14 +505,15 @@ function _onlineCoupMarkLoss(state, playerId, cardIndex) {
         state.log = `${p.name} خرج من الطرح، ضريبة سي فلان تلغيت.`;
         _onlineCoupEvent(state, state.log, 'notice');
     }
-    // Trigger Lawyer Estate Claim if player is eliminated with coins and has Lawyer
-    if (out && (p.coins || 0) > 0 && p.hand.some(c => c.type === 'lawyer' && !c.lost)) {
+    // Trigger Lawyer Estate Claim if player is eliminated with coins AND lawyer is in this game's role pool
+    if (out && (p.coins || 0) > 0 && (state.rolesInPlay || []).includes('lawyer')) {
         state.pendingEstateClaim = {
             id:`estate_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
             eliminatedId: playerId,
             coinsToClaim: p.coins
         };
-        state.log = `${p.name} عند الكبران وعندو ${(p.coins || 0)} فلوس. ينجم طالب بالميراث.`;
+        p.coins = 0; // lock coins now so they can't be spent or stolen before claim resolves
+        state.log = `${p.name} خرج وعندو فلوس. أي لاعب ينجم يدعي الكبران ويطالب بالميراث!`;
         _onlineCoupEvent(state, state.log, 'notice');
     }
     return true;
@@ -1336,21 +1337,21 @@ function _renderOnlineCoupActions(room, state, me) {
                     });
                     const cardSels = sels.filter(s => s.take && s.take !== 'coin');
                     if (cardSels.length > 1) {
-                        // Show keep selection step
+                        // Show keep selection step — no owner labels, cards are anonymous
                         const esc2 = window.CoupUI?.escapeHtml || (x => x);
-                        const keepBtns = cardSels.map(cs => {
-                            const oppPlayer = state.players.find(p => p.id === cs.playerId);
+                        const keepBtns = cardSels.map((cs, idx) => {
                             const meta = window.coupCards[cs.take];
                             const label = meta ? (window.CoupUI?.cardLabelHtml?.(meta) || `${meta.icon} ${esc2(meta.name)}`) : cs.take;
-                            return `<button class="coup-target-btn" data-keep-from="${cs.playerId}">${label}<small>من ${esc2(oppPlayer?.name || cs.playerId)}</small></button>`;
+                            return `<button class="coup-target-btn" data-keep-idx="${idx}">${label}</button>`;
                         }).join('');
                         window.CoupUI?.showModal?.('اختار كارطة تبقى معاك',
-                            `<p>عندك ${cardSels.length} كوارط. اختار <strong>واحدة</strong> تبقى معاك، والباقي يرجعو لأصحابهم.</p>
+                            `<p>عندك ${cardSels.length} كوارط. اختار <strong>واحدة</strong> تبقى معاك، والباقي يرجعو عشوائياً.</p>
                              <div class="coup-target-grid">${keepBtns}</div>`,
                             overlay => {
-                                overlay.querySelectorAll('[data-keep-from]').forEach(btn => btn.addEventListener('click', () => {
+                                overlay.querySelectorAll('[data-keep-idx]').forEach(btn => btn.addEventListener('click', () => {
                                     window.CoupUI.closeModal();
-                                    const finalSels = sels.map(s => ({ ...s, keepCard: s.playerId === btn.dataset.keepFrom && s.take !== 'coin' }));
+                                    const keepIdx = parseInt(btn.dataset.keepIdx, 10);
+                                    const finalSels = sels.map(s => ({ ...s, keepCard: cardSels.indexOf(s) === keepIdx && s.take !== 'coin' }));
                                     _onlineCoupChooseSocialist(finalSels, share.id);
                                 }));
                             }
@@ -1637,17 +1638,25 @@ async function _onlineCoupChooseEstateClaim(claimantId, estateId = null) {
         const eliminated = state.players.find(p => p.id === estate.eliminatedId);
         const claimant = state.players.find(p => p.id === claimantId);
         if (!eliminated || !claimant) return null;
+        if (!claimant.hand.some(c => !c.lost)) return null; // already eliminated
         state.pendingEstateClaim = null;
+        // Use the standard pending machinery: actorId = claimant, claim = 'lawyer'
+        // so _onlineCoupChallenge and _onlineCoupPass work without modification
         state.pending = {
             id:`p_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
             type:'estateClaim',
+            action:'estateClaim',
+            actorId: claimantId,      // claimant IS the actor for challenge purposes
             claimantId,
             eliminatedId: estate.eliminatedId,
             coinsToClaim: estate.coinsToClaim,
-            action:'estateClaim',
+            claim: 'lawyer',          // challengeable
+            blockable: false,
+            blockRoles: [],
             passes:[]
         };
-        state.log = `${claimant.name} يطالب بالترك ${eliminated.name} (${estate.coinsToClaim} فلوس). الكبران يخسر كارطة.`;
+        _onlineCoupSetResponseDeadline(state.pending);
+        state.log = `${claimant.name} يدعي الكبران ويطالب بميراث ${eliminated.name} (${estate.coinsToClaim} فلوس). تقدر تكذّبو!`;
         _onlineCoupEvent(state, state.log, 'notice');
         return state;
     });
@@ -2017,19 +2026,22 @@ function _onlineCoupApplyActionLocal(state, action, targetId) {
         _onlineCoupRequestTaxAssignment(state, actor.id);
         return state;
     }
-    // ── Expansion: Lawyer estate claim resolution ────────────────────
+    // ── Expansion: Lawyer estate claim resolution (all passed, unchallenged) ────
     if (action === 'estateClaim') {
         const p = state.pending;
         if (p && p.type === 'estateClaim') {
             const claimant = state.players.find(x => x.id === p.claimantId);
             const eliminated = state.players.find(x => x.id === p.eliminatedId);
             if (claimant && eliminated) {
-                // Claimant loses 1 influence and takes coins
-                _onlineCoupRequestLoss(state, claimant.id, 'الكبران يأخذ الميراث لكن يخسر كارطة. اختار كارطة تخسرها.', { type: 'nextTurn' });
-                claimant.coins += p.coinsToClaim;
-                eliminated.coins = 0;
-                state.log = `${claimant.name} أخد ${p.coinsToClaim} فلوس من ${eliminated.name} بالميراث.`;
+                // Claimant proves Lawyer (prove-and-replace if they actually have it)
+                if (claimant.hand.some(c => !c.lost && c.type === 'lawyer')) {
+                    _onlineCoupProveAndReplace(state, claimant, 'lawyer');
+                }
+                // Give coins and take a loss
+                claimant.coins += (p.coinsToClaim || 0);
+                state.log = `${claimant.name} أخد ${p.coinsToClaim} فلوس من ${eliminated.name} بالميراث. يخسر كارطة.`;
                 _onlineCoupEvent(state, state.log, 'good');
+                _onlineCoupRequestLoss(state, claimant.id, 'الكبران يأخذ الميراث لكن يخسر كارطة. اختار كارطة تخسرها.', { type: 'nextTurn' });
             }
         }
         return state;
@@ -2172,11 +2184,24 @@ async function _onlineCoupChooseSocialist(selections, shareId = null) {
         } else if (collectedCards.length === 1) {
             actor.hand.push({ type: collectedCards[0].type, lost: false });
         } else {
-            // keep the first card marked keepCard, or default to first
-            const keepIdx = selections.findIndex(s => s.keepCard && collectedCards.find(c => c.fromId === s.playerId));
-            collectedCards.forEach((c, i) => {
-                if (i === (keepIdx >= 0 ? keepIdx : 0)) { actor.hand.push({ type: c.type, lost: false }); }
-                else { c.handCard.lost = false; }
+            // keepCard flag uses index into cardSels array (set by the anonymous keep-choice UI)
+            const cardSels = selections.filter(s => s.take && s.take !== 'coin');
+            const keepIdx = cardSels.findIndex(s => s.keepCard);
+            const keptCard = collectedCards[keepIdx >= 0 ? keepIdx : 0];
+            actor.hand.push({ type: keptCard.type, lost: false });
+            // Return the rest randomly — shuffle returned cards then assign to available opponent slots
+            const returnedCards = collectedCards.filter((_, i) => i !== (keepIdx >= 0 ? keepIdx : 0));
+            const returnedTypes = returnedCards.map(c => c.type).sort(() => 0.5 - Math.random());
+            // Find opponents who lost a card (mark them as needing a card back)
+            const oppsMissingCard = returnedCards.map(c => state.players.find(p => p.id === c.fromId)).filter(Boolean);
+            oppsMissingCard.sort(() => 0.5 - Math.random()); // shuffle to break ownership tracking
+            returnedTypes.forEach((type, i) => {
+                const opp = oppsMissingCard[i];
+                if (opp) {
+                    // Find the first lost slot that was marked lost by us (handCard ref is still in returnedCards)
+                    const lostSlot = returnedCards[i]?.handCard;
+                    if (lostSlot) { lostSlot.type = type; lostSlot.lost = false; }
+                }
             });
         }
         state.pendingSocialistShare = null;
