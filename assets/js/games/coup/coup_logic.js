@@ -67,18 +67,103 @@ const coupCards = {
         attack:  'هجوم: يسرق حتى زوز فلوس من لاعب آخر.',
         defense: 'دفاع: يسكّر سرقة الرايس.',
     },
+    // ── Expansion roles ──────────────────────────────────────────
+    bureaucrat: {
+        name: 'الشيخ', icon: '📋',
+        img: _coupAssetBase + 'bureaucrat.webp', img512: _coupAssetBase + 'bureaucrat512.webp',
+        attack:  'هجوم: يخذ 3 فلوس من البنك ويعطي 1 لأي لاعب تختاره (صافيك +2).',
+        defense: 'دفاع: يسكّر اعانة +2 كيما الشلغمي.',
+    },
+    speculator: {
+        name: 'الكُلّاب', icon: '🎲',
+        img: _coupAssetBase + 'speculator.webp', img512: _coupAssetBase + 'speculator512.webp',
+        attack:  'هجوم: يخذ من البنك نفس عدد فلوسو (حتى 5).',
+        defense: 'دفاع: يسكّر اعانة +2 كيما الشلغمي.',
+    },
+    inquisitor: {
+        name: 'البحّاث', icon: '🔍',
+        img: _coupAssetBase + 'inquisitor.webp', img512: _coupAssetBase + 'inquisitor512.webp',
+        attack:  'هجوم: يبدّل كارطة واحدة مع الدكة، أو يشوف كارطة لاعب آخر وينجم يجبره يبدّلها.',
+        defense: 'دفاع: يسكّر سرقة الرايس.',
+    },
+    jester: {
+        name: 'العمدة', icon: '🃏',
+        img: _coupAssetBase + 'jester.webp', img512: _coupAssetBase + 'jester512.webp',
+        attack:  'هجوم: يجيب كارطة من الدكة وكارطة عشوائية من لاعب آخر ويختار واحدة يبقى بيها.',
+        defense: 'دفاع: يسكّر سرقة الرايس وفوضى العمدة.',
+    },
+    socialist: {
+        name: 'المدير', icon: '✊',
+        img: _coupAssetBase + 'socialist.webp', img512: _coupAssetBase + 'socialist512.webp',
+        attack:  'هجوم: من كل لاعب يختار: يخذ فلوس أو يخذ كارطة (يبقى بكارطة واحدة بالأقصى).',
+        defense: 'دفاع: يسكّر سرقة الرايس.',
+    },
 };
 
+// ── Role-family helpers ───────────────────────────────────────
+const _DUKE_FAMILY      = ['duke', 'bureaucrat', 'speculator'];
+const _AMB_FAMILY       = ['ambassador', 'inquisitor', 'jester', 'socialist'];
+
+function _coupSelectRoles() {
+    const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+    return ['assassin', 'captain', 'contessa', pick(_DUKE_FAMILY), pick(_AMB_FAMILY)];
+}
+
+function _coupGetDynamic(state = coupState) {
+    const roles     = state?.rolesInPlay || ['assassin', 'captain', 'contessa', 'duke', 'ambassador'];
+    const dukeRole  = roles.find(r => _DUKE_FAMILY.includes(r)) || 'duke';
+    const ambRole   = roles.find(r => _AMB_FAMILY.includes(r))  || 'ambassador';
+    return {
+        dukeRole,
+        ambRole,
+        aidBlockRoles:    [dukeRole],
+        stealBlockRoles:  ['captain', ambRole],
+        jesterBlockRoles: ['jester'],
+    };
+}
+
+function _coupActionClaim(action, state = coupState) {
+    const dyn = _coupGetDynamic(state);
+    return ({
+        tax:              dyn.dukeRole,
+        bureaucratTax:    'bureaucrat',
+        speculatorGamble: 'speculator',
+        assassinate:      'assassin',
+        exchange:         'ambassador',
+        inquireExchange:  'inquisitor',
+        inquireInspect:   'inquisitor',
+        jesterDisorder:   'jester',
+        socialistShare:   'socialist',
+        steal:            'captain',
+    })[action] || null;
+}
+
+function _coupActionBlockRoles(action, state = coupState) {
+    const dyn = _coupGetDynamic(state);
+    return ({
+        foreignAid:      dyn.aidBlockRoles,
+        assassinate:     ['contessa'],
+        steal:           dyn.stealBlockRoles,
+        jesterDisorder:  dyn.jesterBlockRoles,
+    })[action] || [];
+}
+
 // ── Action help text ─────────────────────────────────────────
-// Single source of truth — was duplicated in shared.js AND online.js.
+// Single source of truth — includes all expansion role actions.
 const coupActionHelp = {
-    income:      { title: 'شهرية +1',           text: 'تاخو 1 فلوس من البنك. ما تتسكرش وما حد ينجم يقولك تكذب خاطرها أكشن مفتوحة.' },
-    foreignAid:  { title: 'اعانة +2',            text: 'تاخو 2 فلوس من البنك. أي لاعب ينجم يقول عندو الشلغمي ويسكّرها. بعد البلوك، أي لاعب ينجم يتهمه بالتبلعيط.' },
-    tax:         { title: 'الشلغمي +3',          text: 'تقول عندي الشلغمي وتاخو 3 فلوس من البنك. أي لاعب ينجم يقولك تكذب.' },
-    steal:       { title: 'الرايس: اسرق',        text: 'تقول عندي الرايس وتسرق حتى زوز فلوس من لاعب. الهدف ينجم يسكّر بالرايس أو السمسار، وأي لاعب ينجم يتهم أي claim بالتبلعيط.' },
-    assassinate: { title: 'اغتيال -3',           text: 'تدفع 3 فلوس وتقول عندي حفار القبور باش تطيّح كارتة من لاعب. الهدف ينجم يسكّر بالبية، وأي لاعب ينجم يقول تكذب.' },
-    exchange:    { title: 'السمسار: بدّل',       text: 'تقول عندي السمسار وتبدّل كوارطك الحيين مع الدكّة. أي لاعب ينجم يقولك تكذب.' },
-    coup:        { title: 'Coup -7',             text: 'تدفع 7 فلوس وتطيّح كارتة من لاعب. ما تتسكرش وما فيهاش تكذيب.' },
+    income:          { title: 'شهرية +1',              text: 'تاخو 1 فلوس من البنك. ما تتسكرش وما حد ينجم يقولك تكذب.' },
+    foreignAid:      { title: 'اعانة +2',               text: 'تاخو 2 فلوس من البنك. أي لاعب ينجم يسكّرها بكارطة الدكة الموجودة في الطرح. بعد البلوك أي لاعب ينجم يتهمه.' },
+    tax:             { title: 'الشلغمي +3',             text: 'تقول عندي الشلغمي وتاخو 3 فلوس من البنك. أي لاعب ينجم يقولك تكذب.' },
+    bureaucratTax:   { title: 'الشيخ: تعاون +2',       text: 'تقول عندي الشيخ وتاخو 3 فلوس من البنك وتعطي 1 لأي لاعب تختاره (صافيك +2، للهدف +1). أي لاعب ينجم يقولك تكذب.' },
+    speculatorGamble:{ title: 'الكلاب: قامبل',         text: 'تقول عندي الكلاب وتاخو فلوس تساوي فلوسك الحالية (أكثر 5). كان عندك صفر، ما تاخوش. أي لاعب ينجم يقولك تكذب.' },
+    steal:           { title: 'الرايس: اسرق',           text: 'تقول عندي الرايس وتسرق حتى زوز فلوس من لاعب. الهدف ينجم يسكّر بالرايس أو الكارطة الموجودة من عيلة السمسار. أي لاعب ينجم يقول تكذب.' },
+    assassinate:     { title: 'اغتيال -3',              text: 'تدفع 3 فلوس وتقول عندي حفار القبور باش تطيّح كارتة من لاعب. الهدف ينجم يسكّر بالبية، وأي لاعب ينجم يقول تكذب.' },
+    exchange:        { title: 'السمسار: بدّل',          text: 'تقول عندي السمسار وتبدّل كوارطك الحيين مع الدكّة. أي لاعب ينجم يقولك تكذب.' },
+    inquireExchange: { title: 'البحاث: بدّل كارطة',    text: 'تقول عندي البحاث وتجيب كارطة واحدة من الدكة وتختار شنوة تبقى معاك. أي لاعب ينجم يقولك تكذب.' },
+    inquireInspect:  { title: 'البحاث: فحص',           text: 'تقول عندي البحاث وتشوف كارطة لاعب آخر. إما تخلّيه يبدّلها بكارطة عشوائية من الدكة، أو ما تعمل شي. أي لاعب ينجم يقولك تكذب.' },
+    jesterDisorder:  { title: 'العمدة: فوضى',          text: 'تقول عندي العمدة، تجيب كارطة من الدكة وتاخو عشوائي كارطة من لاعب. من الاثنتين اختار واحدة تبقى معاك وبدّلها مع كارطة من كوارطك. أي لاعب ينجم يقولك تكذب.' },
+    socialistShare:  { title: 'المدير: وزّع',          text: 'تقول عندي المدير ومن كل لاعب تختار: تاخو فلوس أو كارطة. كان خذيت أكثر من كارطة، تبقى بواحدة وترجع الباقي لأصحابهم. الفلوس ما ترجعوش.' },
+    coup:            { title: 'Coup -7',                text: 'تدفع 7 فلوس وتطيّح كارتة من لاعب. ما تتسكرش وما فيهاش تكذيب.' },
 };
 
 // ── Offline game state ────────────────────────────────────────
@@ -112,9 +197,9 @@ function _coupAlive(state = coupState) {
     return state.players.filter(p => p.hand.some(c => !c.lost));
 }
 
-function _coupBuildDeck() {
-    const keys = ['duke', 'assassin', 'contessa', 'ambassador', 'captain'];
-    return keys.flatMap(k => Array(3).fill(k)).sort(() => 0.5 - Math.random());
+function _coupBuildDeck(rolesInPlay) {
+    const roles = rolesInPlay || _coupSelectRoles();
+    return roles.flatMap(k => Array(3).fill(k)).sort(() => 0.5 - Math.random());
 }
 
 function _coupNextTurn(state = coupState) {
@@ -201,7 +286,14 @@ function funWrongAccuser() { return ['اكلها في عوضو.','عمل روح�
 
 // ── Action name map ───────────────────────────────────────────
 function coupActionName(action) {
-    return { income:'شهرية', foreignAid:'اعانة', tax:'ضريبة الشلغمي', assassinate:'اغتيال', exchange:'تبديل السمسار', steal:'سرقة الرايس', coup:'Coup' }[action] || action;
+    return ({
+        income:'شهرية', foreignAid:'اعانة',
+        tax:'ضريبة الشلغمي', bureaucratTax:'تعاون الشيخ', speculatorGamble:'قامبل الكلاب',
+        assassinate:'اغتيال', exchange:'تبديل السمسار',
+        inquireExchange:'تبديل البحاث', inquireInspect:'فحص البحاث',
+        jesterDisorder:'فوضى العمدة', socialistShare:'توزيع المدير',
+        steal:'سرقة الرايس', coup:'Coup'
+    })[action] || action;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -513,7 +605,7 @@ function renderCoupActions(state = coupState, myId = null) {
     }
     const me     = myId ? state.players.find(p => p.id === myId) : state.players[state.turnIndex];
     const isTurn = me && me.id === state.players[state.turnIndex].id;
-    if (state.pending) { panel.innerHTML = `<div class="coup-panel-card live">${_escHtml(state.log)}</div>`; return; }
+    if (state.pending) { panel.innerHTML = `<div class="coup-panel-card live">${_escHtml(state.log || '')}</div>`; return; }
     const current = state.players[state.turnIndex];
     if (!isTurn) { panel.innerHTML = `<div class="coup-panel-card">استنى دورك. الدور توّة على ${_escHtml(current?.name || '')}.</div>`; }
     const mustCoup = isTurn && (me?.coins || 0) >= 10;
@@ -526,13 +618,38 @@ function renderCoupActions(state = coupState, myId = null) {
         const bgStyle      = bgFile ? ` style="--action-img:url('${_coupImgBase}${bgFile}.webp')" data-has-bg="1"` : '';
         return `<button class="coup-action-btn ${cls} ${disabled}" data-action="${action}"${bgStyle} aria-disabled="${actionLocked ? 'true' : 'false'}"><strong>${txt}<span class="coup-action-info" data-action-info="${action}">ℹ️</span></strong><small>${finalHint}</small></button>`;
     };
+    const dyn      = _coupGetDynamic(state);
+    const dukeCard = coupCards[dyn.dukeRole] || coupCards.duke;
+    const ambCard  = coupCards[dyn.ambRole]  || coupCards.ambassador;
+    // Duke-family action
+    let dukeBtn = '';
+    if (dyn.dukeRole === 'duke') {
+        dukeBtn = mk(`${_coupCardLabelHtml(dukeCard)} +3`, 'tax', 'primary-action', 'قول عندي الشلغمي');
+    } else if (dyn.dukeRole === 'bureaucrat') {
+        dukeBtn = mk(`${_coupCardLabelHtml(dukeCard)} +2`, 'bureaucratTax', 'primary-action', 'خذ 3، اعطي 1 للهدف');
+    } else {
+        const gain = Math.min((me?.coins || 0), 5);
+        dukeBtn = mk(`${_coupCardLabelHtml(dukeCard)}: قامبل`, 'speculatorGamble', 'primary-action', `تضاعف فلوسك (${gain})`);
+    }
+    // Ambassador-family action(s)
+    let ambBtns = '';
+    if (dyn.ambRole === 'ambassador') {
+        ambBtns = mk(`${_coupCardLabelHtml(ambCard)}: بدّل`, 'exchange', '', 'بدّل كوارطك مع الدكّة');
+    } else if (dyn.ambRole === 'inquisitor') {
+        ambBtns = mk(`${_coupCardLabelHtml(ambCard)}: بدّل`, 'inquireExchange', '', 'بدّل كارطة مع الدكة') +
+                  mk(`${_coupCardLabelHtml(ambCard)}: فحص`, 'inquireInspect', '', 'فحص كارطة لاعب');
+    } else if (dyn.ambRole === 'jester') {
+        ambBtns = mk(`${_coupCardLabelHtml(ambCard)}: فوضى`, 'jesterDisorder', 'primary-action', 'اختلط كوارط لاعب');
+    } else {
+        ambBtns = mk(`${_coupCardLabelHtml(ambCard)}: وزّع`, 'socialistShare', 'primary-action', 'خذ من الكل');
+    }
     panel.innerHTML += `<div class="coup-action-grid ${isTurn ? '' : 'is-disabled'}">
         ${mk('🪙 شهرية +1','income','','مضمون وما يتكذبش')}
-        ${mk('🤲 اعانة +2','foreignAid','','ينجم الشلغمي يسكّرها')}
-        ${mk(`${_coupCardLabelHtml(coupCards.duke)} +3`,'tax','primary-action','قول عندي الشلغمي')}
+        ${mk('🤲 اعانة +2','foreignAid','','ينجم يتسكر')}
+        ${dukeBtn}
         ${mk(`${_coupCardLabelHtml(coupCards.captain)}: اسرق`,'steal','primary-action','اسرق زوز فلوس')}
         ${mk(`${_coupCardLabelHtml(coupCards.assassin)} -3`,'assassinate','danger-action','يلزم حفار القبور')}
-        ${mk(`${_coupCardLabelHtml(coupCards.ambassador)}: بدّل`,'exchange','','بدّل كوارطك مع الدكّة')}
+        ${ambBtns}
         ${mk('💥 Coup -7','coup','danger-action','ضربة ما تتسكرش')}
     </div>`;
     panel.querySelectorAll('.coup-action-info').forEach(info => info.addEventListener('click', e => {
@@ -631,8 +748,8 @@ function coupHandleTimeout() {
 // ─────────────────────────────────────────────────────────────
 
 function coupChooseAction(action) {
-    const actor      = coupState.players[coupState.turnIndex];
-    const needsTarget = ['assassinate', 'coup', 'steal'].includes(action);
+    const actor = coupState.players[coupState.turnIndex];
+    const needsTarget = ['assassinate', 'coup', 'steal', 'bureaucratTax', 'inquireInspect', 'jesterDisorder'].includes(action);
     if ((actor.coins || 0) >= 10 && action !== 'coup') return showToast('عندك 10 فلوس ولا أكثر، لازم تعمل Coup.');
     if (action === 'assassinate' && actor.coins < 3)  return showToast('يلزمك 3 فلوس للاغتيال.');
     if (action === 'coup'        && actor.coins < 7)  return showToast('يلزمك 7 فلوس للCoup.');
@@ -652,9 +769,11 @@ function coupChooseAction(action) {
 function coupPickTarget(action) {
     const actor   = coupState.players[coupState.turnIndex];
     const targets = _coupAlive().filter(p => p.id !== actor.id);
+    const titles  = { steal:'اختار شكون تسرق', assassinate:'اختار شكون تضرب', coup:'اختار الهدف', bureaucratTax:'اختار شكون يخذ +1', inquireInspect:'اختار شكون تفحص كارطتو', jesterDisorder:'اختار شكون تعمل فيه فوضى' };
+    const hints   = { steal:'الرايس يسرق حتى زوز فلوس من لاعب.', assassinate:'حفار القبور يحتاج هدف واضح.', coup:'Coup ضربة مباشرة وما تتسكرش.', bureaucratTax:'الشيخ يعطي +1 لأي لاعب تختاره.', inquireInspect:'البحاث يشوف كارطة لاعب ويحتمل يجبره يبدّلها.', jesterDisorder:'العمدة يخذ كارطة عشوائية من الهدف.' };
     _showCoupModal(
-        action === 'steal' ? 'اختار شكون تسرق' : 'اختار شكون تضرب',
-        `<p>${action === 'steal' ? 'الرايس يسرق حتى زوز فلوس من لاعب.' : action === 'assassinate' ? 'حفار القبور يحتاج هدف واضح.' : 'Coup ضربة مباشرة وما تتسكرش.'}</p><div class="coup-target-grid">${targets.map(p => `<button class="coup-target-btn" data-target-id="${p.id}">${_escHtml(p.name)}</button>`).join('')}</div>`,
+        titles[action] || 'اختار هدف',
+        `<p>${_escHtml(hints[action] || '')}</p><div class="coup-target-grid">${targets.map(p => `<button class="coup-target-btn" data-target-id="${p.id}">${_escHtml(p.name)}</button>`).join('')}</div>`,
         overlay => {
             overlay.querySelectorAll('[data-target-id]').forEach(btn => btn.addEventListener('click', () => {
                 _closeCoupModal();
@@ -665,11 +784,10 @@ function coupPickTarget(action) {
 }
 
 function coupStartPending(action, targetId) {
-    const actor    = coupState.players[coupState.turnIndex];
-    const claims   = { tax: 'duke', assassinate: 'assassin', exchange: 'ambassador', steal: 'captain' };
-    const blockRoles = action === 'foreignAid' ? ['duke'] : action === 'assassinate' ? ['contessa'] : action === 'steal' ? ['captain', 'ambassador'] : [];
+    const actor      = coupState.players[coupState.turnIndex];
+    const claim      = _coupActionClaim(action);
+    const blockRoles = _coupActionBlockRoles(action);
     const blockable  = blockRoles.length > 0;
-    const claim      = claims[action] || null;
     if (!claim && !blockable) return coupResolveAction(action, targetId);
     if (action === 'assassinate') { actor.coins -= 3; _coupPayBank(coupState, 3); }
     coupState.pending = { id: `p_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, action, actorId: actor.id, targetId, claim, blockable, blockRoles, passes: [] };
@@ -826,15 +944,48 @@ function coupResolveAction(action, targetId) {
     if (action === 'income')     { actor.coins += 1; _coupTakeFromBank(coupState, 1); coupState.log = `${actor.name} خذا دينار. رزق بارد.`; }
     if (action === 'foreignAid') { actor.coins += 2; _coupTakeFromBank(coupState, 2); coupState.log = `${actor.name} خذا اعانة. ما فماش شلغمي سكّرها.`; }
     if (action === 'tax')        { actor.coins += 3; _coupTakeFromBank(coupState, 3); coupState.log = `${actor.name} كول بالشلغمي وخذا 3 فلوس.`; }
+    // ── Expansion: Bureaucrat ────────────────────────────────────
+    if (action === 'bureaucratTax' && target) {
+        actor.coins += 2; _coupTakeFromBank(coupState, 3); target.coins += 1;
+        coupState.log = `${actor.name} كول بالشيخ: خذا 3 وعطى 1 لـ${target.name}. البنك نقص 3.`;
+    }
+    // ── Expansion: Speculator ────────────────────────────────────
+    if (action === 'speculatorGamble') {
+        const gain = Math.min(actor.coins, 5);
+        actor.coins += gain; _coupTakeFromBank(coupState, gain);
+        coupState.log = gain > 0 ? `${actor.name} قامبل بـ${gain} فلوس وكسب نفسهم من البنك!` : `${actor.name} حاول يقامبل أما فلوسو صفر.`;
+    }
+    // ── Standard exchange ────────────────────────────────────────
     if (action === 'exchange') {
         coupState.log = `${actor.name} يشوف زوز كوارط من الدكّة ويختار شنوّة يخلي.`;
         _showCoupEvent(coupState.log, 'notice');
         return coupStartExchangeChoice(actor, () => {
             coupState.log = `${actor.name} بدّل كوارطو مع الدكّة. السمسار خدم خدمتو.`;
             _showCoupEvent(coupState.log, 'good');
-            _coupNextTurn();
-            renderCoupScreen();
-        });
+            _coupNextTurn(); renderCoupScreen();
+        }, 2);
+    }
+    // ── Expansion: Inquisitor exchange (1 drawn) ─────────────────
+    if (action === 'inquireExchange') {
+        coupState.log = `${actor.name} يشوف كارطة من الدكة ويختار شنوة يبدّل.`;
+        _showCoupEvent(coupState.log, 'notice');
+        return coupStartExchangeChoice(actor, () => {
+            coupState.log = `${actor.name} بدّل كارطة مع الدكة. البحاث خدم خدمتو.`;
+            _showCoupEvent(coupState.log, 'good');
+            _coupNextTurn(); renderCoupScreen();
+        }, 1);
+    }
+    // ── Expansion: Inquisitor inspect ────────────────────────────
+    if (action === 'inquireInspect' && target) {
+        return coupStartInquisitorInspect(actor, target, () => { _coupNextTurn(); renderCoupScreen(); });
+    }
+    // ── Expansion: Jester disorder ───────────────────────────────
+    if (action === 'jesterDisorder' && target) {
+        return coupStartJesterDisorder(actor, target, () => { _coupNextTurn(); renderCoupScreen(); });
+    }
+    // ── Expansion: Socialist share ───────────────────────────────
+    if (action === 'socialistShare') {
+        return coupStartSocialistShare(actor, () => { _coupNextTurn(); renderCoupScreen(); });
     }
     if (action === 'steal' && target) {
         const amount = Math.min(2, target.coins || 0);
@@ -883,8 +1034,9 @@ function coupLoseInfluence(playerId, onDone, promptMsg = 'اختار كارتة 
     });
 }
 
-function coupStartExchangeChoice(actor, onDone) {
-    const drawn = [coupState.deck.pop(), coupState.deck.pop()].filter(Boolean);
+function coupStartExchangeChoice(actor, onDone, drawCount = 2) {
+    const drawn = [];
+    for (let i = 0; i < drawCount; i++) { const c = coupState.deck.pop(); if (c) drawn.push(c); }
     const pool  = [...actor.hand.filter(c => !c.lost).map(c => c.type), ...drawn];
     const keep  = actor.hand.filter(c => !c.lost).length;
     let chosen  = [];
@@ -913,24 +1065,227 @@ function coupStartExchangeChoice(actor, onDone) {
     render();
 }
 
+// ── Expansion offline resolvers ───────────────────────────────
+
+function coupStartInquisitorInspect(inspector, target, onDone) {
+    const liveCards = target.hand.filter(c => !c.lost);
+    if (!liveCards.length) { onDone?.(); return; }
+    // Pass-and-play: target chooses which card to reveal to inspector
+    _showCoupModal(
+        `${_escHtml(target.name)}: اختار كارطة تريّح للبحاث`,
+        `<p class="coup-card-desc">مرّر التلفون لـ<strong>${_escHtml(target.name)}</strong>. هو يختار كارطة يريّحها، البحاث وحدو يشوفها.</p>
+         <div class="coup-target-grid">${liveCards.map((c, i) => { const meta = coupCards[c.type] || coupCards.duke; return `<button class="coup-target-btn" data-inq-reveal="${i}">${_coupCardLabelHtml(meta)}</button>`; }).join('')}</div>`,
+        overlay => {
+            overlay.querySelectorAll('[data-inq-reveal]').forEach(btn => btn.addEventListener('click', () => {
+                _closeCoupModal();
+                const revIdx = parseInt(btn.dataset.inqReveal, 10);
+                const revCard = liveCards[revIdx];
+                const meta    = coupCards[revCard.type] || coupCards.duke;
+                _showCoupModal(
+                    `${_escHtml(inspector.name)}: كارطة ${_escHtml(target.name)}`,
+                    `<p>مرّر التلفون لـ<strong>${_escHtml(inspector.name)}</strong>.</p>
+                     <div style="text-align:center; margin:16px 0;">${_coupCardLargeHtml(meta)}<br><strong>${_escHtml(meta.name)}</strong></div>
+                     <p class="coup-card-desc">شنوة تعمل؟</p>
+                     <div class="coup-target-grid">
+                         <button class="primary-btn" id="inq-force">↩️ خلّيه يبدّلها</button>
+                         <button class="coup-target-btn quiet-action" id="inq-skip">ما نعملش شي</button>
+                     </div>`,
+                    innerOverlay => {
+                        innerOverlay.querySelector('#inq-force')?.addEventListener('click', () => {
+                            _closeCoupModal();
+                            // Force exchange: put target's revealed card back in deck, draw replacement
+                            const handCard = target.hand.find(c => !c.lost && c.type === revCard.type);
+                            if (handCard) {
+                                coupState.deck.unshift(handCard.type);
+                                coupState.deck.sort(() => 0.5 - Math.random());
+                                handCard.type = coupState.deck.pop() || handCard.type;
+                            }
+                            coupState.log = `${inspector.name} خلّى ${target.name} يبدّل ${_escHtml(meta.name)}.`;
+                            _showCoupEvent(coupState.log, 'notice');
+                            onDone?.();
+                        });
+                        innerOverlay.querySelector('#inq-skip')?.addEventListener('click', () => {
+                            _closeCoupModal();
+                            coupState.log = `${inspector.name} شاف كارطة ${target.name} وما عملش شي.`;
+                            _showCoupEvent(coupState.log, 'notice');
+                            onDone?.();
+                        });
+                    }
+                );
+            }));
+        }
+    );
+}
+
+function coupStartJesterDisorder(actor, target, onDone) {
+    const drawn = coupState.deck.pop();
+    if (!drawn) { onDone?.(); return; }
+    const targetLive = target.hand.map((c, i) => ({ ...c, handIdx: i })).filter(c => !c.lost);
+    if (!targetLive.length) { coupState.deck.push(drawn); onDone?.(); return; }
+    const takenSlot  = targetLive[Math.floor(Math.random() * targetLive.length)];
+    const takenType  = takenSlot.type;
+    // Temporarily remove the taken card from target
+    target.hand[takenSlot.handIdx].lost = true;
+    const drawnMeta = coupCards[drawn]     || coupCards.duke;
+    const takenMeta = coupCards[takenType] || coupCards.duke;
+    _showCoupModal('العمدة: فوضى 🃏',
+        `<p>جبت <strong>${_escHtml(drawnMeta.name)}</strong> من الدكة وخذيت <strong>${_escHtml(takenMeta.name)}</strong> عشوائي من ${_escHtml(target.name)}.</p>
+         <p class="coup-card-desc">اختار <strong>واحدة</strong> تبقى معاك وتبدّل بكارطة من كوارطك:</p>
+         <div class="coup-target-grid">
+             <button class="coup-target-btn" data-jester-keep="0">${_coupCardLabelHtml(drawnMeta)}<small>من الدكة</small></button>
+             <button class="coup-target-btn" data-jester-keep="1">${_coupCardLabelHtml(takenMeta)}<small>من ${_escHtml(target.name)}</small></button>
+         </div>`,
+        overlay => {
+            overlay.querySelectorAll('[data-jester-keep]').forEach(btn => btn.addEventListener('click', () => {
+                _closeCoupModal();
+                const keepIdx   = parseInt(btn.dataset.jesterKeep, 10);
+                const temps     = [{ type: drawn, src: 'deck' }, { type: takenType, src: 'target' }];
+                const keptType  = temps[keepIdx].type;
+                const otherType = temps[1 - keepIdx].type;
+                const otherSrc  = temps[1 - keepIdx].src;
+                const actorLive = actor.hand.filter(c => !c.lost);
+                const doSwap = (replaceHandIdx) => {
+                    const oldType = actor.hand[replaceHandIdx].type;
+                    actor.hand[replaceHandIdx].type = keptType;
+                    if (otherSrc === 'target') {
+                        // Other (taken) goes back to target; actor's old card goes to deck
+                        target.hand[takenSlot.handIdx] = { type: otherType, lost: false };
+                        coupState.deck.unshift(oldType);
+                    } else {
+                        // Other (drawn) goes to deck; actor's old card goes to target
+                        coupState.deck.unshift(otherType);
+                        target.hand[takenSlot.handIdx] = { type: oldType, lost: false };
+                    }
+                    coupState.deck.sort(() => 0.5 - Math.random());
+                    coupState.log = `${actor.name} عمل فوضى مع ${target.name}. الكوارط اختلطت!`;
+                    _showCoupEvent(coupState.log, 'notice');
+                    onDone?.();
+                };
+                if (actorLive.length === 1) {
+                    doSwap(actor.hand.findIndex(c => !c.lost));
+                } else {
+                    _showCoupModal('اختار كارطة تبدّلها',
+                        `<p>اختار من كوارطك الكارطة الي تبدّلها بـ${_escHtml(coupCards[keptType]?.name || keptType)}:</p>
+                         <div class="coup-target-grid">${actorLive.map(c => { const m = coupCards[c.type] || coupCards.duke; const hi = actor.hand.indexOf(c); return `<button class="coup-target-btn" data-swap-idx="${hi}">${_coupCardLabelHtml(m)}</button>`; }).join('')}</div>`,
+                        swapOverlay => {
+                            swapOverlay.querySelectorAll('[data-swap-idx]').forEach(sb => sb.addEventListener('click', () => {
+                                _closeCoupModal();
+                                doSwap(parseInt(sb.dataset.swapIdx, 10));
+                            }));
+                        }
+                    );
+                }
+            }));
+        }
+    );
+}
+
+function coupStartSocialistShare(actor, onDone) {
+    const opponents = _coupAlive().filter(p => p.id !== actor.id);
+    const collected = []; // { fromId, type: 'coin' | cardType, handRef? }
+    let opIdx = 0;
+    const processNext = () => {
+        if (opIdx >= opponents.length) return coupResolveSocialistShare(actor, collected, onDone);
+        const opp = opponents[opIdx++];
+        const hasCoins = opp.coins > 0;
+        const liveCards = opp.hand.filter(c => !c.lost);
+        if (!hasCoins && !liveCards.length) return processNext();
+        const coinBtn = hasCoins
+            ? `<button class="coup-target-btn" data-share-take="coin" data-share-from="${opp.id}">🪙 خذ فلوس من ${_escHtml(opp.name)}</button>`
+            : '';
+        const cardBtns = liveCards.map(c => {
+            const meta = coupCards[c.type] || coupCards.duke;
+            return `<button class="coup-target-btn danger-action" data-share-take="${c.type}" data-share-from="${opp.id}">${_coupCardLabelHtml(meta)}<small>كارطة ${_escHtml(opp.name)}</small></button>`;
+        }).join('');
+        _showCoupModal(`المدير: شنوة تاخو من ${_escHtml(opp.name)}؟`,
+            `<div class="coup-target-grid">${coinBtn}${cardBtns}<button class="coup-target-btn quiet-action" data-share-skip="${opp.id}">ما تاخوش</button></div>`,
+            overlay => {
+                overlay.querySelectorAll('[data-share-take]').forEach(btn => btn.addEventListener('click', () => {
+                    _closeCoupModal();
+                    const takeType = btn.dataset.shareTake;
+                    const opp2 = coupState.players.find(p => p.id === btn.dataset.shareFrom);
+                    if (!opp2) return processNext();
+                    if (takeType === 'coin') {
+                        opp2.coins -= 1; actor.coins += 1;
+                        collected.push({ fromId: opp2.id, type: 'coin' });
+                    } else {
+                        const handCard = opp2.hand.find(c => !c.lost && c.type === takeType);
+                        if (handCard) { handCard.lost = true; collected.push({ fromId: opp2.id, type: takeType, handRef: handCard }); }
+                    }
+                    processNext();
+                }));
+                overlay.querySelector('[data-share-skip]')?.addEventListener('click', () => { _closeCoupModal(); processNext(); });
+            }
+        );
+    };
+    processNext();
+}
+
+function coupResolveSocialistShare(actor, collected, onDone) {
+    const cards = collected.filter(c => c.type !== 'coin');
+    if (cards.length === 0) {
+        coupState.log = `${actor.name} جمع فلوس من الكل بالمدير.`;
+        _showCoupEvent(coupState.log, 'good');
+        onDone?.(); return;
+    }
+    if (cards.length === 1) {
+        actor.hand.push({ type: cards[0].type, lost: false });
+        coupState.log = `${actor.name} أخذ كارطة وفلوس من اللاعبين بالمدير.`;
+        _showCoupEvent(coupState.log, 'good');
+        onDone?.(); return;
+    }
+    const esc = _escHtml;
+    _showCoupModal('المدير: اختار كارطة تبقى معاك',
+        `<p>عندك ${cards.length} كوارط. اختار <strong>واحدة</strong> تبقى معاك والباقي يرجعو لأصحابهم.</p>
+         <div class="coup-target-grid">${cards.map((c, i) => { const meta = coupCards[c.type] || coupCards.duke; const owner = coupState.players.find(p => p.id === c.fromId); return `<button class="coup-target-btn" data-soc-keep="${i}">${_coupCardLabelHtml(meta)}<small>من ${esc(owner?.name || '')}</small></button>`; }).join('')}</div>`,
+        overlay => {
+            overlay.querySelectorAll('[data-soc-keep]').forEach(btn => btn.addEventListener('click', () => {
+                _closeCoupModal();
+                const keepIdx = parseInt(btn.dataset.socKeep, 10);
+                cards.forEach((c, i) => {
+                    if (i === keepIdx) { actor.hand.push({ type: c.type, lost: false }); }
+                    else if (c.handRef) { c.handRef.lost = false; } // return to original owner
+                });
+                coupState.log = `${actor.name} أخذ كارطة من اللاعبين بالمدير.`;
+                _showCoupEvent(coupState.log, 'good');
+                onDone?.();
+            }));
+        }
+    );
+}
+
 // ─────────────────────────────────────────────────────────────
 // Guide system
 // ─────────────────────────────────────────────────────────────
 
-const coupGuideSections = [
+function _coupGuideCards() {
+    // Show the 5 roles currently in play (or default if no game running)
+    const roles = coupState?.rolesInPlay || ['duke','assassin','contessa','captain','ambassador'];
+    return roles;
+}
+
+const _coupGuideSectionsBase = [
     { key:'goal',  title:'الهدف',            icon:'🎯', body:'آخر لاعب يبقى عندو كوارط حيّة يربح. كي تخسر زوز كوارطك تخرج من الطرح وتتفرج.', tips:['كل لاعب يبدأ بزوز كوارط مخبيين وزوز فلوس.', 'الكوارط الي تخسرها تتكشف للناس الكل.'] },
-    { key:'turn',  title:'دورتك',            icon:'🎲', body:'في دورتك تختار أكشن واحدة: شهرية، اعانة، Coup، ولا claim بكارتة. تنجم تكذب، أما أي لاعب ينجم يقولك تكذب.', tips:['الشهرية +1 ما يتسكرش وما يتكذّبش.', 'اعانة +2 تتسكر بالشلغمي.', 'كان عندك 10 فلوس ولا أكثر لازم تعمل Coup.'] },
-    { key:'cards', title:'الكوارط',          icon:'🂠', cards:['duke','assassin','contessa','captain','ambassador'] },
+    { key:'turn',  title:'دورتك',            icon:'🎲', body:'في دورتك تختار أكشن واحدة: شهرية، اعانة، Coup، ولا claim بكارتة. تنجم تكذب، أما أي لاعب ينجم يقولك تكذب.', tips:['الشهرية +1 ما يتسكرش وما يتكذّبش.', 'اعانة +2 تتسكر بالكارطة الدكية.', 'كان عندك 10 فلوس ولا أكثر لازم تعمل Coup.'] },
+    { key:'cards', title:'الكوارط',          icon:'🂠', cards: null /* filled dynamically */ },
     { key:'bluff', title:'التكذيب والبلوك', icon:'🔥', body:'أي claim بكارتة ينجم يتكذّب. كان صاحب الclaim عندو الكارتة، يوريها، يرجّعها للدكّة ويجبد وحدة جديدة، والمتّهم يخسر كارتة. كان ما عندوش، هو يخسر كارتة.', tips:['بعد claim صحيح متاع حفار القبور ولا الرايس، البلوك مازال ينجم يصير.', 'كان البلوك تتبلعيط، يتكذّب زادة: الغالط هو الي يخسر كارتة.'] },
     { key:'money', title:'الفلوس',           icon:'🪙', body:'الفلوس هي السلاح. دخّل فلوس، استعملها للاغتيال، ولا خلّيها للCoup كي تحب تضرب ضربة ما تتسكرش.', tips:['الاغتيال يكلّف 3 فلوس.', 'Coup يكلّف 7 فلوس وما فيه لا بلوك لا تكذيب.', 'الرايس يسرق حتى زوز فلوس من لاعب.'] },
 ];
+
+function _getCoupGuideSections() {
+    return _coupGuideSectionsBase.map(s => s.key === 'cards' ? { ...s, cards: _coupGuideCards() } : s);
+}
+
+// Backward compat alias
+const coupGuideSections = _coupGuideSectionsBase;
 
 function renderCoupGuide(activeKey = 'goal') {
     const tabs    = document.getElementById('coup-guide-tabs');
     const content = document.getElementById('coup-guide-content');
     if (!tabs || !content) return;
-    const active = coupGuideSections.find(s => s.key === activeKey) || coupGuideSections[0];
-    tabs.innerHTML = coupGuideSections.map(section =>
+    const sections = _getCoupGuideSections();
+    const active = sections.find(s => s.key === activeKey) || sections[0];
+    tabs.innerHTML = sections.map(section =>
         `<button class="coup-guide-tab ${section.key === active.key ? 'active' : ''}" data-guide-tab="${section.key}" type="button">${section.icon}<span>${_escHtml(section.title)}</span></button>`
     ).join('');
     if (active.cards) {
@@ -957,8 +1312,9 @@ function showCoupGuide() { renderCoupGuide(); showScreen('coup-guide-screen'); }
 
 function startCoupOffline(playerNames) {
     if (!playerNames || playerNames.length < 2) return;
-    const deck    = _coupBuildDeck();
-    const players = playerNames.map((name, i) => ({
+    const rolesInPlay = _coupSelectRoles();
+    const deck        = _coupBuildDeck(rolesInPlay);
+    const players     = playerNames.map((name, i) => ({
         id:    `offline_${i}`,
         name,
         coins: 2,
@@ -967,10 +1323,11 @@ function startCoupOffline(playerNames) {
     coupState = {
         players,
         deck,
-        bankCoins:  50 - players.length * 2,
-        turnIndex:  0,
-        pending:    null,
-        log:        '',
+        rolesInPlay,
+        bankCoins:     50 - players.length * 2,
+        turnIndex:     0,
+        pending:       null,
+        log:           '',
         actionMinutes: GameState.getTimerConfig() || COUP_DEFAULT_ACTION_MINUTES,
     };
     _coupSetTurnDeadline();
@@ -990,6 +1347,8 @@ window.CoupGame = {
     setState:           (s) => { coupState = s; },
     // Utilities (used by online.js to build online Coup)
     buildDeck:          _coupBuildDeck,
+    selectRoles:        _coupSelectRoles,
+    getDynamic:         _coupGetDynamic,
     alive:              _coupAlive,
     nextTurn:           _coupNextTurn,
     setTurnDeadline:    _coupSetTurnDeadline,
