@@ -1387,7 +1387,7 @@ function _renderOnlineCoupActions(room, state, me) {
                         };
                     })
                 ].sort(() => 0.5 - Math.random()); // shuffle display order only
-                const mustKeep = Math.min(2, pool.length);
+                const mustKeep = Math.min(myLive.length, 2);
                 const keptPoolItems = []; // pool entry objects (NOT indices)
 
                 const renderActorPick = () => {
@@ -2333,8 +2333,9 @@ async function _onlineCoupChooseSocialist(keptChoice, shareId = null) {
         const keptActorCards   = actorLive.filter(x => validActorSet.has(x.idx));
         const unkeptActorCards = actorLive.filter(x => !validActorSet.has(x.idx));
 
-        // Build the full kept list and enforce the 2-card cap
-        const mustKeep = Math.min(2, actorLive.length + collectedCards.length);
+        // Actor keeps exactly as many cards as they started with (capped at 2).
+        // A player with 1 live card must leave with 1, not 2.
+        const mustKeep = Math.min(actorLive.length, 2);
         let keptCards = [...keptActorCards, ...keptOpponentCards].slice(0, mustKeep);
 
         // Auto-fill if the player somehow didn't select enough
@@ -2536,7 +2537,7 @@ async function _onlineCoupAIChooseSocialist(state, ai) {
             ...actorLive.map(c => ({ type: c.type, isActorCard: true, handRef: c })),
             ...collectedCards.map(c => ({ type: c.handCard.type, isActorCard: false, handRef: c.handCard }))
         ];
-        const mustKeep = Math.min(2, pool.length);
+        const mustKeep = Math.min(actorLive.length, 2);
         // AI: pick randomly
         const shuffled = pool.map((_, i) => i).sort(() => 0.5 - Math.random());
         const keptIndices = shuffled.slice(0, mustKeep);
