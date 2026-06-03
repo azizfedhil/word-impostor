@@ -12,6 +12,7 @@
 //   - The guide system
 //
 // online.js imports the state machine via window.CoupGame.*
+// DO NOT IMPLEMENT NEW FEATURES IN OFFLINE. ONLY IMPLEMENT THEM IN ONLINE. OFFLINE IS DEPRECATED. ONLY DO SO IF IT IS REQUIRED TO MAKE THE ONLINE PART WORK.
 // and drives it with server state instead of local state.
 // ============================================================
 
