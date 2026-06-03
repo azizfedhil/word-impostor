@@ -33,10 +33,15 @@ const ONLINE_COUP_RESPONSE_SECONDS = 30;
 const _TUNISIAN_NAMES = ["حمادي", "فوزية", "بلقاسم", "منجي", "نجاة", "مبروكة", "الصادق", "بشيرة", "عياشي", "زهيرة", "فرحات", "لطيفة", "توفيق", "منيرة", "الشاذلي", "عزيزة"];
 function _getRandomTunisianName() { return _TUNISIAN_NAMES[Math.floor(Math.random() * _TUNISIAN_NAMES.length)]; }
 
-function _onlineCoupDeck() {
-    return ['duke','assassin','contessa','ambassador','captain'].flatMap(k=>Array(3).fill(k)).sort(()=>0.5-Math.random());
+function _onlineCoupDynamic(state) {
+    return window.CoupGame?.getDynamic?.(state) || { dukeRole:'duke', ambRole:'ambassador', aidBlockRoles:['duke'], stealBlockRoles:['captain','ambassador'], jesterBlockRoles:['jester'] };
 }
 
+function _onlineCoupDeck() {
+    const rolesInPlay = window.CoupGame?.selectRoles?.() || ['duke','assassin','contessa','ambassador','captain'];
+    const deck = rolesInPlay.flatMap(k => Array(3).fill(k)).sort(() => 0.5 - Math.random());
+    return { deck, rolesInPlay };
+}
 async function _startOnlineCoupGame() {
     if (!_isHost||!_room) return;
     let allP = [...(_room.players || [])];
@@ -53,10 +58,11 @@ async function _startOnlineCoupGame() {
         }
     }
 
-    const deck = _onlineCoupDeck();
+    const { deck, rolesInPlay } = _onlineCoupDeck();
     const actionMinutes = Math.max(1, Math.min(5, parseInt(_room.config?.actionTimer || _pendingConfig?.actionTimer || 1, 10) || 1));
     const state = {
         deck,
+        rolesInPlay,
         revision:0,
         turnIndex: Math.floor(Math.random() * allP.length),
         pending:null,
@@ -392,25 +398,35 @@ function _onlineCoupMarkLoss(state, playerId, cardIndex) {
     return true;
 }
 
-function _onlineCoupRequestExchange(state, playerId) {
+function _onlineCoupRequestExchange(state, playerId, drawCount = 2) {
     const player = state.players.find(x => x.id === playerId);
     const live = player?.hand?.map((card, index) => ({card, index})).filter(x => !x.card.lost) || [];
     if (!player || !live.length) return false;
-    const drawn = [state.deck.pop(), state.deck.pop()].filter(Boolean).map(type => ({ type, drawn:true }));
+    const actualDraw = Math.min(drawCount, state.deck.length);
+    const drawn = Array.from({length: actualDraw}, () => state.deck.pop()).filter(Boolean).map(type => ({ type, drawn:true }));
     state.pending = null;
     state.pendingExchange = {
         id:`ex_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
         playerId,
-        keep:live.length,
+        keep: drawCount === 1 ? 1 : live.length,
         pool:[...live.map(x => ({ type:x.card.type, handIndex:x.index })), ...drawn]
     };
-    state.log = `${player.name} يشوف زوز كوارط من الدكّة ويختار شنوّة يخلي.`;
+    state.log = drawCount === 1
+        ? `${player.name} يشوف كارطة واحدة من الدكّة ويختار شنوّة يخلي.`
+        : `${player.name} يشوف زوز كوارط من الدكّة ويختار شنوّة يخلي.`;
     _onlineCoupEvent(state, state.log, 'notice');
     return true;
 }
 
 function _onlineCoupActionName(action) {
-    return {income:'شهرية',foreignAid:'اعانة',tax:'ضريبة الشلغمي',assassinate:'اغتيال',exchange:'تبديل السمسار',steal:'سرقة الرايس',coup:'Coup'}[action] || action;
+    return {
+        income:'شهرية', foreignAid:'اعانة', tax:'ضريبة الشلغمي',
+        bureaucratTax:'تعاون الشيخ', speculatorGamble:'قامبل الكلاب',
+        assassinate:'اغتيال', exchange:'تبديل السمسار',
+        inquireExchange:'تبديل البحاث', inquireInspect:'فحص البحاث',
+        jesterDisorder:'فوضى العمدة', socialistShare:'توزيع المدير',
+        steal:'سرقة الرايس', coup:'Coup'
+    }[action] || action;
 }
 
 function _startOnlineCoupTimer(state) {
@@ -427,7 +443,7 @@ function _startOnlineCoupTimer(state) {
         }
 
         // AI Logic for active turn
-        if (_isHost && !state.pending && !state.pendingLoss && !state.pendingExchange && !_onlineCoupTimingOut) {
+        if (_isHost && !state.pending && !state.pendingLoss && !state.pendingExchange && !state.pendingInspect && !state.pendingJesterSwap && !state.pendingSocialistShare && !_onlineCoupTimingOut) {
             const actor = state.players[state.turnIndex];
             if (actor?.isAI) {
                 const elapsed = (state.actionMinutes * 60) - left;
@@ -437,7 +453,7 @@ function _startOnlineCoupTimer(state) {
             }
         }
     };
-    // Handle AI Loss / AI Exchange
+    // Handle AI Loss / AI Exchange / AI pendingInspect / AI pendingJesterSwap / AI pendingSocialistShare
     if (_isHost && !_onlineCoupTimingOut) {
         if (state.pendingLoss) {
             const victim = state.players.find(p => p.id === state.pendingLoss.playerId);
@@ -445,6 +461,15 @@ function _startOnlineCoupTimer(state) {
         } else if (state.pendingExchange) {
             const exchanger = state.players.find(p => p.id === state.pendingExchange.playerId);
             if (exchanger?.isAI) setTimeout(() => _onlineCoupAIExchange(state, exchanger), 2000 + Math.random() * 2000);
+        } else if (state.pendingInspect) {
+            const inspector = state.players.find(p => p.id === state.pendingInspect.actorId);
+            if (inspector?.isAI) setTimeout(() => _onlineCoupAIChooseInspect(state), 2000 + Math.random() * 1500);
+        } else if (state.pendingJesterSwap) {
+            const jesterActor = state.players.find(p => p.id === state.pendingJesterSwap.actorId);
+            if (jesterActor?.isAI) setTimeout(() => _onlineCoupAIChooseJesterSwap(state, jesterActor), 2000 + Math.random() * 1500);
+        } else if (state.pendingSocialistShare) {
+            const socActor = state.players.find(p => p.id === state.pendingSocialistShare.actorId);
+            if (socActor?.isAI) setTimeout(() => _onlineCoupAIChooseSocialist(state, socActor), 2000 + Math.random() * 1500);
         }
     }
 
@@ -647,9 +672,14 @@ function _showOnlineCoup(room) {
                     if (cardType) {
                         const actionMap = {
                             duke: 'tax',
+                            bureaucrat: 'bureaucratTax',
+                            speculator: 'speculatorGamble',
                             assassin: 'assassinate',
                             captain: 'steal',
-                            ambassador: 'exchange'
+                            ambassador: 'exchange',
+                            inquisitor: 'inquireExchange',
+                            jester: 'jesterDisorder',
+                            socialist: 'socialistShare',
                         };
                         const action = actionMap[cardType];
                         if (action) _onlineCoupChoose(action);
@@ -663,6 +693,9 @@ function _showOnlineCoup(room) {
     if (myBoard) {
         if (state.pendingLoss) myBoard.appendChild(_renderOnlineCoupLossBanner(state, me));
         else if (state.pendingExchange) myBoard.appendChild(_renderOnlineCoupExchangeBanner(state, me));
+        else if (state.pendingInspect) myBoard.appendChild(_renderOnlineCoupInspectBanner(state, me));
+        else if (state.pendingJesterSwap) myBoard.appendChild(_renderOnlineCoupJesterSwapBanner(state, me));
+        else if (state.pendingSocialistShare) myBoard.appendChild(_renderOnlineCoupSocialistShareBanner(state, me));
         else if (state.pending) myBoard.appendChild(_renderOnlineCoupPendingBanner(state, me));
     }
     const mine = orderedPlayers[0];
@@ -815,6 +848,89 @@ function _renderOnlineCoupPendingBanner(state, me) {
     return wrap;
 }
 
+function _renderOnlineCoupInspectBanner(state, me) {
+    const insp = state.pendingInspect;
+    const actor  = state.players.find(p => p.id === insp?.actorId);
+    const target = state.players.find(p => p.id === insp?.targetId);
+    const esc = window.CoupUI?.escapeHtml || (x => x);
+    const wrap = document.createElement('div');
+    wrap.className = 'coup-pending-banner';
+    const isActor = me?.id === actor?.id;
+    const cardMeta = _coupCards[insp?.revealedCardType];
+    const cardLabel = cardMeta ? (window.CoupUI?.cardLabelHtml?.(cardMeta) || `${cardMeta.icon} ${cardMeta.name}`) : '🂠';
+    wrap.innerHTML = `
+        <div class="coup-pending-title">البحاث: فحص 🔍</div>
+        <strong>${esc(actor?.name || '')} يفحص كارطة ${esc(target?.name || '')}</strong>
+        <p>${isActor
+            ? `كارطة ${esc(target?.name || '')}: <strong>${cardLabel}</strong>. تحب تجبره يبدّلها؟`
+            : `نستناو ${esc(actor?.name || '')} يقرر.`
+        }</p>
+    `;
+    if (isActor) {
+        const grid = document.createElement('div');
+        grid.className = 'coup-target-grid';
+        const forceBtn = document.createElement('button');
+        forceBtn.className = 'coup-target-btn danger-action';
+        forceBtn.textContent = '↩️ جبّره يبدّلها';
+        forceBtn.onclick = () => _onlineCoupChooseInspect(true, insp.id);
+        const skipBtn = document.createElement('button');
+        skipBtn.className = 'coup-target-btn quiet-action';
+        skipBtn.textContent = 'ما نعملش شي';
+        skipBtn.onclick = () => _onlineCoupChooseInspect(false, insp.id);
+        grid.appendChild(forceBtn);
+        grid.appendChild(skipBtn);
+        wrap.appendChild(grid);
+    }
+    return wrap;
+}
+
+function _renderOnlineCoupJesterSwapBanner(state, me) {
+    const jester = state.pendingJesterSwap;
+    const actor  = state.players.find(p => p.id === jester?.actorId);
+    const target = state.players.find(p => p.id === jester?.targetId);
+    const esc = window.CoupUI?.escapeHtml || (x => x);
+    const wrap = document.createElement('div');
+    wrap.className = 'coup-pending-banner';
+    const isActor = me?.id === actor?.id;
+    wrap.innerHTML = `
+        <div class="coup-pending-title">العمدة: فوضى 🃏</div>
+        <strong>${esc(actor?.name || '')} يختار كارطة يبقى فيها</strong>
+        <p>${isActor ? 'اختار واحدة تبقى معاك وبدّلها مع كارطة من كوارطك.' : `نستناو ${esc(actor?.name || '')} يختار.`}</p>
+    `;
+    if (isActor) {
+        const temps = jester.temps || [];
+        const grid = document.createElement('div');
+        grid.className = 'coup-target-grid';
+        temps.forEach((temp, tempIdx) => {
+            const meta = _coupCards[temp.type];
+            const label = meta ? (window.CoupUI?.cardLabelHtml?.(meta) || `${meta.icon} ${meta.name}`) : temp.type;
+            const srcLabel = temp.src === 'deck' ? 'من الدكة' : `من ${esc(target?.name || '')}`;
+            const btn = document.createElement('button');
+            btn.className = 'coup-target-btn';
+            btn.innerHTML = `${label}<small>${srcLabel}</small>`;
+            btn.onclick = () => _onlineCoupPromptJesterActorCard(jester, tempIdx);
+            grid.appendChild(btn);
+        });
+        wrap.appendChild(grid);
+    }
+    return wrap;
+}
+
+function _renderOnlineCoupSocialistShareBanner(state, me) {
+    const share = state.pendingSocialistShare;
+    const actor  = state.players.find(p => p.id === share?.actorId);
+    const esc = window.CoupUI?.escapeHtml || (x => x);
+    const wrap = document.createElement('div');
+    wrap.className = 'coup-pending-banner';
+    const isActor = me?.id === actor?.id;
+    wrap.innerHTML = `
+        <div class="coup-pending-title">المدير: توزيع 🤝</div>
+        <strong>${esc(actor?.name || '')} يختار من كل لاعب</strong>
+        <p>${isActor ? 'من كل لاعب، اختار: تاخو فلوس أو كارطة أو ما تاخوش شي.' : `نستناو ${esc(actor?.name || '')} يختار.`}</p>
+    `;
+    return wrap;
+}
+
 function _renderOnlineCoupActions(room, state, me) {
     const panel = document.getElementById('coup-action-panel');
     panel.innerHTML = '';
@@ -884,6 +1000,135 @@ function _renderOnlineCoupActions(room, state, me) {
         } else {
             const player = state.players.find(p => p.id === exchange.playerId);
             panel.innerHTML = `<div class="coup-panel-card">نستناو ${esc(player?.name || '')} يختار كوارط السمسار.</div>`;
+        }
+        return;
+    }
+    if (state.pendingInspect) {
+        const insp = state.pendingInspect;
+        const esc = window.CoupUI?.escapeHtml || (x => x);
+        if (me.id === insp.actorId) {
+            const cardMeta = _coupCards[insp.revealedCardType];
+            const cardLabel = cardMeta ? (window.CoupUI?.cardLabelHtml?.(cardMeta) || `${cardMeta.icon} ${esc(cardMeta.name)}`) : '🂠';
+            const target = state.players.find(p => p.id === insp.targetId);
+            panel.innerHTML = `<div class="coup-panel-card live">كارطة ${esc(target?.name || '')}: <strong>${cardLabel}</strong><br>شنوة تعمل؟</div>
+                <div class="coup-target-grid">
+                    <button class="coup-target-btn danger-action" id="inq-force-online">↩️ جبّره يبدّلها</button>
+                    <button class="coup-target-btn quiet-action" id="inq-skip-online">ما نعملش شي</button>
+                </div>`;
+            panel.querySelector('#inq-force-online')?.addEventListener('click', e => { e.currentTarget.disabled = true; _onlineCoupChooseInspect(true, insp.id); });
+            panel.querySelector('#inq-skip-online')?.addEventListener('click', e => { e.currentTarget.disabled = true; _onlineCoupChooseInspect(false, insp.id); });
+        } else {
+            const inspector = state.players.find(p => p.id === insp.actorId);
+            panel.innerHTML = `<div class="coup-panel-card">نستناو ${esc(inspector?.name || '')} يقرر شنوة يعمل.`;
+        }
+        return;
+    }
+    if (state.pendingJesterSwap) {
+        const jester = state.pendingJesterSwap;
+        const esc = window.CoupUI?.escapeHtml || (x => x);
+        if (me.id === jester.actorId) {
+            const target = state.players.find(p => p.id === jester.targetId);
+            const tempsHtml = (jester.temps || []).map((temp, idx) => {
+                const meta = _coupCards[temp.type];
+                const label = meta ? (window.CoupUI?.cardLabelHtml?.(meta) || `${meta.icon} ${esc(meta.name)}`) : temp.type;
+                const srcLabel = temp.src === 'deck' ? 'من الدكة' : `من ${esc(target?.name || '')}`;
+                return `<button class="coup-target-btn" data-jester-temp-idx="${idx}">${label}<small>${srcLabel}</small></button>`;
+            }).join('');
+            panel.innerHTML = `<div class="coup-panel-card live">اختار واحدة تبقى معاك وبدّلها مع كارطة من كوارطك.</div>
+                <div class="coup-target-grid">${tempsHtml}</div>`;
+            panel.querySelectorAll('[data-jester-temp-idx]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    btn.disabled = true;
+                    _onlineCoupPromptJesterActorCard(jester, parseInt(btn.dataset.jesterTempIdx, 10));
+                });
+            });
+        } else {
+            const jesterActor = state.players.find(p => p.id === jester.actorId);
+            panel.innerHTML = `<div class="coup-panel-card">نستناو ${esc(jesterActor?.name || '')} يختار كارطة.`;
+        }
+        return;
+    }
+    if (state.pendingSocialistShare) {
+        const share = state.pendingSocialistShare;
+        const esc = window.CoupUI?.escapeHtml || (x => x);
+        if (me.id === share.actorId) {
+            const selections = {};
+            const render = () => {
+                panel.innerHTML = `<div class="coup-panel-card live">من كل لاعب اختار: فلوس أو كارطة أو ما تاخوش.</div>`;
+                (share.opponents || []).forEach(opp => {
+                    const oppPlayer = state.players.find(p => p.id === opp.playerId);
+                    const oppName = esc(oppPlayer?.name || opp.playerId);
+                    const rowDiv = document.createElement('div');
+                    rowDiv.className = 'coup-socialist-row';
+                    rowDiv.innerHTML = `<div class="coup-socialist-label">${oppName}</div><div class="coup-target-grid coup-socialist-choices"></div>`;
+                    const grid = rowDiv.querySelector('.coup-socialist-choices');
+                    if (opp.hasCoins) {
+                        const coinBtn = document.createElement('button');
+                        coinBtn.className = 'coup-target-btn' + (selections[opp.playerId] === 'coin' ? ' selected' : '');
+                        coinBtn.textContent = '🪙 فلوس';
+                        coinBtn.onclick = () => { selections[opp.playerId] = selections[opp.playerId] === 'coin' ? null : 'coin'; render(); };
+                        grid.appendChild(coinBtn);
+                    }
+                    (opp.liveCards || []).forEach(c => {
+                        const meta = _coupCards[c.type];
+                        const label = meta ? (window.CoupUI?.cardLabelHtml?.(meta) || `${meta.icon} ${esc(meta.name)}`) : c.type;
+                        const cardBtn = document.createElement('button');
+                        const selKey = `card:${c.type}:${c.handIdx}`;
+                        cardBtn.className = 'coup-target-btn danger-action' + (selections[opp.playerId] === selKey ? ' selected' : '');
+                        cardBtn.innerHTML = label;
+                        cardBtn.onclick = () => { selections[opp.playerId] = selections[opp.playerId] === selKey ? null : selKey; render(); };
+                        grid.appendChild(cardBtn);
+                    });
+                    const skipBtn = document.createElement('button');
+                    skipBtn.className = 'coup-target-btn quiet-action' + (!selections[opp.playerId] ? ' selected' : '');
+                    skipBtn.textContent = 'ما تاخوش';
+                    skipBtn.onclick = () => { selections[opp.playerId] = null; render(); };
+                    grid.appendChild(skipBtn);
+                    panel.appendChild(rowDiv);
+                });
+                const confirmBtn = document.createElement('button');
+                confirmBtn.className = 'primary-btn';
+                confirmBtn.textContent = 'ثبّت الاختيارات';
+                confirmBtn.onclick = () => {
+                    confirmBtn.disabled = true;
+                    const sels = (share.opponents || []).map(opp => {
+                        const sel = selections[opp.playerId];
+                        if (!sel) return { playerId: opp.playerId, take: null };
+                        if (sel === 'coin') return { playerId: opp.playerId, take: 'coin' };
+                        const parts = sel.split(':');
+                        return { playerId: opp.playerId, take: parts[1], handIdx: parseInt(parts[2], 10) };
+                    });
+                    const cardSels = sels.filter(s => s.take && s.take !== 'coin');
+                    if (cardSels.length > 1) {
+                        // Show keep selection step
+                        const esc2 = window.CoupUI?.escapeHtml || (x => x);
+                        const keepBtns = cardSels.map(cs => {
+                            const oppPlayer = state.players.find(p => p.id === cs.playerId);
+                            const meta = _coupCards[cs.take];
+                            const label = meta ? (window.CoupUI?.cardLabelHtml?.(meta) || `${meta.icon} ${esc2(meta.name)}`) : cs.take;
+                            return `<button class="coup-target-btn" data-keep-from="${cs.playerId}">${label}<small>من ${esc2(oppPlayer?.name || cs.playerId)}</small></button>`;
+                        }).join('');
+                        window.CoupUI?.showModal?.('اختار كارطة تبقى معاك',
+                            `<p>عندك ${cardSels.length} كوارط. اختار <strong>واحدة</strong> تبقى معاك، والباقي يرجعو لأصحابهم.</p>
+                             <div class="coup-target-grid">${keepBtns}</div>`,
+                            overlay => {
+                                overlay.querySelectorAll('[data-keep-from]').forEach(btn => btn.addEventListener('click', () => {
+                                    window.CoupUI.closeModal();
+                                    const finalSels = sels.map(s => ({ ...s, keepCard: s.playerId === btn.dataset.keepFrom && s.take !== 'coin' }));
+                                    _onlineCoupChooseSocialist(finalSels, share.id);
+                                }));
+                            }
+                        );
+                    } else {
+                        _onlineCoupChooseSocialist(sels, share.id);
+                    }
+                };
+                panel.appendChild(confirmBtn);
+            };
+            render();
+        } else {
+            const socActor = state.players.find(p => p.id === share.actorId);
+            panel.innerHTML = `<div class="coup-panel-card">نستناو ${esc(socActor?.name || '')} يختار من كل لاعب.`;
         }
         return;
     }
@@ -973,7 +1218,7 @@ function _renderOnlineCoupActions(room, state, me) {
     const isTurn = me.id === current?.id;
     const mustCoup = isTurn && (me.coins || 0) >= 10;
     const _onlineImgBase = (window.CoupGame?.cards?.duke?.img || '').replace(/coup\/[^/]+$/, '') + 'images/';
-    const _onlineActionBgMap = { income:'plusone', foreignAid:'plustwo', tax:'tax', steal:'steal', assassinate:'assassinate', exchange:'exchange', coup:'coup' };
+    const _onlineActionBgMap = { income:'plusone', foreignAid:'plustwo', tax:'tax', bureaucratTax:'tax', speculatorGamble:'tax', steal:'steal', assassinate:'assassinate', exchange:'exchange', inquireExchange:'exchange', inquireInspect:'exchange', jesterDisorder:'exchange', socialistShare:'exchange', coup:'coup' };
     const mk = (txt, action, cls='', hint='') => {
         const actionLocked = !isTurn || (mustCoup && action !== 'coup');
         const finalHint = mustCoup && action !== 'coup' ? 'عندك 10+ فلوس، لازم Coup' : hint;
@@ -981,13 +1226,40 @@ function _renderOnlineCoupActions(room, state, me) {
         const bgStyle = bgFile ? ` style="--action-img:url('${_onlineImgBase}${bgFile}.webp')" data-has-bg="1"` : '';
         return `<button class="coup-action-btn ${cls} ${actionLocked ? 'is-action-disabled' : ''}" data-coup-action="${action}"${bgStyle} aria-disabled="${actionLocked ? 'true' : 'false'}"><strong>${txt}<span class="coup-action-info" data-action-info="${action}">ℹ️</span></strong><small>${finalHint}</small></button>`;
     };
+
+    const dyn      = _onlineCoupDynamic(state);
+    const dukeCard = window.CoupGame?.cards?.[dyn.dukeRole];
+    const ambCard  = window.CoupGame?.cards?.[dyn.ambRole];
+    const gain     = Math.min(me?.coins || 0, 5);
+
+    let dukeBtn;
+    if (dyn.dukeRole === 'bureaucrat') {
+        dukeBtn = mk(`${window.CoupUI?.cardLabelHtml?.(dukeCard) || '🏛 الشيخ'} +2`, 'bureaucratTax', 'primary-action', 'خذ 3، اعطي 1 للهدف');
+    } else if (dyn.dukeRole === 'speculator') {
+        dukeBtn = mk(`${window.CoupUI?.cardLabelHtml?.(dukeCard) || '🎰 الكلاب'}: قامبل`, 'speculatorGamble', 'primary-action', `تضاعف فلوسك (${gain})`);
+    } else {
+        dukeBtn = mk(`${window.CoupUI?.cardLabelHtml?.(dukeCard) || '👑 الشلغمي'} +3`, 'tax', 'primary-action', 'قول عندي الشلغمي');
+    }
+
+    let ambBtns;
+    if (dyn.ambRole === 'inquisitor') {
+        ambBtns = mk(`${window.CoupUI?.cardLabelHtml?.(ambCard) || '🔍 البحاث'}: بدّل`, 'inquireExchange', '', 'بدّل كارطة مع الدكة') +
+                  mk(`${window.CoupUI?.cardLabelHtml?.(ambCard) || '🔍 البحاث'}: فحص`, 'inquireInspect', '', 'فحص كارطة لاعب');
+    } else if (dyn.ambRole === 'jester') {
+        ambBtns = mk(`${window.CoupUI?.cardLabelHtml?.(ambCard) || '🎭 العمدة'}: فوضى`, 'jesterDisorder', 'primary-action', 'اختلط كوارط لاعب');
+    } else if (dyn.ambRole === 'socialist') {
+        ambBtns = mk(`${window.CoupUI?.cardLabelHtml?.(ambCard) || '🤝 المدير'}: وزّع`, 'socialistShare', 'primary-action', 'خذ من الكل');
+    } else {
+        ambBtns = mk(`${window.CoupUI?.cardLabelHtml?.(ambCard) || '🤝 السمسار'}: بدّل`, 'exchange', '', 'بدّل كوارطك مع الدكّة');
+    }
+
     panel.innerHTML += `<div class="coup-action-grid ${isTurn?'':'is-disabled'}">
         ${mk('🪙 شهرية +1','income','','مضمون وما يتكذبش')}
-        ${mk('🤲 اعانة +2','foreignAid','','ينجم الشلغمي يسكّرها')}
-        ${mk(`${window.CoupUI?.cardLabelHtml?.(_coupCards.duke) || '👑 الشلغمي'} +3`,'tax','primary-action','قول عندي الشلغمي')}
+        ${mk('🤲 اعانة +2','foreignAid','', dyn.aidBlockRoles.length ? `ينجم ${window.CoupGame?.cards?.[dyn.aidBlockRoles[0]]?.name || 'الشلغمي'} يسكّرها` : 'ما تتسكرش')}
+        ${dukeBtn}
         ${mk(`${window.CoupUI?.cardLabelHtml?.(_coupCards.captain) || '⚓ الرايس'}: اسرق`,'steal','primary-action','اسرق زوز فلوس')}
         ${mk(`${window.CoupUI?.cardLabelHtml?.(_coupCards.assassin) || '🗡️ حفار القبور'} -3`,'assassinate','danger-action','يلزم حفار القبور')}
-        ${mk(`${window.CoupUI?.cardLabelHtml?.(_coupCards.ambassador) || '🤝 السمسار'}: بدّل`,'exchange','','بدّل كوارطك مع الدكّة')}
+        ${ambBtns}
         ${mk('💥 Coup -7','coup','danger-action','ضربة ما تتسكرش')}
     </div>`;
     panel.querySelectorAll('.coup-action-info').forEach(info => info.addEventListener('click', e => {
@@ -1091,7 +1363,7 @@ function _onlineCoupChoose(action) {
     if ((actor.coins || 0) >= 10 && action !== 'coup') { reenable(); return showToast('عندك 10 فلوس ولا أكثر، لازم تعمل Coup.'); }
     if (action === 'assassinate' && actor.coins < 3) { reenable(); return showToast('يلزمك 3 فلوس للاغتيال.'); }
     if (action === 'coup' && actor.coins < 7) { reenable(); return showToast('يلزمك 7 فلوس للCoup.'); }
-    if (['assassinate','coup','steal'].includes(action)) return _onlineCoupPickTarget(action);
+    if (['assassinate','coup','steal','bureaucratTax','inquireInspect','jesterDisorder'].includes(action)) return _onlineCoupPickTarget(action);
     const actionName = _onlineCoupActionName(action);
     const esc = window.CoupUI?.escapeHtml || (x => x);
     window.CoupUI?.showModal?.(actionName, `
@@ -1111,8 +1383,24 @@ function _onlineCoupPickTarget(action) {
     const actor = state.players[state.turnIndex || 0];
     const esc = window.CoupUI?.escapeHtml || (x => x);
     const targets = _onlineCoupAlive(state).filter(p=>p.id!==actor.id);
-    window.CoupUI?.showModal?.(action === 'steal' ? 'اختار شكون تسرق' : 'اختار شكون تضرب', `
-        <p>${action === 'steal' ? 'الرايس يسرق حتى زوز فلوس من لاعب.' : action === 'assassinate' ? 'حفار القبور يحتاج هدف واضح.' : 'Coup ضربة مباشرة وما تتسكرش.'}</p>
+    const titles = {
+        steal: 'اختار شكون تسرق',
+        assassinate: 'اختار شكون تضرب',
+        coup: 'اختار الهدف',
+        bureaucratTax: 'اختار شكون يخذ +1',
+        inquireInspect: 'اختار شكون تفحص كارطتو',
+        jesterDisorder: 'اختار شكون تعمل فيه فوضى'
+    };
+    const hints = {
+        steal: 'الرايس يسرق حتى زوز فلوس من لاعب.',
+        assassinate: 'حفار القبور يحتاج هدف واضح.',
+        coup: 'Coup ضربة مباشرة وما تتسكرش.',
+        bureaucratTax: 'الشيخ يعطي +1 لأي لاعب تختاره.',
+        inquireInspect: 'البحاث يشوف كارطة لاعب ويحتمل يجبره يبدّلها.',
+        jesterDisorder: 'العمدة يخذ كارطة عشوائية من الهدف.'
+    };
+    window.CoupUI?.showModal?.(titles[action] || 'اختار الهدف', `
+        <p>${hints[action] || ''}</p>
         <div class="coup-target-grid">${targets.map(p => `<button class="coup-target-btn" data-target-id="${p.id}">${esc(p.name)}</button>`).join('')}</div>
     `, overlay => {
         overlay.querySelectorAll('[data-target-id]').forEach(btn => {
@@ -1133,18 +1421,25 @@ async function _onlineCoupStartPending(action, targetId) {
         if ((actor.coins || 0) >= 10 && action !== 'coup') return null;
         if (action === 'assassinate' && actor.coins < 3) return null;
         if (action === 'coup' && actor.coins < 7) return null;
-        if (['assassinate','coup','steal'].includes(action)) {
+        if (['assassinate','coup','steal','bureaucratTax','inquireInspect','jesterDisorder'].includes(action)) {
             const target = _onlineCoupAlive(state).find(p => p.id === targetId && p.id !== actor.id);
             if (!target) return null;
         }
-        const claims = { tax:'duke', assassinate:'assassin', exchange:'ambassador', steal:'captain' };
-        const blockRoles = action === 'foreignAid' ? ['duke'] : action === 'assassinate' ? ['contessa'] : action === 'steal' ? ['captain','ambassador'] : [];
+        const dyn = _onlineCoupDynamic(state);
+        const claims = {
+            tax: dyn.dukeRole, bureaucratTax: 'bureaucrat', speculatorGamble: 'speculator',
+            assassinate: 'assassin', exchange: dyn.ambRole, inquireExchange: 'inquisitor',
+            inquireInspect: 'inquisitor', jesterDisorder: 'jester', socialistShare: 'socialist',
+            steal: 'captain'
+        };
+        const blockRoles =
+            action === 'foreignAid' ? dyn.aidBlockRoles :
+            action === 'assassinate' ? ['contessa'] :
+            ['steal','inquireExchange','inquireInspect','socialistShare'].includes(action) ? dyn.stealBlockRoles :
+            action === 'jesterDisorder' ? dyn.jesterBlockRoles : [];
         const blockable = blockRoles.length > 0;
         const claim = claims[action] || null;
         if (!claim && !blockable) return _onlineCoupApplyActionLocal(state, action, targetId);
-        // Deduct assassination fee immediately on declaration.
-        // Refunded if the assassin claim is successfully challenged (caught bluffing).
-        // NOT refunded if the assassination is blocked (Contessa) or the block claim is challenged and block holds.
         if (action === 'assassinate') {
             actor.coins -= 3;
             _onlineCoupPayBank(state, 3);
@@ -1283,9 +1578,84 @@ function _onlineCoupApplyActionLocal(state, action, targetId) {
     if (action === 'income') { actor.coins += 1; _onlineCoupTakeFromBank(state, 1); state.log = `${actor.name} خذا دينار. رزق بارد.`; }
     if (action === 'foreignAid') { actor.coins += 2; _onlineCoupTakeFromBank(state, 2); state.log = `${actor.name} خذا اعانة. ما تسكّرتش.`; }
     if (action === 'tax') { actor.coins += 3; _onlineCoupTakeFromBank(state, 3); state.log = `${actor.name} كول بالشلغمي وخذا 3 فلوس.`; }
+    if (action === 'bureaucratTax' && target) {
+        actor.coins += 2; _onlineCoupTakeFromBank(state, 3);
+        target.coins += 1;
+        state.log = `${actor.name} كول بالشيخ، خذا +2 وعطا +1 لـ${target.name}.`;
+    }
+    if (action === 'speculatorGamble') {
+        const gain = Math.min(actor.coins, 5);
+        actor.coins += gain; _onlineCoupTakeFromBank(state, gain);
+        state.log = gain > 0 ? `${actor.name} قامبل بالكلاب وخذا ${gain} فلوس!` : `${actor.name} قامبل بالكلاب أما ما عندوش فلوس.`;
+    }
     if (action === 'exchange') {
         _onlineCoupRequestExchange(state, actor.id);
         return state;
+    }
+    if (action === 'inquireExchange') {
+        _onlineCoupRequestExchange(state, actor.id, 1);
+        return state;
+    }
+    if (action === 'inquireInspect' && target) {
+        const liveCards = target.hand.map((c, i) => ({...c, i})).filter(c => !c.lost);
+        if (!liveCards.length) {
+            state.log = `${actor.name} حاول يفحص ${target.name} أما ما لقى كوارط.`;
+        } else {
+            const revCard = liveCards[Math.floor(Math.random() * liveCards.length)];
+            state.pendingInspect = {
+                id: `pi_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
+                actorId: actor.id, targetId: target.id,
+                revealedCardType: revCard.type, targetHandIdx: revCard.i
+            };
+            state.log = `${actor.name} يفحص كارطة ${target.name}. ينجم يجبره يبدّلها.`;
+            _onlineCoupEvent(state, state.log, 'notice');
+            return state;
+        }
+    }
+    if (action === 'jesterDisorder' && target) {
+        const drawnType = state.deck.pop();
+        if (!drawnType) {
+            state.log = `${actor.name} حاول يعمل فوضى أما الدكة خاوية.`;
+        } else {
+            const targetLive = target.hand.map((c, i) => ({...c, i})).filter(c => !c.lost);
+            if (!targetLive.length) {
+                state.deck.push(drawnType);
+                state.log = `${actor.name} حاول يعمل فوضى أما ${target.name} ما عندوش كوارط.`;
+            } else {
+                const takenSlot = targetLive[Math.floor(Math.random() * targetLive.length)];
+                target.hand[takenSlot.i].lost = true;
+                state.pendingJesterSwap = {
+                    id: `pj_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
+                    actorId: actor.id, targetId: target.id,
+                    temps: [
+                        { type: drawnType, src: 'deck' },
+                        { type: takenSlot.type, src: 'target', targetHandIdx: takenSlot.i }
+                    ]
+                };
+                state.log = `${actor.name} جاب من الدكة وخذ عشوائي من ${target.name}. يختار شنوة يبقى معاه.`;
+                _onlineCoupEvent(state, state.log, 'notice');
+                return state;
+            }
+        }
+    }
+    if (action === 'socialistShare') {
+        const opponents = _onlineCoupAlive(state).filter(p => p.id !== actor.id);
+        if (!opponents.length) {
+            state.log = `${actor.name} يلعب لوحدو، ما ينجمش يوزّع.`;
+        } else {
+            state.pendingSocialistShare = {
+                id: `ps_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
+                actorId: actor.id,
+                opponents: opponents.map(opp => ({
+                    playerId: opp.id,
+                    hasCoins: opp.coins > 0,
+                    liveCards: opp.hand.map((c, i) => ({type: c.type, handIdx: i})).filter((_, i) => !opp.hand[i].lost)
+                }))
+            };
+            state.log = `${actor.name} يوزّع بالمدير. يختار من كل لاعب: فلوس أو كارطة.`;
+            _onlineCoupEvent(state, state.log, 'notice');
+            return state;
+        }
     }
     if (action === 'steal' && target) {
         const amount = Math.min(2, target.coins || 0);
@@ -1294,7 +1664,6 @@ function _onlineCoupApplyActionLocal(state, action, targetId) {
         state.log = amount > 0 ? `${actor.name} سرق ${amount} فلوس من ${target.name}. الرايس دخل للمرسى.` : `${actor.name} حاول يسرق ${target.name} أما ما لقى شي.`;
     }
     if (action === 'assassinate' && target) {
-        // Coins were already deducted at declaration time (in the pending creation block).
         state.log = `${target.name} تضرّب من حفار القبور. ${target.name} يختار كارتة يخسرها.`;
         _onlineCoupEvent(state, state.log, 'bad');
         if (!_onlineCoupRequestLoss(state, target.id, 'تضرّبت من حفار القبور. اختار شنية الكارتة الي تخسرها.', { type:'nextTurn' })) _onlineCoupNextTurn(state);
@@ -1313,6 +1682,240 @@ function _onlineCoupApplyActionLocal(state, action, targetId) {
     return state;
 }
 
+// ── Expansion action resolvers ─────────────────────────────────
+
+async function _onlineCoupChooseInspect(forceSwap, inspectId = null) {
+    await _onlineCoupMutateState(async state => {
+        const insp = state.pendingInspect;
+        if (!insp) return null;
+        if (inspectId && insp.id !== inspectId) return null;
+        if (insp.actorId !== _myId) return null;
+        const actor  = state.players.find(p => p.id === insp.actorId);
+        const target = state.players.find(p => p.id === insp.targetId);
+        if (!actor || !target) return null;
+        if (forceSwap) {
+            const handCard = target.hand[insp.targetHandIdx];
+            if (handCard && !handCard.lost) {
+                state.deck.unshift(handCard.type);
+                state.deck.sort(() => 0.5 - Math.random());
+                handCard.type = state.deck.pop() || handCard.type;
+            }
+            state.log = `${actor.name} خلّى ${target.name} يبدّل كارطتو.`;
+            _onlineCoupEvent(state, state.log, 'notice');
+        } else {
+            state.log = `${actor.name} شاف كارطة ${target.name} وما عملش شي.`;
+            _onlineCoupEvent(state, state.log, 'notice');
+        }
+        state.pendingInspect = null;
+        _onlineCoupNextTurn(state);
+        return state;
+    });
+}
+
+function _onlineCoupPromptJesterActorCard(jester, keepTempIdx) {
+    const state = _room?.word_obj;
+    if (!state) return;
+    const actor = state.players.find(p => p.id === jester.actorId);
+    if (!actor) return;
+    const actorLive = actor.hand.map((c, i) => ({c, i})).filter(x => !x.c.lost);
+    if (actorLive.length === 1) {
+        _onlineCoupChooseJesterSwap(keepTempIdx, actorLive[0].i, jester.id);
+        return;
+    }
+    const esc = window.CoupUI?.escapeHtml || (x => x);
+    const keptMeta = _coupCards[jester.temps[keepTempIdx]?.type];
+    const keptLabel = keptMeta ? (window.CoupUI?.cardLabelHtml?.(keptMeta) || `${keptMeta.icon} ${esc(keptMeta.name)}`) : '?';
+    const cardsHtml = actorLive.map(({c, i}) => {
+        const meta = _coupCards[c.type];
+        const label = meta ? (window.CoupUI?.cardLabelHtml?.(meta) || `${meta.icon} ${esc(meta.name)}`) : c.type;
+        return `<button class="coup-target-btn" data-swap-idx="${i}">${label}</button>`;
+    }).join('');
+    window.CoupUI?.showModal?.('اختار كارطة تبدّلها',
+        `<p>اختار من كوارطك الكارطة الي تبدّلها بـ${keptLabel}:</p>
+         <div class="coup-target-grid">${cardsHtml}</div>`,
+        overlay => {
+            overlay.querySelectorAll('[data-swap-idx]').forEach(btn => btn.addEventListener('click', () => {
+                window.CoupUI.closeModal();
+                _onlineCoupChooseJesterSwap(keepTempIdx, parseInt(btn.dataset.swapIdx, 10), jester.id);
+            }));
+        }
+    );
+}
+
+async function _onlineCoupChooseJesterSwap(keepTempIdx, replaceActorCardIdx, jesterId = null) {
+    await _onlineCoupMutateState(async state => {
+        const jester = state.pendingJesterSwap;
+        if (!jester) return null;
+        if (jesterId && jester.id !== jesterId) return null;
+        if (jester.actorId !== _myId) return null;
+        const actor  = state.players.find(p => p.id === jester.actorId);
+        const target = state.players.find(p => p.id === jester.targetId);
+        if (!actor || !target) return null;
+        const temps = jester.temps;
+        const keptType  = temps[keepTempIdx]?.type;
+        const otherTemp = temps[1 - keepTempIdx];
+        if (!keptType || !otherTemp) return null;
+        const actorCard = actor.hand[replaceActorCardIdx];
+        if (!actorCard || actorCard.lost) return null;
+        const oldType = actorCard.type;
+        actorCard.type = keptType;
+        const takenTemp = temps.find(t => t.src === 'target');
+        if (otherTemp.src === 'target') {
+            target.hand[takenTemp.targetHandIdx] = { type: otherTemp.type, lost: false };
+            state.deck.unshift(oldType);
+        } else {
+            state.deck.unshift(otherTemp.type);
+            target.hand[takenTemp.targetHandIdx] = { type: oldType, lost: false };
+        }
+        state.deck.sort(() => 0.5 - Math.random());
+        state.pendingJesterSwap = null;
+        state.log = `${actor.name} عمل فوضى مع ${target.name}. الكوارط اختلطت!`;
+        _onlineCoupEvent(state, state.log, 'notice');
+        _onlineCoupNextTurn(state);
+        return state;
+    });
+}
+
+async function _onlineCoupChooseSocialist(selections, shareId = null) {
+    await _onlineCoupMutateState(async state => {
+        const share = state.pendingSocialistShare;
+        if (!share) return null;
+        if (shareId && share.id !== shareId) return null;
+        if (share.actorId !== _myId) return null;
+        const actor = state.players.find(p => p.id === share.actorId);
+        if (!actor) return null;
+        const collectedCards = [];
+        for (const sel of selections) {
+            if (!sel.take) continue;
+            const opp = state.players.find(p => p.id === sel.playerId);
+            if (!opp) continue;
+            if (sel.take === 'coin') {
+                if (opp.coins > 0) { opp.coins -= 1; actor.coins += 1; }
+            } else {
+                const handCard = opp.hand.find((c, i) => !c.lost && c.type === sel.take && (sel.handIdx == null || i === sel.handIdx));
+                if (handCard) { handCard.lost = true; collectedCards.push({ fromId: opp.id, type: sel.take, handCard }); }
+            }
+        }
+        if (collectedCards.length === 0) {
+            // only coins or skips
+        } else if (collectedCards.length === 1) {
+            actor.hand.push({ type: collectedCards[0].type, lost: false });
+        } else {
+            // keep the first card marked keepCard, or default to first
+            const keepIdx = selections.findIndex(s => s.keepCard && collectedCards.find(c => c.fromId === s.playerId));
+            collectedCards.forEach((c, i) => {
+                if (i === (keepIdx >= 0 ? keepIdx : 0)) { actor.hand.push({ type: c.type, lost: false }); }
+                else { c.handCard.lost = false; }
+            });
+        }
+        state.pendingSocialistShare = null;
+        state.log = collectedCards.length > 0
+            ? `${actor.name} أخذ كوارط وفلوس من اللاعبين بالمدير.`
+            : `${actor.name} جمع فلوس من الكل بالMدير.`;
+        _onlineCoupEvent(state, state.log, 'good');
+        _onlineCoupNextTurn(state);
+        return state;
+    });
+}
+
+// ── AI handlers for expansion pending states ───────────────────
+
+async function _onlineCoupAIChooseInspect(state) {
+    const insp = state.pendingInspect;
+    if (!insp) return;
+    const inspectId = insp.id;
+    await _onlineCoupMutateState(async fresh => {
+        const i = fresh.pendingInspect;
+        if (!i || i.id !== inspectId) return null;
+        const actor  = fresh.players.find(p => p.id === i.actorId);
+        const target = fresh.players.find(p => p.id === i.targetId);
+        if (!actor || !target) return null;
+        // AI: small chance to force swap
+        if (Math.random() < 0.4) {
+            const handCard = target.hand[i.targetHandIdx];
+            if (handCard && !handCard.lost) {
+                fresh.deck.unshift(handCard.type);
+                fresh.deck.sort(() => 0.5 - Math.random());
+                handCard.type = fresh.deck.pop() || handCard.type;
+            }
+            fresh.log = `${actor.name} خلّى ${target.name} يبدّل كارطتو.`;
+        } else {
+            fresh.log = `${actor.name} شاف كارطة ${target.name} وما عملش شي.`;
+        }
+        _onlineCoupEvent(fresh, fresh.log, 'notice');
+        fresh.pendingInspect = null;
+        _onlineCoupNextTurn(fresh);
+        return fresh;
+    });
+}
+
+async function _onlineCoupAIChooseJesterSwap(state, ai) {
+    const jester = state.pendingJesterSwap;
+    if (!jester || jester.actorId !== ai.id) return;
+    const jesterId = jester.id;
+    await _onlineCoupMutateState(async fresh => {
+        const j = fresh.pendingJesterSwap;
+        if (!j || j.id !== jesterId) return null;
+        const actor  = fresh.players.find(p => p.id === j.actorId);
+        const target = fresh.players.find(p => p.id === j.targetId);
+        if (!actor || !target) return null;
+        const keepTempIdx = Math.floor(Math.random() * j.temps.length);
+        const actorLive = actor.hand.map((c, i) => ({c, i})).filter(x => !x.c.lost);
+        if (!actorLive.length) return null;
+        const replaceIdx = actorLive[Math.floor(Math.random() * actorLive.length)].i;
+        const keptType  = j.temps[keepTempIdx]?.type;
+        const otherTemp = j.temps[1 - keepTempIdx];
+        if (!keptType || !otherTemp) return null;
+        const actorCard = actor.hand[replaceIdx];
+        if (!actorCard || actorCard.lost) return null;
+        const oldType = actorCard.type;
+        actorCard.type = keptType;
+        const takenTemp = j.temps.find(t => t.src === 'target');
+        if (otherTemp.src === 'target') {
+            target.hand[takenTemp.targetHandIdx] = { type: otherTemp.type, lost: false };
+            fresh.deck.unshift(oldType);
+        } else {
+            fresh.deck.unshift(otherTemp.type);
+            target.hand[takenTemp.targetHandIdx] = { type: oldType, lost: false };
+        }
+        fresh.deck.sort(() => 0.5 - Math.random());
+        fresh.pendingJesterSwap = null;
+        fresh.log = `${actor.name} عمل فوضى مع ${target.name}. الكوارط اختلطت!`;
+        _onlineCoupEvent(fresh, fresh.log, 'notice');
+        _onlineCoupNextTurn(fresh);
+        return fresh;
+    });
+}
+
+async function _onlineCoupAIChooseSocialist(state, ai) {
+    const share = state.pendingSocialistShare;
+    if (!share || share.actorId !== ai.id) return;
+    const shareId = share.id;
+    await _onlineCoupMutateState(async fresh => {
+        const s = fresh.pendingSocialistShare;
+        if (!s || s.id !== shareId) return null;
+        const actor = fresh.players.find(p => p.id === s.actorId);
+        if (!actor) return null;
+        const collectedCards = [];
+        for (const opp of (s.opponents || [])) {
+            const oppPlayer = fresh.players.find(p => p.id === opp.playerId);
+            if (!oppPlayer) continue;
+            // AI: prefer coins over cards
+            if (opp.hasCoins && oppPlayer.coins > 0) {
+                oppPlayer.coins -= 1; actor.coins += 1;
+            }
+        }
+        s.opponents.forEach(opp => {
+            // already took coins above, skip cards for simplicity
+        });
+        fresh.pendingSocialistShare = null;
+        fresh.log = `${actor.name} جمع فلوس من الكل بالمدير.`;
+        _onlineCoupEvent(fresh, fresh.log, 'good');
+        _onlineCoupNextTurn(fresh);
+        return fresh;
+    });
+}
+
 function _onlineCoupCaught() {
     return ['الكذبة طلعت بريحة اللبلابي.','بوّعها بثقة وطيح في الحفرة.','قالها كبيرة، جاتو أكبر.'][Math.floor(Math.random()*3)];
 }
@@ -1328,12 +1931,22 @@ async function _onlineCoupAIStartPending(action, aiId, targetId) {
         if ((actor.coins || 0) >= 10 && action !== 'coup') return null;
         if (action === 'assassinate' && actor.coins < 3) return null;
         if (action === 'coup' && actor.coins < 7) return null;
-        if (['assassinate', 'coup', 'steal'].includes(action)) {
+        if (['assassinate', 'coup', 'steal','bureaucratTax','jesterDisorder'].includes(action)) {
             const target = _onlineCoupAlive(state).find(p => p.id === targetId && p.id !== actor.id);
             if (!target) return null;
         }
-        const claims = { tax: 'duke', assassinate: 'assassin', exchange: 'ambassador', steal: 'captain' };
-        const blockRoles = action === 'foreignAid' ? ['duke'] : action === 'assassinate' ? ['contessa'] : action === 'steal' ? ['captain', 'ambassador'] : [];
+        const dyn = _onlineCoupDynamic(state);
+        const claims = {
+            tax: dyn.dukeRole, bureaucratTax: 'bureaucrat', speculatorGamble: 'speculator',
+            assassinate: 'assassin', exchange: dyn.ambRole, inquireExchange: 'inquisitor',
+            inquireInspect: 'inquisitor', jesterDisorder: 'jester', socialistShare: 'socialist',
+            steal: 'captain'
+        };
+        const blockRoles =
+            action === 'foreignAid' ? dyn.aidBlockRoles :
+            action === 'assassinate' ? ['contessa'] :
+            ['steal','inquireExchange','inquireInspect','socialistShare'].includes(action) ? dyn.stealBlockRoles :
+            action === 'jesterDisorder' ? dyn.jesterBlockRoles : [];
         const blockable = blockRoles.length > 0;
         const claim = claims[action] || null;
         if (!claim && !blockable) return _onlineCoupApplyActionLocal(state, action, targetId);
@@ -1363,17 +1976,28 @@ async function _onlineCoupAIAction(state, ai) {
             return;
         }
 
-        const possible = ['income', 'foreignAid', 'tax', 'exchange'];
+        const dyn = _onlineCoupDynamic(state);
+        const possible = ['income', 'foreignAid'];
+        // Dynamic duke-family action
+        if (dyn.dukeRole === 'bureaucrat') possible.push('bureaucratTax');
+        else if (dyn.dukeRole === 'speculator') possible.push('speculatorGamble');
+        else possible.push('tax');
+        // Dynamic ambassador-family action
+        if (dyn.ambRole === 'inquisitor') possible.push('inquireExchange');
+        else if (dyn.ambRole === 'jester') possible.push('jesterDisorder');
+        else if (dyn.ambRole === 'socialist') possible.push('socialistShare');
+        else possible.push('exchange');
+
         if (ai.coins >= 3) possible.push('assassinate');
         if (aliveOpponents.some(p => p.coins > 0)) possible.push('steal');
         if (ai.coins >= 7) possible.push('coup');
 
-        const weights = { income: 10, foreignAid: 15, tax: 25, steal: 20, assassinate: 15, exchange: 5, coup: 10 };
+        const weights = { income: 10, foreignAid: 15, tax: 25, bureaucratTax: 20, speculatorGamble: 20, steal: 20, assassinate: 15, exchange: 5, inquireExchange: 5, inquireInspect: 5, jesterDisorder: 15, socialistShare: 20, coup: 10 };
         const pool = [];
         possible.forEach(act => { for (let i = 0; i < (weights[act] || 10); i++) pool.push(act); });
         const action = pool[Math.floor(Math.random() * pool.length)];
 
-        if (['coup', 'assassinate', 'steal'].includes(action)) {
+        if (['coup', 'assassinate', 'steal', 'bureaucratTax', 'jesterDisorder'].includes(action)) {
             let targetId = randomOpponent.id;
             if (action === 'steal') {
                 const hasMoney = aliveOpponents.filter(p => p.coins > 0);
@@ -1405,9 +2029,10 @@ async function _onlineCoupAIResponse(state, ai) {
         // Target can block with an appropriate role
         if (isTarget && p.blockRoles?.length && roll < 0.3) {
             await _onlineCoupBlock(ai.id, p.blockRoles[0], p.id);
-        // Any player can block foreignAid with duke
+        // Any player can block foreignAid with the dynamic duke-family role
         } else if (canBlock && p.action === 'foreignAid' && !isTarget && roll < 0.15) {
-            await _onlineCoupBlock(ai.id, 'duke', p.id);
+            const dyn2 = _onlineCoupDynamic(state);
+            await _onlineCoupBlock(ai.id, dyn2.aidBlockRoles[0] || 'duke', p.id);
         // Challenge the claim (not on income/foreignAid/coup which have no claim)
         } else if (roll < 0.1 && p.claim && p.action !== 'income' && p.action !== 'foreignAid' && p.action !== 'coup') {
             await _onlineCoupChallenge(ai.id, p.id);
@@ -1487,6 +2112,9 @@ window._onlineCoupAcceptBlock        = _onlineCoupAcceptBlock;
 window._onlineCoupChallengeBlock     = _onlineCoupChallengeBlock;
 window._onlineCoupChooseLoss         = _onlineCoupChooseLoss;
 window._onlineCoupChooseExchange     = _onlineCoupChooseExchange;
+window._onlineCoupChooseInspect      = _onlineCoupChooseInspect;
+window._onlineCoupChooseJesterSwap   = _onlineCoupChooseJesterSwap;
+window._onlineCoupChooseSocialist    = _onlineCoupChooseSocialist;
 window._onlineCoupStartPending       = _onlineCoupStartPending;
 window._onlineCoupTimeout            = _onlineCoupTimeout;
 window._onlineCoupPendingTimeout     = _onlineCoupPendingTimeout;
