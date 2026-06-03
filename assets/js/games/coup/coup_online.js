@@ -423,8 +423,8 @@ function _onlineCoupActionName(action) {
         income:'شهرية', foreignAid:'اعانة', tax:'ضريبة الشلغمي',
         bureaucratTax:'تعاون الشيخ', speculatorGamble:'قامبل الكلاب',
         assassinate:'اغتيال', exchange:'تبديل السمسار',
-        inquireExchange:'تبديل البحاث', inquireInspect:'فحص البحاث',
-        jesterDisorder:'فوضى العمدة', socialistShare:'توزيع المدير',
+        inquireExchange:'بدّل يا البحاث', inquireInspect:'فحص البحاث',
+        jesterDisorder:'خربقها يا العمدة', socialistShare:'توزيع المدير',
         steal:'سرقة الرايس', coup:'Coup'
     }[action] || action;
 }
@@ -862,7 +862,7 @@ function _renderOnlineCoupInspectBanner(state, me) {
         <div class="coup-pending-title">البحاث: فحص 🔍</div>
         <strong>${esc(actor?.name || '')} يفحص كارطة ${esc(target?.name || '')}</strong>
         <p>${isActor
-            ? `كارطة ${esc(target?.name || '')}: <strong>${cardLabel}</strong>. تحب تجبره يبدّلها؟`
+            ? `كارطة ${esc(target?.name || '')}: <strong>${cardLabel}</strong>. تحب تجبرو يبدّلها؟`
             : `نستناو ${esc(actor?.name || '')} يقرر.`
         }</p>
     `;
@@ -871,11 +871,11 @@ function _renderOnlineCoupInspectBanner(state, me) {
         grid.className = 'coup-target-grid';
         const forceBtn = document.createElement('button');
         forceBtn.className = 'coup-target-btn danger-action';
-        forceBtn.textContent = '↩️ جبّره يبدّلها';
+        forceBtn.textContent = '↩️ اجبرو يبدلها';
         forceBtn.onclick = () => _onlineCoupChooseInspect(true, insp.id);
         const skipBtn = document.createElement('button');
         skipBtn.className = 'coup-target-btn quiet-action';
-        skipBtn.textContent = 'ما نعملش شي';
+        skipBtn.textContent = 'ما نعمل شي';
         skipBtn.onclick = () => _onlineCoupChooseInspect(false, insp.id);
         grid.appendChild(forceBtn);
         grid.appendChild(skipBtn);
@@ -893,7 +893,7 @@ function _renderOnlineCoupJesterSwapBanner(state, me) {
     wrap.className = 'coup-pending-banner';
     const isActor = me?.id === actor?.id;
     wrap.innerHTML = `
-        <div class="coup-pending-title">العمدة: فوضى 🃏</div>
+        <div class="coup-pending-title">العمدة: دخلها بعضها 🃏</div>
         <strong>${esc(actor?.name || '')} يختار كارطة يبقى فيها</strong>
         <p>${isActor ? 'اختار واحدة تبقى معاك وبدّلها مع كارطة من كوارطك.' : `نستناو ${esc(actor?.name || '')} يختار.`}</p>
     `;
