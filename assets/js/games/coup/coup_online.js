@@ -29,6 +29,98 @@ let _coupWinnerAnnounced = false;
 const ONLINE_COUP_RESPONSE_SECONDS = 30;
 // COUP_DEFAULT_ACTION_MINUTES is declared in coup_logic.js — do not re-declare here.
 
+function _pulseScreenRed() {
+    document.querySelector('.coup-red-pulse-overlay')?.remove();
+    const overlay = document.createElement('div');
+    overlay.className = 'coup-red-pulse-overlay';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,0,0,0.4);pointer-events:none;z-index:9999;opacity:0;transition:opacity 0.2s ease-in-out;';
+    document.body.appendChild(overlay);
+    let pulses = 0;
+    const pulse = () => {
+        if (pulses >= 3) {
+            overlay.remove();
+            return;
+        }
+        overlay.style.opacity = '1';
+        setTimeout(() => {
+            overlay.style.opacity = '0';
+            pulses++;
+            if (pulses < 3) {
+                setTimeout(pulse, 200);
+            } else {
+                setTimeout(() => overlay.remove(), 200);
+            }
+        }, 200);
+    };
+    pulse();
+}
+
+function _showCardUseAnimation(playerName, cardType) {
+    document.querySelector('.coup-card-use-animation')?.remove();
+    const meta = window.coupCards[cardType] || window.coupCards.duke;
+    const _onlineImgBase = (window.CoupGame?.cards?.duke?.img || '').replace(/coup\/[^/]+$/, '') + 'images/';
+    const fullCardSrc = _onlineImgBase + cardType + '_full_card.webp';
+
+    const container = document.createElement('div');
+    container.className = 'coup-card-use-animation';
+    container.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10000;pointer-events:none;';
+
+    const card = document.createElement('div');
+    card.className = 'coup-use-card';
+    card.style.cssText = 'width:120px;height:180px;position:relative;perspective:1000px;transition:transform 0.5s ease-in-out;';
+
+    const cardInner = document.createElement('div');
+    cardInner.className = 'coup-use-card-inner';
+    cardInner.style.cssText = 'width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform 0.5s;transform:rotateY(0deg);';
+
+    const cardFront = document.createElement('div');
+    cardFront.className = 'coup-use-card-front';
+    cardFront.style.cssText = 'position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:8px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.3);';
+    cardFront.innerHTML = `<img src="${fullCardSrc}" style="width:100%;height:100%;object-fit:cover;" alt="${meta.name}">`;
+
+    const cardBack = document.createElement('div');
+    cardBack.className = 'coup-use-card-back';
+    cardBack.style.cssText = 'position:absolute;width:100%;height:100%;backface-visibility:hidden;transform:rotateY(180deg);border-radius:8px;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.3);';
+    cardBack.innerHTML = `<span style="font-size:48px;">${meta.icon}</span>`;
+
+    cardInner.appendChild(cardFront);
+    cardInner.appendChild(cardBack);
+    card.appendChild(cardInner);
+    container.appendChild(card);
+
+    const messageBox = document.createElement('div');
+    messageBox.className = 'coup-modal-card';
+    messageBox.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);opacity:0;transition:all 0.4s ease-out;padding:20px 30px;text-align:center;';
+    messageBox.innerHTML = `<div class="coup-modal-spark">✦</div><h3 style="margin:0 0 10px 0;"><span style="color:#ffd700;">${playerName}</span></h3><div class="coup-modal-body" style="color:#fff;">استعمل <span style="color:#ffd700;">${meta.name}</span></div>`;
+
+    container.appendChild(messageBox);
+    document.body.appendChild(container);
+
+    setTimeout(() => {
+        cardInner.style.transform = 'rotateY(180deg)';
+    }, 100);
+
+    setTimeout(() => {
+        cardInner.style.transform = 'rotateY(360deg)';
+    }, 600);
+
+    setTimeout(() => {
+        const isMobile = window.innerWidth < 768;
+        card.style.transform = isMobile ? 'translateX(80px)' : 'translateX(200px)';
+    }, 1100);
+
+    setTimeout(() => {
+        messageBox.style.transform = 'translate(-50%,-50%) scale(1)';
+        messageBox.style.opacity = '1';
+    }, 1600);
+
+    setTimeout(() => {
+        container.style.transition = 'opacity 0.3s ease-out';
+        container.style.opacity = '0';
+        setTimeout(() => container.remove(), 300);
+    }, 3500);
+}
+
 // ── Tunisian names for AI players ─────────────────────────────
 const _TUNISIAN_NAMES = ["حمادي", "فوزية", "بلقاسم", "منجي", "نجاة", "مبروكة", "الصادق", "بشيرة", "عياشي", "زهيرة", "فرحات", "لطيفة", "توفيق", "منيرة", "الشاذلي", "عزيزة"];
 function _getRandomTunisianName() { return _TUNISIAN_NAMES[Math.floor(Math.random() * _TUNISIAN_NAMES.length)]; }
@@ -271,7 +363,7 @@ function _onlineCoupSetResponseDeadline(pending) {
 }
 
 function _onlineCoupBlockRoleLabel(role) {
-    const meta = _coupCards[role] || _coupCards.duke;
+    const meta = window.coupCards[role] || window.coupCards.duke;
     return `${meta.icon} ${meta.name}`;
 }
 
@@ -383,7 +475,7 @@ function _onlineCoupMarkLoss(state, playerId, cardIndex) {
     const card = p?.hand?.[cardIndex];
     if (!p || !card || card.lost) return false;
     card.lost = true;
-    const meta = _coupCards[card.type] || _coupCards.duke;
+    const meta = window.coupCards[card.type] || window.coupCards.duke;
     const out = !p.hand.some(c=>!c.lost);
     const lossEvent = {
         id:`loss_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
@@ -608,7 +700,7 @@ function _showOnlineCoup(room) {
     }
     if (state.lastLossEvent?.id && state.lastLossEvent.id !== _lastCoupLossEventId) {
         _lastCoupLossEventId = state.lastLossEvent.id;
-        const meta = _coupCards[state.lastLossEvent.cardType] || { name:state.lastLossEvent.cardName, icon:'🂠' };
+        const meta = window.coupCards[state.lastLossEvent.cardType] || { name:state.lastLossEvent.cardName, icon:'🂠' };
         window.CoupUI?.showLossAnimation?.(state.lastLossEvent.playerName, meta, !!state.lastLossEvent.out, state.lastLossEvent.cardType);
     }
 
@@ -640,7 +732,7 @@ function _showOnlineCoup(room) {
             : '';
         div.innerHTML = `<div class="coup-player-head"><span>${window.CoupUI?.escapeHtml?.(p.name) || p.name}${isMe?' <span class="you-tag">أنا</span>':''}</span><span class="coup-coins">🪙 ${p.coins}</span></div>
             <div class="coup-influence-row">${p.hand.map(c => {
-                const meta = _coupCards[c.type] || _coupCards.duke;
+                const meta = window.coupCards[c.type] || window.coupCards.duke;
                 const label = (showCard || c.lost) ? (window.CoupUI?.cardLabelHtml?.(meta) || `${meta.icon} ${meta.name}`) : '<span>🂠 مخبية</span>';
                 const info = (showCard || c.lost) ? `<button class="coup-card-info" type="button" data-card-type="${c.type}" aria-label="info">ℹ️</button>` : '';
                 const bgStyle = (showCard || c.lost) ? ` style="--card-img:url('${imgBase}${c.type}_horizontal.webp')" data-has-bg="1"` : '';
@@ -659,7 +751,7 @@ function _showOnlineCoup(room) {
         div.querySelectorAll('.coup-card-info').forEach(btn => {
             btn.addEventListener('click', e => {
                 e.stopPropagation();
-                window.CoupUI?.showCardInfo?.(btn.dataset.cardType, _coupCards);
+                window.CoupUI?.showCardInfo?.(btn.dataset.cardType, window.coupCards);
             });
         });
         if (isMe && idx === state.turnIndex && !state.pending && !state.pendingLoss && !state.pendingExchange) {
@@ -730,7 +822,7 @@ function _showOnlineCoup(room) {
         orderedPlayers.slice(1).forEach(({p, idx}) => othersWrap.appendChild(renderCoupPlayerCard(p, idx)));
         othersBoard.appendChild(othersWrap);
     }
-    window.CoupUI?.renderRoleHelp?.(_coupCards);
+    window.CoupUI?.renderRoleHelp?.(window.coupCards);
     _renderOnlineCoupActions(room, state, me);
     _renderOnlineCoupLeaveButton(room);
 }
@@ -764,7 +856,7 @@ function _renderOnlineCoupLossBanner(state, me) {
         <p>${esc(loss?.reason || 'القانون يقول اللاعب هو الي يختار شنية يكشف ويخسر.')}</p>
         <div class="coup-pending-actions">
             ${isMe ? cards.map(({card, index}) => {
-                const meta = _coupCards[card.type] || _coupCards.duke;
+                const meta = window.coupCards[card.type] || window.coupCards.duke;
                 return `<button class="coup-target-btn danger-action" data-online-lose-card="${index}" data-loss-id="${loss?.id || ''}">${window.CoupUI?.cardLabelHtml?.(meta) || `${meta.icon} ${esc(meta.name)}`}</button>`;
             }).join('') : `<div class="coup-waiting-note">نستناو ${esc(player?.name || '')} يختار الكارتة.</div>`}
         </div>
@@ -856,7 +948,7 @@ function _renderOnlineCoupInspectBanner(state, me) {
     const wrap = document.createElement('div');
     wrap.className = 'coup-pending-banner';
     const isActor = me?.id === actor?.id;
-    const cardMeta = _coupCards[insp?.revealedCardType];
+    const cardMeta = window.coupCards[insp?.revealedCardType];
     const cardLabel = cardMeta ? (window.CoupUI?.cardLabelHtml?.(cardMeta) || `${cardMeta.icon} ${cardMeta.name}`) : '🂠';
     wrap.innerHTML = `
         <div class="coup-pending-title">البحاث: فحص 🔍</div>
@@ -902,7 +994,7 @@ function _renderOnlineCoupJesterSwapBanner(state, me) {
         const grid = document.createElement('div');
         grid.className = 'coup-target-grid';
         temps.forEach((temp, tempIdx) => {
-            const meta = _coupCards[temp.type];
+            const meta = window.coupCards[temp.type];
             const label = meta ? (window.CoupUI?.cardLabelHtml?.(meta) || `${meta.icon} ${meta.name}`) : temp.type;
             const srcLabel = temp.src === 'deck' ? 'من الدكة' : `من ${esc(target?.name || '')}`;
             const btn = document.createElement('button');
@@ -957,7 +1049,7 @@ function _renderOnlineCoupActions(room, state, me) {
             const live = me.hand.map((card, index) => ({card, index})).filter(x => !x.card.lost);
             panel.innerHTML = `<div class="coup-panel-card live">${esc(loss.reason || 'اختار كارتة تخسرها.')}</div>
                 <div class="coup-target-grid">${live.map(({card, index}) => {
-                    const meta = _coupCards[card.type] || _coupCards.duke;
+                    const meta = window.coupCards[card.type] || window.coupCards.duke;
                     return `<button class="coup-target-btn danger-action" data-online-lose-card="${index}" data-loss-id="${loss.id || ''}">${window.CoupUI?.cardLabelHtml?.(meta) || `${meta.icon} ${esc(meta.name)}`}</button>`;
                 }).join('')}</div>`;
             panel.querySelectorAll('[data-online-lose-card]').forEach(btn => btn.addEventListener('click', () => {
@@ -976,7 +1068,7 @@ function _renderOnlineCoupActions(room, state, me) {
             panel.innerHTML = `<div class="coup-panel-card live">اختار ${exchange.keep} كارتة باش تخليها.</div>
                 <div class="coup-exchange-count" id="online-coup-exchange-count">0/${exchange.keep}</div>
                 <div class="coup-target-grid coup-exchange-grid">${exchange.pool.map((item, index) => {
-                    const meta = _coupCards[item.type] || _coupCards.duke;
+                    const meta = window.coupCards[item.type] || window.coupCards.duke;
                     return `<button class="coup-target-btn" data-online-exchange-pick="${index}">${window.CoupUI?.cardLabelHtml?.(meta) || `${meta.icon} ${esc(meta.name)}`}<small>${item.drawn ? 'من الدكّة' : 'من كوارطك'}</small></button>`;
                 }).join('')}</div>
                 <button id="online-coup-confirm-exchange" class="primary-btn" type="button" disabled>ثبّت الاختيار</button>`;
@@ -1007,7 +1099,7 @@ function _renderOnlineCoupActions(room, state, me) {
         const insp = state.pendingInspect;
         const esc = window.CoupUI?.escapeHtml || (x => x);
         if (me.id === insp.actorId) {
-            const cardMeta = _coupCards[insp.revealedCardType];
+            const cardMeta = window.coupCards[insp.revealedCardType];
             const cardLabel = cardMeta ? (window.CoupUI?.cardLabelHtml?.(cardMeta) || `${cardMeta.icon} ${esc(cardMeta.name)}`) : '🂠';
             const target = state.players.find(p => p.id === insp.targetId);
             panel.innerHTML = `<div class="coup-panel-card live">كارطة ${esc(target?.name || '')}: <strong>${cardLabel}</strong><br>شنوة تعمل؟</div>
@@ -1029,7 +1121,7 @@ function _renderOnlineCoupActions(room, state, me) {
         if (me.id === jester.actorId) {
             const target = state.players.find(p => p.id === jester.targetId);
             const tempsHtml = (jester.temps || []).map((temp, idx) => {
-                const meta = _coupCards[temp.type];
+                const meta = window.coupCards[temp.type];
                 const label = meta ? (window.CoupUI?.cardLabelHtml?.(meta) || `${meta.icon} ${esc(meta.name)}`) : temp.type;
                 const srcLabel = temp.src === 'deck' ? 'من الدكة' : `من ${esc(target?.name || '')}`;
                 return `<button class="coup-target-btn" data-jester-temp-idx="${idx}">${label}<small>${srcLabel}</small></button>`;
@@ -1070,7 +1162,7 @@ function _renderOnlineCoupActions(room, state, me) {
                         grid.appendChild(coinBtn);
                     }
                     (opp.liveCards || []).forEach(c => {
-                        const meta = _coupCards[c.type];
+                        const meta = window.coupCards[c.type];
                         const label = meta ? (window.CoupUI?.cardLabelHtml?.(meta) || `${meta.icon} ${esc(meta.name)}`) : c.type;
                         const cardBtn = document.createElement('button');
                         const selKey = `card:${c.type}:${c.handIdx}`;
@@ -1104,7 +1196,7 @@ function _renderOnlineCoupActions(room, state, me) {
                         const esc2 = window.CoupUI?.escapeHtml || (x => x);
                         const keepBtns = cardSels.map(cs => {
                             const oppPlayer = state.players.find(p => p.id === cs.playerId);
-                            const meta = _coupCards[cs.take];
+                            const meta = window.coupCards[cs.take];
                             const label = meta ? (window.CoupUI?.cardLabelHtml?.(meta) || `${meta.icon} ${esc2(meta.name)}`) : cs.take;
                             return `<button class="coup-target-btn" data-keep-from="${cs.playerId}">${label}<small>من ${esc2(oppPlayer?.name || cs.playerId)}</small></button>`;
                         }).join('');
@@ -1176,6 +1268,9 @@ function _renderOnlineCoupActions(room, state, me) {
         const pendingKey = `${p.id || ''}:${p.actorId}:${p.action}:${p.targetId || ''}:${p.stage || 'action'}:${p.blockerId || ''}`;
         if (_lastCoupPendingKey !== pendingKey) {
             _lastCoupPendingKey = pendingKey;
+            if (me.id === p.targetId && !isBlockStage) {
+                _pulseScreenRed();
+            }
             const esc = window.CoupUI?.escapeHtml || (x => x);
             const blockButtons = canBlock ? _onlineCoupBlockOptions(p).map(opt => `<button class="coup-target-btn" data-popup-block="${opt.role}">نسكّرها ب${opt.label}</button>`).join('') : '';
             const blockStageButtons = `${canChallengeBlock ? '<button class="coup-target-btn danger-action" data-popup-challenge-block="1">تكذب على البلوك!</button>' : ''}`;
@@ -1218,7 +1313,7 @@ function _renderOnlineCoupActions(room, state, me) {
     const isTurn = me.id === current?.id;
     const mustCoup = isTurn && (me.coins || 0) >= 10;
     const _onlineImgBase = (window.CoupGame?.cards?.duke?.img || '').replace(/coup\/[^/]+$/, '') + 'images/';
-    const _onlineActionBgMap = { income:'plusone', foreignAid:'plustwo', tax:'tax', bureaucratTax:'tax', speculatorGamble:'tax', steal:'steal', assassinate:'assassinate', exchange:'exchange', inquireExchange:'exchange', inquireInspect:'exchange', jesterDisorder:'exchange', socialistShare:'exchange', coup:'coup' };
+    const _onlineActionBgMap = { income:'plusone', foreignAid:'plustwo', tax:'tax', bureaucratTax:'bureaucratTax', speculatorGamble:'speculatorGamble', steal:'steal', assassinate:'assassinate', exchange:'exchange', inquireExchange:'inquireExchange', inquireInspect:'inquireInspect', jesterDisorder:'jesterDisorder', socialistShare:'socialistShare', coup:'coup' };
     const mk = (txt, action, cls='', hint='') => {
         const actionLocked = !isTurn || (mustCoup && action !== 'coup');
         const finalHint = mustCoup && action !== 'coup' ? 'عندك 10+ فلوس، لازم Coup' : hint;
@@ -1257,8 +1352,8 @@ function _renderOnlineCoupActions(room, state, me) {
         ${mk('🪙 شهرية +1','income','','مضمون وما يتكذبش')}
         ${mk('🤲 اعانة +2','foreignAid','', dyn.aidBlockRoles.length ? `ينجم ${window.CoupGame?.cards?.[dyn.aidBlockRoles[0]]?.name || 'الشلغمي'} يسكّرها` : 'ما تتسكرش')}
         ${dukeBtn}
-        ${mk(`${window.CoupUI?.cardLabelHtml?.(_coupCards.captain) || '⚓ الرايس'}: اسرق`,'steal','primary-action','اسرق زوز فلوس')}
-        ${mk(`${window.CoupUI?.cardLabelHtml?.(_coupCards.assassin) || '🗡️ حفار القبور'} -3`,'assassinate','danger-action','يلزم حفار القبور')}
+        ${mk(`${window.CoupUI?.cardLabelHtml?.(window.coupCards.captain) || '⚓ الرايس'}: اسرق`,'steal','primary-action','اسرق زوز فلوس')}
+        ${mk(`${window.CoupUI?.cardLabelHtml?.(window.coupCards.assassin) || '🗡️ حفار القبور'} -3`,'assassinate','danger-action','يلزم حفار القبور')}
         ${ambBtns}
         ${mk('💥 Coup -7','coup','danger-action','ضربة ما تتسكرش')}
     </div>`;
@@ -1448,6 +1543,9 @@ async function _onlineCoupStartPending(action, targetId) {
         _onlineCoupSetResponseDeadline(state.pending);
         state.log = `${actor.name} قال يعمل ${_onlineCoupActionName(action)}. قولولو "تكذب!" كان شاكين.`;
         _onlineCoupEvent(state, `${actor.name} عمل ${_onlineCoupActionName(action)}`, 'notice');
+        if (claim) {
+            _showCardUseAnimation(actor.name, claim);
+        }
         return state;
     });
 }
@@ -1723,10 +1821,10 @@ function _onlineCoupPromptJesterActorCard(jester, keepTempIdx) {
         return;
     }
     const esc = window.CoupUI?.escapeHtml || (x => x);
-    const keptMeta = _coupCards[jester.temps[keepTempIdx]?.type];
+    const keptMeta = window.coupCards[jester.temps[keepTempIdx]?.type];
     const keptLabel = keptMeta ? (window.CoupUI?.cardLabelHtml?.(keptMeta) || `${keptMeta.icon} ${esc(keptMeta.name)}`) : '?';
     const cardsHtml = actorLive.map(({c, i}) => {
-        const meta = _coupCards[c.type];
+        const meta = window.coupCards[c.type];
         const label = meta ? (window.CoupUI?.cardLabelHtml?.(meta) || `${meta.icon} ${esc(meta.name)}`) : c.type;
         return `<button class="coup-target-btn" data-swap-idx="${i}">${label}</button>`;
     }).join('');
