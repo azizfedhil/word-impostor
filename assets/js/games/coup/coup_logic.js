@@ -96,44 +96,44 @@ const coupCards = {
         name: 'المدير', icon: '✊',
         img: _coupAssetBase + 'socialist.webp', img512: _coupAssetBase + 'socialist512.webp',
         attack:  'هجوم: من كل لاعب يختار: يخذ فلوس أو يخذ كارطة (يبقى بكارطة واحدة بالأقصى).',
-        defense: 'دفاع: يسكّر سرقة الرايس والفوترة.',
+        defense: 'دفاع: يسكّر سرقة الرايس.',
     },
     lawyer: {
         name: 'الكبران', icon: '⚖️',
         img: _coupAssetBase + 'lawyer.webp', img512: _coupAssetBase + 'lawyer512.webp',
-        attack:  'هجوم: يفوتر لاعب بـ2 فلوس. عند موت لاعب، ينجم ياخذ فلوسو الكل (أما يخسر كارطة).',
-        defense: 'دفاع: يسكّر الفوترة متاعو.',
+        attack:  'هجوم: يبعث فاتورة لاعب ويأخذ حتى زوز فلوس.',
+        defense: 'دفاع: يسكّر سرقة الرايس. كان لاعب يخرج، ينجم يطالب بميراثه (ياخذ كل فلوسو ويخسر كارطة).',
     },
-    customs: {
-        name: 'سي فلان', icon: '🛂',
-        img: _coupAssetBase + 'customs.webp', img512: _coupAssetBase + 'customs512.webp',
-        attack:  'هجوم: يوظّف أداء (1 فلوس) على كارطة معينة في الطرح.',
-        defense: 'دفاع: ما عندوش دفاع.',
+    customsOfficer: {
+        name: 'سي فلان', icon: '🛃',
+        img: _coupAssetBase + 'customsOfficer.webp', img512: _coupAssetBase + 'customsOfficer512.webp',
+        attack:  'هجوم: يفرض ضريبة على دور موجود في اللعبة. أي حد يدعي الدور يدفع 1 فلوس لسي فلان.',
+        defense: 'دفاع: يسكّر سرقة الرايس.',
     },
 };
 
 // ── Role-family helpers ───────────────────────────────────────
 const _DUKE_FAMILY      = ['duke', 'bureaucrat', 'speculator'];
 const _AMB_FAMILY       = ['ambassador', 'inquisitor', 'jester', 'socialist'];
-const _CAPTAIN_FAMILY   = ['captain', 'lawyer', 'customs'];
+const _CAPTAIN_FAMILY   = ['captain', 'lawyer', 'customsOfficer'];
 
 function _coupSelectRoles() {
     const pick = arr => arr[Math.floor(Math.random() * arr.length)];
-    return ['assassin', 'contessa', pick(_CAPTAIN_FAMILY), pick(_DUKE_FAMILY), pick(_AMB_FAMILY)];
+    return ['assassin', pick(_CAPTAIN_FAMILY), 'contessa', pick(_DUKE_FAMILY), pick(_AMB_FAMILY)];
 }
 
 function _coupGetDynamic(state = coupState) {
     const roles     = state?.rolesInPlay || ['assassin', 'captain', 'contessa', 'duke', 'ambassador'];
     const dukeRole  = roles.find(r => _DUKE_FAMILY.includes(r)) || 'duke';
     const ambRole   = roles.find(r => _AMB_FAMILY.includes(r))  || 'ambassador';
-    const capRole   = roles.find(r => _CAPTAIN_FAMILY.includes(r)) || 'captain';
+    const captainRole = roles.find(r => _CAPTAIN_FAMILY.includes(r)) || 'captain';
     return {
         dukeRole,
         ambRole,
-        capRole,
+        captainRole,
         aidBlockRoles:    [dukeRole],
-        stealBlockRoles:  ['captain', ambRole],
-        invoiceBlockRoles:['lawyer', ..._AMB_FAMILY.filter(r => roles.includes(r))],
+        stealBlockRoles:  [captainRole, ambRole],
+        invoiceBlockRoles: ambRole === 'ambassador' ? ['ambassador', 'inquisitor', 'jester', 'socialist'] : [ambRole],
         jesterBlockRoles: ['jester'],
     };
 }
@@ -150,9 +150,9 @@ function _coupActionClaim(action, state = coupState) {
         inquireInspect:   'inquisitor',
         jesterDisorder:   'jester',
         socialistShare:   'socialist',
-        steal:            'captain',
+        steal:            dyn.captainRole,
         invoice:          'lawyer',
-        taxAssignment:    'customs',
+        taxAssignment:    'customsOfficer',
     })[action] || null;
 }
 
@@ -162,8 +162,8 @@ function _coupActionBlockRoles(action, state = coupState) {
         foreignAid:      dyn.aidBlockRoles,
         assassinate:     ['contessa'],
         steal:           dyn.stealBlockRoles,
-        invoice:         dyn.invoiceBlockRoles,
         jesterDisorder:  dyn.jesterBlockRoles,
+        invoice:         dyn.invoiceBlockRoles,
     })[action] || [];
 }
 
@@ -176,14 +176,14 @@ const coupActionHelp = {
     bureaucratTax:   { title: 'الشيخ: تعاون +2',       text: 'تقول عندي الشيخ وتاخو 3 فلوس من البنك وتعطي 1 لأي لاعب تختاره (صافيك +2، للهدف +1). أي لاعب ينجم يقولك تكذب.' },
     speculatorGamble:{ title: 'الكلاب: قامبل',         text: 'تقول عندي الكلاب وتاخو فلوس تساوي فلوسك الحالية (أكثر 5). كان عندك صفر، ما تاخوش. أي لاعب ينجم يقولك تكذب.' },
     steal:           { title: 'الرايس: اسرق',           text: 'تقول عندي الرايس وتسرق حتى زوز فلوس من لاعب. الهدف ينجم يسكّر بالرايس أو الكارطة الموجودة من عيلة السمسار. أي لاعب ينجم يقول تكذب.' },
+    invoice:         { title: 'الكبران: فاتورة',        text: 'تقول عندي الكبران وتبعث فاتورة لاعب وتاخو حتى زوز فلوس. الهدف ينجم يسكّر بأي كارطة من عيلة السمسار. أي لاعب ينجم يقول تكذب.' },
+    taxAssignment:   { title: 'سي فلان: ضريبة',         text: 'تقول عندي سي فلان وتفرض ضريبة على دور موجود في اللعبة. أي حد يدعي الدور يدفع 1 فلوس لسي فلان. أي لاعب ينجم يقولك تكذب.' },
     assassinate:     { title: 'اغتيال -3',              text: 'تدفع 3 فلوس وتقول عندي حفار القبور باش تطيّح كارتة من لاعب. الهدف ينجم يسكّر بالبية، وأي لاعب ينجم يقول تكذب.' },
     exchange:        { title: 'السمسار: بدّل',          text: 'تقول عندي السمسار وتبدّل كوارطك الحيين مع الدكّة. أي لاعب ينجم يقولك تكذب.' },
     inquireExchange: { title: 'البحاث: بدّل كارطة',    text: 'تقول عندي البحاث وتجيب كارطة واحدة من الدكة وتختار شنوة تبقى معاك. أي لاعب ينجم يقولك تكذب.' },
     inquireInspect:  { title: 'البحاث: فحص',           text: 'تقول عندي البحاث وتشوف كارطة لاعب آخر. إما تخلّيه يبدّلها بكارطة عشوائية من الدكة، أو ما تعمل شي. أي لاعب ينجم يقولك تكذب.' },
     jesterDisorder:  { title: 'العمدة: فوضى',          text: 'تقول عندي العمدة، تجيب كارطة من الدكة وتاخو عشوائي كارطة من لاعب. من الاثنتين اختار واحدة تبقى معاك وبدّلها مع كارطة من كوارطك. أي لاعب ينجم يقولك تكذب.' },
     socialistShare:  { title: 'المدير: وزّع',          text: 'تقول عندي المدير ومن كل لاعب تختار: تاخو فلوس أو كارطة. كان خذيت أكثر من كارطة، تبقى بواحدة وترجع الباقي لأصحابهم. الفلوس ما ترجعوش.' },
-    invoice:         { title: 'الكبران: فوترة',        text: 'تقول عندي الكبران وتفوتر لاعب بـ2 فلوس. أي لاعب من عيلة السمسار ينجم يسكّرها.' },
-    taxAssignment:   { title: 'سي فلان: توظيف أداء',   text: 'تقول عندي سي فلان وتوظّف أداء على كارطة معينة. أي لاعب يستعمل الكارطة هاكي لازم يخلصك 1 دينار قبل ما يكمّل.' },
     coup:            { title: 'Coup -7',                text: 'تدفع 7 فلوس وتطيّح كارتة من لاعب. ما تتسكرش وما فيهاش تكذيب.' },
 };
 
@@ -313,8 +313,8 @@ function coupActionName(action) {
         assassinate:'اغتيال', exchange:'تبديل السمسار',
         inquireExchange:'تبديل البحاث', inquireInspect:'فحص البحاث',
         jesterDisorder:'فوضى العمدة', socialistShare:'توزيع المدير',
-        steal:'سرقة الرايس', coup:'Coup',
-        invoice:'فوترة الكبران', taxAssignment:'أداء سي فلان'
+        steal:'سرقة الرايس', invoice:'فاتورة الكبران', taxAssignment:'ضريبة سي فلان',
+        coup:'Coup'
     })[action] || action;
 }
 
@@ -631,7 +631,7 @@ function renderCoupActions(state = coupState, myId = null) {
     const current = state.players[state.turnIndex];
     if (!isTurn) { panel.innerHTML = `<div class="coup-panel-card">استنى دورك. الدور توّة على ${_escHtml(current?.name || '')}.</div>`; }
     const mustCoup = isTurn && (me?.coins || 0) >= 10;
-    const _actionBgMap = { income:'plusone', foreignAid:'plustwo', tax:'tax', steal:'steal', assassinate:'assassinate', exchange:'exchange', coup:'coup', invoice:'plustwo', taxAssignment:'tax' };
+    const _actionBgMap = { income:'plusone', foreignAid:'plustwo', tax:'tax', steal:'steal', assassinate:'assassinate', exchange:'exchange', coup:'coup' };
     const mk = (txt, action, cls = '', hint = '') => {
         const actionLocked = !isTurn || (mustCoup && action !== 'coup');
         const disabled     = actionLocked ? 'is-action-disabled' : '';
@@ -653,16 +653,6 @@ function renderCoupActions(state = coupState, myId = null) {
         const gain = Math.min((me?.coins || 0), 5);
         dukeBtn = mk(`${_coupCardLabelHtml(dukeCard)}: قامبل`, 'speculatorGamble', 'primary-action', `تضاعف فلوسك (${gain})`);
     }
-    // Captain-family action
-    let capBtn = '';
-    if (dyn.capRole === 'captain') {
-        capBtn = mk(`${_coupCardLabelHtml(coupCards.captain)}: اسرق`,'steal','primary-action','اسرق زوز فلوس');
-    } else if (dyn.capRole === 'lawyer') {
-        capBtn = mk(`${_coupCardLabelHtml(coupCards.lawyer)}: فوتر`,'invoice','primary-action','خذ زوز فلوس من لاعب');
-    } else {
-        capBtn = mk(`${_coupCardLabelHtml(coupCards.customs)}: أداء`,'taxAssignment','primary-action','وظّف أداء على كارطة');
-    }
-
     // Ambassador-family action(s)
     let ambBtns = '';
     if (dyn.ambRole === 'ambassador') {
@@ -679,7 +669,7 @@ function renderCoupActions(state = coupState, myId = null) {
         ${mk('🪙 شهرية +1','income','','مضمون وما يتكذبش')}
         ${mk('🤲 اعانة +2','foreignAid','','ينجم يتسكر')}
         ${dukeBtn}
-        ${capBtn}
+        ${mk(`${_coupCardLabelHtml(coupCards.captain)}: اسرق`,'steal','primary-action','اسرق زوز فلوس')}
         ${mk(`${_coupCardLabelHtml(coupCards.assassin)} -3`,'assassinate','danger-action','يلزم حفار القبور')}
         ${ambBtns}
         ${mk('💥 Coup -7','coup','danger-action','ضربة ما تتسكرش')}
@@ -781,7 +771,7 @@ function coupHandleTimeout() {
 
 function coupChooseAction(action) {
     const actor = coupState.players[coupState.turnIndex];
-    const needsTarget = ['assassinate', 'coup', 'steal', 'bureaucratTax', 'inquireInspect', 'jesterDisorder', 'invoice', 'taxAssignment'].includes(action);
+    const needsTarget = ['assassinate', 'coup', 'steal', 'bureaucratTax', 'inquireInspect', 'jesterDisorder'].includes(action);
     if ((actor.coins || 0) >= 10 && action !== 'coup') return showToast('عندك 10 فلوس ولا أكثر، لازم تعمل Coup.');
     if (action === 'assassinate' && actor.coins < 3)  return showToast('يلزمك 3 فلوس للاغتيال.');
     if (action === 'coup'        && actor.coins < 7)  return showToast('يلزمك 7 فلوس للCoup.');
@@ -801,22 +791,8 @@ function coupChooseAction(action) {
 function coupPickTarget(action) {
     const actor   = coupState.players[coupState.turnIndex];
     const targets = _coupAlive().filter(p => p.id !== actor.id);
-    const titles  = { steal:'اختار شكون تسرق', assassinate:'اختار شكون تضرب', coup:'اختار الهدف', bureaucratTax:'اختار شكون يخذ +1', inquireInspect:'اختار شكون تفحص كارطتو', jesterDisorder:'اختار شكون تعمل فيه فوضى', invoice: 'اختار شكون تفوتره' };
-    const hints   = { steal:'الرايس يسرق حتى زوز فلوس من لاعب.', assassinate:'حفار القبور يحتاج هدف واضح.', coup:'Coup ضربة مباشرة وما تتسكرش.', bureaucratTax:'الشيخ يعطي +1 لأي لاعب تختاره.', inquireInspect:'البحاث يشوف كارطة لاعب ويحتمل يجبره يبدّلها.', jesterDisorder:'العمدة يخذ كارطة عشوائية من الهدف.', invoice: 'الكبران يفوتر لاعب بـ2 فلوس.' };
-
-    if (action === 'taxAssignment') {
-        const roles = coupState.rolesInPlay;
-        _showCoupModal('اختار الكارطة الي توظف عليها أداء',
-            `<div class="coup-target-grid">${roles.map(r => `<button class="coup-target-btn" data-tax-role="${r}">${_coupCardLabelHtml(coupCards[r])}</button>`).join('')}</div>`,
-            overlay => {
-                overlay.querySelectorAll('[data-tax-role]').forEach(btn => btn.addEventListener('click', () => {
-                    _closeCoupModal();
-                    coupStartPending('taxAssignment', btn.dataset.taxRole);
-                }));
-            }
-        );
-        return;
-    }
+    const titles  = { steal:'اختار شكون تسرق', assassinate:'اختار شكون تضرب', coup:'اختار الهدف', bureaucratTax:'اختار شكون يخذ +1', inquireInspect:'اختار شكون تفحص كارطتو', jesterDisorder:'اختار شكون تعمل فيه فوضى' };
+    const hints   = { steal:'الرايس يسرق حتى زوز فلوس من لاعب.', assassinate:'حفار القبور يحتاج هدف واضح.', coup:'Coup ضربة مباشرة وما تتسكرش.', bureaucratTax:'الشيخ يعطي +1 لأي لاعب تختاره.', inquireInspect:'البحاث يشوف كارطة لاعب ويحتمل يجبره يبدّلها.', jesterDisorder:'العمدة يخذ كارطة عشوائية من الهدف.' };
     _showCoupModal(
         titles[action] || 'اختار هدف',
         `<p>${_escHtml(hints[action] || '')}</p><div class="coup-target-grid">${targets.map(p => `<button class="coup-target-btn" data-target-id="${p.id}">${_escHtml(p.name)}</button>`).join('')}</div>`,
@@ -834,6 +810,24 @@ function coupStartPending(action, targetId) {
     const claim      = _coupActionClaim(action);
     const blockRoles = _coupActionBlockRoles(action);
     const blockable  = blockRoles.length > 0;
+    
+    // Check for Customs Officer tax
+    if (coupState.taxAssignment && claim) {
+        const officer = coupState.players.find(p => p.id === coupState.taxAssignment.officerId);
+        const officerAlive = officer && officer.hand.some(c => !c.lost);
+        if (officerAlive && claim === coupState.taxAssignment.taxedRole) {
+            if (actor.coins < 1) {
+                coupState.log = `${actor.name} ما يقدرش يدعي ${coupCards[claim]?.name || claim} عشان لازم يدفع ضريبة 1 فلوس لسي فلان وما عندوش.`;
+                _showCoupEvent(coupState.log, 'bad');
+                return;
+            }
+            actor.coins -= 1;
+            officer.coins += 1;
+            coupState.log = `${actor.name} دفع 1 فلوس ضريبة لسي فلان (${officer.name}) باش يدعي ${coupCards[claim]?.name || claim}.`;
+            _showCoupEvent(coupState.log, 'notice');
+        }
+    }
+    
     if (!claim && !blockable) return coupResolveAction(action, targetId);
     if (action === 'assassinate') { actor.coins -= 3; _coupPayBank(coupState, 3); }
     coupState.pending = { id: `p_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, action, actorId: actor.id, targetId, claim, blockable, blockRoles, passes: [] };
@@ -1038,6 +1032,22 @@ function coupResolveAction(action, targetId) {
         target.coins -= amount; actor.coins += amount;
         coupState.log = amount > 0 ? `${actor.name} سرق ${amount} فلوس من ${target.name}. الرايس دخل للمرسى.` : `${actor.name} حاول يسرق ${target.name} أما ما لقى شي.`;
     }
+    // ── Expansion: Lawyer invoice ───────────────────────────────────
+    if (action === 'invoice' && target) {
+        const amount = Math.min(2, target.coins || 0);
+        target.coins -= amount; actor.coins += amount;
+        coupState.log = amount > 0 ? `${actor.name} بعث فاتورة لـ${target.name} وخذا ${amount} فلوس. الكبران أخد حقو.` : `${actor.name} بعث فاتورة لـ${target.name} أما ما عندوش فلوس.`;
+    }
+    // ── Expansion: Customs Officer tax assignment ────────────────────
+    if (action === 'taxAssignment') {
+        coupState.log = `${actor.name} فرض ضريبة على دور. سي فلان يراقب.`;
+        _showCoupEvent(coupState.log, 'notice');
+        return coupStartTaxAssignmentChoice(actor, () => {
+            coupState.log = `${actor.name} فرض ضريبة. سي فلان ياخو 1 فلوس من كل حد يدعي الدور المضروب.`;
+            _showCoupEvent(coupState.log, 'good');
+            _coupNextTurn(); renderCoupScreen();
+        });
+    }
     if (action === 'assassinate' && target) {
         coupState.log = `${target.name} تضرّب من حفار القبور. ${target.name} يختار كارتة يخسرها.`;
         _showCoupEvent(coupState.log, 'bad');
@@ -1059,11 +1069,30 @@ function coupLoseInfluence(playerId, onDone, promptMsg = 'اختار كارتة 
     if (!player) { onDone?.(); return; }
     const liveCards = player.hand.filter(c => !c.lost);
     if (liveCards.length === 0) { onDone?.(); return; }
+    
+    // Check if Customs Officer is eliminated - clear tax
+    if (coupState.taxAssignment && coupState.taxAssignment.officerId === playerId) {
+        coupState.taxAssignment = null;
+        coupState.log = `سي فلان (${player.name}) خرج. الضريبة تلغيت.`;
+        _showCoupEvent(coupState.log, 'notice');
+    }
+    
+    // Check for Lawyer Estate Claim trigger
+    const willBeEliminated = liveCards.length === 1;
+    const coinsToClaim = player.coins || 0;
+    
     if (liveCards.length === 1) {
         const card    = liveCards[0]; card.lost = true;
         const cardMeta = coupCards[card.type] || coupCards.duke;
         const out      = !player.hand.some(c => !c.lost);
         _showCoupLossAnimation(player.name, cardMeta, out, card.type);
+        
+        // Trigger Lawyer Estate Claim if player is eliminated and has coins
+        if (out && coinsToClaim > 0) {
+            setTimeout(() => coupStartEstateClaimChoice(player, coinsToClaim, onDone), 500);
+            return;
+        }
+        
         onDone?.();
         return;
     }
@@ -1075,9 +1104,147 @@ function coupLoseInfluence(playerId, onDone, promptMsg = 'اختار كارتة 
             const cardMeta = coupCards[btn.dataset.loseType] || coupCards.duke;
             const out      = !player.hand.some(c => !c.lost);
             _showCoupLossAnimation(player.name, cardMeta, out, btn.dataset.loseType);
+            
+            // Trigger Lawyer Estate Claim if player is eliminated and has coins
+            if (out && player.coins > 0) {
+                setTimeout(() => coupStartEstateClaimChoice(player, player.coins, onDone), 500);
+                return;
+            }
+            
             onDone?.();
         }));
     });
+}
+
+function coupStartEstateClaimChoice(eliminatedPlayer, coinsToClaim, onDone) {
+    const alivePlayers = _coupAlive().filter(p => p.id !== eliminatedPlayer.id);
+    const claimButtons = alivePlayers.map(p => 
+        `<button class="coup-target-btn" data-estate-claim="${p.id}">${_escHtml(p.name)}: طالب بالميراث (الكبران)</button>`
+    ).join('');
+    const skipButton = `<button class="coup-target-btn quiet-action" data-estate-skip="1">ما حد طالب بالميراث</button>`;
+    
+    _showCoupModal('الكبران: طالب بميراث',
+        `<p>${_escHtml(eliminatedPlayer.name)} خرج و${coinsToClaim} فلوس. أي لاعب ينجم يطالب بالميراث بالكبران (ياخذ الفلوس ويخسر كارطة).</p>
+         <div class="coup-target-grid">${claimButtons}${skipButton}</div>`,
+        overlay => {
+            overlay.querySelectorAll('[data-estate-claim]').forEach(btn => btn.addEventListener('click', () => {
+                _closeCoupModal();
+                const claimantId = btn.dataset.estateClaim;
+                const claimant = coupState.players.find(p => p.id === claimantId);
+                if (!claimant) { onDone?.(); return; }
+                
+                // Start challenge window for Lawyer claim
+                coupState.pending = {
+                    id: `estate_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+                    type: 'estateClaim',
+                    claimantId,
+                    eliminatedId: eliminatedPlayer.id,
+                    coinsToClaim,
+                    claim: 'lawyer',
+                    passes: []
+                };
+                _coupSetResponseDeadline(coupState.pending);
+                renderCoupEstateClaimPanel(eliminatedPlayer, coinsToClaim);
+            }));
+            overlay.querySelector('[data-estate-skip]')?.addEventListener('click', () => {
+                _closeCoupModal();
+                eliminatedPlayer.coins = 0;
+                coupState.log = `${eliminatedPlayer.name} خرج وفلوسو ضاعت.`;
+                _showCoupEvent(coupState.log, 'notice');
+                onDone?.();
+            });
+        }
+    );
+}
+
+function renderCoupEstateClaimPanel(eliminatedPlayer, coinsToClaim) {
+    renderCoupScreen();
+    const p = coupState.pending;
+    const claimant = coupState.players.find(x => x.id === p.claimantId);
+    const challengers = _coupAlive().filter(x => x.id !== claimant.id);
+    const challengeButtons = challengers.map(c => 
+        `<button class="coup-target-btn danger-action" data-estate-challenge="${c.id}">${_escHtml(c.name)}: تكذب!</button>`
+    ).join('');
+    const passButtons = _coupAlive().filter(c => !(p.passes || []).includes(c.id))
+        .map(c => `<button class="coup-target-btn quiet-action" data-estate-pass="${c.id}">${_escHtml(c.name)}: ما عندي حتى اعتراض</button>`).join('');
+    
+    _showCoupModal('الكبران: طالب بالميراث',
+        `<p>${_escHtml(claimant.name)} طالب بميراث ${_escHtml(eliminatedPlayer.name)} (${coinsToClaim} فلوس) بالكبران.</p>
+         <div class="coup-target-grid">${challengeButtons}${passButtons}</div>`,
+        overlay => {
+            overlay.querySelectorAll('[data-estate-challenge]').forEach(btn => btn.addEventListener('click', () => {
+                _closeCoupModal();
+                coupEstateChallenge(btn.dataset.estateChallenge, eliminatedPlayer, coinsToClaim, onDone);
+            }));
+            overlay.querySelectorAll('[data-estate-pass]').forEach(btn => btn.addEventListener('click', () => {
+                _closeCoupModal();
+                coupEstatePass(btn.dataset.estatePass, eliminatedPlayer, coinsToClaim, onDone);
+            }));
+        }
+    );
+}
+
+function coupEstateChallenge(challengerId, eliminatedPlayer, coinsToClaim, onDone) {
+    const p = coupState.pending;
+    const claimant = coupState.players.find(x => x.id === p.claimantId);
+    const challenger = coupState.players.find(x => x.id === challengerId);
+    
+    // Check if claimant actually has Lawyer
+    const hasLawyer = claimant.hand.some(c => !c.lost && c.type === 'lawyer');
+    
+    if (hasLawyer) {
+        // Challenger loses influence
+        coupState.log = `${challenger.name} كذّب الكبران وطلع غلط. ${challenger.name} يخسر كارطة.`;
+        _showCoupEvent(coupState.log, 'bad');
+        coupLoseInfluence(challengerId, () => {
+            // Claimant exchanges Lawyer and takes coins
+            const lawyerCard = claimant.hand.find(c => !c.lost && c.type === 'lawyer');
+            if (lawyerCard) {
+                lawyerCard.lost = true;
+                // Draw new card
+                const newCard = coupState.deck.pop();
+                if (newCard) claimant.hand.push({ type: newCard, lost: false });
+            }
+            claimant.coins += coinsToClaim;
+            eliminatedPlayer.coins = 0;
+            coupState.log = `${claimant.name} أخد ${coinsToClaim} فلوس من ${eliminatedPlayer.name} بالميراث وخسر كارته الكبران.`;
+            _showCoupEvent(coupState.log, 'good');
+            coupState.pending = null;
+            onDone?.();
+        }, 'كذبت الكبران غلط. اختار كارتة تخسرها.');
+    } else {
+        // Claimant loses influence
+        coupState.log = `${claimant.name} ادعى الكبران وما عندوش. ${claimant.name} يخسر كارطة.`;
+        _showCoupEvent(coupState.log, 'bad');
+        coupLoseInfluence(p.claimantId, () => {
+            eliminatedPlayer.coins = 0;
+            coupState.log = `${eliminatedPlayer.name} خرج وفلوسو ضاعت.`;
+            _showCoupEvent(coupState.log, 'notice');
+            coupState.pending = null;
+            onDone?.();
+        }, 'ادعيت الكبران وما عندكش. اختار كارتة تخسرها.');
+    }
+}
+
+function coupEstatePass(playerId, eliminatedPlayer, coinsToClaim, onDone) {
+    const p = coupState.pending;
+    p.passes.push(playerId);
+    
+    if (_coupAllPassed(coupState, p)) {
+        _closeCoupModal();
+        const claimant = coupState.players.find(x => x.id === p.claimantId);
+        // Claimant loses 1 influence and takes coins
+        coupLoseInfluence(p.claimantId, () => {
+            claimant.coins += coinsToClaim;
+            eliminatedPlayer.coins = 0;
+            coupState.log = `${claimant.name} أخد ${coinsToClaim} فلوس من ${eliminatedPlayer.name} بالميراث وخسر كارطة.`;
+            _showCoupEvent(coupState.log, 'good');
+            coupState.pending = null;
+            onDone?.();
+        }, 'الكبران ياخذ الميراث لكن يخسر كارطة. اختار كارتة تخسرها.');
+    } else {
+        renderCoupEstateClaimPanel(eliminatedPlayer, coinsToClaim);
+    }
 }
 
 function coupStartExchangeChoice(actor, onDone, drawCount = 2) {
@@ -1293,6 +1460,28 @@ function coupResolveSocialistShare(actor, collected, onDone) {
                     else if (c.handRef) { c.handRef.lost = false; } // return to original owner
                 });
                 coupState.log = `${actor.name} أخذ كارطة من اللاعبين بالمدير.`;
+                _showCoupEvent(coupState.log, 'good');
+                onDone?.();
+            }));
+        }
+    );
+}
+
+function coupStartTaxAssignmentChoice(actor, onDone) {
+    const rolesInPlay = coupState.rolesInPlay || ['assassin', 'captain', 'contessa', 'duke', 'ambassador'];
+    const roleButtons = rolesInPlay.map(role => {
+        const meta = coupCards[role] || coupCards.duke;
+        return `<button class="coup-target-btn" data-tax-role="${role}">${_coupCardLabelHtml(meta)}</button>`;
+    }).join('');
+    _showCoupModal('سي فلان: اختار دور تفرض عليه ضريبة',
+        `<p>اختار دور من الأدوار الموجودة في اللعبة. أي حد يدعي الدور يدفع 1 فلوس ليك.</p>
+         <div class="coup-target-grid">${roleButtons}</div>`,
+        overlay => {
+            overlay.querySelectorAll('[data-tax-role]').forEach(btn => btn.addEventListener('click', () => {
+                _closeCoupModal();
+                const taxedRole = btn.dataset.taxRole;
+                coupState.taxAssignment = { taxedRole, officerId: actor.id };
+                coupState.log = `${actor.name} فرض ضريبة على ${coupCards[taxedRole]?.name || taxedRole}.`;
                 _showCoupEvent(coupState.log, 'good');
                 onDone?.();
             }));
