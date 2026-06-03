@@ -1360,45 +1360,64 @@ function _renderOnlineCoupActions(room, state, me) {
             // PHASE 2: All opponents have chosen — actor picks 2 cards from pool
             if (isActor) {
                 // Build pool locally for display: actor's live cards + cards opponents gave
-                const myLive = me.hand.filter(c => !c.lost);
+                // Pool items carry stable identity (actorHandIdx or fromPlayerId) — NOT pool position —
+                // so the server can resolve correctly regardless of display order.
+                const myLive = me.hand
+                    .map((c, handIdx) => ({ c, handIdx }))
+                    .filter(x => !x.c.lost);
                 const cardChoices = (share.opponents || []).filter(o => {
                     const ch = (share.opponentChoices || {})[o.playerId];
                     return ch && ch.take === 'card';
                 });
-                // Pool: actor's cards + opponent cards, shuffled anonymously
+                // Pool: actor's cards + opponent cards, shuffled for display anonymity.
+                // Each entry carries a stable identity key used when sending the choice to the server.
                 const pool = [
-                    ...myLive.map((c, i) => ({ type: c.type, isActorCard: true, localIdx: me.hand.indexOf(c) })),
+                    ...myLive.map(({ c, handIdx }) => ({
+                        type: c.type,
+                        isActorCard: true,
+                        actorHandIdx: handIdx   // stable: index in actor's actual hand array
+                    })),
                     ...cardChoices.map(o => {
                         const ch = (share.opponentChoices || {})[o.playerId];
-                        // We know the type from liveCards
                         const lc = (o.liveCards || []).find(lc => lc.handIdx === ch.handIdx) || (o.liveCards || [])[0];
-                        return { type: lc?.type || '?', isActorCard: false, fromPlayerId: o.playerId };
+                        return {
+                            type: lc?.type || '?',
+                            isActorCard: false,
+                            fromPlayerId: o.playerId   // stable: identifies which opponent's card this is
+                        };
                     })
-                ].sort(() => 0.5 - Math.random());
+                ].sort(() => 0.5 - Math.random()); // shuffle display order only
                 const mustKeep = Math.min(2, pool.length);
-                const kept = []; // pool indices
+                const keptPoolItems = []; // pool entry objects (NOT indices)
 
                 const renderActorPick = () => {
                     panel.innerHTML = '';
-                    const remaining = mustKeep - kept.length;
+                    const remaining = mustKeep - keptPoolItems.length;
                     const title = document.createElement('div');
                     title.className = 'coup-panel-card live';
                     title.textContent = `اختار ${remaining} كارطة تبقى معاك من الحوض:`;
                     panel.appendChild(title);
                     const grid = document.createElement('div');
                     grid.className = 'coup-target-grid';
-                    pool.forEach((pc, idx) => {
+                    pool.forEach((pc) => {
                         const meta = window.coupCards[pc.type];
                         const label = meta ? (window.CoupUI?.cardLabelHtml?.(meta) || `${meta.icon} ${esc(meta.name)}`) : pc.type;
                         const btn = document.createElement('button');
-                        const isKept = kept.includes(idx);
+                        const isKept = keptPoolItems.includes(pc);
                         btn.className = 'coup-target-btn' + (isKept ? ' selected' : '');
                         btn.innerHTML = label;
                         btn.disabled = isKept;
                         btn.onclick = () => {
-                            kept.push(idx);
-                            if (kept.length >= mustKeep) {
-                                _onlineCoupChooseSocialist(kept, share.id);
+                            keptPoolItems.push(pc);
+                            if (keptPoolItems.length >= mustKeep) {
+                                // Send stable identity instead of shuffled pool indices
+                                const keptActorHandIndices = keptPoolItems
+                                    .filter(p => p.isActorCard)
+                                    .map(p => p.actorHandIdx);
+                                const keptOpponentPlayerIds = keptPoolItems
+                                    .filter(p => !p.isActorCard)
+                                    .map(p => p.fromPlayerId);
+                                _onlineCoupChooseSocialist({ keptActorHandIndices, keptOpponentPlayerIds }, share.id);
                             } else {
                                 renderActorPick();
                             }
@@ -2241,8 +2260,9 @@ async function _onlineCoupSocialistOpponentChoose(shareId, take, handIdx = null)
 }
 
 // Called by ACTOR to finalize: keptCardTypes is array of 2 card type strings chosen from the pool
-// poolSnapshot is the pool that was shown to the actor (for verification), keptPoolIndices = [idx1, idx2]
-async function _onlineCoupChooseSocialist(keptPoolIndices, shareId = null) {
+// keptChoice = { keptActorHandIndices: number[], keptOpponentPlayerIds: string[] }
+// These are stable identifiers that don't depend on any client-side shuffle order.
+async function _onlineCoupChooseSocialist(keptChoice, shareId = null) {
     await _onlineCoupMutateState(async state => {
         const share = state.pendingSocialistShare;
         if (!share) return null;
@@ -2251,6 +2271,19 @@ async function _onlineCoupChooseSocialist(keptPoolIndices, shareId = null) {
         if (share.phase && share.phase !== 'actor') return null;
         const actor = state.players.find(p => p.id === share.actorId);
         if (!actor) return null;
+
+        // Normalise: accept both the new structured format and the legacy index-array format
+        // (legacy path kept only for safety; new UI always sends the structured object)
+        let keptActorHandIndices, keptOpponentPlayerIds;
+        if (Array.isArray(keptChoice)) {
+            // Legacy fallback — treat every index < actorLive.length as actor card, rest as opponent
+            const actorLiveCount = actor.hand.filter(c => !c.lost).length;
+            keptActorHandIndices = keptChoice.filter(i => i < actorLiveCount);
+            keptOpponentPlayerIds = []; // best-effort; legacy callers shouldn't reach here anymore
+        } else {
+            keptActorHandIndices  = keptChoice.keptActorHandIndices  || [];
+            keptOpponentPlayerIds = keptChoice.keptOpponentPlayerIds || [];
+        }
 
         // Step 1: Process all opponent choices (coins and cards)
         const collectedCards = []; // { fromId, handCard }
@@ -2281,38 +2314,55 @@ async function _onlineCoupChooseSocialist(keptPoolIndices, shareId = null) {
             return state;
         }
 
-        // Step 2: Build pool = actor's live cards + collected opponent cards
-        const actorLive = actor.hand.filter(c => !c.lost);
-        actorLive.forEach(c => { c.lost = true; }); // temporarily remove from actor hand
+        // Step 2: Identify which of the actor's live cards to keep by their hand index.
+        // Use only valid, deduplicated indices that point to actual live cards.
+        const actorLive = actor.hand
+            .map((c, idx) => ({ c, idx }))
+            .filter(x => !x.c.lost);
 
-        // Pool order: actor's cards first, then collected cards (this must match what was shown in UI)
-        const pool = [
-            ...actorLive.map(c => ({ type: c.type, isActorCard: true, handRef: c })),
-            ...collectedCards.map(c => ({ type: c.handCard.type, isActorCard: false, handRef: c.handCard, fromId: c.fromId }))
-        ];
+        const validActorSet = new Set(
+            keptActorHandIndices
+                .filter(hi => hi >= 0 && hi < actor.hand.length && !actor.hand[hi]?.lost)
+        );
+        // Resolve which collected opponent cards the actor chose to keep (by player ID, deduplicated)
+        const keptOpponentSet = new Set(keptOpponentPlayerIds);
+        const keptOpponentCards  = collectedCards.filter(cc => keptOpponentSet.has(cc.fromId));
+        const unkeptOpponentCards = collectedCards.filter(cc => !keptOpponentSet.has(cc.fromId));
 
-        const mustKeep = Math.min(2, pool.length);
-        const validIndices = keptPoolIndices.filter(i => i >= 0 && i < pool.length);
-        // Deduplicate
-        const keptIndices = [...new Set(validIndices)].slice(0, mustKeep);
-        // If not enough chosen, auto-fill with first available
-        while (keptIndices.length < mustKeep) {
-            const next = pool.findIndex((_, i) => !keptIndices.includes(i));
-            if (next === -1) break;
-            keptIndices.push(next);
+        // Determine actor cards to keep (those whose hand index is in validActorSet)
+        const keptActorCards   = actorLive.filter(x => validActorSet.has(x.idx));
+        const unkeptActorCards = actorLive.filter(x => !validActorSet.has(x.idx));
+
+        // Build the full kept list and enforce the 2-card cap
+        const mustKeep = Math.min(2, actorLive.length + collectedCards.length);
+        let keptCards = [...keptActorCards, ...keptOpponentCards].slice(0, mustKeep);
+
+        // Auto-fill if the player somehow didn't select enough
+        if (keptCards.length < mustKeep) {
+            const allPoolCards = [...actorLive, ...collectedCards.map(cc => ({ c: cc.handCard, idx: -1, fromId: cc.fromId }))];
+            for (const pc of allPoolCards) {
+                if (keptCards.length >= mustKeep) break;
+                const alreadyKept = keptCards.includes(pc) ||
+                    keptCards.some(k => k.c === pc.c);
+                if (!alreadyKept) keptCards.push(pc);
+            }
         }
 
-        // Step 3: Give actor exactly the kept cards
-        actor.hand = actor.hand.filter(c => !actorLive.includes(c)); // strip pooled cards
-        keptIndices.forEach(ki => {
-            actor.hand.push({ type: pool[ki].type, lost: false });
+        // Step 3: Give actor EXACTLY the kept cards (replace entire live portion of hand)
+        // Remove all live actor cards first
+        actor.hand = actor.hand.filter(c => c.lost); // keep only already-dead cards
+        // Add back exactly the kept cards (actor's own or opponent's, both as fresh live slots)
+        keptCards.forEach(pc => {
+            actor.hand.push({ type: pc.c ? pc.c.type : pc.handCard.type, lost: false });
         });
 
-        // Step 4: Redistribute unkept cards to opponents' lost slots
-        const allOpponentSlots = collectedCards.map(c => c.handCard); // opponent handCard refs
-        const unkeptTypes = pool
-            .filter((_, idx) => !keptIndices.includes(idx))
-            .map(pc => pc.type);
+        // Step 4: Redistribute unkept cards back to opponents' lost slots
+        // allOpponentSlots = opponent handCard refs that were marked lost in Step 1
+        const allOpponentSlots = collectedCards.map(c => c.handCard); // all grabbed opponent refs
+        const unkeptTypes = [
+            ...unkeptActorCards.map(x => x.c.type),
+            ...unkeptOpponentCards.map(cc => cc.handCard.type)
+        ];
 
         // Shuffle both for randomness
         unkeptTypes.sort(() => 0.5 - Math.random());
