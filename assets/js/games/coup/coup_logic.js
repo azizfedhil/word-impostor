@@ -1077,19 +1077,17 @@ function coupLoseInfluence(playerId, onDone, promptMsg = 'اختار كارتة 
         _showCoupEvent(coupState.log, 'notice');
     }
     
-    // Check for Lawyer Estate Claim trigger
-    const willBeEliminated = liveCards.length === 1;
-    const coinsToClaim = player.coins || 0;
-    
+    // Trigger Lawyer Estate Claim if player is eliminated with coins AND lawyer is in this game's role pool
     if (liveCards.length === 1) {
         const card    = liveCards[0]; card.lost = true;
         const cardMeta = coupCards[card.type] || coupCards.duke;
         const out      = !player.hand.some(c => !c.lost);
         _showCoupLossAnimation(player.name, cardMeta, out, card.type);
         
-        // Trigger Lawyer Estate Claim if player is eliminated and has coins
-        if (out && coinsToClaim > 0) {
-            setTimeout(() => coupStartEstateClaimChoice(player, coinsToClaim, onDone), 500);
+        if (out && (player.coins || 0) > 0 && (coupState.rolesInPlay || []).includes('lawyer')) {
+            const lockedCoins = player.coins;
+            player.coins = 0; // lock now so they can't be spent before claim resolves
+            setTimeout(() => coupStartEstateClaimChoice(player, lockedCoins, onDone), 500);
             return;
         }
         
@@ -1105,9 +1103,10 @@ function coupLoseInfluence(playerId, onDone, promptMsg = 'اختار كارتة 
             const out      = !player.hand.some(c => !c.lost);
             _showCoupLossAnimation(player.name, cardMeta, out, btn.dataset.loseType);
             
-            // Trigger Lawyer Estate Claim if player is eliminated and has coins
-            if (out && player.coins > 0) {
-                setTimeout(() => coupStartEstateClaimChoice(player, player.coins, onDone), 500);
+            if (out && (player.coins || 0) > 0 && (coupState.rolesInPlay || []).includes('lawyer')) {
+                const lockedCoins = player.coins;
+                player.coins = 0;
+                setTimeout(() => coupStartEstateClaimChoice(player, lockedCoins, onDone), 500);
                 return;
             }
             
@@ -1119,12 +1118,12 @@ function coupLoseInfluence(playerId, onDone, promptMsg = 'اختار كارتة 
 function coupStartEstateClaimChoice(eliminatedPlayer, coinsToClaim, onDone) {
     const alivePlayers = _coupAlive().filter(p => p.id !== eliminatedPlayer.id);
     const claimButtons = alivePlayers.map(p => 
-        `<button class="coup-target-btn" data-estate-claim="${p.id}">${_escHtml(p.name)}: طالب بالميراث (الكبران)</button>`
+        `<button class="coup-target-btn" data-estate-claim="${p.id}">${_escHtml(p.name)}: أنا الكبران، أطالب بالميراث</button>`
     ).join('');
-    const skipButton = `<button class="coup-target-btn quiet-action" data-estate-skip="1">ما حد طالب بالميراث</button>`;
+    const skipButton = `<button class="coup-target-btn quiet-action" data-estate-skip="1">ما حد يطالب بالميراث</button>`;
     
-    _showCoupModal('الكبران: طالب بميراث',
-        `<p>${_escHtml(eliminatedPlayer.name)} خرج و${coinsToClaim} فلوس. أي لاعب ينجم يطالب بالميراث بالكبران (ياخذ الفلوس ويخسر كارطة).</p>
+    _showCoupModal('الكبران: ميراث',
+        `<p><strong>${_escHtml(eliminatedPlayer.name)}</strong> خرج وعندو <strong>${coinsToClaim} فلوس</strong>. أي لاعب ينجم يدعي الكبران ويطالب بالميراث — ياخذ الفلوس ويخسر كارطة. اللاعبين الآخرين ينجموا يكذّبوه.</p>
          <div class="coup-target-grid">${claimButtons}${skipButton}</div>`,
         overlay => {
             overlay.querySelectorAll('[data-estate-claim]').forEach(btn => btn.addEventListener('click', () => {
@@ -1133,22 +1132,24 @@ function coupStartEstateClaimChoice(eliminatedPlayer, coinsToClaim, onDone) {
                 const claimant = coupState.players.find(p => p.id === claimantId);
                 if (!claimant) { onDone?.(); return; }
                 
-                // Start challenge window for Lawyer claim
                 coupState.pending = {
                     id: `estate_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
                     type: 'estateClaim',
+                    action: 'estateClaim',
+                    actorId: claimantId,
                     claimantId,
                     eliminatedId: eliminatedPlayer.id,
                     coinsToClaim,
                     claim: 'lawyer',
+                    blockable: false,
+                    blockRoles: [],
                     passes: []
                 };
                 _coupSetResponseDeadline(coupState.pending);
-                renderCoupEstateClaimPanel(eliminatedPlayer, coinsToClaim);
+                renderCoupEstateClaimPanel(eliminatedPlayer, coinsToClaim, onDone);
             }));
             overlay.querySelector('[data-estate-skip]')?.addEventListener('click', () => {
                 _closeCoupModal();
-                eliminatedPlayer.coins = 0;
                 coupState.log = `${eliminatedPlayer.name} خرج وفلوسو ضاعت.`;
                 _showCoupEvent(coupState.log, 'notice');
                 onDone?.();
@@ -1157,7 +1158,7 @@ function coupStartEstateClaimChoice(eliminatedPlayer, coinsToClaim, onDone) {
     );
 }
 
-function renderCoupEstateClaimPanel(eliminatedPlayer, coinsToClaim) {
+function renderCoupEstateClaimPanel(eliminatedPlayer, coinsToClaim, onDone) {
     renderCoupScreen();
     const p = coupState.pending;
     const claimant = coupState.players.find(x => x.id === p.claimantId);
@@ -1165,11 +1166,14 @@ function renderCoupEstateClaimPanel(eliminatedPlayer, coinsToClaim) {
     const challengeButtons = challengers.map(c => 
         `<button class="coup-target-btn danger-action" data-estate-challenge="${c.id}">${_escHtml(c.name)}: تكذب!</button>`
     ).join('');
-    const passButtons = _coupAlive().filter(c => !(p.passes || []).includes(c.id))
+    const passButtons = challengers.filter(c => !(p.passes || []).includes(c.id))
         .map(c => `<button class="coup-target-btn quiet-action" data-estate-pass="${c.id}">${_escHtml(c.name)}: ما عندي حتى اعتراض</button>`).join('');
+    const passCount = (p.passes || []).length;
     
     _showCoupModal('الكبران: طالب بالميراث',
-        `<p>${_escHtml(claimant.name)} طالب بميراث ${_escHtml(eliminatedPlayer.name)} (${coinsToClaim} فلوس) بالكبران.</p>
+        `<p><strong>${_escHtml(claimant.name)}</strong> يدعي الكبران ويطالب بميراث <strong>${_escHtml(eliminatedPlayer.name)}</strong> (${coinsToClaim} فلوس). أي لاعب ينجم يقوللو تكذب!</p>
+         ${_coupPendingTimerHtml(p)}
+         <div class="coup-pass-progress">${passCount}/${challengers.length} قالو ما عندهم حتى اعتراض</div>
          <div class="coup-target-grid">${challengeButtons}${passButtons}</div>`,
         overlay => {
             overlay.querySelectorAll('[data-estate-challenge]').forEach(btn => btn.addEventListener('click', () => {
@@ -1189,61 +1193,59 @@ function coupEstateChallenge(challengerId, eliminatedPlayer, coinsToClaim, onDon
     const claimant = coupState.players.find(x => x.id === p.claimantId);
     const challenger = coupState.players.find(x => x.id === challengerId);
     
-    // Check if claimant actually has Lawyer
     const hasLawyer = claimant.hand.some(c => !c.lost && c.type === 'lawyer');
     
     if (hasLawyer) {
-        // Challenger loses influence
-        coupState.log = `${challenger.name} كذّب الكبران وطلع غلط. ${challenger.name} يخسر كارطة.`;
+        // Prove the Lawyer (shuffle it back, draw new card), challenger loses influence
+        _coupProveAndReplace(claimant, 'lawyer');
+        coupState.log = `${challenger.name} كذّب الكبران وطلع غلط! ${claimant.name} ورّى الكارتة.`;
+        _showCoupNotLyingAnimation(claimant.name, 'lawyer');
         _showCoupEvent(coupState.log, 'bad');
         coupLoseInfluence(challengerId, () => {
-            // Claimant exchanges Lawyer and takes coins
-            const lawyerCard = claimant.hand.find(c => !c.lost && c.type === 'lawyer');
-            if (lawyerCard) {
-                lawyerCard.lost = true;
-                // Draw new card
-                const newCard = coupState.deck.pop();
-                if (newCard) claimant.hand.push({ type: newCard, lost: false });
-            }
+            // After challenger loses, claimant takes coins and loses a card (the cost)
             claimant.coins += coinsToClaim;
-            eliminatedPlayer.coins = 0;
-            coupState.log = `${claimant.name} أخد ${coinsToClaim} فلوس من ${eliminatedPlayer.name} بالميراث وخسر كارته الكبران.`;
+            coupState.log = `${claimant.name} أخد ${coinsToClaim} فلوس من ${eliminatedPlayer.name} بالميراث. يخسر كارطة.`;
             _showCoupEvent(coupState.log, 'good');
             coupState.pending = null;
-            onDone?.();
-        }, 'كذبت الكبران غلط. اختار كارتة تخسرها.');
+            coupLoseInfluence(p.claimantId, () => { onDone?.(); }, 'الكبران يأخذ الميراث لكن يخسر كارطة. اختار كارطة تخسرها.');
+        }, 'كذّبت الكبران غلط. اختار كارطة تخسرها.');
     } else {
-        // Claimant loses influence
-        coupState.log = `${claimant.name} ادعى الكبران وما عندوش. ${claimant.name} يخسر كارطة.`;
+        // Claimant was bluffing — loses influence, coins are gone (already zeroed)
+        coupState.log = `${claimant.name} ادعى الكبران وما عندوش! ${challenger.name} كشف الكذبة.`;
         _showCoupEvent(coupState.log, 'bad');
+        coupState.pending = null;
         coupLoseInfluence(p.claimantId, () => {
-            eliminatedPlayer.coins = 0;
             coupState.log = `${eliminatedPlayer.name} خرج وفلوسو ضاعت.`;
             _showCoupEvent(coupState.log, 'notice');
-            coupState.pending = null;
             onDone?.();
-        }, 'ادعيت الكبران وما عندكش. اختار كارتة تخسرها.');
+        }, 'ادعيت الكبران وما عندكش. اختار كارطة تخسرها.');
     }
 }
 
 function coupEstatePass(playerId, eliminatedPlayer, coinsToClaim, onDone) {
     const p = coupState.pending;
-    p.passes.push(playerId);
+    if (!p) return;
+    const claimantId = p.claimantId;
+    if (playerId === claimantId) return;
+    p.passes = Array.from(new Set([...(p.passes || []), playerId]));
     
-    if (_coupAllPassed(coupState, p)) {
+    const challengers = _coupAlive().filter(x => x.id !== claimantId);
+    const allPassed = challengers.length > 0 && challengers.every(c => p.passes.includes(c.id));
+    
+    if (allPassed) {
         _closeCoupModal();
-        const claimant = coupState.players.find(x => x.id === p.claimantId);
-        // Claimant loses 1 influence and takes coins
-        coupLoseInfluence(p.claimantId, () => {
-            claimant.coins += coinsToClaim;
-            eliminatedPlayer.coins = 0;
-            coupState.log = `${claimant.name} أخد ${coinsToClaim} فلوس من ${eliminatedPlayer.name} بالميراث وخسر كارطة.`;
-            _showCoupEvent(coupState.log, 'good');
-            coupState.pending = null;
-            onDone?.();
-        }, 'الكبران ياخذ الميراث لكن يخسر كارطة. اختار كارتة تخسرها.');
+        const claimant = coupState.players.find(x => x.id === claimantId);
+        // Prove-and-replace if they actually hold the Lawyer
+        if (claimant.hand.some(c => !c.lost && c.type === 'lawyer')) {
+            _coupProveAndReplace(claimant, 'lawyer');
+        }
+        claimant.coins += coinsToClaim;
+        coupState.log = `${claimant.name} أخد ${coinsToClaim} فلوس من ${eliminatedPlayer.name} بالميراث. يخسر كارطة.`;
+        _showCoupEvent(coupState.log, 'good');
+        coupState.pending = null;
+        coupLoseInfluence(claimantId, () => { onDone?.(); }, 'الكبران يأخذ الميراث لكن يخسر كارطة. اختار كارطة تخسرها.');
     } else {
-        renderCoupEstateClaimPanel(eliminatedPlayer, coinsToClaim);
+        renderCoupEstateClaimPanel(eliminatedPlayer, coinsToClaim, onDone);
     }
 }
 
@@ -1449,16 +1451,17 @@ function coupResolveSocialistShare(actor, collected, onDone) {
     }
     const esc = _escHtml;
     _showCoupModal('المدير: اختار كارطة تبقى معاك',
-        `<p>عندك ${cards.length} كوارط. اختار <strong>واحدة</strong> تبقى معاك والباقي يرجعو لأصحابهم.</p>
-         <div class="coup-target-grid">${cards.map((c, i) => { const meta = coupCards[c.type] || coupCards.duke; const owner = coupState.players.find(p => p.id === c.fromId); return `<button class="coup-target-btn" data-soc-keep="${i}">${_coupCardLabelHtml(meta)}<small>من ${esc(owner?.name || '')}</small></button>`; }).join('')}</div>`,
+        `<p>عندك ${cards.length} كوارط. اختار <strong>واحدة</strong> تبقى معاك والباقي يرجعو عشوائياً.</p>
+         <div class="coup-target-grid">${cards.map((c, i) => { const meta = coupCards[c.type] || coupCards.duke; return `<button class="coup-target-btn" data-soc-keep="${i}">${_coupCardLabelHtml(meta)}</button>`; }).join('')}</div>`,
         overlay => {
             overlay.querySelectorAll('[data-soc-keep]').forEach(btn => btn.addEventListener('click', () => {
                 _closeCoupModal();
                 const keepIdx = parseInt(btn.dataset.socKeep, 10);
-                cards.forEach((c, i) => {
-                    if (i === keepIdx) { actor.hand.push({ type: c.type, lost: false }); }
-                    else if (c.handRef) { c.handRef.lost = false; } // return to original owner
-                });
+                actor.hand.push({ type: cards[keepIdx].type, lost: false });
+                // Shuffle returned cards before giving back — breaks ownership tracking
+                const returned = cards.filter((_, i) => i !== keepIdx);
+                const returnedTypes = returned.map(c => c.type).sort(() => 0.5 - Math.random());
+                returned.forEach((c, i) => { if (c.handRef) { c.handRef.type = returnedTypes[i]; c.handRef.lost = false; } });
                 coupState.log = `${actor.name} أخذ كارطة من اللاعبين بالمدير.`;
                 _showCoupEvent(coupState.log, 'good');
                 onDone?.();
