@@ -1311,7 +1311,7 @@ function _renderOnlineCoupActions(room, state, me) {
         const myChoice = share.opponentChoices?.[me.id];
         const allChosen = (share.opponents || []).every(o => (share.opponentChoices || {})[o.playerId] !== undefined);
 
-        if (share.phase === 'opponents' || (!share.phase && !allChosen)) {
+        if (share.phase === 'opponents' || !share.phase && !allChosen) {
             // PHASE 1: Each opponent makes their choice
             if (isActor) {
                 // Actor waits
@@ -2214,13 +2214,18 @@ async function _onlineCoupSocialistOpponentChoose(shareId, take, handIdx = null)
     await _onlineCoupMutateState(async state => {
         const share = state.pendingSocialistShare;
         if (!share || share.id !== shareId) return null;
-        if (share.phase !== 'opponents') return null;
+        // Accept both 'opponents' phase and missing phase (treat missing as 'opponents')
+        if (share.phase && share.phase !== 'opponents') return null;
         const me = state.players.find(p => p.id === _myId);
         if (!me) return null;
         // Must be an opponent (not the actor)
         if (_myId === share.actorId) return null;
         const opp = share.opponents.find(o => o.playerId === _myId);
         if (!opp) return null;
+        // Defensive: ensure opponentChoices exists
+        if (!share.opponentChoices) share.opponentChoices = {};
+        // Already chose — don't overwrite
+        if (share.opponentChoices[_myId] !== undefined) return null;
         // Record choice
         share.opponentChoices[_myId] = { take, handIdx: handIdx ?? null };
 
@@ -2243,7 +2248,7 @@ async function _onlineCoupChooseSocialist(keptPoolIndices, shareId = null) {
         if (!share) return null;
         if (shareId && share.id !== shareId) return null;
         if (share.actorId !== _myId) return null;
-        if (share.phase !== 'actor') return null;
+        if (share.phase && share.phase !== 'actor') return null;
         const actor = state.players.find(p => p.id === share.actorId);
         if (!actor) return null;
 
