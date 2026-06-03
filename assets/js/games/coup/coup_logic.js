@@ -12,7 +12,6 @@
 //   - The guide system
 //
 // online.js imports the state machine via window.CoupGame.*
-// DO NOT IMPLEMENT NEW FEATURES IN OFFLINE. ONLY IMPLEMENT THEM IN ONLINE. OFFLINE IS DEPRECATED. ONLY DO SO IF IT IS REQUIRED TO MAKE THE ONLINE PART WORK.
 // and drives it with server state instead of local state.
 // ============================================================
 
@@ -1411,7 +1410,7 @@ function coupStartSocialistShare(actor, onDone) {
             : '';
         const cardBtns = liveCards.map(c => {
             const meta = coupCards[c.type] || coupCards.duke;
-            return `<button class="coup-target-btn danger-action" data-share-take="${c.type}" data-share-from="${opp.id}">${_coupCardLabelHtml(meta)}<small>كارطة ${_escHtml(opp.name)}</small></button>`;
+            return `<button class="coup-target-btn danger-action" data-share-take="${c.type}" data-share-from="${opp.id}">${_coupCardLabelHtml(meta)}<small>كارطة مجهولة</small></button>`;
         }).join('');
         _showCoupModal(`المدير: شنوة تاخو من ${_escHtml(opp.name)}؟`,
             `<div class="coup-target-grid">${coinBtn}${cardBtns}<button class="coup-target-btn quiet-action" data-share-skip="${opp.id}">ما تاخوش</button></div>`,
@@ -1440,32 +1439,86 @@ function coupStartSocialistShare(actor, onDone) {
 function coupResolveSocialistShare(actor, collected, onDone) {
     const cards = collected.filter(c => c.type !== 'coin');
     if (cards.length === 0) {
-        coupState.log = `${actor.name} جمع فلوس من الكل بالمدير.`;
+        // Only coins taken — no card redistribution needed
+        coupState.log = `${actor.name} جمع فلوس من اللاعبين بالمدير.`;
         _showCoupEvent(coupState.log, 'good');
         onDone?.(); return;
     }
-    if (cards.length === 1) {
-        actor.hand.push({ type: cards[0].type, lost: false });
-        coupState.log = `${actor.name} أخذ كارطة وفلوس من اللاعبين بالمدير.`;
-        _showCoupEvent(coupState.log, 'good');
-        onDone?.(); return;
-    }
-    const esc = _escHtml;
-    _showCoupModal('المدير: اختار كارطة تبقى معاك',
-        `<p>عندك ${cards.length} كوارط. اختار <strong>واحدة</strong> تبقى معاك والباقي يرجعو عشوائياً.</p>
-         <div class="coup-target-grid">${cards.map((c, i) => { const meta = coupCards[c.type] || coupCards.duke; return `<button class="coup-target-btn" data-soc-keep="${i}">${_coupCardLabelHtml(meta)}</button>`; }).join('')}</div>`,
+
+    // Actor must add one of their own live cards to the pool
+    const actorLive = actor.hand.map((c, i) => ({ c, i })).filter(x => !x.c.lost);
+    const ownCardBtns = actorLive.map(({ c, i }) => {
+        const meta = coupCards[c.type] || coupCards.duke;
+        return `<button class="coup-target-btn danger-action" data-own-idx="${i}">${_coupCardLabelHtml(meta)}</button>`;
+    }).join('');
+
+    _showCoupModal('المدير: أضف كارطة من عندك للحوض',
+        `<p>خذيت ${cards.length} كارطة. لازم تضيف واحدة من عندك للحوض، بعدها تختار واحدة تبقى معاك.</p>
+         <div class="coup-target-grid">${ownCardBtns}</div>`,
         overlay => {
-            overlay.querySelectorAll('[data-soc-keep]').forEach(btn => btn.addEventListener('click', () => {
+            overlay.querySelectorAll('[data-own-idx]').forEach(btn => btn.addEventListener('click', () => {
                 _closeCoupModal();
-                const keepIdx = parseInt(btn.dataset.socKeep, 10);
-                actor.hand.push({ type: cards[keepIdx].type, lost: false });
-                // Shuffle returned cards before giving back — breaks ownership tracking
-                const returned = cards.filter((_, i) => i !== keepIdx);
-                const returnedTypes = returned.map(c => c.type).sort(() => 0.5 - Math.random());
-                returned.forEach((c, i) => { if (c.handRef) { c.handRef.type = returnedTypes[i]; c.handRef.lost = false; } });
-                coupState.log = `${actor.name} أخذ كارطة من اللاعبين بالمدير.`;
-                _showCoupEvent(coupState.log, 'good');
-                onDone?.();
+                const ownIdx = parseInt(btn.dataset.ownIdx, 10);
+                const actorContribCard = actor.hand[ownIdx];
+                const actorContribType = actorContribCard?.type;
+                // Mark contributed card as lost temporarily
+                if (actorContribCard) actorContribCard.lost = true;
+
+                // Build the anonymous pool: opponent cards + actor's contributed card, shuffled
+                const pool = [
+                    ...cards.map(c => ({ type: c.type, isActorOwn: false, handRef: c.handRef })),
+                    { type: actorContribType, isActorOwn: true, handRef: actorContribCard }
+                ].sort(() => 0.5 - Math.random());
+
+                const keepBtns = pool.map((pc, idx) => {
+                    const meta = coupCards[pc.type] || coupCards.duke;
+                    return `<button class="coup-target-btn" data-soc-keep="${idx}">${_coupCardLabelHtml(meta)}</button>`;
+                }).join('');
+
+                _showCoupModal('المدير: اختار كارطة تبقى معاك',
+                    `<p>الحوض فيه ${pool.length} كوارط مخلوطة. اختار <strong>واحدة</strong> تبقى معاك، والباقي يرجعو عشوائياً.</p>
+                     <div class="coup-target-grid">${keepBtns}</div>`,
+                    overlay2 => {
+                        overlay2.querySelectorAll('[data-soc-keep]').forEach(keepBtn => keepBtn.addEventListener('click', () => {
+                            _closeCoupModal();
+                            const keepIdx = parseInt(keepBtn.dataset.socKeep, 10);
+                            const kept = pool[keepIdx];
+
+                            // Resolve keep: restore or add card to actor
+                            if (kept.isActorOwn && actorContribCard) {
+                                actorContribCard.lost = false; // kept own card — restore in place
+                            } else {
+                                actor.hand.push({ type: kept.type, lost: false }); // kept opponent's card
+                            }
+
+                            // Return remaining cards to opponent slots, shuffled
+                            // Slots to fill: all handRefs from cards (opponent lost slots)
+                            const lostSlots = [];
+                            const returnTypes = [];
+                            let keptOppUsed = false;
+                            cards.forEach(c => {
+                                if (!kept.isActorOwn && !keptOppUsed && c.type === kept.type && c.handRef === kept.handRef) {
+                                    keptOppUsed = true;
+                                    // This opponent slot gets actor's contributed type
+                                    if (actorContribType) { lostSlots.push(c.handRef); returnTypes.push(actorContribType); }
+                                } else {
+                                    lostSlots.push(c.handRef);
+                                    returnTypes.push(c.type);
+                                }
+                            });
+                            // Shuffle types before assigning to break ownership tracking
+                            returnTypes.sort(() => 0.5 - Math.random());
+                            lostSlots.sort(() => 0.5 - Math.random());
+                            returnTypes.forEach((type, i) => {
+                                if (lostSlots[i]) { lostSlots[i].type = type; lostSlots[i].lost = false; }
+                            });
+
+                            coupState.log = `${actor.name} وزّع الكوارط بالمدير. بقى بواحدة واختار اللي يناسبو.`;
+                            _showCoupEvent(coupState.log, 'good');
+                            onDone?.();
+                        }));
+                    }
+                );
             }));
         }
     );
