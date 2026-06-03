@@ -1,5 +1,6 @@
 'use strict';
 
+
 // ============================================================
 // WARNING: THE OFFLINE COUP IS DEPRECATED. IF YOU ARE MAKING CODE EDITS TO THIS FILE YOU HAVE TO CHECK coup_online.js as well. It is no an option.
 // COUP (كول وبوّع) — Game logic, card data, and rendering
@@ -12,6 +13,7 @@
 //   - The guide system
 //
 // online.js imports the state machine via window.CoupGame.*
+// DO NOT IMPLEMENT NEW FEATURES IN OFFLINE. ONLY IMPLEMENT THEM IN ONLINE. OFFLINE IS DEPRECATED. ONLY DO SO IF IT IS REQUIRED TO MAKE THE ONLINE PART WORK.
 // and drives it with server state instead of local state.
 // ============================================================
 
