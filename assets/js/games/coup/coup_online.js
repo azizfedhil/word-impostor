@@ -529,7 +529,7 @@ function _onlineCoupRequestExchange(state, playerId, drawCount = 2) {
     state.pendingExchange = {
         id:`ex_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
         playerId,
-        keep: drawCount === 1 ? 1 : live.length,
+        keep: live.length,
         pool:[...live.map(x => ({ type:x.card.type, handIndex:x.index })), ...drawn]
     };
     state.log = drawCount === 1
