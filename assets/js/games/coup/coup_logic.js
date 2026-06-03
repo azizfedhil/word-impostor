@@ -96,28 +96,44 @@ const coupCards = {
         name: 'المدير', icon: '✊',
         img: _coupAssetBase + 'socialist.webp', img512: _coupAssetBase + 'socialist512.webp',
         attack:  'هجوم: من كل لاعب يختار: يخذ فلوس أو يخذ كارطة (يبقى بكارطة واحدة بالأقصى).',
-        defense: 'دفاع: يسكّر سرقة الرايس.',
+        defense: 'دفاع: يسكّر سرقة الرايس والفوترة.',
+    },
+    lawyer: {
+        name: 'الكبران', icon: '⚖️',
+        img: _coupAssetBase + 'lawyer.webp', img512: _coupAssetBase + 'lawyer512.webp',
+        attack:  'هجوم: يفوتر لاعب بـ2 فلوس. عند موت لاعب، ينجم ياخذ فلوسو الكل (أما يخسر كارطة).',
+        defense: 'دفاع: يسكّر الفوترة متاعو.',
+    },
+    customs: {
+        name: 'سي فلان', icon: '🛂',
+        img: _coupAssetBase + 'customs.webp', img512: _coupAssetBase + 'customs512.webp',
+        attack:  'هجوم: يوظّف أداء (1 فلوس) على كارطة معينة في الطرح.',
+        defense: 'دفاع: ما عندوش دفاع.',
     },
 };
 
 // ── Role-family helpers ───────────────────────────────────────
 const _DUKE_FAMILY      = ['duke', 'bureaucrat', 'speculator'];
 const _AMB_FAMILY       = ['ambassador', 'inquisitor', 'jester', 'socialist'];
+const _CAPTAIN_FAMILY   = ['captain', 'lawyer', 'customs'];
 
 function _coupSelectRoles() {
     const pick = arr => arr[Math.floor(Math.random() * arr.length)];
-    return ['assassin', 'captain', 'contessa', pick(_DUKE_FAMILY), pick(_AMB_FAMILY)];
+    return ['assassin', 'contessa', pick(_CAPTAIN_FAMILY), pick(_DUKE_FAMILY), pick(_AMB_FAMILY)];
 }
 
 function _coupGetDynamic(state = coupState) {
     const roles     = state?.rolesInPlay || ['assassin', 'captain', 'contessa', 'duke', 'ambassador'];
     const dukeRole  = roles.find(r => _DUKE_FAMILY.includes(r)) || 'duke';
     const ambRole   = roles.find(r => _AMB_FAMILY.includes(r))  || 'ambassador';
+    const capRole   = roles.find(r => _CAPTAIN_FAMILY.includes(r)) || 'captain';
     return {
         dukeRole,
         ambRole,
+        capRole,
         aidBlockRoles:    [dukeRole],
         stealBlockRoles:  ['captain', ambRole],
+        invoiceBlockRoles:['lawyer', ..._AMB_FAMILY.filter(r => roles.includes(r))],
         jesterBlockRoles: ['jester'],
     };
 }
@@ -135,6 +151,8 @@ function _coupActionClaim(action, state = coupState) {
         jesterDisorder:   'jester',
         socialistShare:   'socialist',
         steal:            'captain',
+        invoice:          'lawyer',
+        taxAssignment:    'customs',
     })[action] || null;
 }
 
@@ -144,6 +162,7 @@ function _coupActionBlockRoles(action, state = coupState) {
         foreignAid:      dyn.aidBlockRoles,
         assassinate:     ['contessa'],
         steal:           dyn.stealBlockRoles,
+        invoice:         dyn.invoiceBlockRoles,
         jesterDisorder:  dyn.jesterBlockRoles,
     })[action] || [];
 }
@@ -163,6 +182,8 @@ const coupActionHelp = {
     inquireInspect:  { title: 'البحاث: فحص',           text: 'تقول عندي البحاث وتشوف كارطة لاعب آخر. إما تخلّيه يبدّلها بكارطة عشوائية من الدكة، أو ما تعمل شي. أي لاعب ينجم يقولك تكذب.' },
     jesterDisorder:  { title: 'العمدة: فوضى',          text: 'تقول عندي العمدة، تجيب كارطة من الدكة وتاخو عشوائي كارطة من لاعب. من الاثنتين اختار واحدة تبقى معاك وبدّلها مع كارطة من كوارطك. أي لاعب ينجم يقولك تكذب.' },
     socialistShare:  { title: 'المدير: وزّع',          text: 'تقول عندي المدير ومن كل لاعب تختار: تاخو فلوس أو كارطة. كان خذيت أكثر من كارطة، تبقى بواحدة وترجع الباقي لأصحابهم. الفلوس ما ترجعوش.' },
+    invoice:         { title: 'الكبران: فوترة',        text: 'تقول عندي الكبران وتفوتر لاعب بـ2 فلوس. أي لاعب من عيلة السمسار ينجم يسكّرها.' },
+    taxAssignment:   { title: 'سي فلان: توظيف أداء',   text: 'تقول عندي سي فلان وتوظّف أداء على كارطة معينة. أي لاعب يستعمل الكارطة هاكي لازم يخلصك 1 دينار قبل ما يكمّل.' },
     coup:            { title: 'Coup -7',                text: 'تدفع 7 فلوس وتطيّح كارتة من لاعب. ما تتسكرش وما فيهاش تكذيب.' },
 };
 
@@ -292,7 +313,8 @@ function coupActionName(action) {
         assassinate:'اغتيال', exchange:'تبديل السمسار',
         inquireExchange:'تبديل البحاث', inquireInspect:'فحص البحاث',
         jesterDisorder:'فوضى العمدة', socialistShare:'توزيع المدير',
-        steal:'سرقة الرايس', coup:'Coup'
+        steal:'سرقة الرايس', coup:'Coup',
+        invoice:'فوترة الكبران', taxAssignment:'أداء سي فلان'
     })[action] || action;
 }
 
@@ -609,7 +631,7 @@ function renderCoupActions(state = coupState, myId = null) {
     const current = state.players[state.turnIndex];
     if (!isTurn) { panel.innerHTML = `<div class="coup-panel-card">استنى دورك. الدور توّة على ${_escHtml(current?.name || '')}.</div>`; }
     const mustCoup = isTurn && (me?.coins || 0) >= 10;
-    const _actionBgMap = { income:'plusone', foreignAid:'plustwo', tax:'tax', steal:'steal', assassinate:'assassinate', exchange:'exchange', coup:'coup' };
+    const _actionBgMap = { income:'plusone', foreignAid:'plustwo', tax:'tax', steal:'steal', assassinate:'assassinate', exchange:'exchange', coup:'coup', invoice:'plustwo', taxAssignment:'tax' };
     const mk = (txt, action, cls = '', hint = '') => {
         const actionLocked = !isTurn || (mustCoup && action !== 'coup');
         const disabled     = actionLocked ? 'is-action-disabled' : '';
@@ -631,6 +653,16 @@ function renderCoupActions(state = coupState, myId = null) {
         const gain = Math.min((me?.coins || 0), 5);
         dukeBtn = mk(`${_coupCardLabelHtml(dukeCard)}: قامبل`, 'speculatorGamble', 'primary-action', `تضاعف فلوسك (${gain})`);
     }
+    // Captain-family action
+    let capBtn = '';
+    if (dyn.capRole === 'captain') {
+        capBtn = mk(`${_coupCardLabelHtml(coupCards.captain)}: اسرق`,'steal','primary-action','اسرق زوز فلوس');
+    } else if (dyn.capRole === 'lawyer') {
+        capBtn = mk(`${_coupCardLabelHtml(coupCards.lawyer)}: فوتر`,'invoice','primary-action','خذ زوز فلوس من لاعب');
+    } else {
+        capBtn = mk(`${_coupCardLabelHtml(coupCards.customs)}: أداء`,'taxAssignment','primary-action','وظّف أداء على كارطة');
+    }
+
     // Ambassador-family action(s)
     let ambBtns = '';
     if (dyn.ambRole === 'ambassador') {
@@ -647,7 +679,7 @@ function renderCoupActions(state = coupState, myId = null) {
         ${mk('🪙 شهرية +1','income','','مضمون وما يتكذبش')}
         ${mk('🤲 اعانة +2','foreignAid','','ينجم يتسكر')}
         ${dukeBtn}
-        ${mk(`${_coupCardLabelHtml(coupCards.captain)}: اسرق`,'steal','primary-action','اسرق زوز فلوس')}
+        ${capBtn}
         ${mk(`${_coupCardLabelHtml(coupCards.assassin)} -3`,'assassinate','danger-action','يلزم حفار القبور')}
         ${ambBtns}
         ${mk('💥 Coup -7','coup','danger-action','ضربة ما تتسكرش')}
@@ -749,7 +781,7 @@ function coupHandleTimeout() {
 
 function coupChooseAction(action) {
     const actor = coupState.players[coupState.turnIndex];
-    const needsTarget = ['assassinate', 'coup', 'steal', 'bureaucratTax', 'inquireInspect', 'jesterDisorder'].includes(action);
+    const needsTarget = ['assassinate', 'coup', 'steal', 'bureaucratTax', 'inquireInspect', 'jesterDisorder', 'invoice', 'taxAssignment'].includes(action);
     if ((actor.coins || 0) >= 10 && action !== 'coup') return showToast('عندك 10 فلوس ولا أكثر، لازم تعمل Coup.');
     if (action === 'assassinate' && actor.coins < 3)  return showToast('يلزمك 3 فلوس للاغتيال.');
     if (action === 'coup'        && actor.coins < 7)  return showToast('يلزمك 7 فلوس للCoup.');
@@ -769,8 +801,22 @@ function coupChooseAction(action) {
 function coupPickTarget(action) {
     const actor   = coupState.players[coupState.turnIndex];
     const targets = _coupAlive().filter(p => p.id !== actor.id);
-    const titles  = { steal:'اختار شكون تسرق', assassinate:'اختار شكون تضرب', coup:'اختار الهدف', bureaucratTax:'اختار شكون يخذ +1', inquireInspect:'اختار شكون تفحص كارطتو', jesterDisorder:'اختار شكون تعمل فيه فوضى' };
-    const hints   = { steal:'الرايس يسرق حتى زوز فلوس من لاعب.', assassinate:'حفار القبور يحتاج هدف واضح.', coup:'Coup ضربة مباشرة وما تتسكرش.', bureaucratTax:'الشيخ يعطي +1 لأي لاعب تختاره.', inquireInspect:'البحاث يشوف كارطة لاعب ويحتمل يجبره يبدّلها.', jesterDisorder:'العمدة يخذ كارطة عشوائية من الهدف.' };
+    const titles  = { steal:'اختار شكون تسرق', assassinate:'اختار شكون تضرب', coup:'اختار الهدف', bureaucratTax:'اختار شكون يخذ +1', inquireInspect:'اختار شكون تفحص كارطتو', jesterDisorder:'اختار شكون تعمل فيه فوضى', invoice: 'اختار شكون تفوتره' };
+    const hints   = { steal:'الرايس يسرق حتى زوز فلوس من لاعب.', assassinate:'حفار القبور يحتاج هدف واضح.', coup:'Coup ضربة مباشرة وما تتسكرش.', bureaucratTax:'الشيخ يعطي +1 لأي لاعب تختاره.', inquireInspect:'البحاث يشوف كارطة لاعب ويحتمل يجبره يبدّلها.', jesterDisorder:'العمدة يخذ كارطة عشوائية من الهدف.', invoice: 'الكبران يفوتر لاعب بـ2 فلوس.' };
+
+    if (action === 'taxAssignment') {
+        const roles = coupState.rolesInPlay;
+        _showCoupModal('اختار الكارطة الي توظف عليها أداء',
+            `<div class="coup-target-grid">${roles.map(r => `<button class="coup-target-btn" data-tax-role="${r}">${_coupCardLabelHtml(coupCards[r])}</button>`).join('')}</div>`,
+            overlay => {
+                overlay.querySelectorAll('[data-tax-role]').forEach(btn => btn.addEventListener('click', () => {
+                    _closeCoupModal();
+                    coupStartPending('taxAssignment', btn.dataset.taxRole);
+                }));
+            }
+        );
+        return;
+    }
     _showCoupModal(
         titles[action] || 'اختار هدف',
         `<p>${_escHtml(hints[action] || '')}</p><div class="coup-target-grid">${targets.map(p => `<button class="coup-target-btn" data-target-id="${p.id}">${_escHtml(p.name)}</button>`).join('')}</div>`,
