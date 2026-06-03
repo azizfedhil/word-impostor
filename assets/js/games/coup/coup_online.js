@@ -617,8 +617,25 @@ function _startOnlineCoupTimer(state) {
             const jesterActor = state.players.find(p => p.id === state.pendingJesterSwap.actorId);
             if (jesterActor?.isAI) setTimeout(() => _onlineCoupAIChooseJesterSwap(state, jesterActor), 2000 + Math.random() * 1500);
         } else if (state.pendingSocialistShare) {
-            const socActor = state.players.find(p => p.id === state.pendingSocialistShare.actorId);
-            if (socActor?.isAI) setTimeout(() => _onlineCoupAIChooseSocialist(state, socActor), 2000 + Math.random() * 1500);
+            const s = state.pendingSocialistShare;
+            const socActor = state.players.find(p => p.id === s.actorId);
+            if (s.phase === 'actor') {
+                // Actor phase: AI actor resolves
+                if (socActor?.isAI) setTimeout(() => _onlineCoupAIChooseSocialist(state, socActor), 2000 + Math.random() * 1500);
+            } else {
+                // Opponent phase: any AI opponent who hasn't chosen yet + actor (actor resolves if all chosen)
+                const hasUnchosenAIOpponent = (s.opponents || []).some(o => {
+                    const ch = (s.opponentChoices || {})[o.playerId];
+                    if (ch !== undefined) return false;
+                    const pl = state.players.find(p => p.id === o.playerId);
+                    return pl?.isAI;
+                });
+                if (hasUnchosenAIOpponent && socActor?.isAI) {
+                    setTimeout(() => _onlineCoupAIChooseSocialist(state, socActor), 1500 + Math.random() * 1000);
+                } else if (hasUnchosenAIOpponent) {
+                    setTimeout(() => _onlineCoupAIChooseSocialist(state, socActor), 1500 + Math.random() * 1000);
+                }
+            }
         }
     }
 
@@ -1120,8 +1137,8 @@ function _renderOnlineCoupSocialistShareBanner(state, me) {
     const isActor = me?.id === actor?.id;
     wrap.innerHTML = `
         <div class="coup-pending-title">مشكي يا المدير 🤝</div>
-        <strong>${esc(actor?.name || '')} يختار من كل لاعب</strong>
-        <p>${isActor ? 'من كل لاعب، اختار: تاخو فلوس أو كارطة أو ما تاخوش شي.' : `نستناو ${esc(actor?.name || '')} يختار.`}</p>
+        <strong>${esc(actor?.name || '')} يوزّع بالمدير</strong>
+        <p>${isActor ? 'نستناو كل لاعب يختار شنوة يعطيك.' : `اختار شنوة تعطي للمدير: فلوس أو كارطة.`}</p>
     `;
     return wrap;
 }
@@ -1288,126 +1305,116 @@ function _renderOnlineCoupActions(room, state, me) {
     if (state.pendingSocialistShare) {
         const share = state.pendingSocialistShare;
         const esc = window.CoupUI?.escapeHtml || (x => x);
-        if (me.id === share.actorId) {
-            // Step 1: actor picks coin OR card OR skip for EACH opponent.
-            // Cards shown anonymously (no player name on card button); coins labeled with player name.
-            const selections = {}; // playerId → null | 'coin' | { cardType, handIdx }
-            const render = () => {
-                panel.innerHTML = `<div class="coup-panel-card live">من كل لاعب اختار: فلوس أو كارطة أو ما تاخوش.</div>`;
-                (share.opponents || []).forEach(opp => {
-                    const oppPlayer = state.players.find(p => p.id === opp.playerId);
-                    const oppName = esc(oppPlayer?.name || opp.playerId);
-                    const sel = selections[opp.playerId] ?? null;
-                    const rowDiv = document.createElement('div');
-                    rowDiv.className = 'coup-socialist-row';
-                    const labelDiv = document.createElement('div');
-                    labelDiv.className = 'coup-socialist-label';
-                    labelDiv.textContent = oppName;
+        const actor = state.players.find(p => p.id === share.actorId);
+        const isActor = me.id === share.actorId;
+        const myOppSlot = (share.opponents || []).find(o => o.playerId === me.id);
+        const myChoice = share.opponentChoices?.[me.id];
+        const allChosen = (share.opponents || []).every(o => (share.opponentChoices || {})[o.playerId] !== undefined);
+
+        if (share.phase === 'opponents' || (!share.phase && !allChosen)) {
+            // PHASE 1: Each opponent makes their choice
+            if (isActor) {
+                // Actor waits
+                const waiting = (share.opponents || []).filter(o => (share.opponentChoices || {})[o.playerId] === undefined);
+                const waitNames = waiting.map(o => esc(state.players.find(p => p.id === o.playerId)?.name || o.playerId)).join('، ');
+                panel.innerHTML = `<div class="coup-panel-card live">نستناو اللاعبين يختاروا. باقي: ${waitNames || 'لا أحد'}</div>`;
+            } else if (myOppSlot) {
+                if (myChoice !== undefined) {
+                    // Already chose — show what they picked
+                    const choiceText = myChoice.take === 'coin' ? '🪙 فلوس' : myChoice.take === null ? 'ما أعطيتش شي' : '🃏 كارطة';
+                    panel.innerHTML = `<div class="coup-panel-card">اخترت: <strong>${choiceText}</strong>. نستناو بقية اللاعبين.</div>`;
+                } else {
+                    // Show this opponent their choice
+                    panel.innerHTML = `<div class="coup-panel-card live">المدير ${esc(actor?.name || '')} يوزّع — شنوة تعطي؟</div>`;
                     const grid = document.createElement('div');
-                    grid.className = 'coup-target-grid coup-socialist-choices';
-                    // Coin button — shows player name so actor knows who they're taking from
-                    if (opp.hasCoins) {
+                    grid.className = 'coup-target-grid';
+                    if (myOppSlot.hasCoins) {
                         const coinBtn = document.createElement('button');
-                        const coinSel = sel === 'coin';
-                        coinBtn.className = 'coup-target-btn' + (coinSel ? ' selected' : '');
-                        coinBtn.textContent = '🪙 فلوس';
-                        coinBtn.onclick = () => { selections[opp.playerId] = coinSel ? null : 'coin'; render(); };
+                        coinBtn.className = 'coup-target-btn';
+                        coinBtn.textContent = '🪙 أعطي فلوس';
+                        coinBtn.onclick = () => _onlineCoupSocialistOpponentChoose(share.id, 'coin', null);
                         grid.appendChild(coinBtn);
                     }
-                    // Card buttons — anonymous (no player name), just card type
-                    (opp.liveCards || []).forEach(c => {
+                    (myOppSlot.liveCards || []).forEach(c => {
                         const meta = window.coupCards[c.type];
                         const label = meta ? (window.CoupUI?.cardLabelHtml?.(meta) || `${meta.icon} ${esc(meta.name)}`) : c.type;
                         const cardBtn = document.createElement('button');
-                        const selKey = `card:${c.type}:${c.handIdx}`;
-                        const cardSel = typeof sel === 'object' && sel !== null && sel.cardType === c.type && sel.handIdx === c.handIdx;
-                        cardBtn.className = 'coup-target-btn danger-action' + (cardSel ? ' selected' : '');
+                        cardBtn.className = 'coup-target-btn danger-action';
                         cardBtn.innerHTML = label;
-                        cardBtn.onclick = () => {
-                            selections[opp.playerId] = cardSel ? null : { cardType: c.type, handIdx: c.handIdx };
-                            render();
-                        };
+                        cardBtn.onclick = () => _onlineCoupSocialistOpponentChoose(share.id, 'card', c.handIdx);
                         grid.appendChild(cardBtn);
                     });
-                    // Skip button
-                    const skipBtn = document.createElement('button');
-                    skipBtn.className = 'coup-target-btn quiet-action' + (sel === null ? ' selected' : '');
-                    skipBtn.textContent = 'ما تاخوش';
-                    skipBtn.onclick = () => { selections[opp.playerId] = null; render(); };
-                    grid.appendChild(skipBtn);
-                    rowDiv.appendChild(labelDiv);
-                    rowDiv.appendChild(grid);
-                    panel.appendChild(rowDiv);
-                });
-                const confirmBtn = document.createElement('button');
-                confirmBtn.className = 'primary-btn';
-                confirmBtn.textContent = 'ثبّت الاختيارات';
-                confirmBtn.onclick = () => {
-                    confirmBtn.disabled = true;
-                    // Build sels for the server
-                    const sels = (share.opponents || []).map(opp => {
-                        const sel = selections[opp.playerId] ?? null;
-                        if (!sel) return { playerId: opp.playerId, take: null };
-                        if (sel === 'coin') return { playerId: opp.playerId, take: 'coin' };
-                        return { playerId: opp.playerId, take: sel.cardType, handIdx: sel.handIdx };
-                    });
-                    const cardSels = sels.filter(s => s.take && s.take !== 'coin');
-                    if (cardSels.length === 0) {
-                        // No cards taken — just coins/skips, send immediately
-                        _onlineCoupChooseSocialist(sels, share.id, null);
-                        return;
+                    // No skip — each player MUST contribute (coin or card) unless they have neither
+                    const hasNeither = !myOppSlot.hasCoins && !(myOppSlot.liveCards?.length);
+                    if (hasNeither) {
+                        panel.innerHTML += `<div class="coup-panel-card">ما عندكش شي تعطي.</div>`;
+                        _onlineCoupSocialistOpponentChoose(share.id, null, null); // auto-skip
+                    } else {
+                        panel.appendChild(grid);
                     }
-                    // Step 2: actor must add one of their own live cards to the pool
-                    const myLive = me.hand.map((c, i) => ({ ...c, i })).filter(x => !x.lost);
-                    const ownCardBtns = myLive.map(x => {
-                        const meta = window.coupCards[x.type];
-                        const label = meta ? (window.CoupUI?.cardLabelHtml?.(meta) || `${meta.icon} ${esc(meta.name)}`) : x.type;
-                        return `<button class="coup-target-btn danger-action" data-own-idx="${x.i}">${label}</button>`;
-                    }).join('');
-                    window.CoupUI?.showModal?.('أضف كارطة من عندك للحوض',
-                        `<p>خذيت ${cardSels.length} كارطة. لازم تضيف واحدة من عندك للحوض، بعدها تختار واحدة تبقى معاك.</p>
-                         <div class="coup-target-grid">${ownCardBtns}</div>`,
-                        overlay => {
-                            overlay.querySelectorAll('[data-own-idx]').forEach(btn => btn.addEventListener('click', () => {
-                                window.CoupUI.closeModal();
-                                const actorHandIdx = parseInt(btn.dataset.ownIdx, 10);
-                                const actorCardType = me.hand[actorHandIdx]?.type;
-                                // Step 3: show the full anonymous pool and let actor pick one to keep
-                                // Pool = taken cards + actor's contributed card, shuffled
-                                const poolCards = [
-                                    ...cardSels.map(s => ({ cardType: s.take })),
-                                    { cardType: actorCardType, isActorOwn: true }
-                                ].sort(() => 0.5 - Math.random());
-                                const keepBtns = poolCards.map((pc, idx) => {
-                                    const meta = window.coupCards[pc.cardType];
-                                    const label = meta ? (window.CoupUI?.cardLabelHtml?.(meta) || `${meta.icon} ${esc(meta.name)}`) : pc.cardType;
-                                    return `<button class="coup-target-btn" data-keep-pool-idx="${idx}">${label}</button>`;
-                                }).join('');
-                                window.CoupUI?.showModal?.('اختار كارطة تبقى معاك',
-                                    `<p>الحوض فيه ${poolCards.length} كوارط مخلوطة. اختار <strong>واحدة</strong> تبقى معاك، والباقي يرجعو عشوائياً.</p>
-                                     <div class="coup-target-grid">${keepBtns}</div>`,
-                                    overlay2 => {
-                                        overlay2.querySelectorAll('[data-keep-pool-idx]').forEach(keepBtn => keepBtn.addEventListener('click', () => {
-                                            window.CoupUI.closeModal();
-                                            const keepPoolIdx = parseInt(keepBtn.dataset.keepPoolIdx, 10);
-                                            const keptCard = poolCards[keepPoolIdx];
-                                            _onlineCoupChooseSocialist(sels, share.id, actorHandIdx, keptCard.cardType, keptCard.isActorOwn || false);
-                                        }));
-                                    }
-                                );
-                            }));
-                        }
-                    );
-                };
-                panel.appendChild(confirmBtn);
-            };
-            render();
+                }
+            } else {
+                panel.innerHTML = `<div class="coup-panel-card">نستناو اللاعبين يختاروا عند المدير.</div>`;
+            }
         } else {
-            const socActor = state.players.find(p => p.id === share.actorId);
-            panel.innerHTML = `<div class="coup-panel-card">نستناو ${esc(socActor?.name || '')} يختار من كل لاعب.`;
+            // PHASE 2: All opponents have chosen — actor picks 2 cards from pool
+            if (isActor) {
+                // Build pool locally for display: actor's live cards + cards opponents gave
+                const myLive = me.hand.filter(c => !c.lost);
+                const cardChoices = (share.opponents || []).filter(o => {
+                    const ch = (share.opponentChoices || {})[o.playerId];
+                    return ch && ch.take === 'card';
+                });
+                // Pool: actor's cards + opponent cards, shuffled anonymously
+                const pool = [
+                    ...myLive.map((c, i) => ({ type: c.type, isActorCard: true, localIdx: me.hand.indexOf(c) })),
+                    ...cardChoices.map(o => {
+                        const ch = (share.opponentChoices || {})[o.playerId];
+                        // We know the type from liveCards
+                        const lc = (o.liveCards || []).find(lc => lc.handIdx === ch.handIdx) || (o.liveCards || [])[0];
+                        return { type: lc?.type || '?', isActorCard: false, fromPlayerId: o.playerId };
+                    })
+                ].sort(() => 0.5 - Math.random());
+                const mustKeep = Math.min(2, pool.length);
+                const kept = []; // pool indices
+
+                const renderActorPick = () => {
+                    panel.innerHTML = '';
+                    const remaining = mustKeep - kept.length;
+                    const title = document.createElement('div');
+                    title.className = 'coup-panel-card live';
+                    title.textContent = `اختار ${remaining} كارطة تبقى معاك من الحوض:`;
+                    panel.appendChild(title);
+                    const grid = document.createElement('div');
+                    grid.className = 'coup-target-grid';
+                    pool.forEach((pc, idx) => {
+                        const meta = window.coupCards[pc.type];
+                        const label = meta ? (window.CoupUI?.cardLabelHtml?.(meta) || `${meta.icon} ${esc(meta.name)}`) : pc.type;
+                        const btn = document.createElement('button');
+                        const isKept = kept.includes(idx);
+                        btn.className = 'coup-target-btn' + (isKept ? ' selected' : '');
+                        btn.innerHTML = label;
+                        btn.disabled = isKept;
+                        btn.onclick = () => {
+                            kept.push(idx);
+                            if (kept.length >= mustKeep) {
+                                _onlineCoupChooseSocialist(kept, share.id);
+                            } else {
+                                renderActorPick();
+                            }
+                        };
+                        grid.appendChild(btn);
+                    });
+                    panel.appendChild(grid);
+                };
+                renderActorPick();
+            } else {
+                panel.innerHTML = `<div class="coup-panel-card">نستناو ${esc(actor?.name || '')} يختار واحدين من الحوض.</div>`;
+            }
         }
         return;
     }
+
     if (state.pending) {
         const p = state.pending;
         const actor = state.players.find(x=>x.id===p.actorId);
@@ -2040,9 +2047,11 @@ function _onlineCoupApplyActionLocal(state, action, targetId) {
                     playerId: opp.id,
                     hasCoins: opp.coins > 0,
                     liveCards: opp.hand.map((c, i) => ({type: c.type, handIdx: i})).filter((_, i) => !opp.hand[i].lost)
-                }))
+                })),
+                opponentChoices: {}, // playerId → { take: 'coin' | 'card', handIdx? } | { take: null } = skip
+                phase: 'opponents' // 'opponents' then 'actor'
             };
-            state.log = `${actor.name} يوزّع بالمدير. يختار من كل لاعب: فلوس أو كارطة.`;
+            state.log = `${actor.name} يوزّع بالمدير. كل لاعب يختار: يعطي فلوس أو كارطة.`;
             _onlineCoupEvent(state, state.log, 'notice');
             return state;
         }
@@ -2200,33 +2209,66 @@ async function _onlineCoupChooseJesterSwap(keepTempIdx, replaceActorCardIdx, jes
 
 // selections: [{ playerId, take: null|'coin'|cardType, handIdx? }]
 // actorHandIdx: index in actor.hand of the card they put into the pool (null if no cards taken)
-// keptCardType: the card type the actor chose to keep from the pool
-// keptWasActorOwn: true if the kept card was the actor's own contributed card
-async function _onlineCoupChooseSocialist(selections, shareId = null, actorHandIdx = null, keptCardType = null, keptWasActorOwn = false) {
+// Called by each OPPONENT to submit their choice (coin or card)
+async function _onlineCoupSocialistOpponentChoose(shareId, take, handIdx = null) {
+    await _onlineCoupMutateState(async state => {
+        const share = state.pendingSocialistShare;
+        if (!share || share.id !== shareId) return null;
+        if (share.phase !== 'opponents') return null;
+        const me = state.players.find(p => p.id === _myId);
+        if (!me) return null;
+        // Must be an opponent (not the actor)
+        if (_myId === share.actorId) return null;
+        const opp = share.opponents.find(o => o.playerId === _myId);
+        if (!opp) return null;
+        // Record choice
+        share.opponentChoices[_myId] = { take, handIdx: handIdx ?? null };
+
+        // Check if all opponents have chosen
+        const allChosen = share.opponents.every(o => share.opponentChoices[o.playerId] !== undefined);
+        if (allChosen) {
+            share.phase = 'actor';
+            state.log = `كل اللاعبين اختاروا. المدير يختار واحدين من الحوض.`;
+            _onlineCoupEvent(state, state.log, 'notice');
+        }
+        return state;
+    });
+}
+
+// Called by ACTOR to finalize: keptCardTypes is array of 2 card type strings chosen from the pool
+// poolSnapshot is the pool that was shown to the actor (for verification), keptPoolIndices = [idx1, idx2]
+async function _onlineCoupChooseSocialist(keptPoolIndices, shareId = null) {
     await _onlineCoupMutateState(async state => {
         const share = state.pendingSocialistShare;
         if (!share) return null;
         if (shareId && share.id !== shareId) return null;
         if (share.actorId !== _myId) return null;
+        if (share.phase !== 'actor') return null;
         const actor = state.players.find(p => p.id === share.actorId);
         if (!actor) return null;
 
-        // Step 1: Process coins and take cards from opponents
-        const collectedCards = []; // { fromId, type, handCard }
-        for (const sel of selections) {
-            if (!sel.take) continue;
-            const opp = state.players.find(p => p.id === sel.playerId);
-            if (!opp) continue;
-            if (sel.take === 'coin') {
-                if (opp.coins > 0) { opp.coins -= 1; actor.coins += 1; }
+        // Step 1: Process all opponent choices (coins and cards)
+        const collectedCards = []; // { fromId, handCard }
+        for (const opp of (share.opponents || [])) {
+            const choice = share.opponentChoices[opp.playerId];
+            if (!choice || choice.take == null) continue;
+            const oppPlayer = state.players.find(p => p.id === opp.playerId);
+            if (!oppPlayer) continue;
+            if (choice.take === 'coin') {
+                if (oppPlayer.coins > 0) { oppPlayer.coins -= 1; actor.coins += 1; }
             } else {
-                const handCard = opp.hand.find((c, i) => !c.lost && c.type === sel.take && (sel.handIdx == null || i === sel.handIdx));
-                if (handCard) { handCard.lost = true; collectedCards.push({ fromId: opp.id, type: sel.take, handCard }); }
+                // card: take a specific handIdx card
+                const hIdx = choice.handIdx;
+                const handCard = hIdx != null ? oppPlayer.hand[hIdx] : oppPlayer.hand.find(c => !c.lost);
+                if (handCard && !handCard.lost) {
+                    handCard.lost = true;
+                    collectedCards.push({ fromId: oppPlayer.id, handCard });
+                }
             }
         }
 
         if (collectedCards.length === 0) {
-            // No cards taken — only coins or skips
+            // No cards collected — only coins
             state.pendingSocialistShare = null;
             state.log = `${actor.name} جمع فلوس من اللاعبين بالمدير.`;
             _onlineCoupEvent(state, state.log, 'good');
@@ -2234,44 +2276,61 @@ async function _onlineCoupChooseSocialist(selections, shareId = null, actorHandI
             return state;
         }
 
-        // Step 2: Actor contributed one of their own live cards to the pool
-        const actorContribCard = (actorHandIdx != null) ? actor.hand[actorHandIdx] : null;
-        const actorContribType = actorContribCard?.type;
-        if (actorContribCard && !actorContribCard.lost) actorContribCard.lost = true;
+        // Step 2: Build pool = actor's live cards + collected opponent cards
+        const actorLive = actor.hand.filter(c => !c.lost);
+        actorLive.forEach(c => { c.lost = true; }); // temporarily remove from actor hand
 
-        // Step 3: Resolve what the actor keeps
-        if (keptWasActorOwn && actorContribCard) {
-            // Actor kept their own card — restore it
-            actorContribCard.lost = false;
-        } else if (keptCardType) {
-            // Actor kept an opponent's card — push it onto their hand
-            actor.hand.push({ type: keptCardType, lost: false });
+        // Pool order: actor's cards first, then collected cards (this must match what was shown in UI)
+        const pool = [
+            ...actorLive.map(c => ({ type: c.type, isActorCard: true, handRef: c })),
+            ...collectedCards.map(c => ({ type: c.handCard.type, isActorCard: false, handRef: c.handCard, fromId: c.fromId }))
+        ];
+
+        const mustKeep = Math.min(2, pool.length);
+        const validIndices = keptPoolIndices.filter(i => i >= 0 && i < pool.length);
+        // Deduplicate
+        const keptIndices = [...new Set(validIndices)].slice(0, mustKeep);
+        // If not enough chosen, auto-fill with first available
+        while (keptIndices.length < mustKeep) {
+            const next = pool.findIndex((_, i) => !keptIndices.includes(i));
+            if (next === -1) break;
+            keptIndices.push(next);
         }
 
-        // Step 4: Return remaining cards randomly to opponents' lost slots
-        // Build return pool: all collected opponent cards except the kept one, plus actor's contributed type if they kept an opponent card
-        const lostSlots = []; // handCard refs to restore
-        const returnTypes = []; // types to distribute
-        let keptOppUsed = false;
-        collectedCards.forEach(c => {
-            if (!keptWasActorOwn && !keptOppUsed && c.type === keptCardType) {
-                keptOppUsed = true; // this slot's card was kept by actor — but the slot itself needs a card back
-                // The slot gets actor's contributed type as replacement
-                if (actorContribType) { lostSlots.push(c.handCard); returnTypes.push(actorContribType); }
-            } else {
-                lostSlots.push(c.handCard);
-                returnTypes.push(c.type);
-            }
-        });
-        // Shuffle types before assigning to break ownership tracking
-        returnTypes.sort(() => 0.5 - Math.random());
-        lostSlots.sort(() => 0.5 - Math.random());
-        returnTypes.forEach((type, i) => {
-            if (lostSlots[i]) { lostSlots[i].type = type; lostSlots[i].lost = false; }
+        // Step 3: Give actor exactly the kept cards
+        actor.hand = actor.hand.filter(c => !actorLive.includes(c)); // strip pooled cards
+        keptIndices.forEach(ki => {
+            actor.hand.push({ type: pool[ki].type, lost: false });
         });
 
+        // Step 4: Redistribute unkept cards to opponents' lost slots
+        const allOpponentSlots = collectedCards.map(c => c.handCard); // opponent handCard refs
+        const unkeptTypes = pool
+            .filter((_, idx) => !keptIndices.includes(idx))
+            .map(pc => pc.type);
+
+        // Shuffle both for randomness
+        unkeptTypes.sort(() => 0.5 - Math.random());
+        allOpponentSlots.sort(() => 0.5 - Math.random());
+
+        allOpponentSlots.forEach((slot, i) => {
+            if (unkeptTypes[i] !== undefined) {
+                slot.type = unkeptTypes[i];
+                slot.lost = false;
+            } else {
+                // More opponent slots than unkept types — draw from deck
+                const drawn = state.deck?.pop?.();
+                if (drawn) { slot.type = drawn; slot.lost = false; }
+                else slot.lost = true;
+            }
+        });
+        // Any leftover unkept types return to deck
+        for (let i = allOpponentSlots.length; i < unkeptTypes.length; i++) {
+            state.deck?.unshift?.(unkeptTypes[i]);
+        }
+
         state.pendingSocialistShare = null;
-        state.log = `${actor.name} وزّع الكوارط بالمدير. بقى بواحدة واختار اللي يناسبو.`;
+        state.log = `${actor.name} وزّع الكوارط بالمدير. اختار واحدين وبقى فيهم.`;
         _onlineCoupEvent(state, state.log, 'good');
         _onlineCoupNextTurn(state);
         return state;
@@ -2351,26 +2410,59 @@ async function _onlineCoupAIChooseSocialist(state, ai) {
     const share = state.pendingSocialistShare;
     if (!share || share.actorId !== ai.id) return;
     const shareId = share.id;
+
+    // If still in opponent-choice phase, make AI opponents choose
+    if (share.phase === 'opponents' || !share.phase) {
+        await _onlineCoupMutateState(async fresh => {
+            const s = fresh.pendingSocialistShare;
+            if (!s || s.id !== shareId) return null;
+            if (!s.opponentChoices) s.opponentChoices = {};
+            let changed = false;
+            for (const opp of (s.opponents || [])) {
+                if (s.opponentChoices[opp.playerId] !== undefined) continue;
+                const oppPlayer = fresh.players.find(p => p.id === opp.playerId);
+                if (!oppPlayer || !oppPlayer.isAI) continue;
+                // AI opponent: prefer giving a coin over a card
+                if (opp.hasCoins && oppPlayer.coins > 0) {
+                    s.opponentChoices[opp.playerId] = { take: 'coin', handIdx: null };
+                } else if (opp.liveCards?.length) {
+                    const pick = opp.liveCards[Math.floor(Math.random() * opp.liveCards.length)];
+                    s.opponentChoices[opp.playerId] = { take: 'card', handIdx: pick.handIdx };
+                } else {
+                    s.opponentChoices[opp.playerId] = { take: null, handIdx: null };
+                }
+                changed = true;
+            }
+            const allChosen = s.opponents.every(o => s.opponentChoices[o.playerId] !== undefined);
+            if (allChosen) { s.phase = 'actor'; fresh.log = `كل اللاعبين اختاروا. المدير يختار واحدين من الحوض.`; _onlineCoupEvent(fresh, fresh.log, 'notice'); }
+            return changed ? fresh : null;
+        });
+        return;
+    }
+
+    // Phase 'actor' — AI picks 2 cards from pool and resolves
     await _onlineCoupMutateState(async fresh => {
         const s = fresh.pendingSocialistShare;
-        if (!s || s.id !== shareId) return null;
+        if (!s || s.id !== shareId || s.phase !== 'actor') return null;
         const actor = fresh.players.find(p => p.id === s.actorId);
         if (!actor) return null;
 
-        // AI strategy: take a card from each opponent (prefer cards over coins for filtering value)
-        const collectedCards = []; // { fromId, type, handCard }
+        // Process opponent choices (coins and cards)
+        const collectedCards = [];
         for (const opp of (s.opponents || [])) {
+            const choice = (s.opponentChoices || {})[opp.playerId];
+            if (!choice || choice.take == null) continue;
             const oppPlayer = fresh.players.find(p => p.id === opp.playerId);
             if (!oppPlayer) continue;
-            // Prefer taking a card; fall back to coin if no live cards
-            const liveCards = oppPlayer.hand.filter(c => !c.lost);
-            if (liveCards.length > 0) {
-                const taken = liveCards[Math.floor(Math.random() * liveCards.length)];
-                taken.lost = true;
-                collectedCards.push({ fromId: oppPlayer.id, type: taken.type, handCard: taken });
-            } else if (opp.hasCoins && oppPlayer.coins > 0) {
-                oppPlayer.coins -= 1;
-                actor.coins += 1;
+            if (choice.take === 'coin') {
+                if (oppPlayer.coins > 0) { oppPlayer.coins -= 1; actor.coins += 1; }
+            } else {
+                const hIdx = choice.handIdx;
+                const handCard = hIdx != null ? oppPlayer.hand[hIdx] : oppPlayer.hand.find(c => !c.lost);
+                if (handCard && !handCard.lost) {
+                    handCard.lost = true;
+                    collectedCards.push({ fromId: oppPlayer.id, handCard });
+                }
             }
         }
 
@@ -2382,47 +2474,35 @@ async function _onlineCoupAIChooseSocialist(state, ai) {
             return fresh;
         }
 
-        // AI contributes one of its own live cards to the pool (pick least-valuable at random)
-        const actorLive = actor.hand.map((c, i) => ({ c, i })).filter(x => !x.c.lost);
-        const contribEntry = actorLive[Math.floor(Math.random() * actorLive.length)];
-        const actorContribCard = contribEntry?.c;
-        const actorContribType = actorContribCard?.type;
-        if (actorContribCard) actorContribCard.lost = true;
+        // Build pool: actor's live cards + collected cards
+        const actorLive = actor.hand.filter(c => !c.lost);
+        actorLive.forEach(c => { c.lost = true; });
+        const pool = [
+            ...actorLive.map(c => ({ type: c.type, isActorCard: true, handRef: c })),
+            ...collectedCards.map(c => ({ type: c.handCard.type, isActorCard: false, handRef: c.handCard }))
+        ];
+        const mustKeep = Math.min(2, pool.length);
+        // AI: pick randomly
+        const shuffled = pool.map((_, i) => i).sort(() => 0.5 - Math.random());
+        const keptIndices = shuffled.slice(0, mustKeep);
 
-        // AI picks the best card from the pool (just picks randomly for simplicity)
-        const poolTypes = [...collectedCards.map(c => c.type), actorContribType].filter(Boolean);
-        const keepIdx = Math.floor(Math.random() * poolTypes.length);
-        const keptType = poolTypes[keepIdx];
-        const keptWasActorOwn = keepIdx === poolTypes.length - 1;
+        // Give actor the kept cards
+        actor.hand = actor.hand.filter(c => !actorLive.includes(c));
+        keptIndices.forEach(ki => { actor.hand.push({ type: pool[ki].type, lost: false }); });
 
-        // Resolve keep
-        if (keptWasActorOwn && actorContribCard) {
-            actorContribCard.lost = false;
-        } else if (keptType) {
-            actor.hand.push({ type: keptType, lost: false });
-        }
-
-        // Return remaining cards to opponent slots, shuffled
-        const lostSlots = [];
-        const returnTypes = [];
-        let keptOppUsed = false;
-        collectedCards.forEach(c => {
-            if (!keptWasActorOwn && !keptOppUsed && c.type === keptType) {
-                keptOppUsed = true;
-                if (actorContribType) { lostSlots.push(c.handCard); returnTypes.push(actorContribType); }
-            } else {
-                lostSlots.push(c.handCard);
-                returnTypes.push(c.type);
-            }
+        // Redistribute unkept cards
+        const allOpponentSlots = collectedCards.map(c => c.handCard);
+        const unkeptTypes = pool.filter((_, idx) => !keptIndices.includes(idx)).map(pc => pc.type);
+        unkeptTypes.sort(() => 0.5 - Math.random());
+        allOpponentSlots.sort(() => 0.5 - Math.random());
+        allOpponentSlots.forEach((slot, i) => {
+            if (unkeptTypes[i] !== undefined) { slot.type = unkeptTypes[i]; slot.lost = false; }
+            else { const drawn = fresh.deck?.pop?.(); if (drawn) { slot.type = drawn; slot.lost = false; } else slot.lost = true; }
         });
-        returnTypes.sort(() => 0.5 - Math.random());
-        lostSlots.sort(() => 0.5 - Math.random());
-        returnTypes.forEach((type, i) => {
-            if (lostSlots[i]) { lostSlots[i].type = type; lostSlots[i].lost = false; }
-        });
+        for (let i = allOpponentSlots.length; i < unkeptTypes.length; i++) fresh.deck?.unshift?.(unkeptTypes[i]);
 
         fresh.pendingSocialistShare = null;
-        fresh.log = `${actor.name} وزّع الكوارط بالمدير. بقى بواحدة واختار اللي يناسبو.`;
+        fresh.log = `${actor.name} وزّع الكوارط بالمدير. اختار واحدين وبقى فيهم.`;
         _onlineCoupEvent(fresh, fresh.log, 'good');
         _onlineCoupNextTurn(fresh);
         return fresh;
@@ -2685,6 +2765,7 @@ window._onlineCoupChooseExchange     = _onlineCoupChooseExchange;
 window._onlineCoupChooseInspect      = _onlineCoupChooseInspect;
 window._onlineCoupChooseJesterSwap   = _onlineCoupChooseJesterSwap;
 window._onlineCoupChooseSocialist    = _onlineCoupChooseSocialist;
+window._onlineCoupSocialistOpponentChoose = _onlineCoupSocialistOpponentChoose;
 window._onlineCoupStartPending       = _onlineCoupStartPending;
 window._onlineCoupTimeout            = _onlineCoupTimeout;
 window._onlineCoupPendingTimeout     = _onlineCoupPendingTimeout;
