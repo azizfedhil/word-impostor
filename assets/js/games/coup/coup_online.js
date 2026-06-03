@@ -1289,76 +1289,80 @@ function _renderOnlineCoupActions(room, state, me) {
         const share = state.pendingSocialistShare;
         const esc = window.CoupUI?.escapeHtml || (x => x);
         if (me.id === share.actorId) {
-            const selections = {};
-            const render = () => {
-                panel.innerHTML = `<div class="coup-panel-card live">من كل لاعب اختار: فلوس أو كارطة أو ما تاخوش.</div>`;
+            // Build a shuffled anonymous pool of all items (cards + coins) from all opponents.
+            // Each pool item tracks its owner internally but shows no name to the actor.
+            const buildPool = () => {
+                const items = [];
                 (share.opponents || []).forEach(opp => {
-                    const oppPlayer = state.players.find(p => p.id === opp.playerId);
-                    const oppName = esc(oppPlayer?.name || opp.playerId);
-                    const rowDiv = document.createElement('div');
-                    rowDiv.className = 'coup-socialist-row';
-                    rowDiv.innerHTML = `<div class="coup-socialist-label">${oppName}</div><div class="coup-target-grid coup-socialist-choices"></div>`;
-                    const grid = rowDiv.querySelector('.coup-socialist-choices');
-                    if (opp.hasCoins) {
-                        const coinBtn = document.createElement('button');
-                        coinBtn.className = 'coup-target-btn' + (selections[opp.playerId] === 'coin' ? ' selected' : '');
-                        coinBtn.textContent = '🪙 فلوس';
-                        coinBtn.onclick = () => { selections[opp.playerId] = selections[opp.playerId] === 'coin' ? null : 'coin'; render(); };
-                        grid.appendChild(coinBtn);
-                    }
                     (opp.liveCards || []).forEach(c => {
-                        const meta = window.coupCards[c.type];
-                        const label = meta ? (window.CoupUI?.cardLabelHtml?.(meta) || `${meta.icon} ${esc(meta.name)}`) : c.type;
-                        const cardBtn = document.createElement('button');
-                        const selKey = `card:${c.type}:${c.handIdx}`;
-                        cardBtn.className = 'coup-target-btn danger-action' + (selections[opp.playerId] === selKey ? ' selected' : '');
-                        cardBtn.innerHTML = label;
-                        cardBtn.onclick = () => { selections[opp.playerId] = selections[opp.playerId] === selKey ? null : selKey; render(); };
-                        grid.appendChild(cardBtn);
+                        items.push({ kind: 'card', playerId: opp.playerId, cardType: c.type, handIdx: c.handIdx });
                     });
-                    const skipBtn = document.createElement('button');
-                    skipBtn.className = 'coup-target-btn quiet-action' + (!selections[opp.playerId] ? ' selected' : '');
-                    skipBtn.textContent = 'ما تاخوش';
-                    skipBtn.onclick = () => { selections[opp.playerId] = null; render(); };
-                    grid.appendChild(skipBtn);
-                    panel.appendChild(rowDiv);
+                    if (opp.hasCoins) {
+                        items.push({ kind: 'coin', playerId: opp.playerId });
+                    }
                 });
+                // Fisher-Yates shuffle so items appear in random order, breaking ownership signals
+                for (let i = items.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [items[i], items[j]] = [items[j], items[i]];
+                }
+                return items;
+            };
+            // Pool is built once so shuffle stays stable across re-renders
+            const pool = buildPool();
+            // selectedPoolIdx: index into pool of the single selected item, or null
+            let selectedPoolIdx = null;
+            const render = () => {
+                panel.innerHTML = `<div class="coup-panel-card live">شوف الكوارط — اختار واحدة باش تاخذها، أو ما تاخوش شي.</div>`;
+                const poolNote = document.createElement('p');
+                poolNote.style.cssText = 'font-size:0.85em;opacity:0.65;margin:4px 0 8px;';
+                poolNote.textContent = 'الكوارط مخلوطة — ما تعرفش منها مني.';
+                panel.appendChild(poolNote);
+                const grid = document.createElement('div');
+                grid.className = 'coup-target-grid';
+                pool.forEach((item, idx) => {
+                    const btn = document.createElement('button');
+                    const isSelected = selectedPoolIdx === idx;
+                    if (item.kind === 'card') {
+                        const meta = window.coupCards[item.cardType];
+                        const label = meta ? (window.CoupUI?.cardLabelHtml?.(meta) || `${meta.icon} ${esc(meta.name)}`) : item.cardType;
+                        btn.className = 'coup-target-btn danger-action' + (isSelected ? ' selected' : '');
+                        btn.innerHTML = label;
+                    } else {
+                        btn.className = 'coup-target-btn' + (isSelected ? ' selected' : '');
+                        btn.textContent = '🪙 فلوس';
+                    }
+                    btn.onclick = () => { selectedPoolIdx = isSelected ? null : idx; render(); };
+                    grid.appendChild(btn);
+                });
+                // Skip button
+                const skipBtn = document.createElement('button');
+                skipBtn.className = 'coup-target-btn quiet-action' + (selectedPoolIdx === null ? ' selected' : '');
+                skipBtn.textContent = 'ما تاخوش شي';
+                skipBtn.onclick = () => { selectedPoolIdx = null; render(); };
+                grid.appendChild(skipBtn);
+                panel.appendChild(grid);
                 const confirmBtn = document.createElement('button');
                 confirmBtn.className = 'primary-btn';
-                confirmBtn.textContent = 'ثبّت الاختيارات';
+                confirmBtn.textContent = 'ثبّت الاختيار';
                 confirmBtn.onclick = () => {
                     confirmBtn.disabled = true;
-                    const sels = (share.opponents || []).map(opp => {
-                        const sel = selections[opp.playerId];
-                        if (!sel) return { playerId: opp.playerId, take: null };
-                        if (sel === 'coin') return { playerId: opp.playerId, take: 'coin' };
-                        const parts = sel.split(':');
-                        return { playerId: opp.playerId, take: parts[1], handIdx: parseInt(parts[2], 10) };
-                    });
-                    const cardSels = sels.filter(s => s.take && s.take !== 'coin');
-                    if (cardSels.length > 1) {
-                        // Show keep selection step — no owner labels, cards are anonymous
-                        const esc2 = window.CoupUI?.escapeHtml || (x => x);
-                        const keepBtns = cardSels.map((cs, idx) => {
-                            const meta = window.coupCards[cs.take];
-                            const label = meta ? (window.CoupUI?.cardLabelHtml?.(meta) || `${meta.icon} ${esc2(meta.name)}`) : cs.take;
-                            return `<button class="coup-target-btn" data-keep-idx="${idx}">${label}</button>`;
-                        }).join('');
-                        window.CoupUI?.showModal?.('اختار كارطة تبقى معاك',
-                            `<p>عندك ${cardSels.length} كوارط. اختار <strong>واحدة</strong> تبقى معاك، والباقي يرجعو عشوائياً.</p>
-                             <div class="coup-target-grid">${keepBtns}</div>`,
-                            overlay => {
-                                overlay.querySelectorAll('[data-keep-idx]').forEach(btn => btn.addEventListener('click', () => {
-                                    window.CoupUI.closeModal();
-                                    const keepIdx = parseInt(btn.dataset.keepIdx, 10);
-                                    const finalSels = sels.map(s => ({ ...s, keepCard: cardSels.indexOf(s) === keepIdx && s.take !== 'coin' }));
-                                    _onlineCoupChooseSocialist(finalSels, share.id);
-                                }));
+                    // Build sels array: all opponents get take:null except the one selected item's owner
+                    const sels = (share.opponents || []).map(opp => ({ playerId: opp.playerId, take: null }));
+                    if (selectedPoolIdx !== null) {
+                        const chosen = pool[selectedPoolIdx];
+                        const oppSel = sels.find(s => s.playerId === chosen.playerId);
+                        if (oppSel) {
+                            if (chosen.kind === 'coin') {
+                                oppSel.take = 'coin';
+                            } else {
+                                oppSel.take = chosen.cardType;
+                                oppSel.handIdx = chosen.handIdx;
                             }
-                        );
-                    } else {
-                        _onlineCoupChooseSocialist(sels, share.id);
+                        }
                     }
+                    // At most one card is taken (anonymous pool UI), so send directly
+                    _onlineCoupChooseSocialist(sels, share.id);
                 };
                 panel.appendChild(confirmBtn);
             };
