@@ -185,7 +185,7 @@ const coupActionHelp = {
     inquireExchange: { title: 'البحاث: بدّل كارطة',    text: 'تقول عندي البحاث وتجيب كارطة واحدة من الدكة وتختار شنوة تبقى معاك. أي لاعب ينجم يقولك تكذب.' },
     inquireInspect:  { title: 'البحاث: فحص',           text: 'تقول عندي البحاث وتشوف كارطة لاعب آخر. إما تخلّيه يبدّلها بكارطة عشوائية من الدكة، أو ما تعمل شي. أي لاعب ينجم يقولك تكذب.' },
     jesterDisorder:  { title: 'العمدة: فوضى',          text: 'تقول عندي العمدة، تجيب كارطة من الدكة وتاخو عشوائي كارطة من لاعب. من الاثنتين اختار واحدة تبقى معاك وبدّلها مع كارطة من كوارطك. أي لاعب ينجم يقولك تكذب.' },
-    socialistShare:  { title: 'المدير: وزّع',          text: 'تقول عندي المدير ومن كل لاعب تختار: تاخو فلوس أو كارطة. كان خذيت أكثر من كارطة، تبقى بواحدة وترجع الباقي لأصحابهم. الفلوس ما ترجعوش.' },
+    socialistShare:  { title: 'المدير: وزّع',          text: 'تقول عندي المدير. كل لاعب يختار: يعطيك فلوس أو كارطة. الكوارط المجموعة + كوارطك تدخلو في حوض مشترك. تختار منو واحدين تبقى معاك، والباقي يرجعو عشوائياً لأصحابهم. الفلوس ما ترجعوش.' },
     coup:            { title: 'Coup -7',                text: 'تدفع 7 فلوس وتطيّح كارتة من لاعب. ما تتسكرش وما فيهاش تكذيب.' },
 };
 
@@ -1398,132 +1398,162 @@ function coupStartJesterDisorder(actor, target, onDone) {
 }
 
 function coupStartSocialistShare(actor, onDone) {
+    // Each opponent chooses for themselves: give 1 coin OR 1 influence card
     const opponents = _coupAlive().filter(p => p.id !== actor.id);
-    const collected = []; // { fromId, type: 'coin' | cardType, handRef? }
+    const collectedCards = []; // { fromId, handRef } — cards taken from opponents (not lost, just held)
     let opIdx = 0;
+
     const processNext = () => {
-        if (opIdx >= opponents.length) return coupResolveSocialistShare(actor, collected, onDone);
+        if (opIdx >= opponents.length) return coupResolveSocialistShare(actor, collectedCards, onDone);
         const opp = opponents[opIdx++];
         const hasCoins = opp.coins > 0;
         const liveCards = opp.hand.filter(c => !c.lost);
         if (!hasCoins && !liveCards.length) return processNext();
+
+        // Show the opponent their own choice (in local pass-and-play, actor sees this too)
         const coinBtn = hasCoins
-            ? `<button class="coup-target-btn" data-share-take="coin" data-share-from="${opp.id}">🪙 خذ فلوس من ${_escHtml(opp.name)}</button>`
+            ? `<button class="coup-target-btn" data-soc-choice="coin">🪙 أعطي فلوس</button>`
             : '';
-        const cardBtns = liveCards.map(c => {
+        const cardBtns = liveCards.map((c, localIdx) => {
             const meta = coupCards[c.type] || coupCards.duke;
-            return `<button class="coup-target-btn danger-action" data-share-take="${c.type}" data-share-from="${opp.id}">${_coupCardLabelHtml(meta)}<small>كارطة مجهولة</small></button>`;
+            const handIdx = opp.hand.indexOf(c);
+            return `<button class="coup-target-btn danger-action" data-soc-choice="card" data-hand-idx="${handIdx}">${_coupCardLabelHtml(meta)}</button>`;
         }).join('');
-        _showCoupModal(`المدير: شنوة تاخو من ${_escHtml(opp.name)}؟`,
-            `<div class="coup-target-grid">${coinBtn}${cardBtns}<button class="coup-target-btn quiet-action" data-share-skip="${opp.id}">ما تاخوش</button></div>`,
+
+        _showCoupModal(`المدير: ${_escHtml(opp.name)}، شنوة تعطي؟`,
+            `<p>اختار: تعطي فلوس أو تعطي كارطة للحوض.</p>
+             <div class="coup-target-grid">${coinBtn}${cardBtns}</div>`,
             overlay => {
-                overlay.querySelectorAll('[data-share-take]').forEach(btn => btn.addEventListener('click', () => {
+                overlay.querySelector('[data-soc-choice="coin"]')?.addEventListener('click', () => {
                     _closeCoupModal();
-                    const takeType = btn.dataset.shareTake;
-                    const opp2 = coupState.players.find(p => p.id === btn.dataset.shareFrom);
-                    if (!opp2) return processNext();
-                    if (takeType === 'coin') {
-                        opp2.coins -= 1; actor.coins += 1;
-                        collected.push({ fromId: opp2.id, type: 'coin' });
-                    } else {
-                        const handCard = opp2.hand.find(c => !c.lost && c.type === takeType);
-                        if (handCard) { handCard.lost = true; collected.push({ fromId: opp2.id, type: takeType, handRef: handCard }); }
+                    if (opp.coins > 0) { opp.coins -= 1; actor.coins += 1; }
+                    processNext();
+                });
+                overlay.querySelectorAll('[data-soc-choice="card"]').forEach(btn => btn.addEventListener('click', () => {
+                    _closeCoupModal();
+                    const handIdx = parseInt(btn.dataset.handIdx, 10);
+                    const handCard = opp.hand[handIdx];
+                    if (handCard && !handCard.lost) {
+                        // Temporarily pull from hand (mark lost so it can't be used), track for redistribution
+                        handCard.lost = true;
+                        collectedCards.push({ fromId: opp.id, handRef: handCard });
                     }
                     processNext();
                 }));
-                overlay.querySelector('[data-share-skip]')?.addEventListener('click', () => { _closeCoupModal(); processNext(); });
             }
         );
     };
     processNext();
 }
 
-function coupResolveSocialistShare(actor, collected, onDone) {
-    const cards = collected.filter(c => c.type !== 'coin');
-    if (cards.length === 0) {
-        // Only coins taken — no card redistribution needed
+function coupResolveSocialistShare(actor, collectedCards, onDone) {
+    if (collectedCards.length === 0) {
+        // No cards collected — only coins
         coupState.log = `${actor.name} جمع فلوس من اللاعبين بالمدير.`;
         _showCoupEvent(coupState.log, 'good');
         onDone?.(); return;
     }
 
-    // Actor must add one of their own live cards to the pool
-    const actorLive = actor.hand.map((c, i) => ({ c, i })).filter(x => !x.c.lost);
-    const ownCardBtns = actorLive.map(({ c, i }) => {
-        const meta = coupCards[c.type] || coupCards.duke;
-        return `<button class="coup-target-btn danger-action" data-own-idx="${i}">${_coupCardLabelHtml(meta)}</button>`;
-    }).join('');
+    // Pool = all actor's live cards + all collected cards
+    // Mark actor's cards as temporarily removed
+    const actorLive = actor.hand.filter(c => !c.lost);
+    actorLive.forEach(c => { c.lost = true; }); // temporarily remove from hand
 
-    _showCoupModal('المدير: أضف كارطة من عندك للحوض',
-        `<p>خذيت ${cards.length} كارطة. لازم تضيف واحدة من عندك للحوض، بعدها تختار واحدة تبقى معاك.</p>
-         <div class="coup-target-grid">${ownCardBtns}</div>`,
-        overlay => {
-            overlay.querySelectorAll('[data-own-idx]').forEach(btn => btn.addEventListener('click', () => {
-                _closeCoupModal();
-                const ownIdx = parseInt(btn.dataset.ownIdx, 10);
-                const actorContribCard = actor.hand[ownIdx];
-                const actorContribType = actorContribCard?.type;
-                // Mark contributed card as lost temporarily
-                if (actorContribCard) actorContribCard.lost = true;
+    // Build pool: actor's cards + collected opponent cards, shuffled
+    const pool = [
+        ...actorLive.map(c => ({ type: c.type, isActorCard: true, handRef: c })),
+        ...collectedCards.map(c => ({ type: c.type, isActorCard: false, handRef: c.handRef, fromId: c.fromId }))
+    ].sort(() => 0.5 - Math.random());
 
-                // Build the anonymous pool: opponent cards + actor's contributed card, shuffled
-                const pool = [
-                    ...cards.map(c => ({ type: c.type, isActorOwn: false, handRef: c.handRef })),
-                    { type: actorContribType, isActorOwn: true, handRef: actorContribCard }
-                ].sort(() => 0.5 - Math.random());
+    const mustKeep = Math.min(2, pool.length);
+    const kept = []; // indices into pool
 
-                const keepBtns = pool.map((pc, idx) => {
-                    const meta = coupCards[pc.type] || coupCards.duke;
-                    return `<button class="coup-target-btn" data-soc-keep="${idx}">${_coupCardLabelHtml(meta)}</button>`;
-                }).join('');
+    const renderKeepModal = () => {
+        const remaining = mustKeep - kept.length;
+        const keepBtns = pool.map((pc, idx) => {
+            const meta = coupCards[pc.type] || coupCards.duke;
+            const alreadyKept = kept.includes(idx);
+            return `<button class="coup-target-btn${alreadyKept ? ' selected' : ''}" data-soc-keep="${idx}" ${alreadyKept ? 'disabled' : ''}>${_coupCardLabelHtml(meta)}</button>`;
+        }).join('');
 
-                _showCoupModal('المدير: اختار كارطة تبقى معاك',
-                    `<p>الحوض فيه ${pool.length} كوارط مخلوطة. اختار <strong>واحدة</strong> تبقى معاك، والباقي يرجعو عشوائياً.</p>
-                     <div class="coup-target-grid">${keepBtns}</div>`,
-                    overlay2 => {
-                        overlay2.querySelectorAll('[data-soc-keep]').forEach(keepBtn => keepBtn.addEventListener('click', () => {
-                            _closeCoupModal();
-                            const keepIdx = parseInt(keepBtn.dataset.socKeep, 10);
-                            const kept = pool[keepIdx];
+        _showCoupModal(`المدير: اختار ${mustKeep} كوارط تبقى معاك`,
+            `<p>الحوض فيه ${pool.length} كوارط مخلوطة. اختار <strong>${remaining}</strong> تبقى معاك، والباقي يرجعو عشوائياً لأصحابهم.</p>
+             <div class="coup-target-grid">${keepBtns}</div>`,
+            overlay => {
+                overlay.querySelectorAll('[data-soc-keep]').forEach(keepBtn => keepBtn.addEventListener('click', () => {
+                    _closeCoupModal();
+                    const keepIdx = parseInt(keepBtn.dataset.socKeep, 10);
+                    kept.push(keepIdx);
 
-                            // Resolve keep: restore or add card to actor
-                            if (kept.isActorOwn && actorContribCard) {
-                                actorContribCard.lost = false; // kept own card — restore in place
+                    if (kept.length < mustKeep) {
+                        renderKeepModal(); // pick another
+                    } else {
+                        // Finalize: give actor exactly the kept cards
+                        // Remove actor's old hand entries and rebuild with kept cards only
+                        actor.hand = actor.hand.filter(c => !actorLive.includes(c)); // remove actor's pooled cards
+                        kept.forEach(ki => {
+                            const pc = pool[ki];
+                            actor.hand.push({ type: pc.type, lost: false });
+                        });
+
+                        // Return unkept cards randomly to the players who gave them
+                        // Build list of slots (opponent handRefs) and types to return
+                        const returnSlots = []; // handRef objects belonging to opponents
+                        const returnTypes = []; // card types to redistribute
+
+                        pool.forEach((pc, idx) => {
+                            if (kept.includes(idx)) return; // actor is keeping this
+                            if (pc.isActorCard) {
+                                // Actor's own card goes back to an opponent slot
+                                returnTypes.push(pc.type);
                             } else {
-                                actor.hand.push({ type: kept.type, lost: false }); // kept opponent's card
+                                // Opponent card — the slot is the handRef
+                                returnSlots.push(pc.handRef);
+                                returnTypes.push(pc.type);
                             }
+                        });
 
-                            // Return remaining cards to opponent slots, shuffled
-                            // Slots to fill: all handRefs from cards (opponent lost slots)
-                            const lostSlots = [];
-                            const returnTypes = [];
-                            let keptOppUsed = false;
-                            cards.forEach(c => {
-                                if (!kept.isActorOwn && !keptOppUsed && c.type === kept.type && c.handRef === kept.handRef) {
-                                    keptOppUsed = true;
-                                    // This opponent slot gets actor's contributed type
-                                    if (actorContribType) { lostSlots.push(c.handRef); returnTypes.push(actorContribType); }
-                                } else {
-                                    lostSlots.push(c.handRef);
-                                    returnTypes.push(c.type);
-                                }
-                            });
-                            // Shuffle types before assigning to break ownership tracking
-                            returnTypes.sort(() => 0.5 - Math.random());
-                            lostSlots.sort(() => 0.5 - Math.random());
-                            returnTypes.forEach((type, i) => {
-                                if (lostSlots[i]) { lostSlots[i].type = type; lostSlots[i].lost = false; }
-                            });
+                        // Also collect actor-card-typed slots: if actor kept opponent cards,
+                        // we need slots for actor's contributed types going to opponents
+                        // returnSlots already has all opponent handRefs from unkept opp cards
+                        // But actor card types also need slots — use opponent slots
+                        // Rebuild cleanly: all unkept cards need to go to opponents' lost slots
+                        const allOpponentSlots = collectedCards.map(c => c.handRef);
+                        const allReturnTypes = pool
+                            .filter((_, idx) => !kept.includes(idx))
+                            .map(pc => pc.type);
 
-                            coupState.log = `${actor.name} وزّع الكوارط بالمدير. بقى بواحدة واختار اللي يناسبو.`;
-                            _showCoupEvent(coupState.log, 'good');
-                            onDone?.();
-                        }));
+                        // Shuffle both independently to randomize redistribution
+                        allReturnTypes.sort(() => 0.5 - Math.random());
+                        allOpponentSlots.sort(() => 0.5 - Math.random());
+
+                        allOpponentSlots.forEach((slot, i) => {
+                            if (allReturnTypes[i] !== undefined) {
+                                slot.type = allReturnTypes[i];
+                                slot.lost = false;
+                            } else {
+                                // More slots than types (actor kept all opp cards) — draw from deck
+                                const drawn = coupState.deck?.pop?.();
+                                if (drawn) { slot.type = drawn; slot.lost = false; }
+                                else slot.lost = true; // no deck card available (shouldn't happen)
+                            }
+                        });
+
+                        // Any extra types with no opponent slots — push to deck
+                        for (let i = allOpponentSlots.length; i < allReturnTypes.length; i++) {
+                            coupState.deck?.push?.(allReturnTypes[i]);
+                        }
+
+                        coupState.log = `${actor.name} وزّع الكوارط بالمدير. اختار واحدين وبقى فيهم.`;
+                        _showCoupEvent(coupState.log, 'good');
+                        onDone?.();
                     }
-                );
-            }));
-        }
-    );
+                }));
+            }
+        );
+    };
+
+    renderKeepModal();
 }
 
 function coupStartTaxAssignmentChoice(actor, onDone) {
