@@ -157,7 +157,7 @@ function _onlineCoupDynamic(state) {
         stealBlockRoles: captainRole === 'customsOfficer' ? ['customsOfficer'] : ['captain','lawyer','ambassador'].filter(r=>roles.includes(r)),
         invoiceBlockRoles:['ambassador'],
         jesterBlockRoles:['jester'],
-        taxAssignmentBlockRoles: roles.includes('customsOfficer') ? ['customsOfficer'] : [],
+        taxAssignmentBlockRoles: [],
     };
 }
 
@@ -1048,7 +1048,8 @@ function _renderOnlineCoupPendingBanner(state, me) {
     const isClaimant = me?.id === claimantId;
     const isBlockStage = p.stage === 'block';
     const canChallenge = me && !isClaimant && me.hand.some(c=>!c.lost) && (p.claim || isBlockStage);
-    const canBlock = me && !isBlockStage && p.blockable && me.id !== actor?.id && me.hand.some(c=>!c.lost) && (p.action === 'foreignAid' || !p.targetId || p.targetId === me.id);
+    const isReactiveTax = p.action === 'reactiveTax';
+    const canBlock = me && !isBlockStage && p.blockable && me.id !== actor?.id && me.hand.some(c=>!c.lost) && (p.action === 'foreignAid' || isReactiveTax || !p.targetId || p.targetId === me.id);
     const canPass = me && !isClaimant && !(p.passes || []).includes(me.id);
     const passCount = _onlineCoupPassCount(state, p);
     const total = _onlineCoupPendingResponders(state, p).length;
@@ -1478,7 +1479,8 @@ function _renderOnlineCoupActions(room, state, me) {
         const target = state.players.find(x=>x.id===p.targetId);
         const isBlockStage = p.stage === 'block';
         const canChallenge = !isBlockStage && p.claim && me.id !== actor?.id && me.hand.some(c=>!c.lost);
-        const canBlock = !isBlockStage && p.blockable && me.id !== actor?.id && me.hand.some(c=>!c.lost) && (p.action === 'foreignAid' || p.targetId === me.id);
+        const isReactiveTax = p.action === 'reactiveTax';
+        const canBlock = !isBlockStage && p.blockable && me.id !== actor?.id && me.hand.some(c=>!c.lost) && (p.action === 'foreignAid' || isReactiveTax || !p.targetId || p.targetId === me.id);
         const canChallengeBlock = isBlockStage && me.id !== p.blockerId && me.hand.some(c=>!c.lost);
         const canPass = me.id !== _onlineCoupPendingClaimantId(p) && !(p.passes || []).includes(me.id);
         panel.innerHTML = `<div class="coup-panel-card live">${window.CoupUI?.escapeHtml?.(state.log) || state.log}<br>${_onlineCoupPendingTimerHtml(p)}</div><div class="coup-target-grid"></div>`;
@@ -2048,7 +2050,7 @@ async function _onlineCoupBlock(blockerId, blockRole = null, pendingId = null) {
         if (!p || p.stage === 'block' || !p.blockable || (pendingId && p.id !== pendingId)) return null;
         const blocker = state.players.find(x=>x.id===blockerId);
         if (!blocker || blocker.id === p.actorId || !_onlineCoupLiveCards(blocker).length) return null;
-        if (p.action !== 'foreignAid' && p.targetId && p.targetId !== blocker.id) return null;
+        if (p.action !== 'foreignAid' && p.action !== 'reactiveTax' && p.targetId && p.targetId !== blocker.id) return null;
         const blockRoles = p.blockRoles || (p.action === 'assassinate' ? ['contessa'] : p.action === 'steal' ? ['captain','ambassador'] : ['duke']);
         const role = blockRole && blockRoles.includes(blockRole) ? blockRole : blockRoles[0];
         state.pending = {...p, id:`p_${Date.now()}_${Math.random().toString(36).slice(2,6)}`, stage:'block', blockerId, blockRole:role, passes:[]};
@@ -3090,7 +3092,7 @@ async function _onlineCoupAIResponse(state, ai) {
 
     if (p.stage === 'action') {
         // Target can block with an appropriate role
-        if (canBlock && p.blockRoles?.length && (isTarget || !p.targetId) && roll < 0.3) {
+        if (canBlock && p.blockRoles?.length && (isTarget || !p.targetId || p.action === 'reactiveTax') && roll < 0.3) {
             await _onlineCoupBlock(ai.id, p.blockRoles[0], p.id);
         // Any player can block foreignAid with the dynamic duke-family role
         } else if (canBlock && p.action === 'foreignAid' && !isTarget && roll < 0.15) {
