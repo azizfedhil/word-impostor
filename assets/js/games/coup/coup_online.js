@@ -55,6 +55,26 @@ function _pulseScreenRed() {
     pulse();
 }
 
+function _pulseScreenGreen() {
+    document.querySelector('.coup-green-pulse-overlay')?.remove();
+    const overlay = document.createElement('div');
+    overlay.className = 'coup-green-pulse-overlay';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,200,80,0.35);pointer-events:none;z-index:9999;opacity:0;transition:opacity 0.2s ease-in-out;';
+    document.body.appendChild(overlay);
+    let pulses = 0;
+    const pulse = () => {
+        if (pulses >= 3) { overlay.remove(); return; }
+        overlay.style.opacity = '1';
+        setTimeout(() => {
+            overlay.style.opacity = '0';
+            pulses++;
+            if (pulses < 3) setTimeout(pulse, 200);
+            else setTimeout(() => overlay.remove(), 200);
+        }, 200);
+    };
+    pulse();
+}
+
 function _showCardUseAnimation(playerName, cardType) {
     document.querySelector('.coup-card-use-animation')?.remove();
     const meta = window.coupCards[cardType] || window.coupCards.duke;
@@ -126,7 +146,7 @@ const _TUNISIAN_NAMES = ["حمادي", "فوزية", "بلقاسم", "منجي",
 function _getRandomTunisianName() { return _TUNISIAN_NAMES[Math.floor(Math.random() * _TUNISIAN_NAMES.length)]; }
 
 function _onlineCoupDynamic(state) {
-    return window.CoupGame?.getDynamic?.(state) || { dukeRole:'duke', ambRole:'ambassador', captainRole:'captain', aidBlockRoles:['duke'], stealBlockRoles:['captain','ambassador'], invoiceBlockRoles:['ambassador','inquisitor','jester','socialist'], jesterBlockRoles:['jester'] };
+    return window.CoupGame?.getDynamic?.(state) || { dukeRole:'duke', ambRole:'ambassador', captainRole:'captain', aidBlockRoles:['duke'], stealBlockRoles:['captain','ambassador'], invoiceBlockRoles:['ambassador'], jesterBlockRoles:['jester'] };
 }
 
 function _onlineCoupActionClaim(action, state) {
@@ -1479,7 +1499,11 @@ function _renderOnlineCoupActions(room, state, me) {
         if (_lastCoupPendingKey !== pendingKey) {
             _lastCoupPendingKey = pendingKey;
             if (me.id === p.targetId && !isBlockStage) {
-                _pulseScreenRed();
+                if (p.action === 'bureaucratTax') {
+                    _pulseScreenGreen();
+                } else {
+                    _pulseScreenRed();
+                }
             }
             const esc = window.CoupUI?.escapeHtml || (x => x);
             const blockButtons = canBlock ? _onlineCoupBlockOptions(p).map(opt => `<button class="coup-target-btn" data-popup-block="${opt.role}">نسكّرها ب${opt.label}</button>`).join('') : '';
@@ -1487,6 +1511,7 @@ function _renderOnlineCoupActions(room, state, me) {
             const targetLine = target && !isBlockStage ? `<p class="coup-decision-hint">${esc(target.name)}، اختياراتك واضحة: سكّر بالكارتة المناسبة، ولا اتهمه بالتبلعيط.</p>` : '';
         const hasContessa = me && me.hand.some(c => !c.lost && c.type === 'contessa');
         const isAssassinationTarget = p.action === 'assassinate' && p.targetId === me?.id && !isBlockStage;
+        const isBureaucratTarget = p.action === 'bureaucratTax' && p.targetId === me?.id && !isBlockStage;
 
         const passButton = canPass ? '<button class="coup-target-btn quiet-action" data-popup-pass="1">ما عندي حتى اعتراض</button>' : '';
         const buttons = `${canChallenge ? '<button class="coup-target-btn danger-action" data-popup-challenge="1">تكذب!</button>' : ''}${blockButtons}${blockStageButtons}${passButton}`;
@@ -1494,7 +1519,20 @@ function _renderOnlineCoupActions(room, state, me) {
         let modalTitle = isBlockStage ? 'البلوك صحيح؟' : 'شنوة تعمل؟';
         let modalBody = `<p>${esc(state.log)}</p>${targetLine}${_onlineCoupPendingTimerHtml(p)}<div class="coup-target-grid">${buttons}</div>`;
 
-        if (isAssassinationTarget && hasContessa) {
+        if (isBureaucratTarget) {
+            const actorName = esc(actor?.name || '');
+            modalTitle = '🎁 هدية من الشيخ!';
+            modalBody = `
+                <p style="font-size:1.1rem;font-weight:700;color:var(--success-color,#22c55e);">
+                    ${actorName} اختارك تاخو +1 فلوس بالشيخ 📋
+                </p>
+                <p style="opacity:0.85;">تقبل الهدية، ولا ترفضها وتحاسبه؟</p>
+                ${_onlineCoupPendingTimerHtml(p)}
+                <div class="coup-target-grid">
+                    <button class="coup-target-btn primary-action" data-popup-pass="1">✅ قبلت، خذلي +1</button>
+                    <button class="coup-target-btn danger-action" data-popup-bureaucrat-reject="1">❌ نرفض</button>
+                </div>`;
+        } else if (isAssassinationTarget && hasContessa) {
             modalTitle = "عندك 'البية'!";
             modalBody = `<p style="font-size:1.2rem; font-weight:800; color:var(--primary-color);">عندك 'البية'، تحب تمنع روحك والا تسكت؟</p>
                          ${_onlineCoupPendingTimerHtml(p)}
@@ -1505,11 +1543,27 @@ function _renderOnlineCoupActions(room, state, me) {
                          </div>`;
         }
 
-        if (buttons || (isAssassinationTarget && hasContessa)) window.CoupUI?.showModal?.(modalTitle, modalBody, overlay => {
+        if (isBureaucratTarget || buttons || (isAssassinationTarget && hasContessa)) window.CoupUI?.showModal?.(modalTitle, modalBody, overlay => {
                 overlay.querySelector('[data-popup-challenge]')?.addEventListener('click', () => { window.CoupUI.closeModal(); _onlineCoupChallenge(me.id, p.id); });
                 overlay.querySelectorAll('[data-popup-block]').forEach(btn => btn.addEventListener('click', () => { window.CoupUI.closeModal(); _onlineCoupBlock(me.id, btn.dataset.popupBlock, p.id); }));
                 overlay.querySelector('[data-popup-challenge-block]')?.addEventListener('click', () => { window.CoupUI.closeModal(); _onlineCoupChallengeBlock(me.id, p.id); });
                 overlay.querySelector('[data-popup-pass]')?.addEventListener('click', () => { window.CoupUI.closeModal(); _onlineCoupPass(me.id, p.id); });
+                overlay.querySelector('[data-popup-bureaucrat-reject]')?.addEventListener('click', () => {
+                    // Show second modal: challenge or just pass (forfeit the +1 silently)
+                    const actorNameEsc = esc(actor?.name || '');
+                    window.CoupUI.showModal('رفضت الهدية — شنوة تعمل؟',
+                        `<p>رفضت +1 من ${actorNameEsc}. تحب تتهمه بالتبلعيط؟</p>
+                        ${_onlineCoupPendingTimerHtml(p)}
+                        <div class="coup-target-grid">
+                            <button class="coup-target-btn danger-action" data-popup-challenge-after-reject="1">⚔️ تكذب على الشيخ!</button>
+                            <button class="coup-target-btn quiet-action" data-popup-pass-after-reject="1">لا، بس ما نقبلش</button>
+                        </div>`,
+                        overlay2 => {
+                            overlay2.querySelector('[data-popup-challenge-after-reject]')?.addEventListener('click', () => { window.CoupUI.closeModal(); _onlineCoupChallenge(me.id, p.id); });
+                            overlay2.querySelector('[data-popup-pass-after-reject]')?.addEventListener('click', () => { window.CoupUI.closeModal(); _onlineCoupPass(me.id, p.id); });
+                        }
+                    );
+                });
             });
             else window.CoupUI?.closeModal?.();
         }
