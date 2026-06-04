@@ -20,6 +20,7 @@
 // ── Constants ────────────────────────────────────────────────
 const COUP_DEFAULT_ACTION_MINUTES = 1;
 const COUP_RESPONSE_SECONDS       = 45;
+const CONTESSA_DEFLECT_COST       = 2;
 
 // ── Card definitions ─────────────────────────────────────────
 // Single source of truth — replaces the definitions in both
@@ -55,7 +56,7 @@ const coupCards = {
         name: 'البية', icon: '💃',
         img: _coupAssetBase + 'contessa.png', img512: _coupAssetBase + 'contessa512.png',
         attack:  'هجوم: ما عندهاش هجوم.',
-        defense: 'دفاع: تسكّر الاغتيال متاع حفار القبور.',
+        defense: 'دفاع: تمنع الاغتيال، أو تدفع 2 فرنك باش تحوّل الاغتيال لواحد آخر وتورّي كارتتك وتجبد وحدة جديدة.',
     },
     ambassador: {
         name: 'السمسار', icon: '🤝',
@@ -185,7 +186,7 @@ const coupActionHelp = {
     steal:           { title: 'الرايس: اسرق',           text: 'تقول عندي الرايس وتسرق حتى زوز فلوس من لاعب. الهدف ينجم يسكّر بالرايس أو الكارطة الموجودة من عيلة السمسار. أي لاعب ينجم يقول تكذب.' },
     invoice:         { title: 'الكبران: فاتورة',        text: 'تقول عندي الكبران وتبعث فاتورة لاعب وتاخو حتى زوز فلوس. الهدف ينجم يسكّر بأي كارطة من عيلة السمسار. أي لاعب ينجم يقول تكذب.' },
     taxAssignment:   { title: 'سي فلان: ضريبة',         text: 'تقول عندي سي فلان وتختار دور واحد من الأدوار الموجودة في اللعبة. أي لاعب يدعي هذا الدور هذا الدور خلال هذا الدور يدفع لك +1 فلوس. الضريبة تدوم دورة واحدة فقط. عند الاغتيال، Coup، أو بلوك البية، اللاعبون ينجموا يدعوا سي فلان بشكل ردّ فعل ويتقبضو +1 أو +2 أو +3. أي لاعب ينجم يقولك تكذب.' },
-    assassinate:     { title: 'اغتيال -3',              text: 'تدفع 3 فلوس وتقول عندي حفار القبور باش تطيّح كارتة من لاعب. الهدف ينجم يسكّر بالبية، وأي لاعب ينجم يقول تكذب.' },
+    assassinate:     { title: 'اغتيال -3',              text: 'تدفع 3 فلوس وتقول عندي حفار القبور باش تطيّح كارتة من لاعب. الهدف ينجم يسكّر بالبية ولا يحوّل الاغتيال، وأي لاعب ينجم يقول تكذب.' },
     exchange:        { title: 'السمسار: بدّل',          text: 'تقول عندي السمسار وتبدّل كوارطك الحيين مع الدكّة. أي لاعب ينجم يقولك تكذب.' },
     inquireExchange: { title: 'البحاث: بدّل كارطة',    text: 'تقول عندي البحاث وتجيب كارطة واحدة من الدكة وتختار شنوة تبقى معاك. أي لاعب ينجم يقولك تكذب.' },
     inquireInspect:  { title: 'البحاث: فحص',           text: 'تقول عندي البحاث وتشوف كارطة لاعب آخر. إما تخلّيه يبدّلها بكارطة عشوائية من الدكة، أو ما تعمل شي. أي لاعب ينجم يقولك تكذب.' },
@@ -310,7 +311,9 @@ function _coupBlockOptions(pending) {
 }
 
 function _coupPendingClaimantId(pending) {
-    return pending?.stage === 'block' ? pending.blockerId : pending?.actorId;
+    if (pending?.stage === 'block') return pending.blockerId;
+    if (pending?.stage === 'deflect') return pending.deflectorId;
+    return pending?.actorId;
 }
 
 function _coupPendingResponders(state = coupState, pending = state?.pending) {
@@ -756,22 +759,35 @@ function _renderCoupPendingBanner(state = coupState) {
     const p            = state.pending;
     const claimantId   = _coupPendingClaimantId(p);
     const isBlockStage = p.stage === 'block';
+    const isDeflectStage = p.stage === 'deflect';
     const actor        = state.players.find(x => x.id === p.actorId);
     const blocker      = state.players.find(x => x.id === p.blockerId);
     const target       = state.players.find(x => x.id === p.targetId);
     const wrap         = document.createElement('div');
     wrap.className = 'coup-pending-banner';
     const responders      = _coupPendingResponders(state, p);
-    const challengeButtons = (p.claim || isBlockStage)
+    const challengeButtons = (p.claim || isBlockStage || isDeflectStage)
         ? responders.map(player => `<button class="coup-target-btn danger-action" data-banner-challenge="${player.id}">${_escHtml(player.name)}: تكذب!</button>`).join('') : '';
     const passButtons = responders.filter(player => !(p.passes || []).includes(player.id))
         .map(player => `<button class="coup-target-btn quiet-action" data-banner-pass="${player.id}">${_escHtml(player.name)}: ما عندي حتى اعتراض</button>`).join('');
-    const blockButtons = !isBlockStage && p.blockable
+    const blockButtons = !isBlockStage && !isDeflectStage && p.blockable
         ? (p.action === 'foreignAid' ? responders : responders.filter(x => x.id === p.targetId))
             .map(player => _coupBlockOptions(p).map(opt =>
                 `<button class="coup-target-btn" data-banner-block="${player.id}" data-block-role="${opt.role}">${_escHtml(player.name)}: نسكّرها ب${opt.label}</button>`
             ).join('')).join('') : '';
-    wrap.innerHTML = `<div class="coup-pending-title">قرار مباشر</div><strong>${_escHtml(state.log || '')}</strong><p>${isBlockStage ? `${_escHtml(blocker?.name || '')} قال يسكّر. أي لاعب ينجم يقول تكذب.` : `${target ? `${_escHtml(target.name)} مستهدف. ` : ''}${p.claim ? 'أي لاعب ينجم يقول تكذب أو ما عنديش اعتراض.' : 'أي لاعب ينجم يسكّرها أو يقول ما عندو اعتراض.'}`}</p>${_coupPendingTimerHtml(p)}<div class="coup-pass-progress">${_coupPassCount(state, p)}/${responders.length} قالو ما عندهم حتى اعتراض</div><div class="coup-pending-actions">${challengeButtons}${blockButtons}${passButtons}</div>`;
+
+    let blockerLine = '';
+    if (isBlockStage) {
+        blockerLine = `${_escHtml(blocker?.name || '')} قال يسكّر. أي لاعب ينجم يقول تكذب.`;
+    } else if (isDeflectStage) {
+        const deflector = state.players.find(x => x.id === p.deflectorId);
+        const deflectTarget = state.players.find(x => x.id === p.deflectTargetId);
+        blockerLine = `${_escHtml(deflector?.name || '')} حوّل الاغتيال لـ${_escHtml(deflectTarget?.name || '')}. أي لاعب ينجم يقول تكذب.`;
+    } else {
+        blockerLine = `${target ? `${_escHtml(target.name)} مستهدف. ` : ''}${p.claim ? 'أي لاعب ينجم يقول تكذب أو ما عنديش اعتراض.' : 'أي لاعب ينجم يسكّرها أو يقول ما عندو اعتراض.'}`;
+    }
+
+    wrap.innerHTML = `<div class="coup-pending-title">قرار مباشر</div><strong>${_escHtml(state.log || '')}</strong><p>${blockerLine}</p>${_coupPendingTimerHtml(p)}<div class="coup-pass-progress">${_coupPassCount(state, p)}/${responders.length} قالو ما عندهم حتى اعتراض</div><div class="coup-pending-actions">${challengeButtons}${blockButtons}${passButtons}</div>`;
     wrap.querySelectorAll('[data-banner-challenge]').forEach(btn => btn.addEventListener('click', () => {
         isBlockStage ? coupChallengeBlock(btn.dataset.bannerChallenge) : coupChallenge(btn.dataset.bannerChallenge);
     }));
@@ -1919,6 +1935,7 @@ window.CoupGame = {
     allPassed:          _coupAllPassed,
     proveAndReplace:    _coupProveAndReplace,
     actionName:         coupActionName,
+    deflectCost:        CONTESSA_DEFLECT_COST,
     // Rendering (called by online.js after receiving server state)
     renderScreen:       renderCoupScreen,
     renderGuide:        renderCoupGuide,
