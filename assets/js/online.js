@@ -392,6 +392,7 @@ function _renderCoupLobbySettings(anchorBtn, room) {
     const cfg = room.config || {};
     const turnTime = cfg.actionTimer || 1;
     const versusAI = !!cfg.versusAI;
+    const extendedMode = !!cfg.extendedMode;
 
     const wrap = document.createElement('div');
     wrap.id = 'lobby-settings-panel';
@@ -406,9 +407,15 @@ function _renderCoupLobbySettings(anchorBtn, room) {
                     <button class="counter-btn" id="coup-time-plus">+</button>
                 </div>
             </div>
-            <div class="toggle-row" style="border-bottom:none; margin-top:16px;">
+            <div class="toggle-row" style="margin-top:16px;">
                 <span class="toggle-label">🤖 اللعب ضد الذكاء الاصطناعي</span>
                 <div class="toggle-switch ${versusAI?'active':''}" id="coup-ai-tog">
+                    <div class="toggle-thumb"></div>
+                </div>
+            </div>
+            <div class="toggle-row" style="border-bottom:none; margin-top:16px;">
+                <span class="toggle-label">🏆 كول وبوّع Extended (14 coins)</span>
+                <div class="toggle-switch ${extendedMode?'active':''}" id="coup-extended-tog">
                     <div class="toggle-thumb"></div>
                 </div>
             </div>
@@ -424,6 +431,7 @@ function _renderCoupLobbySettings(anchorBtn, room) {
     wrap.querySelector('#coup-time-minus').onclick = () => updateConfig({ actionTimer: Math.max(1, turnTime - 1) });
     wrap.querySelector('#coup-time-plus').onclick = () => updateConfig({ actionTimer: Math.min(5, turnTime + 1) });
     wrap.querySelector('#coup-ai-tog').onclick = () => updateConfig({ versusAI: !versusAI });
+    wrap.querySelector('#coup-extended-tog').onclick = () => updateConfig({ extendedMode: !extendedMode });
 }
 
 function _renderSimpleLobbyTimerSettings(anchorBtn, room, opts = {}) {
