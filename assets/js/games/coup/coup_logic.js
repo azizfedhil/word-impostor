@@ -109,7 +109,7 @@ const coupCards = {
     customsOfficer: {
         name: 'سي فلان', icon: '🛃',
         img: _coupAssetBase + 'customsOfficer.webp', img512: _coupAssetBase + 'customsOfficer512.webp',
-        attack:  'هجوم: يفرض ضريبة لدورة كاملة — أي دور (+1)، بية (+1)، حفار القبور (+2)، أو Coup (+3). الضرائب تتراكم. الضريبة تُدفع عند تنفيذ الأكشن.',
+        attack:  'هجوم: يفرض ضريبة على دور واحد من الأدوار لدورة واحدة (+1). عند اغتيال/Coup/بية بلوك، ينجم يدعي ردّ فعل للتقبّض على +2/+3/+1.',
         defense: 'دفاع: يسكّر ضريبة سي فلان لاعب آخر.',
     },
 };
@@ -183,7 +183,7 @@ const coupActionHelp = {
     speculatorGamble:{ title: 'الكلاب: قامبل',         text: 'تقول عندي الكلاب وتاخو فلوس تساوي فلوسك الحالية (أكثر 5). كان عندك صفر، ما تاخوش. أي لاعب ينجم يقولك تكذب.' },
     steal:           { title: 'الرايس: اسرق',           text: 'تقول عندي الرايس وتسرق حتى زوز فلوس من لاعب. الهدف ينجم يسكّر بالرايس أو الكارطة الموجودة من عيلة السمسار. أي لاعب ينجم يقول تكذب.' },
     invoice:         { title: 'الكبران: فاتورة',        text: 'تقول عندي الكبران وتبعث فاتورة لاعب وتاخو حتى زوز فلوس. الهدف ينجم يسكّر بأي كارطة من عيلة السمسار. أي لاعب ينجم يقول تكذب.' },
-    taxAssignment:   { title: 'سي فلان: ضريبة',         text: 'تقول عندي سي فلان وتختار هدف الضريبة: أي دور (+1)، بية (+1)، حفار القبور (+2)، أو Coup (+3). الضرائب تتراكم من الدورات السابقة. الضريبة تُدفع عند تنفيذ الأكشن. لاعب يدعي سي فلان ينجم يسكّر الضريبة. أي لاعب ينجم يقولك تكذب.' },
+    taxAssignment:   { title: 'سي فلان: ضريبة',         text: 'تقول عندي سي فلان وتختار دور واحد من الأدوار الموجودة في اللعبة. أي لاعب يدعي هذا الدور هذا الدور خلال هذا الدور يدفع لك +1 فلوس. الضريبة تدوم دورة واحدة فقط. عند الاغتيال، Coup، أو بلوك البية، اللاعبون ينجموا يدعوا سي فلان بشكل ردّ فعل ويتقبضو +1 أو +2 أو +3. أي لاعب ينجم يقولك تكذب.' },
     assassinate:     { title: 'اغتيال -3',              text: 'تدفع 3 فلوس وتقول عندي حفار القبور باش تطيّح كارتة من لاعب. الهدف ينجم يسكّر بالبية، وأي لاعب ينجم يقول تكذب.' },
     exchange:        { title: 'السمسار: بدّل',          text: 'تقول عندي السمسار وتبدّل كوارطك الحيين مع الدكّة. أي لاعب ينجم يقولك تكذب.' },
     inquireExchange: { title: 'البحاث: بدّل كارطة',    text: 'تقول عندي البحاث وتجيب كارطة واحدة من الدكة وتختار شنوة تبقى معاك. أي لاعب ينجم يقولك تكذب.' },
@@ -261,12 +261,13 @@ function _coupPayBank(state, amount) {
     state.bankCoins += Math.max(0, amount || 0);
 }
 
-// Returns the coin cost for a given taxType
+// Returns the coin cost for a role-based tax (always 1 per tax assignment)
 function _coupTaxAmount(taxType) {
-    return ({ role: 1, contessa: 1, assassin: 2, coup: 3 })[taxType] || 1;
+    return 1;
 }
 
-// Returns the total tax an actor must pay given their action/claim, checking all active taxes
+// Returns the total pre-placed role tax an actor must pay given their claim, checking all active taxes
+// Only taxType === 'role' with matching taxedRole (or wildcard) applies here.
 function _coupComputeTotalTax(state, claim, action) {
     const taxes = state.taxAssignments || [];
     let total = 0;
@@ -275,16 +276,10 @@ function _coupComputeTotalTax(state, claim, action) {
         const officer = state.players.find(p => p.id === tax.officerId);
         const officerAlive = officer && officer.hand.some(c => !c.lost);
         if (!officerAlive) continue;
-        let applies = false;
-        if (tax.taxType === 'role' && claim)            applies = true;
-        if (tax.taxType === 'contessa' && action === 'assassinate') applies = false; // contessa is a block, not an action
-        // contessa tax: applies when contessa block is used — handled separately
-        if (tax.taxType === 'assassin' && action === 'assassinate') applies = true;
-        if (tax.taxType === 'coup' && action === 'coup')            applies = true;
-        if (applies) {
-            const amount = _coupTaxAmount(tax.taxType);
-            total += amount;
-            officers.push({ officer, amount, tax });
+        // Only role-based pre-placed taxes apply here
+        if (tax.taxType === 'role' && claim && tax.taxedRole && tax.taxedRole === claim) {
+            total += 1;
+            officers.push({ officer, amount: 1, tax });
         }
     }
     return { total, officers };
@@ -814,31 +809,28 @@ function coupChooseAction(action) {
     if ((actor.coins || 0) >= 10 && action !== 'coup') return showToast('عندك 10 فلوس ولا أكثر، لازم تعمل Coup.');
     if (action === 'assassinate' && actor.coins < 3)  return showToast('يلزمك 3 فلوس للاغتيال.');
     if (action === 'coup'        && actor.coins < 7)  return showToast('يلزمك 7 فلوس للCoup.');
-    // Customs Officer: pick tax type upfront (needed for bluff penalty calculation)
+    // Customs Officer: pick a specific role to tax (pre-placed tax lasts one turn)
     if (action === 'taxAssignment') {
-        const taxCategories = [
-            { taxType: 'role',     label: 'أي دور (+1 فلوس)',           icon: '🎭' },
-            { taxType: 'contessa', label: 'بية — بلوك (+1 فلوس)',       icon: '🌹' },
-            { taxType: 'assassin', label: 'حفار القبور (+2 فلوس)',      icon: '🗡️' },
-            { taxType: 'coup',     label: 'Coup (+3 فلوس)',              icon: '💥' },
-        ];
-        const btns = taxCategories.map(c =>
-            `<button class="coup-target-btn" data-tax-type="${c.taxType}">${c.icon} ${_escHtml(c.label)}</button>`
-        ).join('');
-        _showCoupModal('سي فلان: اختار هدف الضريبة',
-            `<p>اختار نوع الضريبة. الضرائب تتراكم مع ضرائب سابقة على نفس الهدف.</p>
-             <div class="coup-target-grid">${btns}</div>`,
+        const rolesInPlay = coupState.rolesInPlay || ['assassin', 'captain', 'contessa', 'duke', 'ambassador'];
+        const roleBtns = rolesInPlay.map(role => {
+            const meta = coupCards[role] || coupCards.duke;
+            return `<button class="coup-target-btn" data-tax-role="${role}">${meta.icon} ${_escHtml(meta.name)} (+1)</button>`;
+        }).join('');
+        _showCoupModal('سي فلان: اختار الدور اللي تفرض عليه ضريبة',
+            `<p>اختار دور واحد من الأدوار الموجودة في اللعبة. أي لاعب يدعي هذا الدور هذا الدور يدفع لك +1 فلوس. الضريبة تدوم دورة واحدة بس.</p>
+             <div class="coup-target-grid">${roleBtns}</div>`,
             overlay => {
-                overlay.querySelectorAll('[data-tax-type]').forEach(btn => btn.addEventListener('click', () => {
+                overlay.querySelectorAll('[data-tax-role]').forEach(btn => btn.addEventListener('click', () => {
                     _closeCoupModal();
-                    const taxType = btn.dataset.taxType;
+                    const taxedRole = btn.dataset.taxRole;
+                    const meta = coupCards[taxedRole] || coupCards.duke;
                     const actionName = coupActionName(action);
                     _showCoupModal(actionName,
-                        `<p>باش تفرض ضريبة <strong>${_escHtml(btn.textContent.trim())}</strong>. اللاعبون ينجموا يقولو "تكذب!" ولا يسكّروا بسي فلان.</p><button class="primary-btn" id="coup-confirm-action">كمّل</button>`,
+                        `<p>باش تفرض ضريبة على <strong>${_escHtml(meta.icon + ' ' + meta.name)}</strong>. اللاعبون ينجموا يقولو "تكذب!" ولا يسكّروا بسي فلان.</p><button class="primary-btn" id="coup-confirm-action">كمّل</button>`,
                         overlay2 => {
                             overlay2.querySelector('#coup-confirm-action')?.addEventListener('click', () => {
                                 _closeCoupModal();
-                                coupStartPending(action, null, taxType);
+                                coupStartPending(action, null, taxedRole);
                             });
                         }
                     );
@@ -883,23 +875,18 @@ function coupStartPending(action, targetId, taxType = null) {
     const blockRoles = _coupActionBlockRoles(action);
     const blockable  = blockRoles.length > 0;
 
-    // Check for Customs Officer taxes (multi-tax array)
+    // Check for Customs Officer role-based taxes
     const taxes = coupState.taxAssignments || [];
-    if (taxes.length > 0 && (claim || action === 'coup')) {
+    if (taxes.length > 0 && claim) {
         let totalTax = 0;
         const taxLines = [];
         for (const tax of taxes) {
             const officer = coupState.players.find(p => p.id === tax.officerId);
             const officerAlive = officer && officer.hand.some(c => !c.lost);
             if (!officerAlive) continue;
-            let applies = false;
-            if (tax.taxType === 'role' && claim)                     applies = true;
-            if (tax.taxType === 'assassin' && action === 'assassinate') applies = true;
-            if (tax.taxType === 'coup'     && action === 'coup')        applies = true;
-            if (applies) {
-                const amount = _coupTaxAmount(tax.taxType);
-                totalTax += amount;
-                taxLines.push({ officer, amount });
+            if (tax.taxType === 'role' && tax.taxedRole && tax.taxedRole === claim) {
+                totalTax += 1;
+                taxLines.push({ officer, amount: 1 });
             }
         }
         if (totalTax > 0) {
@@ -983,7 +970,7 @@ function coupChallenge(challengerId) {
             coupState.log = `${actor.name} تڨبض يبوّع على الكُلّاب! ${funCaughtBluff()} خسر كارتة وكل فلوسو (${penalty}) راحت لـ${challenger.name}!`;
         // taxAssignment bluff penalty: pay challenger the tax amount you tried to collect
         } else if (p.action === 'taxAssignment' && p.taxType) {
-            const penalty = Math.min(_coupTaxAmount(p.taxType), actor.coins);
+            const penalty = Math.min(1, actor.coins);
             if (penalty > 0) {
                 actor.coins -= penalty;
                 challenger.coins += penalty;
@@ -1055,12 +1042,18 @@ function renderCoupBlockChallengePanel() {
 function coupAcceptBlock() {
     const p      = coupState.pending;
     const blocker = coupState.players.find(x => x.id === p?.blockerId);
+    const actor   = coupState.players.find(x => x.id === p?.actorId);
     coupState.log = `${blocker?.name || ''} سكّر الأكشن. تعدّت بسلام.`;
     coupState.pending = null;
-    _coupNextTurn();
     _showCoupEvent(coupState.log, 'good');
     _sfx.notify();
-    renderCoupScreen();
+    // If this was a contessa block of an assassination, prompt reactive tax
+    if (p?.action === 'assassinate' && p?.blockRole === 'contessa' && actor) {
+        _coupPromptReactiveTax('contessaBlock', actor.id, 1, () => { _coupNextTurn(); renderCoupScreen(); });
+    } else {
+        _coupNextTurn();
+        renderCoupScreen();
+    }
 }
 
 function coupChallengeBlock(challengerId = null) {
@@ -1081,6 +1074,70 @@ function coupChallengeBlock(challengerId = null) {
         _showCoupEvent(coupState.log, 'bad');
         coupLoseInfluence(blocker.id, () => coupResolveAction(p.action, p.targetId), 'البلوك كان تبلعيط. اختار كارتة تكشفها.');
     }
+}
+
+// ── Reactive Customs Officer tax prompts ──────────────────────
+// Prompts all alive players to claim customsOfficer tax after assassination/coup/contessa-block
+function _coupPromptReactiveTax(eventType, actorId, amount, onDone) {
+    // Only prompt if customsOfficer is in the round pool
+    if (!(coupState.rolesInPlay || []).includes('customsOfficer')) { onDone(); return; }
+    const alive = _coupAlive();
+    const actor = coupState.players.find(p => p.id === actorId);
+    // Each alive player (including actor — they can't realistically tax themselves but rules allow claiming)
+    // We'll collect claims sequentially: show one modal at a time per player
+    const labels = {
+        assassination: `اغتيال (+${amount} فلوس من ${actor?.name || '?'})`,
+        coup:          `Coup (+${amount} فلوس من ${actor?.name || '?'})`,
+        contessaBlock: `بلوك البية (+${amount} فلوس من ${actor?.name || '?'})`,
+    };
+    const label = labels[eventType] || `+${amount} فلوس`;
+    const claimants = []; // players who claimed the tax
+    let idx = 0;
+    const promptNext = () => {
+        if (idx >= alive.length) {
+            // Apply all claims
+            if (claimants.length > 0 && actor) {
+                let total = claimants.length * amount;
+                if (actor.coins < total) total = actor.coins; // can't pay more than they have
+                // distribute proportionally (simplified: give each claimant their share if possible)
+                let remaining = actor.coins;
+                for (const cl of claimants) {
+                    if (remaining >= amount) {
+                        actor.coins -= amount;
+                        cl.coins += amount;
+                        remaining -= amount;
+                    }
+                }
+                const names = claimants.map(c => c.name).join('، ');
+                coupState.log = `سي فلان: ${names} طالب بضريبة على ${label}. ${actor.name} دفع.`;
+                _showCoupEvent(coupState.log, 'notice');
+            }
+            onDone();
+            return;
+        }
+        const player = alive[idx++];
+        if (player.id === actorId) { promptNext(); return; } // actor can't tax themselves reactively
+        const meta = coupCards.customsOfficer;
+        _showCoupModal(`سي فلان: ضريبة على ${label}`,
+            `<p><strong>${_escHtml(player.name)}</strong>، تحب تدعي سي فلان وتاخو +${amount} فلوس من ${_escHtml(actor?.name || '?')} على هذا الأكشن؟</p>
+             <div class="coup-target-grid">
+                 <button class="coup-target-btn primary-action" id="co-claim-yes">✅ نعم، ادعي سي فلان (+${amount})</button>
+                 <button class="coup-target-btn quiet-action" id="co-claim-no">لا، تخطي</button>
+             </div>`,
+            overlay => {
+                overlay.querySelector('#co-claim-yes')?.addEventListener('click', () => {
+                    _closeCoupModal();
+                    claimants.push(player);
+                    promptNext();
+                });
+                overlay.querySelector('#co-claim-no')?.addEventListener('click', () => {
+                    _closeCoupModal();
+                    promptNext();
+                });
+            }
+        );
+    };
+    promptNext();
 }
 
 function coupResolveAction(action, targetId) {
@@ -1147,13 +1204,14 @@ function coupResolveAction(action, targetId) {
     }
     // ── Expansion: Customs Officer tax assignment ────────────────────
     if (action === 'taxAssignment') {
-        const taxType = pendingTaxType || 'role';
-        const taxLabel = { role: 'أي دور (+1)', contessa: 'بية (+1)', assassin: 'حفار القبور (+2)', coup: 'Coup (+3)' }[taxType] || taxType;
+        const taxedRole = pendingTaxType || 'assassin'; // pendingTaxType now stores the specific role
+        const roleMeta = coupCards[taxedRole];
+        const taxLabel = roleMeta ? `${roleMeta.icon} ${roleMeta.name} (+1)` : taxedRole;
         if (!coupState.taxAssignments) coupState.taxAssignments = [];
         // Remove any previous tax by this officer (only one per officer at a time)
         coupState.taxAssignments = coupState.taxAssignments.filter(t => t.officerId !== actor.id);
-        coupState.taxAssignments.push({ taxType, officerId: actor.id, officerTurnIndex: coupState.turnIndex });
-        coupState.log = `${actor.name} فرض ضريبة ${taxLabel} لسي فلان.`;
+        coupState.taxAssignments.push({ taxType: 'role', taxedRole, officerId: actor.id, officerTurnIndex: coupState.turnIndex });
+        coupState.log = `${actor.name} فرض ضريبة على ${taxLabel} لسي فلان. تدوم دورة واحدة.`;
         _showCoupEvent(coupState.log, 'good');
         _coupNextTurn(); renderCoupScreen();
         return;
@@ -1161,13 +1219,17 @@ function coupResolveAction(action, targetId) {
     if (action === 'assassinate' && target) {
         coupState.log = `${target.name} تضرّب من حفار القبور. ${target.name} يختار كارتة يخسرها.`;
         _showCoupEvent(coupState.log, 'bad');
-        return coupLoseInfluence(target.id, () => { _coupNextTurn(); renderCoupScreen(); }, 'تضرّبت من حفار القبور. اختار شنية الكارتة الي تخسرها.');
+        return _coupPromptReactiveTax('assassination', actor.id, 2, () => {
+            coupLoseInfluence(target.id, () => { _coupNextTurn(); renderCoupScreen(); }, 'تضرّبت من حفار القبور. اختار شنية الكارتة الي تخسرها.');
+        });
     }
     if (action === 'coup' && target) {
         actor.coins -= 7; _coupPayBank(coupState, 7);
         coupState.log = `${actor.name} عمل Coup على ${target.name}. ${target.name} يختار كارتة يخسرها.`;
         _showCoupEvent(coupState.log, 'bad');
-        return coupLoseInfluence(target.id, () => { _coupNextTurn(); renderCoupScreen(); }, 'تضرّبت بCoup. اختار شنية الكارتة الي تخسرها.');
+        return _coupPromptReactiveTax('coup', actor.id, 3, () => {
+            coupLoseInfluence(target.id, () => { _coupNextTurn(); renderCoupScreen(); }, 'تضرّبت بCoup. اختار شنية الكارتة الي تخسرها.');
+        });
     }
     _showCoupEvent(coupState.log, ['assassinate', 'coup'].includes(action) ? 'bad' : 'good');
     _coupNextTurn();
