@@ -2197,7 +2197,8 @@ async function _onlineCoupChallengeBlock(challengerId = _myId, pendingId = null)
 // ── Reactive Customs Officer tax (after assassination/coup/contessa block) ──────
 
 async function _onlineCoupReactiveTaxRespond(claim, taxId = null) {
-    // claim: true = claim customsOfficer, false = pass
+    // claim: true = claim customsOfficer, false = pass.
+    // First valid claim wins — once claimed, the window closes for everyone else.
     await _onlineCoupMutateState(async state => {
         const rt = state.pendingReactiveTax;
         if (!rt) return null;
@@ -2207,30 +2208,45 @@ async function _onlineCoupReactiveTaxRespond(claim, taxId = null) {
         if ((rt.respondedIds || []).includes(_myId)) return null;
         if (_myId === rt.actorId) return null; // actor can't tax themselves
         if (!rt.respondedIds) rt.respondedIds = [];
-        rt.respondedIds.push(_myId);
+
         if (claim) {
-            // Apply tax: take coins from actor
-            const actor = state.players.find(p => p.id === rt.actorId);
-            if (actor && actor.coins >= rt.amount) {
-                actor.coins -= rt.amount;
-                me.coins += rt.amount;
-                state.log = `${me.name} ادعى سي فلان وتقبّض ${rt.amount} فلوس من ${actor.name}.`;
-                _onlineCoupEvent(state, state.log, 'good');
-            } else if (actor && actor.coins > 0) {
-                const paid = actor.coins;
-                actor.coins = 0;
-                me.coins += paid;
-                state.log = `${me.name} ادعى سي فلان وتقبّض ${paid} فلوس من ${actor.name} (كل ما عنده).`;
-                _onlineCoupEvent(state, state.log, 'good');
+            if (rt.claimedById) {
+                // Already claimed by someone else — treat as a pass.
+                rt.respondedIds.push(_myId);
+            } else {
+                // First claim — award coins and lock out all remaining players immediately.
+                const actor = state.players.find(p => p.id === rt.actorId);
+                if (actor && actor.coins >= rt.amount) {
+                    actor.coins -= rt.amount;
+                    me.coins += rt.amount;
+                    state.log = `${me.name} ادعى سي فلان أول وتقبّض ${rt.amount} فلوس من ${actor.name}.`;
+                    _onlineCoupEvent(state, state.log, 'good');
+                } else if (actor && actor.coins > 0) {
+                    const paid = actor.coins;
+                    actor.coins = 0;
+                    me.coins += paid;
+                    state.log = `${me.name} ادعى سي فلان أول وتقبّض ${paid} فلوس من ${actor.name} (كل ما عنده).`;
+                    _onlineCoupEvent(state, state.log, 'good');
+                }
+                rt.claimedById = _myId;
+                // Mark all remaining eligible players as responded so the window closes.
+                const alive = _onlineCoupAlive(state);
+                alive.forEach(p => {
+                    if (p.id !== rt.actorId && !rt.respondedIds.includes(p.id)) {
+                        rt.respondedIds.push(p.id);
+                    }
+                });
             }
+        } else {
+            rt.respondedIds.push(_myId);
         }
+
         // Check if all eligible players have responded
         const alive = _onlineCoupAlive(state);
         const eligible = alive.filter(p => p.id !== rt.actorId);
         const allResponded = eligible.every(p => rt.respondedIds.includes(p.id));
         if (allResponded) {
             state.pendingReactiveTax = null;
-            // Continue with the next action
             const next = rt.next || { type: 'nextTurn' };
             if (next.type === 'applyLoss') {
                 if (!_onlineCoupRequestLoss(state, next.targetId, next.reason || '', { type: 'nextTurn' })) _onlineCoupNextTurn(state);
@@ -2254,12 +2270,23 @@ function _renderOnlineCoupReactiveTaxBanner(state, me) {
     const label = labels[rt?.eventType] || `+${rt?.amount} فلوس`;
     const hasResponded = (rt?.respondedIds || []).includes(me?.id);
     const isActor = me?.id === rt?.actorId;
+    const alreadyClaimed = !!rt?.claimedById;
+    const claimedByMe = rt?.claimedById === me?.id;
+    const claimedByPlayer = alreadyClaimed ? state.players.find(p => p.id === rt.claimedById) : null;
     const alive = _onlineCoupAlive(state);
     const eligible = alive.filter(p => p.id !== rt?.actorId);
     const waitingCount = eligible.filter(p => !(rt?.respondedIds || []).includes(p.id)).length;
     const wrap = document.createElement('div');
     wrap.className = 'coup-pending-banner';
-    if (isActor || hasResponded) {
+    if (alreadyClaimed) {
+        // Tax already won — show outcome to everyone.
+        const claimedName = esc(claimedByPlayer?.name || '?');
+        wrap.innerHTML = `
+            <div class="coup-pending-title">سي فلان: ضريبة ردّ فعل</div>
+            <strong>${label}</strong>
+            <p>${claimedByMe ? `✅ تقبّضت الضريبة.` : `✅ ${claimedName} تقبّض الضريبة. الفرصة راحت.`}</p>
+        `;
+    } else if (isActor || hasResponded) {
         wrap.innerHTML = `
             <div class="coup-pending-title">سي فلان: ضريبة ردّ فعل</div>
             <strong>${label}</strong>
@@ -2269,7 +2296,7 @@ function _renderOnlineCoupReactiveTaxBanner(state, me) {
         wrap.innerHTML = `
             <div class="coup-pending-title">سي فلان: ضريبة ردّ فعل</div>
             <strong>${label}</strong>
-            <p>تحب تدعي سي فلان وتتقبّض على ${rt?.amount} فلوس من ${esc(actor?.name || '?')}؟</p>
+            <p>تحب تدعي سي فلان وتتقبّض على ${rt?.amount} فلوس من ${esc(actor?.name || '?')}؟ أول واحد يدعي يتقبّض.</p>
             <div class="coup-pending-actions">
                 <button class="coup-target-btn primary-action" id="rt-claim-yes">✅ نعم، ادعي سي فلان (+${rt?.amount})</button>
                 <button class="coup-target-btn quiet-action" id="rt-claim-no">لا، تخطي</button>
@@ -2291,24 +2318,36 @@ async function _onlineCoupAIReactiveTax(state, ai) {
     const rt = state.pendingReactiveTax;
     if (!rt || (rt.respondedIds || []).includes(ai.id) || ai.id === rt.actorId) return;
     const taxId = rt.id;
-    // AI has a 40% chance to claim the tax
-    const shouldClaim = Math.random() < 0.4;
+    // AI only tries to claim if no one has claimed yet; 40% chance otherwise it passes.
+    const shouldClaim = !rt.claimedById && Math.random() < 0.4;
     await _onlineCoupMutateState(async state => {
         const rt = state.pendingReactiveTax;
         if (!rt || rt.id !== taxId) return null;
         if ((rt.respondedIds || []).includes(ai.id) || ai.id === rt.actorId) return null;
         if (!rt.respondedIds) rt.respondedIds = [];
-        rt.respondedIds.push(ai.id);
-        if (shouldClaim) {
+
+        if (shouldClaim && !rt.claimedById) {
+            // First claim — award coins and lock out all remaining players immediately.
             const actor = state.players.find(p => p.id === rt.actorId);
             const aiPlayer = state.players.find(p => p.id === ai.id);
             if (actor && aiPlayer && actor.coins >= rt.amount) {
                 actor.coins -= rt.amount;
                 aiPlayer.coins += rt.amount;
-                state.log = `${aiPlayer.name} ادعى سي فلان وتقبّض ${rt.amount} فلوس من ${actor.name}.`;
+                state.log = `${aiPlayer.name} ادعى سي فلان أول وتقبّض ${rt.amount} فلوس من ${actor.name}.`;
                 _onlineCoupEvent(state, state.log, 'good');
             }
+            rt.claimedById = ai.id;
+            // Mark all remaining eligible players as responded so the window closes.
+            const alive = _onlineCoupAlive(state);
+            alive.forEach(p => {
+                if (p.id !== rt.actorId && !rt.respondedIds.includes(p.id)) {
+                    rt.respondedIds.push(p.id);
+                }
+            });
+        } else {
+            rt.respondedIds.push(ai.id);
         }
+
         const alive = _onlineCoupAlive(state);
         const eligible = alive.filter(p => p.id !== rt.actorId);
         const allResponded = eligible.every(p => rt.respondedIds.includes(p.id));
