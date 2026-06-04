@@ -130,13 +130,14 @@ function _coupGetDynamic(state = coupState) {
     const ambRole   = roles.find(r => _AMB_FAMILY.includes(r))  || 'ambassador';
     const captainRole = roles.find(r => _CAPTAIN_FAMILY.includes(r)) || 'captain';
     // customsOfficer blocks taxAssignment only (not steal); other captain-family members block steal
+    // UPDATE: customsOfficer blocks other customsOfficer (steal/taxAssignment)
     const stealBlockers = _CAPTAIN_FAMILY.filter(r => r !== 'customsOfficer');
     return {
         dukeRole,
         ambRole,
         captainRole,
         aidBlockRoles:            [dukeRole],
-        stealBlockRoles:          [captainRole, ambRole].filter(r => roles.includes(r) && (r === ambRole || stealBlockers.includes(r))),
+        stealBlockRoles:          captainRole === 'customsOfficer' ? ['customsOfficer'] : [captainRole, ambRole].filter(r => roles.includes(r) && (r === ambRole || stealBlockers.includes(r))),
         invoiceBlockRoles:        [ambRole].filter(r => roles.includes(r)),
         jesterBlockRoles:         ['jester'].filter(r => roles.includes(r)),
         taxAssignmentBlockRoles:  roles.includes('customsOfficer') ? ['customsOfficer'] : [],
