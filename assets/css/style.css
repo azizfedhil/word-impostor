@@ -1131,15 +1131,14 @@ body:not(.game-coup) .coup-only-btn { display: none !important; }
 #join-voice-btn[data-active="1"] { background: linear-gradient(145deg,#8a2020,#6e1515) !important; box-shadow: 0 3px 12px rgba(138,32,32,0.4) !important; }
 
 .coup-turn-indicator {
-    position: fixed;
-    top: 53.75px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 9991;
+    position: relative;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
     padding: 3px 31px;
+    margin: 0 auto 8px auto;
+    width: fit-content;
     background: rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(16px) saturate(180%);
     -webkit-backdrop-filter: blur(16px) saturate(180%);
@@ -1183,7 +1182,7 @@ body:not(.game-coup) .coup-only-btn { display: none !important; }
 }
 .coup-turn-indicator.hidden {
     opacity: 0;
-    transform: translateX(-50%) translateY(-20px);
+    transform: translateY(-20px);
 }
 .cti-label {
     color: var(--text-muted);
