@@ -2100,7 +2100,22 @@ async function _onlineCoupPass(playerId = _myId, pendingId = null) {
             if (p.stage === 'block') {
                 state.log = `${state.players.find(x=>x.id===p.blockerId)?.name || ''} سكّرها. الأكشن مات غادي.`;
                 _onlineCoupEvent(state, state.log, 'good');
+                const actor = state.players.find(x=>x.id===p.actorId);
                 state.pending = null;
+                // Reactive tax prompt for contessa block of assassination
+                if ((p.action === 'assassination' || p.action === 'assassinate') && p.blockRole === 'contessa') {
+                    if ((state.rolesInPlay || []).includes('customsOfficer') && actor) {
+                        state.pendingReactiveTax = {
+                            id: `rt_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
+                            eventType: 'contessaBlock', actorId: actor.id, amount: 1,
+                            respondedIds: [],
+                            next: { type: 'nextTurn' }
+                        };
+                        state.log = `سي فلان: هل تدعي الضريبة على بلوك البية؟ (+1 فلوس من ${actor.name})`;
+                        _onlineCoupEvent(state, state.log, 'notice');
+                        return state;
+                    }
+                }
                 _onlineCoupNextTurn(state);
             } else {
                 return _onlineCoupApplyActionLocal(state, p.action, p.targetId);
@@ -2137,7 +2152,7 @@ async function _onlineCoupAcceptBlock() {
         _onlineCoupEvent(state, state.log, 'good');
         state.pending = null;
         // Reactive tax prompt for contessa block of assassination
-        if (p.action === 'assassination' || p.action === 'assassinate') {
+        if ((p.action === 'assassination' || p.action === 'assassinate') && p.blockRole === 'contessa') {
             if ((state.rolesInPlay || []).includes('customsOfficer') && actor) {
                 state.pendingReactiveTax = {
                     id: `rt_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
