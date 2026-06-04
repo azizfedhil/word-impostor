@@ -1890,7 +1890,15 @@ async function _onlineCoupChallenge(challengerId, pendingId = null) {
                 actor.coins += 3;
                 _onlineCoupTakeFromBank(state, 3);
             }
-            state.log = `${actor.name} تڨبض يبوّع! ${_onlineCoupCaught()}`;
+            // Speculator penalty: failed bluff transfers ALL of actor's coins to the challenger
+            if (p.action === 'speculatorGamble' && actor.coins > 0) {
+                const penalty = actor.coins;
+                challenger.coins += penalty;
+                actor.coins = 0;
+                state.log = `${actor.name} تڨبض يبوّع على الكُلّاب! ${_onlineCoupCaught()} خسر كارتة وكل فلوسو (${penalty}) راحت لـ${challenger.name}!`;
+            } else {
+                state.log = `${actor.name} تڨبض يبوّع! ${_onlineCoupCaught()}`;
+            }
             _onlineCoupEvent(state, state.log, 'bad');
             _onlineCoupRequestLoss(state, actor.id, 'تكذّبت وما عندكش الكارتة. اختار كارتة تكشفها.', { type:'nextTurn' });
         }
