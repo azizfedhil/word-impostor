@@ -154,7 +154,7 @@ function _onlineCoupDynamic(state) {
     return {
         dukeRole:'duke', ambRole:'ambassador', captainRole,
         aidBlockRoles:['duke'],
-        stealBlockRoles: captainRole === 'customsOfficer' ? ['ambassador'] : [captainRole,'ambassador'].filter(r=>roles.includes(r)),
+        stealBlockRoles: captainRole === 'customsOfficer' ? ['customsOfficer'] : ['captain','lawyer','ambassador'].filter(r=>roles.includes(r)),
         invoiceBlockRoles:['ambassador'],
         jesterBlockRoles:['jester'],
         taxAssignmentBlockRoles: roles.includes('customsOfficer') ? ['customsOfficer'] : [],
@@ -508,7 +508,6 @@ function _onlineCoupContinueAfterLoss(state, next = { type:'nextTurn' }) {
     if (_onlineCoupAlive(state).length <= 1) {
         state.pending = null;
         state.pendingExchange = null;
-        state.pendingTaxAssignment = null;
         state.pendingEstateClaim = null;
         state.pendingReactiveTax = null;
         return state;
@@ -602,24 +601,6 @@ function _onlineCoupRequestExchange(state, playerId, drawCount = 2) {
     return true;
 }
 
-function _onlineCoupRequestTaxAssignment(state, playerId, taxedRole = 'assassin') {
-    const player = state.players.find(x => x.id === playerId);
-    const rolesInPlay = state.rolesInPlay || ['assassin', 'captain', 'contessa', 'duke', 'ambassador'];
-    if (!player) return false;
-    state.pending = null;
-    state.pendingTaxAssignment = {
-        id:`tax_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
-        playerId,
-        rolesInPlay,
-        taxedRole,  // specific role being taxed
-        taxType: 'role', // always role
-    };
-    const roleMeta = window.coupCards?.[taxedRole];
-    const taxLabel = roleMeta ? `${roleMeta.icon} ${roleMeta.name} (+1)` : taxedRole;
-    state.log = `${player.name} يفرض ضريبة على ${taxLabel}. سي فلان يراقب.`;
-    _onlineCoupEvent(state, state.log, 'notice');
-    return true;
-}
 
 function _onlineCoupActionName(action) {
     return {
@@ -642,12 +623,12 @@ function _startOnlineCoupTimer(state) {
         const left = _onlineCoupTurnSecondsLeft(state);
         timerEl.innerHTML = _onlineCoupTimerHtml(left);
         timerEl.classList.toggle('urgent', left <= 10);
-        if (left <= 0 && !state.pending && !state.pendingLoss && !state.pendingExchange && !state.pendingTaxAssignment && !state.pendingEstateClaim && !state.pendingReactiveTax && !_onlineCoupTimingOut && _onlineCoupAlive(state).length > 1 && _isHost) {
+        if (left <= 0 && !state.pending && !state.pendingLoss && !state.pendingExchange && !state.pendingEstateClaim && !state.pendingReactiveTax && !_onlineCoupTimingOut && _onlineCoupAlive(state).length > 1 && _isHost) {
             _onlineCoupTimeout();
         }
 
         // AI Logic for active turn
-        if (_isHost && !state.pending && !state.pendingLoss && !state.pendingExchange && !state.pendingTaxAssignment && !state.pendingEstateClaim && !state.pendingReactiveTax && !state.pendingInspect && !state.pendingJesterSwap && !state.pendingSocialistShare && !_onlineCoupTimingOut) {
+        if (_isHost && !state.pending && !state.pendingLoss && !state.pendingExchange && !state.pendingEstateClaim && !state.pendingReactiveTax && !state.pendingInspect && !state.pendingJesterSwap && !state.pendingSocialistShare && !_onlineCoupTimingOut) {
             const actor = state.players[state.turnIndex];
             if (actor?.isAI) {
                 const elapsed = (state.actionMinutes * 60) - left;
@@ -657,7 +638,7 @@ function _startOnlineCoupTimer(state) {
             }
         }
     };
-    // Handle AI Loss / AI Exchange / AI pendingTaxAssignment / AI pendingEstateClaim / AI pendingReactiveTax / AI pendingInspect / AI pendingJesterSwap / AI pendingSocialistShare
+    // Handle AI Loss / AI Exchange / AI pendingEstateClaim / AI pendingReactiveTax / AI pendingInspect / AI pendingJesterSwap / AI pendingSocialistShare
     if (_isHost && !_onlineCoupTimingOut) {
         if (state.pendingLoss) {
             const victim = state.players.find(p => p.id === state.pendingLoss.playerId);
@@ -665,9 +646,6 @@ function _startOnlineCoupTimer(state) {
         } else if (state.pendingExchange) {
             const exchanger = state.players.find(p => p.id === state.pendingExchange.playerId);
             if (exchanger?.isAI) setTimeout(() => _onlineCoupAIExchange(state, exchanger), 2000 + Math.random() * 2000);
-        } else if (state.pendingTaxAssignment) {
-            const officer = state.players.find(p => p.id === state.pendingTaxAssignment.playerId);
-            if (officer?.isAI) setTimeout(() => _onlineCoupAITaxAssignment(state, officer), 2000 + Math.random() * 2000);
         } else if (state.pendingReactiveTax) {
             const rt = state.pendingReactiveTax;
             const aiEligible = state.players.filter(p => p.isAI && p.id !== rt.actorId && p.hand.some(c => !c.lost) && !(rt.respondedIds || []).includes(p.id));
@@ -764,7 +742,7 @@ async function _onlineCoupTimeout() {
     _onlineCoupTimingOut = true;
     try {
         await _onlineCoupMutateState(async state => {
-            if (!isAI && (state.pending || state.pendingLoss || state.pendingExchange || state.pendingTaxAssignment || state.pendingEstateClaim || Math.ceil(((state.turnEndsAt || _syncedNow()) - _syncedNow()) / 1000) > 0)) return null;
+            if (!isAI && (state.pending || state.pendingLoss || state.pendingExchange || state.pendingEstateClaim || Math.ceil(((state.turnEndsAt || _syncedNow()) - _syncedNow()) / 1000) > 0)) return null;
             const actor = state.players[state.turnIndex || 0];
             if (actor?.hand?.some(c=>!c.lost)) {
                 actor.coins += 1;
@@ -807,7 +785,7 @@ function _showOnlineCoup(room) {
     if (state.pending && !state.pending.expiresAt) {
         state.pending.expiresAt = _syncedNow() + ONLINE_COUP_RESPONSE_SECONDS * 1000;
     }
-    const activePromptId = state.pending?.id || state.pendingLoss?.id || state.pendingExchange?.id || state.pendingTaxAssignment?.id || state.pendingEstateClaim?.id || null;
+    const activePromptId = state.pending?.id || state.pendingLoss?.id || state.pendingExchange?.id || state.pendingEstateClaim?.id || null;
     if (activePromptId !== _lastCoupPromptId) {
         window.CoupUI?.closeModal?.();
         _lastCoupPendingKey = null;
@@ -899,7 +877,7 @@ function _showOnlineCoup(room) {
                 window.CoupUI?.showCardInfo?.(btn.dataset.cardType, window.coupCards);
             });
         });
-        if (isMe && idx === state.turnIndex && !state.pending && !state.pendingLoss && !state.pendingExchange && !state.pendingTaxAssignment && !state.pendingEstateClaim) {
+        if (isMe && idx === state.turnIndex && !state.pending && !state.pendingLoss && !state.pendingExchange && !state.pendingEstateClaim) {
             div.querySelectorAll('.coup-influence:not(.lost)').forEach(cardEl => {
                 cardEl.style.cursor = 'pointer';
                 cardEl.addEventListener('click', e => {
@@ -946,7 +924,6 @@ function _showOnlineCoup(room) {
     if (myBoard) {
         if (state.pendingLoss) myBoard.appendChild(_renderOnlineCoupLossBanner(state, me));
         else if (state.pendingExchange) myBoard.appendChild(_renderOnlineCoupExchangeBanner(state, me));
-        else if (state.pendingTaxAssignment) myBoard.appendChild(_renderOnlineCoupTaxAssignmentBanner(state, me));
         else if (state.pendingEstateClaim) myBoard.appendChild(_renderOnlineCoupEstateClaimBanner(state, me));
         else if (state.pendingReactiveTax) myBoard.appendChild(_renderOnlineCoupReactiveTaxBanner(state, me));
         else if (state.pendingInspect) myBoard.appendChild(_renderOnlineCoupInspectBanner(state, me));
@@ -1048,21 +1025,6 @@ function _renderOnlineCoupExchangeBanner(state, me) {
     return wrap;
 }
 
-function _renderOnlineCoupTaxAssignmentBanner(state, me) {
-    const tax = state.pendingTaxAssignment;
-    const player = state.players.find(p => p.id === tax?.playerId);
-    const esc = window.CoupUI?.escapeHtml || (x => x);
-    const roleMeta = window.coupCards?.[tax?.taxedRole];
-    const taxLabel = roleMeta ? `${roleMeta.icon} ${esc(roleMeta.name)} (+1)` : esc(tax?.taxedRole || '');
-    const wrap = document.createElement('div');
-    wrap.className = 'coup-pending-banner';
-    wrap.innerHTML = `
-        <div class="coup-pending-title">خطية سي فلان</div>
-        <strong>${esc(player?.name || '')} فرض ضريبة على ${taxLabel}</strong>
-        <p>${me?.id === player?.id ? `تأكيد الضريبة على ${taxLabel}.` : `نستناو ${esc(player?.name || '')} يؤكد الضريبة.`}</p>
-    `;
-    return wrap;
-}
 
 function _renderOnlineCoupEstateClaimBanner(state, me) {
     const estate = state.pendingEstateClaim;
@@ -1086,7 +1048,7 @@ function _renderOnlineCoupPendingBanner(state, me) {
     const isClaimant = me?.id === claimantId;
     const isBlockStage = p.stage === 'block';
     const canChallenge = me && !isClaimant && me.hand.some(c=>!c.lost) && (p.claim || isBlockStage);
-    const canBlock = me && !isBlockStage && p.blockable && me.id !== actor?.id && me.hand.some(c=>!c.lost) && (p.action === 'foreignAid' || p.targetId === me.id);
+    const canBlock = me && !isBlockStage && p.blockable && me.id !== actor?.id && me.hand.some(c=>!c.lost) && (p.action === 'foreignAid' || !p.targetId || p.targetId === me.id);
     const canPass = me && !isClaimant && !(p.passes || []).includes(me.id);
     const passCount = _onlineCoupPassCount(state, p);
     const total = _onlineCoupPendingResponders(state, p).length;
@@ -1286,23 +1248,6 @@ function _renderOnlineCoupActions(room, state, me) {
         } else {
             const player = state.players.find(p => p.id === exchange.playerId);
             panel.innerHTML = `<div class="coup-panel-card">نستناو ${esc(player?.name || '')} يختار كوارط السمسار.</div>`;
-        }
-        return;
-    }
-    if (state.pendingTaxAssignment) {
-        const tax = state.pendingTaxAssignment;
-        const esc = window.CoupUI?.escapeHtml || (x => x);
-        const roleMeta = window.coupCards?.[tax.taxedRole];
-        const taxLabel = roleMeta ? `${roleMeta.icon} ${esc(roleMeta.name)} (+1)` : esc(tax.taxedRole || '');
-        if (me.id === tax.playerId) {
-            panel.innerHTML = `<div class="coup-panel-card live">سي فلان: تأكيد ضريبة على <strong>${taxLabel}</strong></div>
-                <button class="coup-target-btn primary-btn" id="confirm-tax-assignment">تأكيد الضريبة</button>`;
-            panel.querySelector('#confirm-tax-assignment')?.addEventListener('click', () => {
-                _onlineCoupChooseTaxAssignment(null, tax.id);
-            });
-        } else {
-            const player = state.players.find(p => p.id === tax.playerId);
-            panel.innerHTML = `<div class="coup-panel-card">نستناو ${esc(player?.name || '')} يؤكد الضريبة على ${taxLabel}.</div>`;
         }
         return;
     }
@@ -1807,29 +1752,6 @@ async function _onlineCoupChooseExchange(indices, exchangeId = null) {
     });
 }
 
-async function _onlineCoupChooseTaxAssignment(role, taxId = null) {
-    // NOTE: taxedRole comes from pendingTaxAssignment.taxedRole
-    // This function confirms the assignment and commits it to the taxAssignments array.
-    await _onlineCoupMutateState(async state => {
-        const tax = state.pendingTaxAssignment;
-        if (!tax || tax.playerId !== _myId) return null;
-        if (taxId && tax.id !== taxId) return null;
-        const player = state.players.find(p => p.id === tax.playerId);
-        if (!player) return null;
-        const taxedRole = tax.taxedRole || 'assassin';
-        if (!state.taxAssignments) state.taxAssignments = [];
-        // Remove any existing tax by this officer (replace with the new one)
-        state.taxAssignments = state.taxAssignments.filter(t => t.officerId !== player.id);
-        state.taxAssignments.push({ taxType: 'role', taxedRole, officerId: player.id, officerTurnIndex: state.turnIndex });
-        state.pendingTaxAssignment = null;
-        const roleMeta = window.coupCards?.[taxedRole];
-        const taxLabel = roleMeta ? `${roleMeta.icon} ${roleMeta.name} (+1)` : taxedRole;
-        state.log = `${player.name} فرض ضريبة على ${taxLabel}. سي فلان يراقب.`;
-        _onlineCoupEvent(state, state.log, 'good');
-        _onlineCoupNextTurn(state);
-        return state;
-    });
-}
 
 async function _onlineCoupChooseEstateClaim(claimantId, estateId = null) {
     await _onlineCoupMutateState(async state => {
@@ -1899,25 +1821,13 @@ function _onlineCoupChoose(action) {
             return `<button class="coup-target-btn" data-tax-role="${esc(role)}">${meta.icon} ${esc(meta.name)} (+1)</button>`;
         }).join('');
         window.CoupUI?.showModal?.('سي فلان: اختار الدور اللي تفرض عليه ضريبة',
-            `<p>اختار دور واحد. أي لاعب يدعيه هذا الدور هذا الدور يدفع لك +1 فلوس. الضريبة تدوم دورة واحدة فقط.</p>
+            `<p>اختار دور واحد. أي لاعب يدعيه هذا الدور يدفع لك +1 فلوس. الضريبة تدوم دورة واحدة فقط.</p>
              <div class="coup-target-grid">${roleBtns}</div>`,
             overlay => {
                 overlay.querySelectorAll('[data-tax-role]').forEach(btn => btn.addEventListener('click', () => {
                     const taxedRole = btn.dataset.taxRole;
-                    const meta = window.coupCards?.[taxedRole] || { icon: '🂠', name: taxedRole };
                     window.CoupUI.closeModal();
-                    const actionName = _onlineCoupActionName(action);
-                    window.CoupUI?.showModal?.(actionName,
-                        `<p>باش تفرض ضريبة على <strong>${esc(meta.icon + ' ' + meta.name)}</strong>. اللاعبون ينجموا يقولو "تكذب!" ولا يسكّروا بسي فلان.</p>
-                         <button class="primary-btn" id="online-coup-confirm-action">كمّل</button>`,
-                        overlay2 => {
-                            overlay2.querySelector('#online-coup-confirm-action')?.addEventListener('click', () => {
-                                overlay2.querySelector('#online-coup-confirm-action').disabled = true;
-                                window.CoupUI.closeModal();
-                                _onlineCoupStartPending(action, null, taxedRole);
-                            });
-                        }
-                    );
+                    _onlineCoupStartPending(action, null, taxedRole);
                 }));
             }
         );
@@ -2069,7 +1979,7 @@ async function _onlineCoupChallenge(challengerId, pendingId = null) {
                 state.log = `${actor.name} تڨبض يبوّع على الكُلّاب! ${_onlineCoupCaught()} خسر كارتة وكل فلوسو (${penalty}) راحت لـ${challenger.name}!`;
             // taxAssignment bluff penalty: pay challenger the attempted tax amount
             } else if (p.action === 'taxAssignment' && p.taxType) {
-                const penalty = Math.min(_onlineCoupTaxAmount(p.taxType), actor.coins);
+                const penalty = Math.min(1, actor.coins);
                 if (penalty > 0) {
                     actor.coins -= penalty;
                     challenger.coins += penalty;
@@ -2077,11 +1987,13 @@ async function _onlineCoupChallenge(challengerId, pendingId = null) {
                 } else {
                     state.log = `${actor.name} تڨبض يبوّع على سي فلان! ${_onlineCoupCaught()} ما عندوش فلوس يدفعها.`;
                 }
+            } else if (p.action === 'reactiveTax') {
+                state.log = `${actor.name} تڨبض يبوّع على سي فلان! ${_onlineCoupCaught()}`;
             } else {
                 state.log = `${actor.name} تڨبض يبوّع! ${_onlineCoupCaught()}`;
             }
             _onlineCoupEvent(state, state.log, 'bad');
-            _onlineCoupRequestLoss(state, actor.id, 'تكذّبت وما عندكش الكارتة. اختار كارتة تكشفها.', { type:'nextTurn' });
+            _onlineCoupRequestLoss(state, actor.id, 'تكذّبت وما عندكش الكارتة. اختار كارتة تكشفها.', p.next || { type:'nextTurn' });
         }
         return state;
     });
@@ -2116,6 +2028,10 @@ async function _onlineCoupPass(playerId = _myId, pendingId = null) {
                         return state;
                     }
                 }
+                if (p.action === 'reactiveTax') {
+                    // If reactiveTax is passed/unchallenged, it applies
+                    return _onlineCoupApplyActionLocal(state, p.action, p.targetId);
+                }
                 _onlineCoupNextTurn(state);
             } else {
                 return _onlineCoupApplyActionLocal(state, p.action, p.targetId);
@@ -2132,7 +2048,7 @@ async function _onlineCoupBlock(blockerId, blockRole = null, pendingId = null) {
         if (!p || p.stage === 'block' || !p.blockable || (pendingId && p.id !== pendingId)) return null;
         const blocker = state.players.find(x=>x.id===blockerId);
         if (!blocker || blocker.id === p.actorId || !_onlineCoupLiveCards(blocker).length) return null;
-        if (p.action !== 'foreignAid' && p.targetId !== blocker.id) return null;
+        if (p.action !== 'foreignAid' && p.targetId && p.targetId !== blocker.id) return null;
         const blockRoles = p.blockRoles || (p.action === 'assassinate' ? ['contessa'] : p.action === 'steal' ? ['captain','ambassador'] : ['duke']);
         const role = blockRole && blockRoles.includes(blockRole) ? blockRole : blockRoles[0];
         state.pending = {...p, id:`p_${Date.now()}_${Math.random().toString(36).slice(2,6)}`, stage:'block', blockerId, blockRole:role, passes:[]};
@@ -2164,6 +2080,15 @@ async function _onlineCoupAcceptBlock() {
                 _onlineCoupEvent(state, state.log, 'notice');
                 return state;
             }
+        }
+        if (p.action === 'reactiveTax') {
+            const next = p.next || { type: 'nextTurn' };
+            if (next.type === 'applyLoss') {
+                if (!_onlineCoupRequestLoss(state, next.targetId, next.reason || '', { type: 'nextTurn' })) _onlineCoupNextTurn(state);
+            } else {
+                _onlineCoupNextTurn(state);
+            }
+            return state;
         }
         _onlineCoupNextTurn(state);
         return state;
@@ -2211,23 +2136,8 @@ async function _onlineCoupReactiveTaxRespond(claim, taxId = null) {
 
         if (claim) {
             if (rt.claimedById) {
-                // Already claimed by someone else — treat as a pass.
                 rt.respondedIds.push(_myId);
             } else {
-                // First claim — award coins and lock out all remaining players immediately.
-                const actor = state.players.find(p => p.id === rt.actorId);
-                if (actor && actor.coins >= rt.amount) {
-                    actor.coins -= rt.amount;
-                    me.coins += rt.amount;
-                    state.log = `${me.name} ادعى سي فلان أول وتقبّض ${rt.amount} فلوس من ${actor.name}.`;
-                    _onlineCoupEvent(state, state.log, 'good');
-                } else if (actor && actor.coins > 0) {
-                    const paid = actor.coins;
-                    actor.coins = 0;
-                    me.coins += paid;
-                    state.log = `${me.name} ادعى سي فلان أول وتقبّض ${paid} فلوس من ${actor.name} (كل ما عنده).`;
-                    _onlineCoupEvent(state, state.log, 'good');
-                }
                 rt.claimedById = _myId;
                 // Mark all remaining eligible players as responded so the window closes.
                 const alive = _onlineCoupAlive(state);
@@ -2246,12 +2156,34 @@ async function _onlineCoupReactiveTaxRespond(claim, taxId = null) {
         const eligible = alive.filter(p => p.id !== rt.actorId);
         const allResponded = eligible.every(p => rt.respondedIds.includes(p.id));
         if (allResponded) {
+            const claimantId = rt.claimedById;
+            const rtBackup = { ...rt };
             state.pendingReactiveTax = null;
-            const next = rt.next || { type: 'nextTurn' };
-            if (next.type === 'applyLoss') {
-                if (!_onlineCoupRequestLoss(state, next.targetId, next.reason || '', { type: 'nextTurn' })) _onlineCoupNextTurn(state);
+            if (claimantId) {
+                state.pending = {
+                    id: `p_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
+                    action: 'reactiveTax',
+                    actorId: claimantId,
+                    targetId: rtBackup.actorId,
+                    amount: rtBackup.amount,
+                    next: rtBackup.next,
+                    claim: 'customsOfficer',
+                    blockable: true,
+                    blockRoles: ['customsOfficer'],
+                    passes: []
+                };
+                _onlineCoupSetResponseDeadline(state.pending);
+                const claimant = state.players.find(p => p.id === claimantId);
+                const originalActor = state.players.find(p => p.id === rtBackup.actorId);
+                state.log = `${claimant.name} ادعى سي فلان ويطالب بضريبة من ${originalActor.name}. تقدر تكذّبو ولا تسكّر بسي فلان!`;
+                _onlineCoupEvent(state, state.log, 'notice');
             } else {
-                _onlineCoupNextTurn(state);
+                const next = rtBackup.next || { type: 'nextTurn' };
+                if (next.type === 'applyLoss') {
+                    if (!_onlineCoupRequestLoss(state, next.targetId, next.reason || '', { type: 'nextTurn' })) _onlineCoupNextTurn(state);
+                } else {
+                    _onlineCoupNextTurn(state);
+                }
             }
         }
         return state;
@@ -2327,15 +2259,6 @@ async function _onlineCoupAIReactiveTax(state, ai) {
         if (!rt.respondedIds) rt.respondedIds = [];
 
         if (shouldClaim && !rt.claimedById) {
-            // First claim — award coins and lock out all remaining players immediately.
-            const actor = state.players.find(p => p.id === rt.actorId);
-            const aiPlayer = state.players.find(p => p.id === ai.id);
-            if (actor && aiPlayer && actor.coins >= rt.amount) {
-                actor.coins -= rt.amount;
-                aiPlayer.coins += rt.amount;
-                state.log = `${aiPlayer.name} ادعى سي فلان أول وتقبّض ${rt.amount} فلوس من ${actor.name}.`;
-                _onlineCoupEvent(state, state.log, 'good');
-            }
             rt.claimedById = ai.id;
             // Mark all remaining eligible players as responded so the window closes.
             const alive = _onlineCoupAlive(state);
@@ -2352,12 +2275,34 @@ async function _onlineCoupAIReactiveTax(state, ai) {
         const eligible = alive.filter(p => p.id !== rt.actorId);
         const allResponded = eligible.every(p => rt.respondedIds.includes(p.id));
         if (allResponded) {
+            const claimantId = rt.claimedById;
+            const rtBackup = { ...rt };
             state.pendingReactiveTax = null;
-            const next = rt.next || { type: 'nextTurn' };
-            if (next.type === 'applyLoss') {
-                if (!_onlineCoupRequestLoss(state, next.targetId, next.reason || '', { type: 'nextTurn' })) _onlineCoupNextTurn(state);
+            if (claimantId) {
+                state.pending = {
+                    id: `p_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
+                    action: 'reactiveTax',
+                    actorId: claimantId,
+                    targetId: rtBackup.actorId,
+                    amount: rtBackup.amount,
+                    next: rtBackup.next,
+                    claim: 'customsOfficer',
+                    blockable: true,
+                    blockRoles: ['customsOfficer'],
+                    passes: []
+                };
+                _onlineCoupSetResponseDeadline(state.pending);
+                const claimant = state.players.find(p => p.id === claimantId);
+                const originalActor = state.players.find(p => p.id === rtBackup.actorId);
+                state.log = `${claimant.name} ادعى سي فلان ويطالب بضريبة من ${originalActor.name}. تقدر تكذّبو ولا تسكّر بسي فلان!`;
+                _onlineCoupEvent(state, state.log, 'notice');
             } else {
-                _onlineCoupNextTurn(state);
+                const next = rtBackup.next || { type: 'nextTurn' };
+                if (next.type === 'applyLoss') {
+                    if (!_onlineCoupRequestLoss(state, next.targetId, next.reason || '', { type: 'nextTurn' })) _onlineCoupNextTurn(state);
+                } else {
+                    _onlineCoupNextTurn(state);
+                }
             }
         }
         return state;
@@ -2379,6 +2324,7 @@ async function _onlineCoupApplyAction(state, action, targetId) {
 function _onlineCoupApplyActionLocal(state, action, targetId) {
     const actor = state.players[state.turnIndex || 0];
     const target = state.players.find(p=>p.id===targetId);
+    const pBackup = state.pending ? { ...state.pending } : null;
     const pendingTaxType = state.pending?.taxType || null;
     state.pending = null;
     if (action === 'income') { actor.coins += 1; _onlineCoupTakeFromBank(state, 1); state.log = `${actor.name} خذا دينار. رزق بارد.`; }
@@ -2480,8 +2426,36 @@ function _onlineCoupApplyActionLocal(state, action, targetId) {
     }
     // ── Expansion: Customs Officer tax assignment ────────────────────
     if (action === 'taxAssignment') {
-        const taxedRole = pendingTaxType || 'assassin'; // pendingTaxType now stores the specific role name
-        _onlineCoupRequestTaxAssignment(state, actor.id, taxedRole);
+        const taxedRole = pendingTaxType || 'assassin';
+        if (!state.taxAssignments) state.taxAssignments = [];
+        state.taxAssignments = state.taxAssignments.filter(t => t.officerId !== actor.id);
+        state.taxAssignments.push({ taxType: 'role', taxedRole, officerId: actor.id, officerTurnIndex: state.turnIndex });
+        const roleMeta = window.coupCards?.[taxedRole];
+        const taxLabel = roleMeta ? `${roleMeta.icon} ${roleMeta.name} (+1)` : taxedRole;
+        state.log = `${actor.name} فرض ضريبة على ${taxLabel}. سي فلان يراقب.`;
+        _onlineCoupEvent(state, state.log, 'good');
+        _onlineCoupNextTurn(state);
+        return state;
+    }
+    // ── Expansion: Reactive Customs Officer tax resolution ───────────
+    if (action === 'reactiveTax') {
+        const p = pBackup;
+        const claimant = state.players.find(x => x.id === p.actorId);
+        const originalActor = state.players.find(x => x.id === p.targetId);
+        if (claimant && originalActor) {
+            const amount = p.amount || 0;
+            const actual = Math.min(amount, originalActor.coins);
+            originalActor.coins -= actual;
+            claimant.coins += actual;
+            state.log = `${claimant.name} تقبّض ${actual} فلوس من ${originalActor.name} بسي فلان.`;
+            _onlineCoupEvent(state, state.log, 'good');
+        }
+        const next = p.next || { type: 'nextTurn' };
+        if (next.type === 'applyLoss') {
+            if (!_onlineCoupRequestLoss(state, next.targetId, next.reason || '', { type: 'nextTurn' })) _onlineCoupNextTurn(state);
+        } else {
+            _onlineCoupNextTurn(state);
+        }
         return state;
     }
     // ── Expansion: Lawyer estate claim resolution (all passed, unchallenged) ────
@@ -3116,7 +3090,7 @@ async function _onlineCoupAIResponse(state, ai) {
 
     if (p.stage === 'action') {
         // Target can block with an appropriate role
-        if (isTarget && p.blockRoles?.length && roll < 0.3) {
+        if (canBlock && p.blockRoles?.length && (isTarget || !p.targetId) && roll < 0.3) {
             await _onlineCoupBlock(ai.id, p.blockRoles[0], p.id);
         // Any player can block foreignAid with the dynamic duke-family role
         } else if (canBlock && p.action === 'foreignAid' && !isTarget && roll < 0.15) {
@@ -3185,29 +3159,6 @@ async function _onlineCoupAIExchange(state, ai) {
     });
 }
 
-async function _onlineCoupAITaxAssignment(state, ai) {
-    const p = state.pendingTaxAssignment;
-    if (!p || p.playerId !== ai.id) return;
-    const taxId = p.id;
-    await _onlineCoupMutateState(async state => {
-        const tax = state.pendingTaxAssignment;
-        if (!tax || tax.playerId !== ai.id) return null;
-        if (taxId && tax.id !== taxId) return null;
-        const player = state.players.find(pl => pl.id === tax.playerId);
-        if (!player) return null;
-        const taxedRole = tax.taxedRole || 'assassin';
-        if (!state.taxAssignments) state.taxAssignments = [];
-        state.taxAssignments = state.taxAssignments.filter(t => t.officerId !== player.id);
-        state.taxAssignments.push({ taxType: 'role', taxedRole, officerId: player.id, officerTurnIndex: state.turnIndex });
-        state.pendingTaxAssignment = null;
-        const roleMeta = window.coupCards?.[taxedRole];
-        const taxLabel = roleMeta ? `${roleMeta.icon} ${roleMeta.name} (+1)` : taxedRole;
-        state.log = `${player.name} فرض ضريبة على ${taxLabel}. سي فلان يراقب.`;
-        _onlineCoupEvent(state, state.log, 'good');
-        _onlineCoupNextTurn(state);
-        return state;
-    });
-}
 
 async function _onlineCoupAIEstateClaim(state, ai, estate) {
     const estateId = estate.id;
