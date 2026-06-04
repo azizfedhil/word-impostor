@@ -140,7 +140,7 @@ function _coupGetDynamic(state = coupState) {
         stealBlockRoles:          captainRole === 'customsOfficer' ? ['customsOfficer'] : [captainRole, ambRole].filter(r => roles.includes(r) && (r === ambRole || stealBlockers.includes(r))),
         invoiceBlockRoles:        [ambRole].filter(r => roles.includes(r)),
         jesterBlockRoles:         ['jester'].filter(r => roles.includes(r)),
-        taxAssignmentBlockRoles:  roles.includes('customsOfficer') ? ['customsOfficer'] : [],
+        taxAssignmentBlockRoles:  [],
     };
 }
 
