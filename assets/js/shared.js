@@ -572,7 +572,10 @@ async function initSharedSetup(gameMode) {
 
     // PWA
     if('serviceWorker'in navigator){
-        window.addEventListener('load',()=>{ navigator.serviceWorker.register('./sw.js').then(reg=>reg.update()).catch(err=>console.warn('SW failed:',err)); });
+        window.addEventListener('load',()=>{
+            const swPath = window.location.pathname.includes('/games/') ? '../sw.js' : './sw.js';
+            navigator.serviceWorker.register(swPath).then(reg=>reg.update()).catch(err=>console.warn('SW failed:',err));
+        });
         let refreshing=false;
         navigator.serviceWorker.addEventListener('controllerchange',()=>{ if(!refreshing){refreshing=true;window.location.reload();} });
     }

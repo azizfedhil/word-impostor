@@ -1,0 +1,22 @@
+{
+  "name": "شكونو هو؟",
+  "short_name": "شكونو هو؟",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#faf7f2",
+  "theme_color": "#528c71",
+  "description": "مجموعة ألعاب تونسية للمّة والأصحاب",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "assets/coup/contessa.png",
+      "sizes": "256x256",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/coup/contessa512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
