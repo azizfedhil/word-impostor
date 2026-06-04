@@ -145,6 +145,15 @@ function _showCardUseAnimation(playerName, cardType) {
 const _TUNISIAN_NAMES = ["حمادي", "فوزية", "بلقاسم", "منجي", "نجاة", "مبروكة", "الصادق", "بشيرة", "عياشي", "زهيرة", "فرحات", "لطيفة", "توفيق", "منيرة", "الشاذلي", "عزيزة"];
 function _getRandomTunisianName() { return _TUNISIAN_NAMES[Math.floor(Math.random() * _TUNISIAN_NAMES.length)]; }
 
+function _getOnlineCoupThresholds(state) {
+    const ext = !!(state?.extendedMode || _room?.config?.extendedMode);
+    return {
+        coup: ext ? 14 : 7,
+        assassinate: ext ? 6 : 3,
+        mustCoup: ext ? 20 : 10
+    };
+}
+
 function _onlineCoupDynamic(state) {
     const dyn = window.CoupGame?.getDynamic?.(state);
     if (dyn) return dyn;
@@ -217,6 +226,7 @@ async function _startOnlineCoupGame() {
     const { deck, rolesInPlay } = _onlineCoupDeck();
     const actionMinutes = Math.max(1, Math.min(5, parseInt(_room.config?.actionTimer || _pendingConfig?.actionTimer || 1, 10) || 1));
     const state = {
+        extendedMode: !!cfg.extendedMode,
         deck,
         rolesInPlay,
         revision:0,
@@ -941,8 +951,10 @@ function _showOnlineCoup(room) {
 
         const warningEl = document.getElementById('coup-10-coin-warning');
         if (warningEl) {
-            if (mine.p.coins >= 10) {
+            const th = _getOnlineCoupThresholds(state);
+            if (mine.p.coins >= th.mustCoup) {
                 warningEl.classList.remove('hidden');
+                warningEl.innerText = `عندك اكثر من ${th.mustCoup} فرنك، لازم تعمل انقلاب`;
             } else {
                 warningEl.classList.add('hidden');
             }
@@ -1595,12 +1607,13 @@ function _renderOnlineCoupActions(room, state, me) {
         panel.innerHTML = `<div class="coup-panel-card">استنى دورك. الدور توّة على ${window.CoupUI?.escapeHtml?.(current?.name || '') || current?.name || ''}.</div>`;
     }
     const isTurn = me.id === current?.id;
-    const mustCoup = isTurn && (me.coins || 0) >= 10;
+    const th = _getOnlineCoupThresholds(state);
+    const mustCoup = isTurn && (me.coins || 0) >= th.mustCoup;
     const _onlineImgBase = (window.CoupGame?.cards?.duke?.img || '').replace(/coup\/[^/]+$/, '') + 'images/';
     const _onlineActionBgMap = { income:'plusone', foreignAid:'plustwo', tax:'tax', bureaucratTax:'bureaucrattax', speculatorGamble:'speculatorgamble', steal:'steal', invoice:'invoice', taxAssignment:'taxAssignment', assassinate:'assassinate', exchange:'exchange', inquireExchange:'inquireexchange', inquireInspect:'inquireinspect', jesterDisorder:'jesterDisorder', socialistShare:'socialistshare', coup:'coup' };
     const mk = (txt, action, cls='', hint='') => {
         const actionLocked = !isTurn || (mustCoup && action !== 'coup');
-        const finalHint = mustCoup && action !== 'coup' ? 'عندك 10+ فلوس، لازم Coup' : hint;
+        const finalHint = mustCoup && action !== 'coup' ? `عندك ${th.mustCoup}+ فلوس، لازم Coup` : hint;
         const bgFile = _onlineActionBgMap[action];
         const bgStyle = bgFile ? ` style="--action-img:url('${_onlineImgBase}${bgFile}.webp')" data-has-bg="1"` : '';
         return `<button class="coup-action-btn ${cls} ${actionLocked ? 'is-action-disabled' : ''}" data-coup-action="${action}"${bgStyle} aria-disabled="${actionLocked ? 'true' : 'false'}"><strong>${txt}<span class="coup-action-info" data-action-info="${action}">ℹ️</span></strong><small>${finalHint}</small></button>`;
@@ -1646,9 +1659,9 @@ function _renderOnlineCoupActions(room, state, me) {
         ${mk('🤲 اعانة +2','foreignAid','', dyn.aidBlockRoles.length ? `ينجم ${window.CoupGame?.cards?.[dyn.aidBlockRoles[0]]?.name || 'الشلغمي'} يسكّرها` : 'ما تتسكرش')}
         ${dukeBtn}
         ${captainBtn}
-        ${mk(`${window.CoupUI?.cardLabelHtml?.(window.coupCards.assassin) || '🗡️ حفار القبور'} -3`,'assassinate','danger-action','يلزم حفار القبور')}
+        ${mk(`${window.CoupUI?.cardLabelHtml?.(window.coupCards.assassin) || '🗡️ حفار القبور'} -${th.assassinate}`,'assassinate','danger-action','يلزم حفار القبور')}
         ${ambBtns}
-        ${mk('💥 Coup -7','coup','danger-action','ضربة ما تتسكرش')}
+        ${mk(`💥 Coup -${th.coup}`,'coup','danger-action','ضربة ما تتسكرش')}
     </div>`;
     panel.querySelectorAll('.coup-action-info').forEach(info => info.addEventListener('click', e => {
         e.stopPropagation();
@@ -1804,15 +1817,16 @@ async function _onlineCoupSkipEstateClaim(estateId = null) {
 function _onlineCoupChoose(action) {
     const state = structuredClone(_room.word_obj);
     const actor = state.players[state.turnIndex || 0];
+    const th = _getOnlineCoupThresholds(state);
     const reenable = () => {
         document.querySelectorAll('.coup-action-btn').forEach(b => {
             if (b.getAttribute('aria-disabled') !== 'true') b.disabled = false;
         });
     };
     if (actor.id !== _myId) { reenable(); return; }
-    if ((actor.coins || 0) >= 10 && action !== 'coup') { reenable(); return showToast('عندك 10 فلوس ولا أكثر، لازم تعمل Coup.'); }
-    if (action === 'assassinate' && actor.coins < 3) { reenable(); return showToast('يلزمك 3 فلوس للاغتيال.'); }
-    if (action === 'coup' && actor.coins < 7) { reenable(); return showToast('يلزمك 7 فلوس للCoup.'); }
+    if ((actor.coins || 0) >= th.mustCoup && action !== 'coup') { reenable(); return showToast(`عندك ${th.mustCoup} فلوس ولا أكثر، لازم تعمل Coup.`); }
+    if (action === 'assassinate' && actor.coins < th.assassinate) { reenable(); return showToast(`يلزمك ${th.assassinate} فلوس للاغتيال.`); }
+    if (action === 'coup' && actor.coins < th.coup) { reenable(); return showToast(`يلزمك ${th.coup} فلوس للCoup.`); }
     if (['assassinate','coup','steal','invoice','bureaucratTax','inquireInspect','jesterDisorder'].includes(action)) return _onlineCoupPickTarget(action);
     // Customs Officer: pick a specific role to tax (one turn only)
     if (action === 'taxAssignment') {
@@ -1890,10 +1904,11 @@ async function _onlineCoupStartPending(action, targetId, taxType = null) {
     await _onlineCoupMutateState(async state => {
         if (state.pending || state.pendingLoss || state.pendingExchange) return null;
         const actor = state.players[state.turnIndex || 0];
+        const th = _getOnlineCoupThresholds(state);
         if (!actor || actor.id !== _myId || !_onlineCoupLiveCards(actor).length) return null;
-        if ((actor.coins || 0) >= 10 && action !== 'coup') return null;
-        if (action === 'assassinate' && actor.coins < 3) return null;
-        if (action === 'coup' && actor.coins < 7) return null;
+        if ((actor.coins || 0) >= th.mustCoup && action !== 'coup') return null;
+        if (action === 'assassinate' && actor.coins < th.assassinate) return null;
+        if (action === 'coup' && actor.coins < th.coup) return null;
         if (['assassinate','coup','steal','invoice','bureaucratTax','inquireInspect','jesterDisorder'].includes(action)) {
             const target = _onlineCoupAlive(state).find(p => p.id === targetId && p.id !== actor.id);
             if (!target) return null;
@@ -1937,8 +1952,8 @@ async function _onlineCoupStartPending(action, targetId, taxType = null) {
         const finalClaim = claims[action] || null;
         if (!finalClaim && !blockable) return _onlineCoupApplyActionLocal(state, action, targetId);
         if (action === 'assassinate') {
-            actor.coins -= 3;
-            _onlineCoupPayBank(state, 3);
+            actor.coins -= th.assassinate;
+            _onlineCoupPayBank(state, th.assassinate);
         }
         state.pending = { id:`p_${Date.now()}_${Math.random().toString(36).slice(2,6)}`, action, actorId:actor.id, targetId, claim: finalClaim, blockable, blockRoles, passes:[], taxType };
         _onlineCoupSetResponseDeadline(state.pending);
@@ -1958,6 +1973,7 @@ async function _onlineCoupChallenge(challengerId, pendingId = null) {
         if (!p || p.stage === 'block' || !p.claim || (pendingId && p.id !== pendingId)) return null;
         const actor = state.players.find(x=>x.id===p.actorId);
         const challenger = state.players.find(x=>x.id===challengerId);
+        const th = _getOnlineCoupThresholds(state);
         if (!actor || !challenger || challenger.id === actor.id || !_onlineCoupLiveCards(challenger).length) return null;
         const hasIt = actor.hand.some(c=>!c.lost && c.type===p.claim);
         if (hasIt) {
@@ -1970,8 +1986,8 @@ async function _onlineCoupChallenge(challengerId, pendingId = null) {
             // Rulebook: "If an action is successfully challenged the entire action fails,
             // and any coins paid as the cost of the action are returned to the player."
             if (p.action === 'assassinate') {
-                actor.coins += 3;
-                _onlineCoupTakeFromBank(state, 3);
+                actor.coins += th.assassinate;
+                _onlineCoupTakeFromBank(state, th.assassinate);
             }
             // Speculator penalty: failed bluff transfers ALL of actor's coins to the challenger
             if (p.action === 'speculatorGamble' && actor.coins > 0) {
@@ -2499,8 +2515,9 @@ function _onlineCoupApplyActionLocal(state, action, targetId) {
         return state;
     }
     if (action === 'coup' && target) {
-        actor.coins -= 7;
-        _onlineCoupPayBank(state, 7);
+        const th = _getOnlineCoupThresholds(state);
+        actor.coins -= th.coup;
+        _onlineCoupPayBank(state, th.coup);
         state.log = `${actor.name} عمل Coup على ${target.name}. ${target.name} يختار كارتة يخسرها.`;
         _onlineCoupEvent(state, state.log, 'bad');
         // Reactive tax prompt if customsOfficer is in play
@@ -2967,10 +2984,11 @@ async function _onlineCoupAIStartPending(action, aiId, targetId, taxType = null)
     await _onlineCoupMutateState(async state => {
         if (state.pending || state.pendingLoss || state.pendingExchange) return null;
         const actor = state.players[state.turnIndex || 0];
+        const th = _getOnlineCoupThresholds(state);
         if (!actor || actor.id !== aiId || !_onlineCoupLiveCards(actor).length) return null;
-        if ((actor.coins || 0) >= 10 && action !== 'coup') return null;
-        if (action === 'assassinate' && actor.coins < 3) return null;
-        if (action === 'coup' && actor.coins < 7) return null;
+        if ((actor.coins || 0) >= th.mustCoup && action !== 'coup') return null;
+        if (action === 'assassinate' && actor.coins < th.assassinate) return null;
+        if (action === 'coup' && actor.coins < th.coup) return null;
         if (['assassinate', 'coup', 'steal','invoice','bureaucratTax','jesterDisorder'].includes(action)) {
             const target = _onlineCoupAlive(state).find(p => p.id === targetId && p.id !== actor.id);
             if (!target) return null;
@@ -3007,8 +3025,8 @@ async function _onlineCoupAIStartPending(action, aiId, targetId, taxType = null)
         const finalClaim = claims[action] || null;
         if (!finalClaim && !blockable) return _onlineCoupApplyActionLocal(state, action, targetId);
         if (action === 'assassinate') {
-            actor.coins -= 3;
-            _onlineCoupPayBank(state, 3);
+            actor.coins -= th.assassinate;
+            _onlineCoupPayBank(state, th.assassinate);
         }
         state.pending = { id: `p_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, action, actorId: actor.id, targetId, claim: finalClaim, blockable, blockRoles, passes: [], taxType };
         _onlineCoupSetResponseDeadline(state.pending);
@@ -3026,8 +3044,9 @@ async function _onlineCoupAIAction(state, ai) {
         const aliveOpponents = state.players.filter(p => p.id !== ai.id && p.hand.some(c => !c.lost));
         if (!aliveOpponents.length) return;
         const randomOpponent = aliveOpponents[Math.floor(Math.random() * aliveOpponents.length)];
+        const th = _getOnlineCoupThresholds(state);
 
-        if (ai.coins >= 10) {
+        if (ai.coins >= th.mustCoup) {
             await _onlineCoupAIStartPending('coup', ai.id, randomOpponent.id);
             return;
         }
@@ -3048,9 +3067,9 @@ async function _onlineCoupAIAction(state, ai) {
         else if (dyn.ambRole === 'socialist') possible.push('socialistShare');
         else possible.push('exchange');
 
-        if (ai.coins >= 3) possible.push('assassinate');
+        if (ai.coins >= th.assassinate) possible.push('assassinate');
         if (aliveOpponents.some(p => p.coins > 0) && dyn.captainRole === 'captain') possible.push('steal');
-        if (ai.coins >= 7) possible.push('coup');
+        if (ai.coins >= th.coup) possible.push('coup');
 
         const weights = { income: 10, foreignAid: 15, tax: 25, bureaucratTax: 20, speculatorGamble: 20, steal: 20, invoice: 20, taxAssignment: 15, assassinate: 15, exchange: 5, inquireExchange: 5, inquireInspect: 5, jesterDisorder: 15, socialistShare: 20, coup: 10 };
         const pool = [];

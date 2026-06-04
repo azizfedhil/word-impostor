@@ -328,6 +328,29 @@ function _coupAllPassed(state = coupState, pending = state?.pending) {
     return responders.length > 0 && _coupPassCount(state, pending) >= responders.length;
 }
 
+function _getCoupThresholds(state) {
+    const ext = !!(state?.extendedMode || state?.config?.extendedMode);
+    return {
+        coup: ext ? 14 : 7,
+        assassinate: ext ? 6 : 3,
+        mustCoup: ext ? 20 : 10
+    };
+}
+
+function _getCoupActionHelp(state) {
+    const th = _getCoupThresholds(state);
+    const base = { ...coupActionHelp };
+    base.assassinate = {
+        title: `اغتيال -${th.assassinate}`,
+        text: `تدفع ${th.assassinate} فلوس وتقول عندي حفار القبور باش تطيّح كارتة من لاعب. الهدف ينجم يسكّر بالبية، وأي لاعب ينجم يقول تكذب.`
+    };
+    base.coup = {
+        title: `Coup -${th.coup}`,
+        text: `تدفع ${th.coup} فلوس وتطيّح كارتة من لاعب. ما تتسكرش وما فيهاش تكذيب.`
+    };
+    return base;
+}
+
 function _coupProveAndReplace(player, role, state = coupState) {
     const idx = player?.hand?.findIndex(c => !c.lost && c.type === role);
     if (idx < 0) return;
@@ -559,6 +582,7 @@ function _renderCoupRoleHelp(cards = coupCards) {
 
 function renderCoupScreen(state = coupState, myId = null) {
     if (!state) return;
+    const thresholds = _getCoupThresholds(state);
     document.getElementById('coup-deck-pill').innerHTML  = _coupResourceHtml(state);
     document.getElementById('coup-status').innerHTML     = _coupStatusHtml(state);
     const myBoard     = document.getElementById('coup-my-board');
@@ -626,7 +650,10 @@ function renderCoupScreen(state = coupState, myId = null) {
         myBoard.appendChild(label);
         myBoard.appendChild(renderPlayerCard(mine.p, mine.idx));
         const warningEl = document.getElementById('coup-10-coin-warning');
-        if (warningEl) warningEl.classList.toggle('hidden', mine.p.coins < 10);
+        if (warningEl) {
+            warningEl.classList.toggle('hidden', mine.p.coins < thresholds.mustCoup);
+            warningEl.innerText = `عندك اكثر من ${thresholds.mustCoup} فرنك، لازم تعمل انقلاب`;
+        }
     }
     if (othersBoard) {
         const othersHeader = document.createElement('button');
@@ -665,12 +692,15 @@ function renderCoupActions(state = coupState, myId = null) {
     if (state.pending) { panel.innerHTML = `<div class="coup-panel-card live">${_escHtml(state.log || '')}</div>`; return; }
     const current = state.players[state.turnIndex];
     if (!isTurn) { panel.innerHTML = `<div class="coup-panel-card">استنى دورك. الدور توّة على ${_escHtml(current?.name || '')}.</div>`; }
-    const mustCoup = isTurn && (me?.coins || 0) >= 10;
+
+    const th = _getCoupThresholds(state);
+    const mustCoup = isTurn && (me?.coins || 0) >= th.mustCoup;
+
     const _actionBgMap = { income:'plusone', foreignAid:'plustwo', tax:'tax', steal:'steal', assassinate:'assassinate', exchange:'exchange', coup:'coup', bureaucratTax:'bureaucrattax', speculatorGamble:'speculatorgamble', invoice:'invoice', taxAssignment:'taxAssignment', inquireExchange:'inquireexchange', inquireInspect:'inquireinspect', jesterDisorder:'jesterDisorder', socialistShare:'socialistshare' };
     const mk = (txt, action, cls = '', hint = '') => {
         const actionLocked = !isTurn || (mustCoup && action !== 'coup');
         const disabled     = actionLocked ? 'is-action-disabled' : '';
-        const finalHint    = mustCoup && action !== 'coup' ? 'عندك 10+ فلوس، لازم Coup' : hint;
+        const finalHint    = mustCoup && action !== 'coup' ? `عندك ${th.mustCoup}+ فلوس، لازم Coup` : hint;
         const bgFile       = _actionBgMap[action];
         const bgStyle      = bgFile ? ` style="--action-img:url('${_coupImgBase}${bgFile}.webp')" data-has-bg="1"` : '';
         return `<button class="coup-action-btn ${cls} ${disabled}" data-action="${action}"${bgStyle} aria-disabled="${actionLocked ? 'true' : 'false'}"><strong>${txt}<span class="coup-action-info" data-action-info="${action}">ℹ️</span></strong><small>${finalHint}</small></button>`;
@@ -705,13 +735,14 @@ function renderCoupActions(state = coupState, myId = null) {
         ${mk('🤲 اعانة +2','foreignAid','','ينجم يتسكر')}
         ${dukeBtn}
         ${mk(`${_coupCardLabelHtml(coupCards.captain)}: اسرق`,'steal','primary-action','اسرق زوز فلوس')}
-        ${mk(`${_coupCardLabelHtml(coupCards.assassin)} -3`,'assassinate','danger-action','يلزم حفار القبور')}
+        ${mk(`${_coupCardLabelHtml(coupCards.assassin)} -${th.assassinate}`,'assassinate','danger-action','يلزم حفار القبور')}
         ${ambBtns}
-        ${mk('💥 Coup -7','coup','danger-action','ضربة ما تتسكرش')}
+        ${mk(`💥 Coup -${th.coup}`,'coup','danger-action','ضربة ما تتسكرش')}
     </div>`;
     panel.querySelectorAll('.coup-action-info').forEach(info => info.addEventListener('click', e => {
         e.stopPropagation();
-        const meta = coupActionHelp[info.dataset.actionInfo];
+        const help = _getCoupActionHelp(state);
+        const meta = help[info.dataset.actionInfo];
         if (meta) _showCoupModal(meta.title, `<p class="coup-card-desc">${_escHtml(meta.text)}</p>`);
     }));
     panel.querySelectorAll('[data-action]').forEach(btn => btn.addEventListener('click', e => {
@@ -806,10 +837,11 @@ function coupHandleTimeout() {
 
 function coupChooseAction(action) {
     const actor = coupState.players[coupState.turnIndex];
+    const th = _getCoupThresholds(coupState);
     const needsTarget = ['assassinate', 'coup', 'steal', 'invoice', 'bureaucratTax', 'inquireInspect', 'jesterDisorder'].includes(action);
-    if ((actor.coins || 0) >= 10 && action !== 'coup') return showToast('عندك 10 فلوس ولا أكثر، لازم تعمل Coup.');
-    if (action === 'assassinate' && actor.coins < 3)  return showToast('يلزمك 3 فلوس للاغتيال.');
-    if (action === 'coup'        && actor.coins < 7)  return showToast('يلزمك 7 فلوس للCoup.');
+    if ((actor.coins || 0) >= th.mustCoup && action !== 'coup') return showToast(`عندك ${th.mustCoup} فلوس ولا أكثر، لازم تعمل Coup.`);
+    if (action === 'assassinate' && actor.coins < th.assassinate)  return showToast(`يلزمك ${th.assassinate} فلوس للاغتيال.`);
+    if (action === 'coup'        && actor.coins < th.coup)  return showToast(`يلزمك ${th.coup} فلوس للCoup.`);
     // Customs Officer: pick a specific role to tax (pre-placed tax lasts one turn)
     if (action === 'taxAssignment') {
         const rolesInPlay = coupState.rolesInPlay || ['assassin', 'captain', 'contessa', 'duke', 'ambassador'];
@@ -905,7 +937,11 @@ function coupStartPending(action, targetId, taxType = null) {
     }
 
     if (!claim && !blockable) return coupResolveAction(action, targetId);
-    if (action === 'assassinate') { actor.coins -= 3; _coupPayBank(coupState, 3); }
+    if (action === 'assassinate') {
+        const th = _getCoupThresholds(coupState);
+        actor.coins -= th.assassinate;
+        _coupPayBank(coupState, th.assassinate);
+    }
     coupState.pending = { id: `p_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, action, actorId: actor.id, targetId, claim, blockable, blockRoles, passes: [], taxType };
     _coupSetResponseDeadline(coupState.pending);
     coupState.log = `${actor.name} قال يعمل ${coupActionName(action)}. تنجمو تقولو "تكذب!"${blockable ? ' ولا تسكروها.' : ''}`;
@@ -960,8 +996,9 @@ function coupChallenge(challengerId) {
         // Rulebook: "If an action is successfully challenged the entire action fails,
         // and any coins paid as the cost of the action are returned to the player."
         if (p.action === 'assassinate') {
-            actor.coins += 3;
-            _coupTakeFromBank(coupState, 3);
+            const th = _getCoupThresholds(coupState);
+            actor.coins += th.assassinate;
+            _coupTakeFromBank(coupState, th.assassinate);
         }
         // Speculator penalty: failed bluff transfers ALL of actor's coins to the challenger
         if (p.action === 'speculatorGamble' && actor.coins > 0) {
@@ -1225,7 +1262,8 @@ function coupResolveAction(action, targetId) {
         });
     }
     if (action === 'coup' && target) {
-        actor.coins -= 7; _coupPayBank(coupState, 7);
+        const th = _getCoupThresholds(coupState);
+        actor.coins -= th.coup; _coupPayBank(coupState, th.coup);
         coupState.log = `${actor.name} عمل Coup على ${target.name}. ${target.name} يختار كارتة يخسرها.`;
         _showCoupEvent(coupState.log, 'bad');
         return _coupPromptReactiveTax('coup', actor.id, 3, () => {
@@ -1776,18 +1814,36 @@ const _coupGuideSectionsBase = [
     { key:'money', title:'الفلوس',           icon:'🪙', body:'الفلوس هي السلاح. دخّل فلوس، استعملها للاغتيال، ولا خلّيها للCoup كي تحب تضرب ضربة ما تتسكرش.', tips:['الاغتيال يكلّف 3 فلوس.', 'Coup يكلّف 7 فلوس وما فيه لا بلوك لا تكذيب.', 'الرايس يسرق حتى زوز فلوس من لاعب.'] },
 ];
 
-function _getCoupGuideSections() {
-    return _coupGuideSectionsBase.map(s => s.key === 'cards' ? { ...s, cards: _coupGuideCards() } : s);
+function _getCoupGuideSections(state = coupState) {
+    const th = _getCoupThresholds(state);
+    return _coupGuideSectionsBase.map(s => {
+        if (s.key === 'cards') return { ...s, cards: _coupGuideCards() };
+        if (s.key === 'turn') {
+            return { ...s, tips: [
+                'الشهرية +1 ما يتسكرش وما يتكذّبش.',
+                'اعانة +2 تتسكر بالكارطة الدكية.',
+                `كان عندك ${th.mustCoup} فلوس ولا أكثر لازم تعمل Coup.`
+            ]};
+        }
+        if (s.key === 'money') {
+            return { ...s, tips: [
+                `الاغتيال يكلّف ${th.assassinate} فلوس.`,
+                `Coup يكلّف ${th.coup} فلوس وما فيه لا بلوك لا تكذيب.`,
+                'الرايس يسرق حتى زوز فلوس من لاعب.'
+            ]};
+        }
+        return s;
+    });
 }
 
 // Backward compat alias
 const coupGuideSections = _coupGuideSectionsBase;
 
-function renderCoupGuide(activeKey = 'goal') {
+function renderCoupGuide(activeKey = 'goal', state = coupState) {
     const tabs    = document.getElementById('coup-guide-tabs');
     const content = document.getElementById('coup-guide-content');
     if (!tabs || !content) return;
-    const sections = _getCoupGuideSections();
+    const sections = _getCoupGuideSections(state);
     const active = sections.find(s => s.key === activeKey) || sections[0];
     tabs.innerHTML = sections.map(section =>
         `<button class="coup-guide-tab ${section.key === active.key ? 'active' : ''}" data-guide-tab="${section.key}" type="button">${section.icon}<span>${_escHtml(section.title)}</span></button>`
@@ -1804,11 +1860,11 @@ function renderCoupGuide(activeKey = 'goal') {
         content.innerHTML = `<div class="coup-guide-box"><div class="coup-guide-big-icon">${active.icon}</div><h3>${_escHtml(active.title)}</h3><p>${_escHtml(active.body || '')}</p><div class="coup-guide-tip-grid">${(active.tips || []).map(tip => `<div class="coup-guide-tip">${_escHtml(tip)}</div>`).join('')}</div></div>`;
     }
     tabs.querySelectorAll('[data-guide-tab]').forEach(btn =>
-        btn.addEventListener('click', () => { _sfx.tap(); renderCoupGuide(btn.dataset.guideTab); })
+        btn.addEventListener('click', () => { _sfx.tap(); renderCoupGuide(btn.dataset.guideTab, state); })
     );
 }
 
-function showCoupGuide() { renderCoupGuide(); showScreen('coup-guide-screen'); }
+function showCoupGuide() { renderCoupGuide('goal', window.onlineMode ? (_room?.word_obj || {}) : coupState); showScreen('coup-guide-screen'); }
 
 // ─────────────────────────────────────────────────────────────
 // Offline game initializer
@@ -1842,6 +1898,8 @@ function startCoupOffline(playerNames) {
 // ─────────────────────────────────────────────────────────────
 // Expose as platform game contract + global backward compat
 // ─────────────────────────────────────────────────────────────
+window._getCoupThresholds = _getCoupThresholds;
+
 window.CoupGame = {
     cards:              coupCards,
     actionHelp:         coupActionHelp,
