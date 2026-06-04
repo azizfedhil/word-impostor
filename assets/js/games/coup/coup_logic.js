@@ -889,7 +889,15 @@ function coupChallenge(challengerId) {
             actor.coins += 3;
             _coupTakeFromBank(coupState, 3);
         }
-        coupState.log = `${actor.name} تڨبض يبوّع! ${funCaughtBluff()}`;
+        // Speculator penalty: failed bluff transfers ALL of actor's coins to the challenger
+        if (p.action === 'speculatorGamble' && actor.coins > 0) {
+            const penalty = actor.coins;
+            challenger.coins += penalty;
+            actor.coins = 0;
+            coupState.log = `${actor.name} تڨبض يبوّع على الكُلّاب! ${funCaughtBluff()} خسر كارتة وكل فلوسو (${penalty}) راحت لـ${challenger.name}!`;
+        } else {
+            coupState.log = `${actor.name} تڨبض يبوّع! ${funCaughtBluff()}`;
+        }
         coupState.pending = null;
         coupLoseInfluence(actor.id, () => { _coupNextTurn(); renderCoupScreen(); }, 'تكذّبت وما عندكش الكارتة. اختار كارتة تكشفها.');
     }
