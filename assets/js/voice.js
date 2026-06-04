@@ -40,5 +40,62 @@ function _makeAnalyser(stream){try{const ctx=new AudioContext(),src=ctx.createMe
 function _getVolume(an){if(!an)return 0;const buf=new Uint8Array(an.frequencyBinCount);an.getByteFrequencyData(buf);return buf.reduce((a,b)=>a+b,0)/buf.length;}
 function _detectSpeaking(){_setSpeaking('local',_getVolume(_localAnalyser)>12&&!_muted);Object.entries(_peers).forEach(([id,p])=>_setSpeaking(id,_getVolume(p.analyser)>12));}
 function _setSpeaking(id,isSpeaking){if(id==='local')document.getElementById('voice-mute-btn')?.classList.toggle('speaking',isSpeaking&&!_muted);const tid=id==='local'?_myId:id;let dot=document.querySelector(`.speak-dot[data-pid="${tid}"]`);if(!dot){document.querySelectorAll('.lobby-item,.seen-status-item').forEach(el=>{if(!el.querySelector('.speak-dot')&&el.innerHTML.includes(tid)){dot=document.createElement('span');dot.className='speak-dot';dot.dataset.pid=tid;el.prepend(dot);}});}dot?.classList.toggle('active',isSpeaking);}
-function _buildVoiceUI(){document.getElementById('voice-panel')?.remove();const panel=document.createElement('div');panel.id='voice-panel';panel.innerHTML=`<div class="vc-live"><span class="vc-live-dot"></span>صوت</div><div class="vc-sep"></div><button id="voice-mute-btn" title="كتم/فتح الميكروفون">🎙️</button><button id="voice-leave-btn" title="قطع الصوت">✕</button>`;document.body.appendChild(panel);document.getElementById('voice-mute-btn').addEventListener('click',toggleMute);document.getElementById('voice-leave-btn').addEventListener('click',stopVoice);}
+
+function _makeDraggable(el) {
+    let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+    el.addEventListener('pointerdown', (e) => {
+        if (e.target.closest('button')) return;
+
+        const scale = window._gameScale || 1;
+        const rect = el.getBoundingClientRect();
+        const parentRect = el.offsetParent ? el.offsetParent.getBoundingClientRect() : { left: 0, top: 0 };
+
+        // Set explicit top/left matching current visual position to prevent "jump"
+        // when we switch from bottom/transform-centered to absolute positioning.
+        el.style.top = ((rect.top - parentRect.top) / scale) + "px";
+        el.style.left = ((rect.left - parentRect.left) / scale) + "px";
+        el.style.bottom = 'auto';
+        el.style.transform = 'none';
+        el.style.margin = '0';
+
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+
+        const onPointerMove = (ev) => {
+            pos1 = (pos3 - ev.clientX) / scale;
+            pos2 = (pos4 - ev.clientY) / scale;
+            pos3 = ev.clientX;
+            pos4 = ev.clientY;
+            el.style.top = (el.offsetTop - pos2) + "px";
+            el.style.left = (el.offsetLeft - pos1) + "px";
+        };
+        const onPointerUp = () => {
+            el.releasePointerCapture(e.pointerId);
+            el.removeEventListener('pointermove', onPointerMove);
+            el.removeEventListener('pointerup', onPointerUp);
+        };
+        el.addEventListener('pointermove', onPointerMove);
+        el.addEventListener('pointerup', onPointerUp);
+        el.setPointerCapture(e.pointerId);
+    });
+}
+
+function _buildVoiceUI(){
+    document.getElementById('voice-panel')?.remove();
+    const panel = document.createElement('div');
+    panel.id = 'voice-panel';
+    panel.innerHTML = `<div class="vc-live"><span class="vc-live-dot"></span>صوت</div><div class="vc-sep"></div><button id="voice-mute-btn" title="كتم/فتح الميكروفون">🎙️</button><button id="voice-leave-btn" title="قطع الصوت">✕</button>`;
+
+    const shell = document.getElementById('app-shell') || document.body;
+    shell.appendChild(panel);
+
+    if (shell.id === 'app-shell') {
+        panel.style.position = 'absolute';
+    }
+
+    _makeDraggable(panel);
+
+    document.getElementById('voice-mute-btn').addEventListener('click', toggleMute);
+    document.getElementById('voice-leave-btn').addEventListener('click', stopVoice);
+}
 function _refreshMicBtn(){const btn=document.getElementById('voice-mute-btn');if(!btn)return;btn.textContent=_muted?'🔇':'🎙️';btn.classList.toggle('muted',_muted);if(_muted)btn.classList.remove('speaking');}

@@ -633,6 +633,17 @@ function _startOnlineCoupTimer(state) {
         const left = _onlineCoupTurnSecondsLeft(state);
         timerEl.innerHTML = _onlineCoupTimerHtml(left);
         timerEl.classList.toggle('urgent', left <= 10);
+
+        const chkobbaTimer = document.getElementById('chkobba-turn-timer');
+        if (chkobbaTimer) {
+            const m = Math.floor(left / 60).toString().padStart(2, '0');
+            const sec = (left % 60).toString().padStart(2, '0');
+            chkobbaTimer.innerText = `${m}:${sec}`;
+            chkobbaTimer.classList.remove('hidden');
+            if (left <= 10) chkobbaTimer.style.color = 'var(--danger-color)';
+            else chkobbaTimer.style.color = '';
+        }
+
         if (left <= 0 && !state.pending && !state.pendingLoss && !state.pendingExchange && !state.pendingEstateClaim && !state.pendingReactiveTax && !_onlineCoupTimingOut && _onlineCoupAlive(state).length > 1 && _isHost) {
             _onlineCoupTimeout();
         }
