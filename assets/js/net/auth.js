@@ -93,43 +93,55 @@ async function _updateUsername(newName) {
     const cleanName = newName.trim();
     if (!cleanName) return;
 
-    const { data, error } = await _supa
-        .from('profiles')
-        .update({ username: cleanName })
-        .eq('id', _currentUser.id)
-        .select()
-        .single();
+    try {
+        const { data, error } = await _supa
+            .from('profiles')
+            .update({ username: cleanName })
+            .eq('id', _currentUser.id)
+            .select()
+            .single();
 
-    if (!error && data) {
-        _userProfile = data;
-        _saveOnlineName(cleanName);
-        if (typeof _renderAccountScreen === 'function') _renderAccountScreen();
-        if (window._showToast) window._showToast('تم تحديث الاسم بنجاح');
-    } else {
-        console.error('Update username error:', error);
-        if (window._showToast) window._showToast('خطأ في تحديث الاسم');
+        if (error) throw error;
+
+        if (data) {
+            _userProfile = data;
+            window._userProfile = data;
+            _saveOnlineName(cleanName);
+            if (typeof _renderAccountScreen === 'function') _renderAccountScreen();
+            if (window._showToast) window._showToast('تم تحديث الاسم بنجاح');
+        }
+    } catch (e) {
+        console.error('Update username error:', e);
+        const msg = e.message || 'خطأ غير معروف';
+        if (window._showToast) window._showToast('خطأ في تحديث الاسم: ' + msg);
     }
 }
 
 async function _updateStats(gameMode, won = false) {
-    if (!_userProfile) return;
+    if (!_userProfile || !_currentUser) return;
 
-    const stats = { ..._userProfile.stats };
+    const stats = { ...(_userProfile.stats || {}) };
     if (!stats[gameMode]) stats[gameMode] = { wins: 0, games: 0 };
 
     stats[gameMode].games++;
     if (won) stats[gameMode].wins++;
 
-    const { data, error } = await _supa
-        .from('profiles')
-        .update({ stats })
-        .eq('id', _currentUser.id)
-        .select()
-        .single();
+    try {
+        const { data, error } = await _supa
+            .from('profiles')
+            .update({ stats })
+            .eq('id', _currentUser.id)
+            .select()
+            .single();
 
-    if (!error && data) {
-        _userProfile = data;
-        if (typeof _renderAccountScreen === 'function') _renderAccountScreen();
+        if (error) throw error;
+        if (data) {
+            _userProfile = data;
+            window._userProfile = data;
+            if (typeof _renderAccountScreen === 'function') _renderAccountScreen();
+        }
+    } catch (e) {
+        console.error('Update stats error:', e);
     }
 }
 
@@ -140,11 +152,17 @@ _supa.auth.onAuthStateChange(async (event, session) => {
         _currentUser = session.user;
         window._currentUser = _currentUser;
         _storeMyId(_currentUser.id);
-        const newName = _currentUser.user_metadata.full_name || _currentUser.email.split('@')[0];
-        _saveOnlineName(newName);
 
+        // Fetch profile first to avoid overwriting with provider name
         _userProfile = await _fetchProfile(_currentUser.id);
         window._userProfile = _userProfile;
+
+        if (_userProfile && _userProfile.username) {
+            _saveOnlineName(_userProfile.username);
+        } else {
+            const providerName = _currentUser.user_metadata.full_name || _currentUser.email.split('@')[0];
+            _saveOnlineName(providerName);
+        }
 
         // Update UI if on account screen
         if (typeof _renderAccountScreen === 'function') _renderAccountScreen();
