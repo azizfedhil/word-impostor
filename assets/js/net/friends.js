@@ -277,12 +277,94 @@ _supa.auth.onAuthStateChange((event, session) => {
     }
 });
 
+async function _searchProfiles(query) {
+    if (!query || query.trim().length < 2) {
+        const resultsCont = document.getElementById('search-results');
+        if (resultsCont) resultsCont.innerHTML = '';
+        return;
+    }
+
+    const cleanQuery = query.trim();
+    try {
+        const { data, error } = await _supa
+            .from('profiles')
+            .select('id, display_name, avatar_url')
+            .ilike('display_name', `%${cleanQuery}%`)
+            .neq('id', window._currentUser.id)
+            .limit(5);
+
+        if (error) throw error;
+        _renderSearchResults(data || []);
+    } catch (e) {
+        console.error('Search error:', e);
+    }
+}
+
+function _renderSearchResults(results) {
+    const resultsCont = document.getElementById('search-results');
+    if (!resultsCont) return;
+
+    if (results.length === 0) {
+        resultsCont.innerHTML = '<p style="text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 10px;">ما لقينا حد بهذا الاسم</p>';
+        return;
+    }
+
+    resultsCont.innerHTML = '';
+    results.forEach(p => {
+        const isFriend = _friends.some(f => f.id === p.id);
+        const item = document.createElement('div');
+        item.className = 'friend-item';
+        item.style.padding = '8px';
+        item.style.marginBottom = '5px';
+        item.style.background = 'rgba(255,255,255,0.05)';
+        item.innerHTML = `
+            <div class="friend-avatar" style="width: 32px; height: 32px;">
+                ${p.avatar_url ? `<img src="${p.avatar_url}" style="width:100%; height:100%; object-fit:cover;"/>` : '👤'}
+            </div>
+            <div class="friend-info">
+                <div class="friend-name" style="font-size: 0.9rem;">${_esc(p.display_name)}</div>
+            </div>
+            ${isFriend ? '<span style="font-size: 0.7rem; color: var(--primary-color);">صاحبك</span>' : `
+                <button onclick="_sendFriendRequest('${p.id}', '${_esc(p.display_name)}')" class="primary-btn" style="width: auto; padding: 4px 10px; font-size: 0.7rem; margin: 0;">إضافة</button>
+            `}
+        `;
+        resultsCont.appendChild(item);
+    });
+}
+
+async function _sendFriendRequest(friendId, friendName) {
+    if (!window._currentUser) return;
+
+    try {
+        const { error } = await _supa
+            .from('friend_requests')
+            .insert([{ sender_id: window._currentUser.id, receiver_id: friendId }]);
+
+        if (error) {
+            if (error.code === '23505') {
+                if (window._showToast) window._showToast('بعثت استدعاء ديجا لـ ' + friendName);
+                return;
+            }
+            throw error;
+        }
+
+        if (window._showToast) window._showToast('تبعت طلب صداقة لـ ' + friendName);
+        const resultsCont = document.getElementById('search-results');
+        if (resultsCont) resultsCont.innerHTML = '';
+        const searchInput = document.getElementById('friend-search-input');
+        if (searchInput) searchInput.value = '';
+    } catch (e) {
+        console.error('Error adding friend:', e);
+        if (window._showToast) window._showToast('خطأ في طلب الصداقة');
+    }
+}
+
 async function _addFriend() {
     if (!window._currentUser) {
         if (window._showToast) window._showToast('سجل دخولك باش تزيد أصحابك');
         return;
     }
-    const friendId = prompt('أدخل الـ ID متاع صاحبك:');
+    const friendId = prompt('أدخل الـ ID متاع صاحبك (اختياري، تنجم تلوج بالاسم):');
     if (!friendId || friendId.trim() === '') return;
     if (friendId === window._currentUser.id) {
         if (window._showToast) window._showToast('ما تنجمش تزيد روحك صاحب');
@@ -313,21 +395,9 @@ async function _addFriend() {
             return;
         }
 
-        const { error: iError } = await _supa
-            .from('friend_requests')
-            .insert([{ sender_id: window._currentUser.id, receiver_id: friendId }]);
-
-        if (iError) {
-             if (iError.code === '23505') {
-                 if (window._showToast) window._showToast('بعثت استدعاء ديجا لهذا الصاحب');
-                 return;
-             }
-             throw iError;
-        }
-
-        if (window._showToast) window._showToast('تبعت طلب صداقة لـ ' + profile.display_name);
+        await _sendFriendRequest(friendId, profile.display_name);
     } catch (e) {
-        console.error('Error adding friend:', e);
+        console.error('Error adding friend by ID:', e);
         if (window._showToast) window._showToast('خطأ في طلب الصداقة');
     }
 }
@@ -338,3 +408,5 @@ window._renderLobbyInviteList = _renderLobbyInviteList;
 window._addFriend = _addFriend;
 window._acceptRequest = _acceptRequest;
 window._declineRequest = _declineRequest;
+window._searchProfiles = _searchProfiles;
+window._sendFriendRequest = _sendFriendRequest;

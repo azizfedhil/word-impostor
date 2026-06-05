@@ -8,6 +8,13 @@
 let _currentUser = null;
 let _userProfile = null;
 
+const _DEFAULT_STATS = {
+    impostor: { wins: 0, games: 0 },
+    spyfall:  { wins: 0, games: 0 },
+    coup:     { wins: 0, games: 0 },
+    chkobba:  { wins: 0, games: 0 }
+};
+
 async function _loginWithProvider(provider) {
     let path = window.location.pathname;
     if (path.endsWith('.html')) {
@@ -51,7 +58,30 @@ async function _fetchProfile(userId) {
             .eq('id', userId)
             .single();
 
-        if (error) throw error;
+        if (error) {
+            // Handle PGRST205 (table missing) or empty result
+            if (error.code === 'PGRST205' || error.code === 'PGRST116') {
+                if (userId === _currentUser?.id) {
+                    // Fallback for self: try to create profile from auth metadata
+                    const { data: profile, error: upsertError } = await _supa
+                        .from('profiles')
+                        .upsert({
+                            id: _currentUser.id,
+                            display_name: _currentUser.user_metadata.full_name || _currentUser.user_metadata.name || _currentUser.email.split('@')[0],
+                            avatar_url: _currentUser.user_metadata.avatar_url
+                        })
+                        .select()
+                        .single();
+
+                    if (!upsertError && profile) {
+                        _userProfile = profile;
+                        window._userProfile = profile;
+                        return profile;
+                    }
+                }
+            }
+            throw error;
+        }
 
         if (userId === _currentUser?.id) {
             _userProfile = data;
@@ -60,6 +90,18 @@ async function _fetchProfile(userId) {
         return data;
     } catch (e) {
         console.error('Error fetching profile:', e);
+        // Last resort fallback: return a fake profile object from metadata if it's the current user
+        if (userId === _currentUser?.id) {
+            const fallback = {
+                id: _currentUser.id,
+                display_name: _currentUser.user_metadata.full_name || _currentUser.user_metadata.name || _currentUser.email.split('@')[0],
+                avatar_url: _currentUser.user_metadata.avatar_url,
+                stats: { ..._DEFAULT_STATS }
+            };
+            _userProfile = fallback;
+            window._userProfile = fallback;
+            return fallback;
+        }
         return null;
     }
 }
@@ -96,7 +138,7 @@ async function _updateUsername(newName) {
 async function _updateStats(gameMode, won = false) {
     if (!_userProfile || !_currentUser) return;
 
-    const stats = { ...(_userProfile.stats || {}) };
+    const stats = { ...(_DEFAULT_STATS), ...(_userProfile.stats || {}) };
     if (!stats[gameMode]) stats[gameMode] = { wins: 0, games: 0 };
 
     stats[gameMode].games++;
