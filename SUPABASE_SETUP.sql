@@ -23,11 +23,17 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
 -- Profile Policies
+DROP POLICY IF EXISTS "Profiles are viewable by everyone" ON public.profiles;
 CREATE POLICY "Profiles are viewable by everyone" ON public.profiles
   FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
 CREATE POLICY "Users can update their own profile" ON public.profiles
   FOR UPDATE USING (auth.uid() = id);
+
+DROP POLICY IF EXISTS "Users can insert their own profile" ON public.profiles;
+CREATE POLICY "Users can insert their own profile" ON public.profiles
+  FOR INSERT WITH CHECK (auth.uid() = id);
 
 
 -- 2. FRIEND REQUESTS TABLE
@@ -45,14 +51,21 @@ CREATE TABLE IF NOT EXISTS public.friend_requests (
 ALTER TABLE public.friend_requests ENABLE ROW LEVEL SECURITY;
 
 -- Friend Requests Policies
+DROP POLICY IF EXISTS "Users can view requests they sent or received" ON public.friend_requests;
 CREATE POLICY "Users can view requests they sent or received" ON public.friend_requests
   FOR SELECT USING (auth.uid() = sender_id OR auth.uid() = receiver_id);
 
+DROP POLICY IF EXISTS "Users can send friend requests" ON public.friend_requests;
 CREATE POLICY "Users can send friend requests" ON public.friend_requests
   FOR INSERT WITH CHECK (auth.uid() = sender_id);
 
+DROP POLICY IF EXISTS "Receivers can update request status" ON public.friend_requests;
 CREATE POLICY "Receivers can update request status" ON public.friend_requests
   FOR UPDATE USING (auth.uid() = receiver_id);
+
+DROP POLICY IF EXISTS "Users can delete their own sent or received requests" ON public.friend_requests;
+CREATE POLICY "Users can delete their own sent or received requests" ON public.friend_requests
+  FOR DELETE USING (auth.uid() = sender_id OR auth.uid() = receiver_id);
 
 
 -- 3. FRIENDSHIPS TABLE
@@ -68,8 +81,13 @@ CREATE TABLE IF NOT EXISTS public.friendships (
 ALTER TABLE public.friendships ENABLE ROW LEVEL SECURITY;
 
 -- Friendships Policies
+DROP POLICY IF EXISTS "Users can view their own friendships" ON public.friendships;
 CREATE POLICY "Users can view their own friendships" ON public.friendships
   FOR SELECT USING (auth.uid() = user_id OR auth.uid() = friend_id);
+
+DROP POLICY IF EXISTS "System can manage friendships" ON public.friendships;
+CREATE POLICY "System can manage friendships" ON public.friendships
+  FOR ALL USING (true) WITH CHECK (true); -- Note: In production, consider more restrictive policies if not using service_role or DEFINER functions
 
 
 -- 4. TRIGGER: Create or Update profile on Auth change
@@ -115,6 +133,10 @@ DECLARE
 BEGIN
   SELECT * FROM public.friend_requests WHERE id = request_id INTO req;
 
+  IF req IS NULL THEN
+    RAISE EXCEPTION 'Request not found';
+  END IF;
+
   IF req.receiver_id != auth.uid() THEN
     RAISE EXCEPTION 'Only the receiver can accept the request';
   END IF;
@@ -128,3 +150,14 @@ BEGIN
   DELETE FROM public.friend_requests WHERE id = request_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+-- 6. BACKFILL: Profiles for existing users
+-- Run this once to populate profiles for users who already signed up.
+INSERT INTO public.profiles (id, display_name, avatar_url)
+SELECT
+  id,
+  COALESCE(raw_user_meta_data->>'full_name', raw_user_meta_data->>'name', email),
+  raw_user_meta_data->>'avatar_url'
+FROM auth.users
+ON CONFLICT (id) DO NOTHING;
