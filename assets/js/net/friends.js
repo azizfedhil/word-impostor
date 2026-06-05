@@ -28,8 +28,15 @@ async function _fetchFriends() {
             .eq('user_id', window._currentUser.id)
             .eq('status', 'accepted');
 
-        if (error) throw error;
-        _friends = data.map(f => f.profiles);
+        if (error) {
+            if (error.code === 'PGRST205') {
+                console.warn('Friends system: database tables missing.');
+                _friends = [];
+                return;
+            }
+            throw error;
+        }
+        _friends = (data || []).map(f => f.profiles).filter(Boolean);
     } catch (e) {
         console.error('Error fetching friends:', e);
     }
@@ -225,7 +232,11 @@ async function _addFriend() {
             .eq('id', friendId)
             .single();
 
-        if (pError || !profile) {
+        if (pError) {
+            if (pError.code === 'PGRST205') {
+                 if (window._showToast) window._showToast('خاصية الأصحاب تتطلب إعداد قاعدة البيانات. من فضلك اتصل بالمطور.');
+                 return;
+            }
             if (window._showToast) window._showToast('الـ ID هذا موش موجود');
             return;
         }

@@ -56,30 +56,58 @@ async function _fetchProfile(userId) {
             .eq('id', userId)
             .single();
 
-        if (error && error.code === 'PGRST116') {
-            // Profile doesn't exist, create it
-            const { data: newProfile, error: createError } = await _supa
-                .from('profiles')
-                .insert([{
+        if (error) {
+            if (error.code === 'PGRST116' && _currentUser && userId === _currentUser.id) {
+                // Profile doesn't exist in table, try to create it
+                const meta = _currentUser.user_metadata || {};
+                const { data: newProfile, error: createError } = await _supa
+                    .from('profiles')
+                    .insert([{
+                        id: userId,
+                        username: meta.username || meta.full_name || _currentUser.email.split('@')[0],
+                        avatar_url: meta.avatar_url,
+                        stats: meta.stats || {
+                            impostor: { wins: 0, games: 0 },
+                            spyfall: { wins: 0, games: 0 },
+                            coup: { wins: 0, games: 0 },
+                            chkobba: { wins: 0, games: 0 }
+                        }
+                    }])
+                    .select()
+                    .single();
+
+                if (createError) throw createError;
+                if (userId === _currentUser.id) {
+                    _userProfile = newProfile;
+                    window._userProfile = newProfile;
+                }
+                return newProfile;
+            } else if (error.code === 'PGRST205' && _currentUser && userId === _currentUser.id) {
+                // Table missing! Fallback to metadata for local user
+                console.warn('Profiles table missing, using Auth metadata fallback.');
+                const meta = _currentUser.user_metadata || {};
+                const fallback = {
                     id: userId,
-                    username: _currentUser.user_metadata.full_name || _currentUser.email.split('@')[0],
-                    avatar_url: _currentUser.user_metadata.avatar_url,
-                    stats: {
+                    username: meta.username || meta.full_name || _currentUser.email?.split('@')[0] || 'لاعب',
+                    avatar_url: meta.avatar_url,
+                    stats: meta.stats || {
                         impostor: { wins: 0, games: 0 },
                         spyfall: { wins: 0, games: 0 },
                         coup: { wins: 0, games: 0 },
                         chkobba: { wins: 0, games: 0 }
                     }
-                }])
-                .select()
-                .single();
-
-            if (createError) throw createError;
-            _userProfile = newProfile;
-            window._userProfile = newProfile;
-            return newProfile;
-        } else if (error) {
+                };
+                if (userId === _currentUser.id) {
+                    _userProfile = fallback;
+                    window._userProfile = fallback;
+                }
+                return fallback;
+            }
             throw error;
+        }
+        if (userId === _currentUser?.id) {
+            _userProfile = data;
+            window._userProfile = data;
         }
         return data;
     } catch (e) {
@@ -94,6 +122,10 @@ async function _updateUsername(newName) {
     if (!cleanName) return;
 
     try {
+        // 1. Always update Auth metadata (reliable local fallback)
+        await _supa.auth.updateUser({ data: { username: cleanName } });
+
+        // 2. Try to update 'profiles' table
         const { data, error } = await _supa
             .from('profiles')
             .update({ username: cleanName })
@@ -101,15 +133,22 @@ async function _updateUsername(newName) {
             .select()
             .single();
 
-        if (error) throw error;
+        if (error && error.code !== 'PGRST205') throw error;
 
         if (data) {
             _userProfile = data;
             window._userProfile = data;
-            _saveOnlineName(cleanName);
-            if (typeof _renderAccountScreen === 'function') _renderAccountScreen();
-            if (window._showToast) window._showToast('تم تحديث الاسم بنجاح');
+        } else {
+            // If table missing or update failed, refresh from metadata
+            const { data: { user } } = await _supa.auth.getUser();
+            _currentUser = user;
+            window._currentUser = user;
+            await _fetchProfile(_currentUser.id);
         }
+
+        _saveOnlineName(cleanName);
+        if (typeof _renderAccountScreen === 'function') _renderAccountScreen();
+        if (window._showToast) window._showToast('تم تحديث الاسم بنجاح');
     } catch (e) {
         console.error('Update username error:', e);
         const msg = e.message || 'خطأ غير معروف';
@@ -118,15 +157,21 @@ async function _updateUsername(newName) {
 }
 
 async function _updateStats(gameMode, won = false) {
-    if (!_userProfile || !_currentUser) return;
+    if (!_currentUser) return;
+    const profile = await _fetchProfile(_currentUser.id);
+    if (!profile) return;
 
-    const stats = { ...(_userProfile.stats || {}) };
+    const stats = { ...(profile.stats || {}) };
     if (!stats[gameMode]) stats[gameMode] = { wins: 0, games: 0 };
 
     stats[gameMode].games++;
     if (won) stats[gameMode].wins++;
 
     try {
+        // 1. Update Auth metadata
+        await _supa.auth.updateUser({ data: { stats } });
+
+        // 2. Try to update 'profiles' table
         const { data, error } = await _supa
             .from('profiles')
             .update({ stats })
@@ -134,12 +179,19 @@ async function _updateStats(gameMode, won = false) {
             .select()
             .single();
 
-        if (error) throw error;
+        if (error && error.code !== 'PGRST205') throw error;
+
         if (data) {
             _userProfile = data;
             window._userProfile = data;
-            if (typeof _renderAccountScreen === 'function') _renderAccountScreen();
+        } else {
+            const { data: { user } } = await _supa.auth.getUser();
+            _currentUser = user;
+            window._currentUser = user;
+            await _fetchProfile(_currentUser.id);
         }
+
+        if (typeof _renderAccountScreen === 'function') _renderAccountScreen();
     } catch (e) {
         console.error('Update stats error:', e);
     }
@@ -153,7 +205,6 @@ _supa.auth.onAuthStateChange(async (event, session) => {
         window._currentUser = _currentUser;
         _storeMyId(_currentUser.id);
 
-        // Fetch profile first to avoid overwriting with provider name
         _userProfile = await _fetchProfile(_currentUser.id);
         window._userProfile = _userProfile;
 
