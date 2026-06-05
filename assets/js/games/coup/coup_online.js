@@ -2014,7 +2014,7 @@ async function _onlineCoupStartPending(action, targetId, taxType = null) {
             actor.coins -= th.assassinate;
             _onlineCoupPayBank(state, th.assassinate);
         }
-        state.pending = { id:`p_${Date.now()}_${Math.random().toString(36).slice(2,6)}`, action, actorId:actor.id, targetId, claim: finalClaim, blockable, blockRoles, passes:[], taxType };
+        state.pending = { id:`p_${Date.now()}_${Math.random().toString(36).slice(2,6)}`, stage: null, action, actorId:actor.id, targetId, claim: finalClaim, blockable, blockRoles, passes:[], taxType };
         _onlineCoupSetResponseDeadline(state.pending);
         state.log = `${actor.name} قال يعمل ${_onlineCoupActionName(action)}. قولولو "تكذب!" كان شاكين.`;
         _onlineCoupEvent(state, `${actor.name} عمل ${_onlineCoupActionName(action)}`, 'notice');
@@ -3186,7 +3186,7 @@ async function _onlineCoupAIStartPending(action, aiId, targetId, taxType = null)
             actor.coins -= th.assassinate;
             _onlineCoupPayBank(state, th.assassinate);
         }
-        state.pending = { id: `p_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, action, actorId: actor.id, targetId, claim: finalClaim, blockable, blockRoles, passes: [], taxType };
+        state.pending = { id: `p_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, stage: null, action, actorId: actor.id, targetId, claim: finalClaim, blockable, blockRoles, passes: [], taxType };
         _onlineCoupSetResponseDeadline(state.pending);
         state.log = `${actor.name} قال يعمل ${_onlineCoupActionName(action)}. قولولو "تكذب!" كان شاكين.`;
         _onlineCoupEvent(state, `${actor.name} عمل ${_onlineCoupActionName(action)}`, 'notice');
