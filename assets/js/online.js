@@ -1244,13 +1244,11 @@ async function _processVotes(room) {
                 if (mode === 'impostor') {
                     won = (data.result && data.result.outcome === 'all_impostors_dead' && !me.isImpostor) ||
                           (data.result && data.result.outcome === 'impostors_win' && me.isImpostor) ||
-                          (data.result && data.result.outcome === 'correct_guess' && !me.isImpostor);
+                          (data.result && data.result.outcome === 'correct_guess' && !me.isImpostor) ||
+                          (data.result && data.result.outcome === 'wrong_guess' && me.isImpostor);
                 } else if (mode === 'spyfall') {
                     won = (data.result && data.result.outcome === 'spy_caught' && !me.isSpy) ||
                           (data.result && data.result.outcome === 'spy_escaped' && me.isSpy);
-                } else if (mode === 'thief') {
-                    won = (data.result && data.result.outcome === 'thief_caught' && me.role !== 'thief') ||
-                          (data.result && data.result.outcome === 'thief_escaped' && me.role === 'thief');
                 }
                 _updateStats(mode, won);
             }
