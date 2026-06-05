@@ -39,7 +39,7 @@ const GAME_MODE_KEY     = 'dakheel_game_mode';
 const _gameModes = {
     impostor: { title: '🕵️‍♂️ شكونو هو؟',      start: '🚀 انافا',            online: '🌐 العب أونلاين مع أصحابك' },
     spyfall:  { title: 'ماناش هوني',            start: '🚀 وزّع الكوارط',     online: '🌐 العب أونلاين مع أصحابك' },
-    coup:     { title: '👑 كول وبوّع',           start: '🚀 ابدا الكول',       online: '🌐 العب أونلاين مع أصحابك' },
+    coup:     { title: '<i class="coup-icon-inline"></i> كول وبوّع',           start: '🚀 ابدا الكول',       online: '🌐 العب أونلاين مع أصحابك' },
     chkobba:  { title: '🃏 شكبّة',              start: '🚀 ابدا الشكبّة',     online: '🌐 العب أونلاين مع أصحابك' },
 };
 

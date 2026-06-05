@@ -41,7 +41,7 @@ const _coupImgBase = _coupAssetBase.replace(/coup\/$/, '') + 'images/';
 
 const coupCards = {
     duke: {
-        name: 'الشلغمي', icon: '👑',
+        name: 'الشلغمي', icon: '<i class="coup-icon-inline"></i>',
         img: _coupAssetBase + 'duke.png', img512: _coupAssetBase + 'duke512.png',
         attack:  'هجوم: ياخو 3 فلوس من البنك.',
         defense: 'دفاع: يسكّر اعانة +2 متاع أي لاعب.',
