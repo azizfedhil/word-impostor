@@ -103,9 +103,16 @@
                     <span id="profile-avatar-placeholder">👤</span>
                     <img id="profile-avatar-img" src="" style="display: none;"/>
                 </div>
-                <h2 id="profile-name">لاعب ضيف</h2>
-                <p id="profile-email" style="font-size: 0.9rem; margin-top: -10px;"></p>
-                <button id="logout-btn" class="danger-btn" style="width: auto; margin: 10px auto; padding: 8px 20px; font-size: 0.9rem; background: transparent; color: var(--danger-color); border: 1px solid var(--danger-color);">تسجيل الخروج</button>
+                <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <h2 id="profile-name" style="margin: 0;">لاعب ضيف</h2>
+                    <button onclick="_editProfileName()" class="icon-btn" style="width: 32px; height: 32px; font-size: 0.9rem; background: transparent; border: 1px solid #ddd;">✏️</button>
+                </div>
+                <p id="profile-email" style="font-size: 0.9rem; margin-top: -10px; color: var(--text-muted);"></p>
+                <div style="background: rgba(0,0,0,0.05); padding: 5px 10px; border-radius: 8px; display: inline-block; margin-bottom: 15px; cursor: pointer;" onclick="_copyMyId()">
+                    <span style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 2px;">ID متاعك (انزل باش تكوبي):</span>
+                    <code id="profile-id" style="font-size: 0.85rem; font-weight: bold; color: var(--primary-color);"></code>
+                </div>
+                <button id="logout-btn" class="danger-btn" style="width: auto; margin: 0 auto 20px; padding: 8px 20px; font-size: 0.9rem; background: transparent; color: var(--danger-color); border: 1px solid var(--danger-color);">تسجيل الخروج</button>
             </div>
 
             <div class="surface-card">
@@ -130,11 +137,6 @@
                         <span class="stat-icon">🃏</span>
                         <span class="stat-label">شكبّة</span>
                         <span class="stat-value" id="stat-chkobba">0 / 0</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-icon">🎭</span>
-                        <span class="stat-label">سارق/حاكم</span>
-                        <span class="stat-value" id="stat-thief">0 / 0</span>
                     </div>
                 </div>
             </div>
@@ -195,6 +197,14 @@
             if (confirm('متأكد تحب تخرج؟')) _logout();
         });
 
+        window._editProfileName = function() {
+            const currentName = document.getElementById('profile-name').innerText;
+            const newName = prompt('أدخل اسمك الجديد:', currentName);
+            if (newName && newName.trim() !== '' && newName !== currentName) {
+                _updateUsername(newName);
+            }
+        };
+
         window._updateHeaderAvatar = function() {
             const placeholder = document.getElementById('header-avatar-placeholder');
             const img = document.getElementById('header-avatar-img');
@@ -208,11 +218,21 @@
             }
         }
 
+        window._copyMyId = function() {
+            const id = window._currentUser?.id;
+            if (id) {
+                navigator.clipboard.writeText(id).then(() => {
+                    _showToast('تم نسخ الـ ID بنجاح');
+                });
+            }
+        };
+
         window._renderAccountScreen = function() {
             if (!window._currentUser) return;
 
             document.getElementById('profile-name').innerText = window._myName || 'لاعب';
             document.getElementById('profile-email').innerText = window._currentUser.email || '';
+            document.getElementById('profile-id').innerText = window._currentUser.id || '';
 
             const pPlaceholder = document.getElementById('profile-avatar-placeholder');
             const pImg = document.getElementById('profile-avatar-img');
@@ -228,7 +248,6 @@
                 if (s.spyfall) document.getElementById('stat-spyfall').innerText = `${s.spyfall.wins} / ${s.spyfall.games}`;
                 if (s.coup) document.getElementById('stat-coup').innerText = `${s.coup.wins} / ${s.coup.games}`;
                 if (s.chkobba) document.getElementById('stat-chkobba').innerText = `${s.chkobba.wins} / ${s.chkobba.games}`;
-                if (s.thief) document.getElementById('stat-thief').innerText = `${s.thief.wins} / ${s.thief.games}`;
             }
         }
     </script>
