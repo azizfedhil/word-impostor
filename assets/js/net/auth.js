@@ -33,7 +33,7 @@ async function _loginWithProvider(provider) {
     });
     if (error) {
         console.error('Login error:', error.message);
-        _showToast('خطأ في تسجيل الدخول: ' + error.message);
+        if (window._showToast) window._showToast('خطأ في تسجيل الدخول: ' + error.message);
     }
     return { data, error };
 }
@@ -104,9 +104,10 @@ async function _updateUsername(newName) {
         _userProfile = data;
         _saveOnlineName(cleanName);
         if (typeof _renderAccountScreen === 'function') _renderAccountScreen();
-        _showToast('تم تحديث الاسم بنجاح');
+        if (window._showToast) window._showToast('تم تحديث الاسم بنجاح');
     } else {
-        _showToast('خطأ في تحديث الاسم');
+        console.error('Update username error:', error);
+        if (window._showToast) window._showToast('خطأ في تحديث الاسم');
     }
 }
 

@@ -117,7 +117,7 @@ async function _sendGameInvite(friendId) {
         payload
     });
 
-    _showToast('تبعت الاستدعاء لـ ' + (_friends.find(f => f.id === friendId)?.username || 'صاحبك'));
+    if (window._showToast) window._showToast('تبعت الاستدعاء لـ ' + (_friends.find(f => f.id === friendId)?.username || 'صاحبك'));
 }
 
 function _showGameInvite(payload) {
@@ -207,13 +207,13 @@ _supa.auth.onAuthStateChange((event, session) => {
 
 async function _addFriend() {
     if (!window._currentUser) {
-        _showToast('سجل دخولك باش تزيد أصحابك');
+        if (window._showToast) window._showToast('سجل دخولك باش تزيد أصحابك');
         return;
     }
     const friendId = prompt('أدخل الـ ID متاع صاحبك:');
     if (!friendId || friendId.trim() === '') return;
     if (friendId === window._currentUser.id) {
-        _showToast('ما تنجمش تزيد روحك صاحب');
+        if (window._showToast) window._showToast('ما تنجمش تزيد روحك صاحب');
         return;
     }
 
@@ -226,7 +226,7 @@ async function _addFriend() {
             .single();
 
         if (pError || !profile) {
-            _showToast('الـ ID هذا موش موجود');
+            if (window._showToast) window._showToast('الـ ID هذا موش موجود');
             return;
         }
 
@@ -239,7 +239,7 @@ async function _addFriend() {
             .single();
 
         if (existing) {
-            _showToast('إنت وصاحبك هذا ديجا أصحاب');
+            if (window._showToast) window._showToast('إنت وصاحبك هذا ديجا أصحاب');
             return;
         }
 
@@ -253,12 +253,12 @@ async function _addFriend() {
 
         if (iError) throw iError;
 
-        _showToast('زدت ' + profile.username + ' لصحابك');
+        if (window._showToast) window._showToast('زدت ' + profile.username + ' لصحابك');
         await _fetchFriends();
         _renderFriendsList();
     } catch (e) {
         console.error('Error adding friend:', e);
-        _showToast('خطأ في زيادة الصاحب');
+        if (window._showToast) window._showToast('خطأ في زيادة الصاحب');
     }
 }
 
