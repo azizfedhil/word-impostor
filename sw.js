@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chkounou-hu-v1.3';
+const CACHE_NAME = 'chkounou-hu-v1.4';
 const ASSETS = [
   './',
   './index.html',
