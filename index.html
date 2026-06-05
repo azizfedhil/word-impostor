@@ -222,7 +222,7 @@
             const id = window._currentUser?.id;
             if (id) {
                 navigator.clipboard.writeText(id).then(() => {
-                    _showToast('تم نسخ الـ ID بنجاح');
+                    if (window._showToast) window._showToast('تم نسخ الـ ID بنجاح');
                 });
             }
         };
