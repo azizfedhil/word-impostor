@@ -10,7 +10,7 @@
 // Load order:
 //   core/* → game_registry → games/*/logic →
 //   games/coup/coup_online → games/chkobba/chkobba_online →
-//   [THIS FILE] → net/room → online → shared → *_init
+//   [THIS FILE] → net/auth → net/friends → net/room → online → shared → *_init
 // ============================================================
 
 // ── Supabase client ──────────────────────────────────────────
@@ -41,7 +41,41 @@ window._serverTimeOffset = _serverTimeOffset;
 window._hasSynced        = _hasSynced;
 
 // ── Player identity ──────────────────────────────────────────
-// _myId is generated/restored in net/room.js after this file loads.
-// Declare it here so room.js can assign to it without a ReferenceError.
+let _myName = '';
+try { _myName = localStorage.getItem(ONLINE_NAME_KEY) || ''; } catch(_) {}
+window._myName = _myName;
+
 let _myId = null;
+try { _myId = localStorage.getItem(ONLINE_PLAYER_ID_KEY) || sessionStorage.getItem(ONLINE_PLAYER_ID_KEY); } catch(_) {}
+if (!_myId) _myId = 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+
+function _storeMyId(id) {
+    _myId = id;
+    try { sessionStorage.setItem(ONLINE_PLAYER_ID_KEY, id); } catch(_) {}
+    try { localStorage.setItem(ONLINE_PLAYER_ID_KEY, id); } catch(_) {}
+}
+_storeMyId(_myId);
+
+function _saveOnlineName(name) {
+    const clean = (name || '').trim();
+    if (!clean) return;
+    _myName = clean;
+    window._myName = clean;
+    try { localStorage.setItem(ONLINE_NAME_KEY, clean); } catch(_) {}
+}
+
+function _restoreOnlineName() {
+    try {
+        const saved = localStorage.getItem(ONLINE_NAME_KEY);
+        const input = document.getElementById('online-player-name');
+        if (saved && input && !input.value) input.value = saved;
+        const code = localStorage.getItem(ONLINE_LAST_ROOM_KEY);
+        const codeInput = document.getElementById('room-code-input');
+        if (code && codeInput && !codeInput.value) codeInput.value = code;
+    } catch(_) {}
+}
+
 window._myId = _myId;
+window._storeMyId = _storeMyId;
+window._saveOnlineName = _saveOnlineName;
+window._restoreOnlineName = _restoreOnlineName;

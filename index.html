@@ -54,43 +54,178 @@
 <body>
     <div class="bg-orb orb-1"></div>
     <div class="bg-orb orb-2"></div>
-    <main class="container">
-        <header class="app-header" style="text-align: center; justify-content: center;">
+    <main class="container" id="app-shell">
+        <header class="app-header" style="text-align: center; justify-content: space-between; align-items: center; display: flex;">
+            <div style="width: 48px;"></div> <!-- Spacer for balance -->
             <h1 style="margin: 0;">🕵️‍♂️ شكونو هو؟</h1>
+            <button id="header-profile-btn" class="icon-btn" style="border-radius: 50%; padding: 0; overflow: hidden; width: 42px; height: 42px;">
+                <span id="header-avatar-placeholder">👤</span>
+                <img id="header-avatar-img" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;"/>
+            </button>
         </header>
 
-        <div class="menu-container">
-            <a href="games/impostor.html" class="menu-card">
-                <span class="menu-icon">🕵️‍♂️</span>
-                <div class="menu-info">
-                    <span class="menu-title">شكونو هو؟</span>
-                    <span class="menu-sub">كلمة، كذاب، وتصويت</span>
+        <section id="home-screen" class="screen">
+            <div class="menu-container" style="margin-top: 20px;">
+                <a href="games/impostor.html" class="menu-card">
+                    <span class="menu-icon">🕵️‍♂️</span>
+                    <div class="menu-info">
+                        <span class="menu-title">شكونو هو؟</span>
+                        <span class="menu-sub">كلمة، كذاب، وتصويت</span>
+                    </div>
+                </a>
+                <a href="games/spyfall.html" class="menu-card">
+                    <span class="menu-icon">🕶️</span>
+                    <div class="menu-info">
+                        <span class="menu-title">ماناش هوني</span>
+                        <span class="menu-sub">بلاصة، أدوار، وspy مخبي</span>
+                    </div>
+                </a>
+                <a href="games/coup.html" class="menu-card">
+                    <span class="menu-icon">👑</span>
+                    <div class="menu-info">
+                        <span class="menu-title">كول وبوّع</span>
+                        <span class="menu-sub">فلوس، تبلعيط، و"تكذب!"</span>
+                    </div>
+                </a>
+                <a href="games/chkobba.html" class="menu-card">
+                    <span class="menu-icon">🃏</span>
+                    <div class="menu-info">
+                        <span class="menu-title">شكبّة</span>
+                        <span class="menu-sub">كوارط، حساب، و"شكبّة!"</span>
+                    </div>
+                </a>
+            </div>
+        </section>
+
+        <section id="account-screen" class="screen" hidden aria-hidden="true">
+            <div class="surface-card profile-card" style="text-align: center; padding-top: 40px;">
+                <div class="profile-avatar-large">
+                    <span id="profile-avatar-placeholder">👤</span>
+                    <img id="profile-avatar-img" src="" style="display: none;"/>
                 </div>
-            </a>
-            <a href="games/spyfall.html" class="menu-card">
-                <span class="menu-icon">🕶️</span>
-                <div class="menu-info">
-                    <span class="menu-title">ماناش هوني</span>
-                    <span class="menu-sub">بلاصة، أدوار، وspy مخبي</span>
+                <h2 id="profile-name">لاعب ضيف</h2>
+                <p id="profile-email" style="font-size: 0.9rem; margin-top: -10px;"></p>
+                <button id="logout-btn" class="danger-btn" style="width: auto; margin: 10px auto; padding: 8px 20px; font-size: 0.9rem; background: transparent; color: var(--danger-color); border: 1px solid var(--danger-color);">تسجيل الخروج</button>
+            </div>
+
+            <div class="surface-card">
+                <h3 style="margin-bottom: 15px;">📊 إحصائياتك</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-icon">🕵️‍♂️</span>
+                        <span class="stat-label">شكونو هو؟</span>
+                        <span class="stat-value" id="stat-impostor">0 / 0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-icon">🕶️</span>
+                        <span class="stat-label">ماناش هوني</span>
+                        <span class="stat-value" id="stat-spyfall">0 / 0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-icon">👑</span>
+                        <span class="stat-label">كول وبوّع</span>
+                        <span class="stat-value" id="stat-coup">0 / 0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-icon">🃏</span>
+                        <span class="stat-label">شكبّة</span>
+                        <span class="stat-value" id="stat-chkobba">0 / 0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-icon">🎭</span>
+                        <span class="stat-label">سارق/حاكم</span>
+                        <span class="stat-value" id="stat-thief">0 / 0</span>
+                    </div>
                 </div>
-            </a>
-            <a href="games/coup.html" class="menu-card">
-                <span class="menu-icon">👑</span>
-                <div class="menu-info">
-                    <span class="menu-title">كول وبوّع</span>
-                    <span class="menu-sub">فلوس، تبلعيط، و"تكذب!"</span>
+            </div>
+
+            <div class="surface-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0;">👥 أصحابك</h3>
+                    <button onclick="_addFriend()" class="icon-btn" style="width: 36px; height: 36px; font-size: 1rem;">➕</button>
                 </div>
-            </a>
-            <a href="games/chkobba.html" class="menu-card">
-                <span class="menu-icon">🃏</span>
-                <div class="menu-info">
-                    <span class="menu-title">شكبّة</span>
-                    <span class="menu-sub">كوارط، حساب، و"شكبّة!"</span>
+                <div id="friends-list" class="friends-list">
+                    <p style="text-align: center; color: var(--text-muted); padding: 20px;">سجل دخولك باش تشوف أصحابك</p>
                 </div>
-            </a>
-        </div>
+            </div>
+
+            <button onclick="showScreen('home-screen')" class="secondary-btn" style="margin-top: 10px;">↩️ ارجع للرئيسية</button>
+        </section>
     </main>
+
+    <!-- LOGIN MODAL -->
+    <div id="login-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3 style="margin-top:0; color:var(--primary-color); font-size:1.6rem;">🔑 تسجيل الدخول</h3>
+            <p style="margin-bottom: 24px;">سجل دخولك باش تحفظ إحصائياتك وتلعب مع أصحابك</p>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <button onclick="_loginWithProvider('google')" class="primary-btn" style="background: #fff; color: #444; border: 1px solid #ddd; box-shadow: var(--shadow-soft);">
+                    <img src="https://www.google.com/favicon.ico" style="width: 20px; margin-left: 10px;"/>
+                    Google تسجيل الدخول بـ
+                </button>
+                <button onclick="_loginWithProvider('facebook')" class="primary-btn" style="background: #1877F2; color: #fff;">
+                    <span style="font-weight: bold; font-size: 1.2rem; margin-left: 10px;">f</span>
+                    Facebook تسجيل الدخول بـ
+                </button>
+            </div>
+            <button onclick="closeModal('login-modal')" class="secondary-btn" style="margin-top: 20px; border: none;">إلغاء</button>
+        </div>
+    </div>
+
+    <div id="toast-msg" class="toast"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="assets/js/core/state.js"></script>
+    <script src="assets/js/net/sync.js"></script>
+    <script src="assets/js/net/auth.js"></script>
+    <script src="assets/js/net/friends.js"></script>
     <script src="assets/js/shared.js"></script>
+    <script>
+        document.getElementById('header-profile-btn').addEventListener('click', () => {
+            if (window._currentUser) showScreen('account-screen');
+            else openModal('login-modal');
+        });
+
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            if (confirm('متأكد تحب تخرج؟')) _logout();
+        });
+
+        window._updateHeaderAvatar = function() {
+            const placeholder = document.getElementById('header-avatar-placeholder');
+            const img = document.getElementById('header-avatar-img');
+            if (window._currentUser && window._currentUser.user_metadata.avatar_url) {
+                placeholder.style.display = 'none';
+                img.src = window._currentUser.user_metadata.avatar_url;
+                img.style.display = 'block';
+            } else {
+                placeholder.style.display = 'block';
+                img.style.display = 'none';
+            }
+        }
+
+        window._renderAccountScreen = function() {
+            if (!window._currentUser) return;
+
+            document.getElementById('profile-name').innerText = window._myName || 'لاعب';
+            document.getElementById('profile-email').innerText = window._currentUser.email || '';
+
+            const pPlaceholder = document.getElementById('profile-avatar-placeholder');
+            const pImg = document.getElementById('profile-avatar-img');
+            if (window._currentUser.user_metadata.avatar_url) {
+                pPlaceholder.style.display = 'none';
+                pImg.src = window._currentUser.user_metadata.avatar_url;
+                pImg.style.display = 'block';
+            }
+
+            if (window._userProfile && window._userProfile.stats) {
+                const s = window._userProfile.stats;
+                if (s.impostor) document.getElementById('stat-impostor').innerText = `${s.impostor.wins} / ${s.impostor.games}`;
+                if (s.spyfall) document.getElementById('stat-spyfall').innerText = `${s.spyfall.wins} / ${s.spyfall.games}`;
+                if (s.coup) document.getElementById('stat-coup').innerText = `${s.coup.wins} / ${s.coup.games}`;
+                if (s.chkobba) document.getElementById('stat-chkobba').innerText = `${s.chkobba.wins} / ${s.chkobba.games}`;
+                if (s.thief) document.getElementById('stat-thief').innerText = `${s.thief.wins} / ${s.thief.games}`;
+            }
+        }
+    </script>
 </body>
 </html>
