@@ -88,16 +88,21 @@ function _thiefRoleMeta(role) {
 }
 
 
-function _handleStateChange(room) {
-    if (_lastHandledState && _lastHandledState !== room.state) {
-        const isToCoup = room.state === 'coup';
-        const isFromCoup = _lastHandledState === 'coup';
-        const isToLobby = room.state === 'lobby';
+let _lastAnimatedState = null;
 
-        if (isToCoup || (isFromCoup && isToLobby)) {
-            if (window._triggerCoupLogoAnimation) {
+function _handleStateChange(room) {
+    if (!room) return;
+
+    if (_lastHandledState !== room.state) {
+        // If transitioning to or from Coup, trigger the logo animation once
+        if (_lastAnimatedState !== room.state) {
+            _lastAnimatedState = room.state;
+            const isToCoup = room.state === 'coup';
+            const isFromCoup = _lastHandledState === 'coup';
+            const isToLobby = room.state === 'lobby';
+
+            if ((isToCoup || (isFromCoup && isToLobby)) && window._triggerCoupLogoAnimation) {
                 window._triggerCoupLogoAnimation(() => {
-                    _lastHandledState = null; // force re-run switch
                     _handleStateChange(room);
                 });
                 return;
