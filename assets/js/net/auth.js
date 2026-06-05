@@ -9,10 +9,19 @@ let _currentUser = null;
 let _userProfile = null;
 
 async function _loginWithProvider(provider) {
+    // Ensure redirect goes to index.html to avoid broken URLs on subpages
+    let redirectUrl = window.location.origin;
+    if (window.location.pathname.includes('/games/')) {
+        // If we are in a subfolder, go back to root
+        redirectUrl = window.location.origin + window.location.pathname.split('/games/')[0];
+    }
+    if (!redirectUrl.endsWith('/')) redirectUrl += '/';
+    redirectUrl += 'index.html';
+
     const { data, error } = await _supa.auth.signInWithOAuth({
         provider: provider,
         options: {
-            redirectTo: window.location.origin
+            redirectTo: redirectUrl
         }
     });
     if (error) {
@@ -52,8 +61,7 @@ async function _fetchProfile(userId) {
                         impostor: { wins: 0, games: 0 },
                         spyfall: { wins: 0, games: 0 },
                         coup: { wins: 0, games: 0 },
-                        chkobba: { wins: 0, games: 0 },
-                        thief: { wins: 0, games: 0 }
+                        chkobba: { wins: 0, games: 0 }
                     }
                 }])
                 .select()
@@ -70,6 +78,28 @@ async function _fetchProfile(userId) {
     } catch (e) {
         console.error('Error fetching profile:', e);
         return null;
+    }
+}
+
+async function _updateUsername(newName) {
+    if (!_currentUser || !newName) return;
+    const cleanName = newName.trim();
+    if (!cleanName) return;
+
+    const { data, error } = await _supa
+        .from('profiles')
+        .update({ username: cleanName })
+        .eq('id', _currentUser.id)
+        .select()
+        .single();
+
+    if (!error && data) {
+        _userProfile = data;
+        _saveOnlineName(cleanName);
+        if (typeof _renderAccountScreen === 'function') _renderAccountScreen();
+        _showToast('تم تحديث الاسم بنجاح');
+    } else {
+        _showToast('خطأ في تحديث الاسم');
     }
 }
 
@@ -136,4 +166,5 @@ _supa.auth.getSession().then(({ data: { session } }) => {
 
 window._loginWithProvider = _loginWithProvider;
 window._logout = _logout;
+window._updateUsername = _updateUsername;
 window._updateStats = _updateStats;
