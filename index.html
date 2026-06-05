@@ -181,6 +181,11 @@
     <script src="assets/js/net/friends.js"></script>
     <script src="assets/js/shared.js"></script>
     <script>
+        // Ensure home screen is visible on load
+        document.addEventListener('DOMContentLoaded', () => {
+            showScreen('home-screen');
+        });
+
         document.getElementById('header-profile-btn').addEventListener('click', () => {
             if (window._currentUser) showScreen('account-screen');
             else openModal('login-modal');
