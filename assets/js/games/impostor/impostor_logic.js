@@ -262,3 +262,6 @@ window.startImpostorOffline = startImpostorOffline;
 window.regularWordsDB       = regularWordsDB;
 window.adultWordsDB         = adultWordsDB;
 window.wordsDB              = regularWordsDB; // default; updated after load
+
+// Kick off word loading immediately
+loadWordLists();
