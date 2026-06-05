@@ -1,7 +1,0 @@
-127.0.0.1 - - [05/Jun/2026 17:04:23] "GET /index.html HTTP/1.1" 200 -
-127.0.0.1 - - [05/Jun/2026 17:04:24] "GET /assets/css/style.css HTTP/1.1" 200 -
-127.0.0.1 - - [05/Jun/2026 17:04:24] "GET /assets/js/core/state.js HTTP/1.1" 200 -
-127.0.0.1 - - [05/Jun/2026 17:04:24] "GET /assets/js/net/sync.js HTTP/1.1" 200 -
-127.0.0.1 - - [05/Jun/2026 17:04:24] "GET /assets/js/net/auth.js HTTP/1.1" 200 -
-127.0.0.1 - - [05/Jun/2026 17:04:24] "GET /assets/js/net/friends.js HTTP/1.1" 200 -
-127.0.0.1 - - [05/Jun/2026 17:04:24] "GET /assets/js/shared.js HTTP/1.1" 200 -

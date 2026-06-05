@@ -80,8 +80,8 @@
                         <span class="menu-sub">بلاصة، أدوار، وspy مخبي</span>
                     </div>
                 </a>
-                <a href="games/coup.html" class="menu-card">
-                    <span class="menu-icon">👑</span>
+                <a href="games/coup.html" class="menu-card" id="coup-menu-card">
+                    <span class="menu-icon"><i class="coup-icon-inline" style="font-size: 1.2em;"></i></span>
                     <div class="menu-info">
                         <span class="menu-title">كول وبوّع</span>
                         <span class="menu-sub">فلوس، تبلعيط، و"تكذب!"</span>
@@ -129,7 +129,7 @@
                         <span class="stat-value" id="stat-spyfall">0 / 0</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-icon">👑</span>
+                        <span class="stat-icon"><i class="coup-icon-inline"></i></span>
                         <span class="stat-label">كول وبوّع</span>
                         <span class="stat-value" id="stat-coup">0 / 0</span>
                     </div>
@@ -193,6 +193,17 @@
         // Ensure home screen is visible on load
         document.addEventListener('DOMContentLoaded', () => {
             showScreen('home-screen');
+
+            document.getElementById('coup-menu-card').addEventListener('click', (e) => {
+                e.preventDefault();
+                if (window._triggerCoupLogoAnimation) {
+                    window._triggerCoupLogoAnimation(() => {
+                        window.location.href = 'games/coup.html';
+                    });
+                } else {
+                    window.location.href = 'games/coup.html';
+                }
+            });
         });
 
         document.getElementById('header-profile-btn').addEventListener('click', () => {

@@ -133,6 +133,11 @@ window.triggerWinnerAnnouncement = triggerWinnerAnnouncement;
 // GAME MODE
 // ============================================================
 function setGameMode(mode, goSetup = true) {
+    if (mode === 'coup' && GameState.getCurrentGameMode() !== 'coup') {
+        window._triggerCoupLogoAnimation(() => setGameMode(mode, goSetup));
+        return;
+    }
+
     // Teardown the current game before switching
     const prevReg = window.GameRegistry?.[GameState.getCurrentGameMode()];
     if (typeof prevReg?.teardown === 'function') prevReg.teardown();
@@ -180,7 +185,7 @@ function updateGameModeUI() {
         ?.classList.toggle('hidden', currentGameMode !== 'coup');
     // Header title
     const title = document.querySelector('header h1');
-    if (title) title.innerText = meta.title || currentGameMode;
+    if (title) title.innerHTML = meta.title || currentGameMode;
     // Active switcher button
     document.querySelectorAll('.game-switch-option').forEach(btn =>
         btn.classList.toggle('active', btn.dataset.gameMode === currentGameMode));
@@ -380,7 +385,13 @@ async function initSharedSetup(gameMode) {
             const targetMode = btn.dataset.gameMode;
             document.getElementById('game-switch-menu')?.classList.add('hidden');
             // Navigate to that game's HTML file
-            window.location.href = `${targetMode}.html`;
+            if (targetMode === 'coup' && !window.location.pathname.includes('coup.html')) {
+                window._triggerCoupLogoAnimation(() => {
+                    window.location.href = `${targetMode}.html`;
+                });
+            } else {
+                window.location.href = `${targetMode}.html`;
+            }
         });
     });
     document.getElementById('back-to-mode-select-btn')?.addEventListener('click', () => {
@@ -586,3 +597,29 @@ async function initSharedSetup(gameMode) {
 }
 
 window.initSharedSetup = initSharedSetup;
+
+// ============================================================
+// COUP LOGO TRANSITION
+// ============================================================
+window._triggerCoupLogoAnimation = function(callback) {
+    let overlay = document.getElementById('coup-transition-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'coup-transition-overlay';
+        overlay.className = 'coup-transition-overlay';
+        const imgPath = window.location.pathname.includes('/games/') ? '../assets/images/coup_logo.png' : 'assets/images/coup_logo.png';
+        overlay.innerHTML = `<img src="${imgPath}" class="coup-transition-logo" id="coup-transition-logo" alt="Coup Logo">`;
+        document.body.appendChild(overlay);
+    }
+    const logo = document.getElementById('coup-transition-logo');
+    overlay.classList.add('active');
+    logo.classList.add('animate');
+
+    setTimeout(() => {
+        if (typeof callback === 'function') callback();
+        setTimeout(() => {
+            overlay.classList.remove('active');
+            logo.classList.remove('animate');
+        }, 600);
+    }, 2000);
+};

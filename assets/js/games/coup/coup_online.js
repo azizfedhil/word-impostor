@@ -1690,7 +1690,7 @@ function _renderOnlineCoupActions(room, state, me) {
     } else if (dyn.dukeRole === 'speculator') {
         dukeBtn = mk(`${window.CoupUI?.cardLabelHtml?.(dukeCard) || '🎰 الكلاب'}: تقمير`, 'speculatorGamble', 'primary-action', `تدوبلي فلوسك (${gain})`);
     } else {
-        dukeBtn = mk(`${window.CoupUI?.cardLabelHtml?.(dukeCard) || '👑 الشلغمي'} +3`, 'tax', 'primary-action', 'قول عندي الشلغمي');
+        dukeBtn = mk(`${window.CoupUI?.cardLabelHtml?.(dukeCard) || '<i class="coup-icon-inline"></i> الشلغمي'} +3`, 'tax', 'primary-action', 'قول عندي الشلغمي');
     }
 
     let captainBtn;

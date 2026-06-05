@@ -89,6 +89,22 @@ function _thiefRoleMeta(role) {
 
 
 function _handleStateChange(room) {
+    if (_lastHandledState && _lastHandledState !== room.state) {
+        const isToCoup = room.state === 'coup';
+        const isFromCoup = _lastHandledState === 'coup';
+        const isToLobby = room.state === 'lobby';
+
+        if (isToCoup || (isFromCoup && isToLobby)) {
+            if (window._triggerCoupLogoAnimation) {
+                window._triggerCoupLogoAnimation(() => {
+                    _lastHandledState = null; // force re-run switch
+                    _handleStateChange(room);
+                });
+                return;
+            }
+        }
+    }
+
     if (room?.state !== 'coup' && room?.state !== 'chkobba' && room?.state !== 'chkobba_tournament') {
         document.getElementById('coup-turn-indicator')?.classList.add('hidden');
     }
@@ -173,12 +189,14 @@ function _renderLobby(room) {
     const list = document.getElementById('lobby-players-list');
     list.innerHTML = '';
     const frag = document.createDocumentFragment();
+    const isCoup = _getRoomGameMode(room) === 'coup';
+    const hostIcon = isCoup ? '<i class="coup-icon-inline"></i> ' : '👑 ';
     room.players.forEach(p => {
         const online = _playerOnline(p);
         const div = document.createElement('div');
         div.className = 'lobby-item' + (online ? '' : ' player-offline');
         const isMe = p.id === _myId;
-        div.innerHTML = (p.isHost ? '👑 ' : '👤 ') + _esc(p.name) +
+        div.innerHTML = (p.isHost ? hostIcon : '👤 ') + _esc(p.name) +
             (isMe ? ' <span class="you-tag">أنا</span>' : '') +
             ` <span class="player-status ${online ? 'online' : 'offline'}" title="${online ? 'online' : 'offline'}">${online ? '●' : '○'}</span>`;
         if (isMe) {
@@ -532,6 +550,8 @@ function _rebuildChips(panel, room, screenId) {
     });
 
     const frag = document.createDocumentFragment();
+    const isCoup = _getRoomGameMode(room) === 'coup';
+    const hostIcon = isCoup ? '<i class="coup-icon-inline"></i>' : '👑';
     sorted.forEach(p => {
         const chip = document.createElement('div');
         chip.className = 'online-player-chip';
@@ -543,7 +563,7 @@ function _rebuildChips(panel, room, screenId) {
         if (_playerFigured(p)) chip.classList.add('figured-out');
 
         const status = !_playerOnline(p) ? '○' : p.eliminated ? '🚫' : p.vote !== null ? '🗳️' : p.hasSeenCard ? '✅' : '👤';
-        chip.innerHTML = `${p.isHost ? '👑' : status} <span>${_esc(p.name)}</span>${p.id===_myId?' <span class="you-tag">أنا</span>':''}${_playerFigured(p)?'<span class="figured-badge">🎯</span>':''}`;
+        chip.innerHTML = `${p.isHost ? hostIcon : status} <span>${_esc(p.name)}</span>${p.id===_myId?' <span class="you-tag">أنا</span>':''}${_playerFigured(p)?'<span class="figured-badge">🎯</span>':''}`;
         frag.appendChild(chip);
     });
     list.appendChild(frag);
