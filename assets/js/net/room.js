@@ -68,11 +68,6 @@ let _movingToVoting = false, _processingVotes = false;
 function _clearErr() { _err(''); }
 function _getLang(room) { return (room.config&&room.config.lang)||'tn'; }
 function _getTrans(room) { return i18n[_getLang(room)]; }
-function _getRoomGameMode(room) { return ['thief','spyfall','coup','chkobba'].includes(room?.config?.gameMode) ? room.config.gameMode : 'impostor'; }
-function _isThiefRoom(room) { return _getRoomGameMode(room) === 'thief'; }
-function _isSpyfallRoom(room) { return _getRoomGameMode(room) === 'spyfall'; }
-function _isCoupRoom(room) { return _getRoomGameMode(room) === 'coup'; }
-function _isChkobbaRoom(room) { return _getRoomGameMode(room) === 'chkobba'; }
 
 function _chkobbaMinPlayers(room) {
     const mode = room?.config?.chkobbaMode || '1v1';
@@ -462,11 +457,6 @@ window._checkAutoJoin              = _checkAutoJoin;
 window._clearErr                   = _clearErr;
 window._getLang                    = _getLang;
 window._getTrans                   = _getTrans;
-window._getRoomGameMode            = _getRoomGameMode;
-window._isThiefRoom                = _isThiefRoom;
-window._isSpyfallRoom              = _isSpyfallRoom;
-window._isCoupRoom                 = _isCoupRoom;
-window._isChkobbaRoom              = _isChkobbaRoom;
 window._lobbyMinPlayers            = _lobbyMinPlayers;
 window._playerOnline               = _playerOnline;
 window._playerFigured              = _playerFigured;

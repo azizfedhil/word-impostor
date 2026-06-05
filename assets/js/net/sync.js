@@ -79,3 +79,18 @@ window._myId = _myId;
 window._storeMyId = _storeMyId;
 window._saveOnlineName = _saveOnlineName;
 window._restoreOnlineName = _restoreOnlineName;
+
+// ── Game Mode Helpers ────────────────────────────────────────
+function _getRoomGameMode(room) {
+    return ['thief','spyfall','coup','chkobba'].includes(room?.config?.gameMode) ? room.config.gameMode : 'impostor';
+}
+function _isThiefRoom(room) { return _getRoomGameMode(room) === 'thief'; }
+function _isSpyfallRoom(room) { return _getRoomGameMode(room) === 'spyfall'; }
+function _isCoupRoom(room) { return _getRoomGameMode(room) === 'coup'; }
+function _isChkobbaRoom(room) { return _getRoomGameMode(room) === 'chkobba'; }
+
+window._getRoomGameMode = _getRoomGameMode;
+window._isThiefRoom     = _isThiefRoom;
+window._isSpyfallRoom   = _isSpyfallRoom;
+window._isCoupRoom      = _isCoupRoom;
+window._isChkobbaRoom   = _isChkobbaRoom;
