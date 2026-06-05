@@ -9,14 +9,21 @@ let _currentUser = null;
 let _userProfile = null;
 
 async function _loginWithProvider(provider) {
-    // Ensure redirect goes to index.html to avoid broken URLs on subpages
-    let redirectUrl = window.location.origin;
-    if (window.location.pathname.includes('/games/')) {
-        // If we are in a subfolder, go back to root
-        redirectUrl = window.location.origin + window.location.pathname.split('/games/')[0];
+    // Ensure redirect goes to index.html to avoid broken URLs on subpages.
+    // Handles subpaths (like GitHub Pages /word-impostor/) correctly.
+    let path = window.location.pathname;
+    // Remove filename if present
+    if (path.endsWith('.html')) {
+        path = path.substring(0, path.lastIndexOf('/') + 1);
     }
-    if (!redirectUrl.endsWith('/')) redirectUrl += '/';
-    redirectUrl += 'index.html';
+    // If in /games/ folder, move up to root
+    if (path.includes('/games/')) {
+        path = path.split('/games/')[0] + '/';
+    }
+    // Ensure trailing slash
+    if (!path.endsWith('/')) path += '/';
+
+    const redirectUrl = window.location.origin + path + 'index.html';
 
     const { data, error } = await _supa.auth.signInWithOAuth({
         provider: provider,
