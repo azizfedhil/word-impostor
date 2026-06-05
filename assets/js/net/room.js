@@ -54,17 +54,9 @@ function _syncedNow() {
     return Date.now() + _serverTimeOffset;
 }
 
-try { _myId = localStorage.getItem(ONLINE_PLAYER_ID_KEY) || sessionStorage.getItem(ONLINE_PLAYER_ID_KEY); } catch(_) {}
-if (!_myId) _myId = 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
-function _storeMyId(id) {
-    _myId = id;
-    try { sessionStorage.setItem(ONLINE_PLAYER_ID_KEY, id); } catch(_) {}
-    try { localStorage.setItem(ONLINE_PLAYER_ID_KEY, id); } catch(_) {}
-}
-_storeMyId(_myId);
 
 window.onlineMode = false;
-let _room = null, _channel = null, _isHost = false, _myName = '', _onlineTimer = null;
+let _room = null, _channel = null, _isHost = false, _onlineTimer = null;
 let _timerSyncTicker = null, _timerSyncState = null, _lastOnlineTimerSecond = null;
 let _votingTimer = null, _lastVotingTimerSecond = null;
 let _votingSyncTicker = null, _votingSyncState = null;
@@ -110,24 +102,9 @@ function _thiefRoleMeta(role) {
         witness: { label:'شاهد', icon:'👁️', desc:'إنت شاهد. عاون الحاكم بالكلام وما تكشفش برشة.' }
     }[role] || { label:'شاهد', icon:'👁️', desc:'إنت شاهد. عاون الحاكم.' };
 }
-function _saveOnlineName(name) {
-    const clean = (name || '').trim();
-    if (!clean) return;
-    try { localStorage.setItem(ONLINE_NAME_KEY, clean); } catch(_) {}
-}
 function _rememberLastRoom(code) {
     if (!code) return;
     try { localStorage.setItem(ONLINE_LAST_ROOM_KEY, code); } catch(_) {}
-}
-function _restoreOnlineName() {
-    try {
-        const saved = localStorage.getItem(ONLINE_NAME_KEY);
-        const input = document.getElementById('online-player-name');
-        if (saved && input && !input.value) input.value = saved;
-        const code = localStorage.getItem(ONLINE_LAST_ROOM_KEY);
-        const codeInput = document.getElementById('room-code-input');
-        if (code && codeInput && !codeInput.value) codeInput.value = code;
-    } catch(_) {}
 }
 
 function _sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }

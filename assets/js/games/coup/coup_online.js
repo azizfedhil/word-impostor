@@ -799,6 +799,15 @@ function _showOnlineCoup(room) {
     if (alive.length === 1 && !_coupWinnerAnnounced) {
         _coupWinnerAnnounced = true;
         window.triggerWinnerAnnouncement(alive[0].name);
+
+        // Update stats for logged in users
+        if (window._userProfile) {
+            const me = state.players.find(p => p.id === window._myId);
+            if (me) {
+                const won = alive[0].id === me.id;
+                window._updateStats('coup', won);
+            }
+        }
     } else if (alive.length > 1) {
         _coupWinnerAnnounced = false;
     }

@@ -2854,6 +2854,17 @@ function _endChkobbaRound(state, roomObj) {
         // Show final scoreboard first, then mark finished
         state.phase = 'finished';
         state.log = 'الطرح وفى!';
+
+        // Update stats for logged in users
+        if (window._userProfile) {
+            const me = state.players.find(p => p.id === window._myId);
+            if (me) {
+                const winnerPlayer = state.players.reduce((best, p) => (!best || p.totalScore > best.totalScore ? p : best), null);
+                const won = winnerPlayer && winnerPlayer.id === me.id;
+                window._updateStats('chkobba', won);
+            }
+        }
+
         // Clear captures/chkobbas after we've stored scores above
         state.players.forEach(p => { p.captured = []; p.chkobbas = 0; });
     } else {

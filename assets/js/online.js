@@ -217,6 +217,22 @@ function _renderLobby(room) {
     list.appendChild(frag);
     const n = room.players.length;
     const startBtn = document.getElementById('online-start-btn');
+
+    // Add friend invite section in lobby
+    if (window._currentUser) {
+        let inviteSect = document.getElementById('lobby-invite-section');
+        if (!inviteSect) {
+            inviteSect = document.createElement('div');
+            inviteSect.id = 'lobby-invite-section';
+            inviteSect.style.cssText = 'margin-top: 15px; padding: 12px; background: rgba(82,140,113,0.05); border-radius: 12px; border: 1px dashed var(--border-color);';
+            inviteSect.innerHTML = `
+                <div style="font-size: 0.85rem; font-weight: 800; color: var(--primary-color); margin-bottom: 8px;">استدعى أصحابك:</div>
+                <div id="lobby-invite-friends"></div>
+            `;
+            list.after(inviteSect);
+        }
+        if (typeof _renderLobbyInviteList === 'function') _renderLobbyInviteList();
+    }
     const waitMsg  = document.getElementById('lobby-wait-msg');
 
     // Remove stale settings UI before re-rendering
@@ -1215,7 +1231,31 @@ async function _processVotes(room) {
         .select()
         .maybeSingle();
     if (error) throw error;
-    if (data) { _room = data; _handleStateChange(data); }
+    if (data) {
+        _room = data;
+        _handleStateChange(data);
+
+        // Update stats for logged in users
+        if (_userProfile) {
+            const me = _me(data);
+            if (me) {
+                const mode = _getRoomGameMode(data);
+                let won = false;
+                if (mode === 'impostor') {
+                    won = (data.result && data.result.outcome === 'all_impostors_dead' && !me.isImpostor) ||
+                          (data.result && data.result.outcome === 'impostors_win' && me.isImpostor) ||
+                          (data.result && data.result.outcome === 'correct_guess' && !me.isImpostor);
+                } else if (mode === 'spyfall') {
+                    won = (data.result && data.result.outcome === 'spy_caught' && !me.isSpy) ||
+                          (data.result && data.result.outcome === 'spy_escaped' && me.isSpy);
+                } else if (mode === 'thief') {
+                    won = (data.result && data.result.outcome === 'thief_caught' && me.role !== 'thief') ||
+                          (data.result && data.result.outcome === 'thief_escaped' && me.role === 'thief');
+                }
+                _updateStats(mode, won);
+            }
+        }
+    }
     } catch(e) { console.error(e); }
     finally { _processingVotes = false; }
 }
