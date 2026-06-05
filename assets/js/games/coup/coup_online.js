@@ -27,7 +27,7 @@ let _onlineCoupResponseSync = null, _onlineCoupTurnSync = null;
 let _coupWinnerAnnounced = false;
 
 const ONLINE_COUP_RESPONSE_SECONDS = 30;
-// COUP_DEFAULT_ACTION_MINUTES is declared in coup_logic.js — do not re-declare here.
+// CONTESSA_DEFLECT_COST and COUP_DEFAULT_ACTION_MINUTES are declared in coup_logic.js — do not re-declare here.
 
 function _pulseScreenRed() {
     document.querySelector('.coup-red-pulse-overlay')?.remove();
@@ -446,7 +446,9 @@ function _onlineCoupBlockOptions(pending) {
 }
 
 function _onlineCoupPendingClaimantId(pending) {
-    return pending?.stage === 'block' ? pending.blockerId : pending?.actorId;
+    if (pending?.stage === 'block') return pending.blockerId;
+    if (pending?.stage === 'deflect') return pending.deflectorId;
+    return pending?.actorId;
 }
 
 function _onlineCoupPendingResponders(state, pending = state?.pending) {
@@ -535,6 +537,9 @@ function _onlineCoupContinueAfterLoss(state, next = { type:'nextTurn' }) {
         state.log = next.log || 'مازال تنجم تتسكر الأكشن.';
         _onlineCoupEvent(state, state.log, 'notice');
         return state;
+    }
+    if (next.type === 'acceptDeflect') {
+        return _onlineCoupAcceptDeflect(state, next.pending, next.pending.alreadyProven);
     }
     _onlineCoupNextTurn(state);
     return state;
@@ -748,6 +753,10 @@ async function _onlineCoupPendingTimeout() {
                 _onlineCoupEvent(state, state.log, 'good');
                 _onlineCoupNextTurn(state);
                 return state;
+            }
+            if (p.stage === 'deflect') {
+                state.pending = null;
+                return _onlineCoupAcceptDeflect(state, p);
             }
             state.pending = null;
             return _onlineCoupApplyActionLocal(state, p.action, p.targetId);
@@ -1070,18 +1079,35 @@ function _renderOnlineCoupPendingBanner(state, me) {
     const claimantId = _onlineCoupPendingClaimantId(p);
     const isClaimant = me?.id === claimantId;
     const isBlockStage = p.stage === 'block';
-    const canChallenge = me && !isClaimant && me.hand.some(c=>!c.lost) && (p.claim || isBlockStage);
+    const isDeflectStage = p.stage === 'deflect';
+    const isActionStage = !p.stage;
+
+    const canChallenge = me && !isClaimant && me.hand.some(c=>!c.lost) && (p.claim || isBlockStage || isDeflectStage);
     const isReactiveTax = p.action === 'reactiveTax';
-    const canBlock = me && !isBlockStage && p.blockable && me.id !== actor?.id && me.hand.some(c=>!c.lost) && (p.action === 'foreignAid' || isReactiveTax || !p.targetId || p.targetId === me.id);
+    const canBlock = me && me.hand.some(c=>!c.lost) && p.blockable && (
+        isActionStage && me.id !== actor?.id && (p.action === 'foreignAid' || isReactiveTax || !p.targetId || p.targetId === me.id)
+    );
+    const canDeflect = me && isActionStage && p.action === 'assassinate' && p.targetId === me.id &&
+                      (me.coins || 0) >= CONTESSA_DEFLECT_COST && p.canDeflect !== false;
+
     const canPass = me && !isClaimant && !(p.passes || []).includes(me.id);
     const passCount = _onlineCoupPassCount(state, p);
     const total = _onlineCoupPendingResponders(state, p).length;
     const esc = window.CoupUI?.escapeHtml || (x => x);
     const wrap = document.createElement('div');
     wrap.className = 'coup-pending-banner';
-    const blockerLine = isBlockStage
-        ? `<p>${esc(state.players.find(x=>x.id===p.blockerId)?.name || '')} قال يسكّر ب${_onlineCoupBlockRoleLabel(p.blockRole)}. أي لاعب ينجم يقول "تكذب".</p>`
-        : `<p>${target ? `${esc(target.name)} مستهدف. ` : ''}أي لاعب ينجم يقول "تكذب"${canBlock ? '، وإنت تنجم تسكّر بالكارتة المناسبة' : ''}.</p>`;
+
+    let blockerLine = '';
+    if (isBlockStage) {
+        blockerLine = `<p>${esc(state.players.find(x=>x.id===p.blockerId)?.name || '')} قال يسكّر ب${_onlineCoupBlockRoleLabel(p.blockRole)}. أي لاعب ينجم يقول "تكذب".</p>`;
+    } else if (isDeflectStage) {
+        const deflector = state.players.find(x=>x.id===p.deflectorId);
+        const deflectTarget = state.players.find(x=>x.id===p.deflectTargetId);
+        blockerLine = `<p>${esc(deflector?.name || '')} حوّل الاغتيال لـ${esc(deflectTarget?.name || '')}. أي لاعب ينجم يقول "تكذب".</p>`;
+    } else {
+        blockerLine = `<p>${target ? `${esc(target.name)} مستهدف. ` : ''}أي لاعب ينجم يقول "تكذب"${canBlock ? '، وإنت تنجم تسكّر بالكارتة المناسبة' : ''}${canDeflect ? '، ولا تحوّل الضربة' : ''}.</p>`;
+    }
+
     wrap.innerHTML = `
         <div class="coup-pending-title">قرار مباشر</div>
         <strong>${esc(state.log || '')}</strong>
@@ -1095,7 +1121,10 @@ function _renderOnlineCoupPendingBanner(state, me) {
         const btn = document.createElement('button');
         btn.className = 'coup-target-btn danger-action';
         btn.textContent = 'تكذب!';
-        btn.onclick = () => isBlockStage ? _onlineCoupChallengeBlock(me.id, p.id) : _onlineCoupChallenge(me.id, p.id);
+        btn.onclick = () => {
+            if (isBlockStage) _onlineCoupChallengeBlock(me.id, p.id);
+            else _onlineCoupChallenge(me.id, p.id);
+        };
         actions.appendChild(btn);
     }
     if (canBlock) {
@@ -1106,6 +1135,13 @@ function _renderOnlineCoupPendingBanner(state, me) {
             btn.onclick = () => _onlineCoupBlock(me.id, opt.role, p.id);
             actions.appendChild(btn);
         });
+    }
+    if (canDeflect) {
+        const btn = document.createElement('button');
+        btn.className = 'coup-target-btn primary-action';
+        btn.textContent = `🛡️ حوّل الاغتيال (${CONTESSA_DEFLECT_COST}🪙)`;
+        btn.onclick = () => _onlineCoupDeflectPickTarget(p.id);
+        actions.appendChild(btn);
     }
     if (canPass) {
         const btn = document.createElement('button');
@@ -1553,13 +1589,14 @@ function _renderOnlineCoupActions(room, state, me) {
             const blockStageButtons = `${canChallengeBlock ? '<button class="coup-target-btn danger-action" data-popup-challenge-block="1">تكذب على البلوك!</button>' : ''}`;
             const targetLine = target && !isBlockStage ? `<p class="coup-decision-hint">${esc(target.name)}، اختياراتك واضحة: سكّر بالكارتة المناسبة، ولا اتهمه بالتبلعيط.</p>` : '';
         const hasContessa = me && me.hand.some(c => !c.lost && c.type === 'contessa');
-        const isAssassinationTarget = p.action === 'assassinate' && p.targetId === me?.id && !isBlockStage;
+        const isAssassinationTarget = p.action === 'assassinate' && p.targetId === me?.id && !isBlockStage && !isDeflectStage;
         const isBureaucratTarget = p.action === 'bureaucratTax' && p.targetId === me?.id && !isBlockStage;
 
         const passButton = canPass ? '<button class="coup-target-btn quiet-action" data-popup-pass="1">ما عندي حتى اعتراض</button>' : '';
-        const buttons = `${canChallenge ? '<button class="coup-target-btn danger-action" data-popup-challenge="1">تكذب!</button>' : ''}${blockButtons}${blockStageButtons}${passButton}`;
+        const deflectButton = canDeflect ? `<button class="coup-target-btn primary-action" data-popup-deflect="1">🛡️ حوّل الاغتيال (${CONTESSA_DEFLECT_COST}🪙)</button>` : '';
+        const buttons = `${canChallenge ? '<button class="coup-target-btn danger-action" data-popup-challenge="1">تكذب!</button>' : ''}${blockButtons}${deflectButton}${blockStageButtons}${passButton}`;
 
-        let modalTitle = isBlockStage ? 'البلوك صحيح؟' : 'شنوة تعمل؟';
+        let modalTitle = isBlockStage ? 'البلوك صحيح؟' : (isDeflectStage ? 'التحويل صحيح؟' : 'شنوة تعمل؟');
         let modalBody = `<p>${esc(state.log)}</p>${targetLine}${_onlineCoupPendingTimerHtml(p)}<div class="coup-target-grid">${buttons}</div>`;
 
         if (isBureaucratTarget) {
@@ -1577,10 +1614,11 @@ function _renderOnlineCoupActions(room, state, me) {
                 </div>`;
         } else if (isAssassinationTarget && hasContessa) {
             modalTitle = "عندك 'البية'!";
-            modalBody = `<p style="font-size:1.2rem; font-weight:800; color:var(--primary-color);">عندك 'البية'، تحب تمنع روحك والا تسكت؟</p>
+            modalBody = `<p style="font-size:1.2rem; font-weight:800; color:var(--primary-color);">عندك 'البية'، تحب تمنع روحك، تحوّل الضربة، والا تسكت؟</p>
                          ${_onlineCoupPendingTimerHtml(p)}
                          <div class="coup-target-grid">
-                            <button class="coup-target-btn primary-action" data-popup-block="contessa">🛡️ استعمل البية</button>
+                            <button class="coup-target-btn primary-action" data-popup-block="contessa">🛡️ سكر بالبية</button>
+                            ${(me.coins >= CONTESSA_DEFLECT_COST && p.canDeflect !== false) ? `<button class="coup-target-btn primary-action" data-popup-deflect="1">🛡️ حوّل الاغتيال (${CONTESSA_DEFLECT_COST}🪙)</button>` : ''}
                             <button class="coup-target-btn danger-action" data-popup-challenge="1">تكذب!</button>
                             <button class="coup-target-btn quiet-action" data-popup-pass="1">اسكت</button>
                          </div>`;
@@ -1589,6 +1627,7 @@ function _renderOnlineCoupActions(room, state, me) {
         if (isBureaucratTarget || buttons || (isAssassinationTarget && hasContessa)) window.CoupUI?.showModal?.(modalTitle, modalBody, overlay => {
                 overlay.querySelector('[data-popup-challenge]')?.addEventListener('click', () => { window.CoupUI.closeModal(); _onlineCoupChallenge(me.id, p.id); });
                 overlay.querySelectorAll('[data-popup-block]').forEach(btn => btn.addEventListener('click', () => { window.CoupUI.closeModal(); _onlineCoupBlock(me.id, btn.dataset.popupBlock, p.id); }));
+                overlay.querySelector('[data-popup-deflect]')?.addEventListener('click', () => { window.CoupUI.closeModal(); _onlineCoupDeflectPickTarget(p.id); });
                 overlay.querySelector('[data-popup-challenge-block]')?.addEventListener('click', () => { window.CoupUI.closeModal(); _onlineCoupChallengeBlock(me.id, p.id); });
                 overlay.querySelector('[data-popup-pass]')?.addEventListener('click', () => { window.CoupUI.closeModal(); _onlineCoupPass(me.id, p.id); });
                 overlay.querySelector('[data-popup-bureaucrat-reject]')?.addEventListener('click', () => {
@@ -1982,47 +2021,61 @@ async function _onlineCoupChallenge(challengerId, pendingId = null) {
     await _onlineCoupMutateState(async state => {
         const p = state.pending;
         if (!p || p.stage === 'block' || !p.claim || (pendingId && p.id !== pendingId)) return null;
-        const actor = state.players.find(x=>x.id===p.actorId);
+        const isDeflectChallenge = p.stage === 'deflect';
+        const claimantId = _onlineCoupPendingClaimantId(p);
+        const claimant = state.players.find(x=>x.id===claimantId);
         const challenger = state.players.find(x=>x.id===challengerId);
         const th = _getOnlineCoupThresholds(state);
-        if (!actor || !challenger || challenger.id === actor.id || !_onlineCoupLiveCards(challenger).length) return null;
-        const hasIt = actor.hand.some(c=>!c.lost && c.type===p.claim);
+        if (!claimant || !challenger || challenger.id === claimant.id || !_onlineCoupLiveCards(challenger).length) return null;
+        const hasIt = claimant.hand.some(c=>!c.lost && c.type===p.claim);
         if (hasIt) {
-            _onlineCoupProveAndReplace(state, actor, p.claim);
-            state.log = `${challenger.name} طلع غالط! ${actor.name} عندو الكارتة. ${_onlineCoupWrong()}`;
-        _onlineCoupEvent(state, state.log, 'bad', { triggerNotLying: actor.name, notLyingCardType: p.claim });
-            const next = p.blockable ? _onlineCoupResumeBlockNext(p, actor.name) : { type:'applyAction', action:p.action, targetId:p.targetId };
+            _onlineCoupProveAndReplace(state, claimant, p.claim);
+            state.log = `${challenger.name} طلع غالط! ${claimant.name} عندو الكارتة. ${_onlineCoupWrong()}`;
+            _onlineCoupEvent(state, state.log, 'bad', { triggerNotLying: claimant.name, notLyingCardType: p.claim });
+
+            let next;
+            if (isDeflectChallenge) {
+                next = { type: 'acceptDeflect', pending: { ...p, alreadyProven: true } };
+            } else {
+                next = p.blockable ? _onlineCoupResumeBlockNext(p, claimant.name) : { type: 'applyAction', action: p.action, targetId: p.targetId };
+            }
             _onlineCoupRequestLoss(state, challengerId, 'طلعت غالط في التكذيب. اختار كارتة تخسرها.', next);
         } else {
+            const actor = state.players.find(x => x.id === p.actorId);
             // Rulebook: "If an action is successfully challenged the entire action fails,
             // and any coins paid as the cost of the action are returned to the player."
-            if (p.action === 'assassinate') {
+            if (p.action === 'assassinate' && !isDeflectChallenge) {
                 actor.coins += th.assassinate;
                 _onlineCoupTakeFromBank(state, th.assassinate);
             }
             // Speculator penalty: failed bluff transfers ALL of actor's coins to the challenger
-            if (p.action === 'speculatorGamble' && actor.coins > 0) {
-                const penalty = actor.coins;
+            if (p.action === 'speculatorGamble' && claimant.coins > 0) {
+                const penalty = claimant.coins;
                 challenger.coins += penalty;
-                actor.coins = 0;
-                state.log = `${actor.name} تڨبض يبوّع على الكُلّاب! ${_onlineCoupCaught()} خسر كارتة وكل فلوسو (${penalty}) راحت لـ${challenger.name}!`;
+                claimant.coins = 0;
+                state.log = `${claimant.name} تڨبض يبوّع على الكُلّاب! ${_onlineCoupCaught()} خسر كارتة وكل فلوسو (${penalty}) راحت لـ${challenger.name}!`;
             // taxAssignment bluff penalty: pay challenger the attempted tax amount
             } else if (p.action === 'taxAssignment' && p.taxType) {
-                const penalty = Math.min(1, actor.coins);
+                const penalty = Math.min(1, claimant.coins);
                 if (penalty > 0) {
-                    actor.coins -= penalty;
+                    claimant.coins -= penalty;
                     challenger.coins += penalty;
-                    state.log = `${actor.name} تڨبض يبوّع على سي فلان! ${_onlineCoupCaught()} يدفع ${penalty} فلوس لـ${challenger.name}!`;
+                    state.log = `${claimant.name} تڨبض يبوّع على سي فلان! ${_onlineCoupCaught()} يدفع ${penalty} فلوس لـ${challenger.name}!`;
                 } else {
-                    state.log = `${actor.name} تڨبض يبوّع على سي فلان! ${_onlineCoupCaught()} ما عندوش فلوس يدفعها.`;
+                    state.log = `${claimant.name} تڨبض يبوّع على سي فلان! ${_onlineCoupCaught()} ما عندوش فلوس يدفعها.`;
                 }
             } else if (p.action === 'reactiveTax') {
-                state.log = `${actor.name} تڨبض يبوّع على سي فلان! ${_onlineCoupCaught()}`;
+                state.log = `${claimant.name} تڨبض يبوّع على سي فلان! ${_onlineCoupCaught()}`;
+            } else if (isDeflectChallenge) {
+                claimant.coins += CONTESSA_DEFLECT_COST;
+                _onlineCoupTakeFromBank(state, CONTESSA_DEFLECT_COST);
+                state.log = `${claimant.name} حاول يحوّل الاغتيال وطلع يبوّع! ${_onlineCoupCaught()}`;
             } else {
-                state.log = `${actor.name} تڨبض يبوّع! ${_onlineCoupCaught()}`;
+                state.log = `${claimant.name} تڨبض يبوّع! ${_onlineCoupCaught()}`;
             }
             _onlineCoupEvent(state, state.log, 'bad');
-            _onlineCoupRequestLoss(state, actor.id, 'تكذّبت وما عندكش الكارتة. اختار كارتة تكشفها.', p.next || { type:'nextTurn' });
+            const lossNext = isDeflectChallenge ? { type: 'applyAction', action: 'assassinate', targetId: claimant.id } : (p.next || { type: 'nextTurn' });
+            _onlineCoupRequestLoss(state, claimant.id, 'تكذّبت وما عندكش الكارتة. اختار كارتة تكشفها.', lossNext);
         }
         return state;
     });
@@ -2062,6 +2115,9 @@ async function _onlineCoupPass(playerId = _myId, pendingId = null) {
                     return _onlineCoupApplyActionLocal(state, p.action, p.targetId);
                 }
                 _onlineCoupNextTurn(state);
+            } else if (p.stage === 'deflect') {
+                state.pending = null;
+                return _onlineCoupAcceptDeflect(state, p);
             } else {
                 return _onlineCoupApplyActionLocal(state, p.action, p.targetId);
             }
@@ -2149,6 +2205,88 @@ async function _onlineCoupChallengeBlock(challengerId = _myId, pendingId = null)
 }
 
 // ── Reactive Customs Officer tax (after assassination/coup/contessa block) ──────
+
+function _onlineCoupDeflectPickTarget(pendingId) {
+    const state = _room?.word_obj;
+    if (!state) return;
+    const p = state.pending;
+    if (!p || p.id !== pendingId) return;
+    const actor = state.players.find(x => x.id === p.actorId);
+    const targets = _onlineCoupAlive(state).filter(pl => pl.id !== _myId && pl.id !== actor.id);
+    const esc = window.CoupUI?.escapeHtml || (x => x);
+
+    window.CoupUI?.showModal?.('البية: اختار شكون تحوّل له الاغتيال',
+        `<p>باش تدفع ${CONTESSA_DEFLECT_COST} فرنك وتحوّل الاغتيال لواحد آخر. اللاعبين ينجموا يقولو "تكذب!" على البية.</p>
+         <div class="coup-target-grid">${targets.map(pl => `<button class="coup-target-btn" data-deflect-target="${pl.id}">${esc(pl.name)}</button>`).join('')}</div>`,
+        overlay => {
+            overlay.querySelectorAll('[data-deflect-target]').forEach(btn => btn.addEventListener('click', () => {
+                btn.disabled = true;
+                window.CoupUI.closeModal();
+                _onlineCoupDeflect(_myId, btn.dataset.deflectTarget, pendingId);
+            }));
+        }
+    );
+}
+
+async function _onlineCoupDeflect(deflectorId, deflectTargetId, pendingId) {
+    await _onlineCoupMutateState(async state => {
+        const p = state.pending;
+        if (!p || p.id !== pendingId || p.stage !== null || p.action !== 'assassinate') return null;
+        if (p.targetId !== deflectorId) return null;
+        const deflector = state.players.find(x => x.id === deflectorId);
+        const newTarget = state.players.find(x => x.id === deflectTargetId);
+        if (!deflector || !newTarget || (deflector.coins || 0) < CONTESSA_DEFLECT_COST) return null;
+
+        deflector.coins -= CONTESSA_DEFLECT_COST;
+        _onlineCoupPayBank(state, CONTESSA_DEFLECT_COST);
+
+        state.pending = {
+            ...p,
+            id: `p_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+            stage: 'deflect',
+            deflectorId,
+            deflectTargetId,
+            claim: 'contessa',
+            blockable: true,
+            blockRoles: ['contessa'],
+            passes: [],
+            canDeflect: false // cannot deflect a deflected assassination
+        };
+        _onlineCoupSetResponseDeadline(state.pending);
+        state.log = `${deflector.name} دفع ${CONTESSA_DEFLECT_COST} فرنك وقال عندي "البية" وحوّل الاغتيال لـ${newTarget.name}. تقدر تكذّبه!`;
+        _onlineCoupEvent(state, state.log, 'notice');
+        return state;
+    });
+}
+
+function _onlineCoupAcceptDeflect(state, p, alreadyProven = false) {
+    const deflector = state.players.find(x => x.id === p.deflectorId);
+    const newTarget = state.players.find(x => x.id === p.deflectTargetId);
+    const actor     = state.players.find(x => x.id === p.actorId);
+
+    // Prove and replace Contessa for deflector if they actually have it and haven't already proven it this turn
+    if (!alreadyProven && deflector && deflector.hand.some(c => !c.lost && c.type === 'contessa')) {
+        _onlineCoupProveAndReplace(state, deflector, 'contessa');
+    }
+
+    state.log = `البية حوّلت الاغتيال بنجاح. ${newTarget?.name || ''} توة هو المستهدف!`;
+    _onlineCoupEvent(state, state.log, 'good');
+
+    // Create a new pending for the assassination hitting the new target
+    state.pending = {
+        ...p,
+        id: `p_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        stage: null, // back to action stage (waiting for block/challenge)
+        targetId: p.deflectTargetId,
+        claim: null, // Original claim was already handled or not relevant now
+        blockable: true,
+        blockRoles: ['contessa'],
+        passes: [],
+        canDeflect: false // important: cannot deflect again
+    };
+    _onlineCoupSetResponseDeadline(state.pending);
+    return state;
+}
 
 async function _onlineCoupReactiveTaxRespond(claim, taxId = null) {
     // claim: true = claim customsOfficer, false = pass.
@@ -3114,22 +3252,41 @@ async function _onlineCoupAIAction(state, ai) {
 
 async function _onlineCoupAIResponse(state, ai) {
     const p = state.pending;
-    if (!p || p.passes.includes(ai.id)) return;
+    if (!p || (p.passes || []).includes(ai.id)) return;
 
     const roll = Math.random();
     const isTarget = p.targetId === ai.id;
-    const canBlock = !p.stage || p.stage === 'action';
+    const isDeflectTarget = p.deflectTargetId === ai.id;
+    const isActionStage = !p.stage;
 
-    if (p.stage === 'action') {
+    if (isActionStage) {
+        // AI chooses to deflect?
+        if (p.action === 'assassinate' && isTarget && p.canDeflect !== false && (ai.coins || 0) >= CONTESSA_DEFLECT_COST && roll < 0.3) {
+            const possibleDeflectTargets = _onlineCoupAlive(state).filter(pl => pl.id !== ai.id && pl.id !== p.actorId);
+            if (possibleDeflectTargets.length > 0) {
+                const target = possibleDeflectTargets[Math.floor(Math.random() * possibleDeflectTargets.length)];
+                await _onlineCoupDeflect(ai.id, target.id, p.id);
+                return;
+            }
+        }
+
         // Target can block with an appropriate role
-        if (canBlock && p.blockRoles?.length && (isTarget || !p.targetId || p.action === 'reactiveTax') && roll < 0.3) {
+        if (p.blockRoles?.length && (isTarget || !p.targetId || p.action === 'reactiveTax') && roll < 0.3) {
             await _onlineCoupBlock(ai.id, p.blockRoles[0], p.id);
         // Any player can block foreignAid with the dynamic duke-family role
-        } else if (canBlock && p.action === 'foreignAid' && !isTarget && roll < 0.15) {
+        } else if (p.action === 'foreignAid' && !isTarget && roll < 0.15) {
             const dyn2 = _onlineCoupDynamic(state);
             await _onlineCoupBlock(ai.id, dyn2.aidBlockRoles[0] || 'duke', p.id);
         // Challenge the claim (not on income/foreignAid/coup which have no claim)
         } else if (roll < 0.1 && p.claim && p.action !== 'income' && p.action !== 'foreignAid' && p.action !== 'coup') {
+            await _onlineCoupChallenge(ai.id, p.id);
+        } else {
+            await _onlineCoupPass(ai.id, p.id);
+        }
+    } else if (p.stage === 'deflect') {
+        // Challenge the deflection?
+        const challengeChance = isDeflectTarget ? 0.4 : 0.1;
+        if (roll < challengeChance) {
             await _onlineCoupChallenge(ai.id, p.id);
         } else {
             await _onlineCoupPass(ai.id, p.id);
@@ -3248,5 +3405,7 @@ window._onlineCoupPendingTimeout     = _onlineCoupPendingTimeout;
 window._startOnlineCoupTimer         = _startOnlineCoupTimer;
 window._onlineCoupDeck               = _onlineCoupDeck;
 window._onlineCoupReactiveTaxRespond = _onlineCoupReactiveTaxRespond;
+window._onlineCoupDeflect             = _onlineCoupDeflect;
+window._onlineCoupDeflectPickTarget   = _onlineCoupDeflectPickTarget;
 window.COUP_DEFAULT_ACTION_MINUTES   = COUP_DEFAULT_ACTION_MINUTES;
 window._getRandomTunisianName        = _getRandomTunisianName;
