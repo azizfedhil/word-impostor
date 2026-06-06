@@ -525,6 +525,8 @@ function _onlineCoupContinueAfterLoss(state, next = { type:'nextTurn' }) {
         return state;
     }
     if (next.type === 'applyAction') {
+        // Restore state.pending for estateClaim so pBackup captures it inside _onlineCoupApplyActionLocal
+        if (next._estatePending) state.pending = next._estatePending;
         return _onlineCoupApplyActionLocal(state, next.action, next.targetId);
     }
     if (next.type === 'resumeBlock') {
@@ -2045,6 +2047,11 @@ async function _onlineCoupChallenge(challengerId, pendingId = null) {
             let next;
             if (isDeflectChallenge) {
                 next = { type: 'acceptDeflect', pending: { ...p, alreadyProven: true } };
+            } else if (p.type === 'estateClaim') {
+                // Estate claim data must survive state.pending being cleared in _onlineCoupRequestLoss
+                // so we carry it in _estatePending for _onlineCoupContinueAfterLoss to restore
+                next = { type: 'applyAction', action: p.action, targetId: p.targetId,
+                         _estatePending: { type: 'estateClaim', claimantId: p.claimantId, eliminatedId: p.eliminatedId, coinsToClaim: p.coinsToClaim } };
             } else {
                 next = p.blockable ? _onlineCoupResumeBlockNext(p, claimant.name) : { type: 'applyAction', action: p.action, targetId: p.targetId };
             }
@@ -2636,7 +2643,7 @@ function _onlineCoupApplyActionLocal(state, action, targetId) {
     }
     // ── Expansion: Lawyer estate claim resolution (all passed, unchallenged) ────
     if (action === 'estateClaim') {
-        const p = state.pending;
+        const p = pBackup; // pBackup captures state.pending before it was nulled at the top of this function
         if (p && p.type === 'estateClaim') {
             const claimant = state.players.find(x => x.id === p.claimantId);
             const eliminated = state.players.find(x => x.id === p.eliminatedId);
