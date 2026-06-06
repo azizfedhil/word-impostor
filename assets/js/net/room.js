@@ -220,7 +220,7 @@ function _playerFigured(player) {
 function _figuredThresholdMet(room) {
     const alive = (room?.players || []).filter(p => !p.eliminated);
     if (!alive.length) return false;
-    const needed = Math.ceil(alive.length * 0.75);
+    const needed = Math.ceil(alive.length * 0.6);
     return alive.filter(_playerFigured).length >= needed;
 }
 

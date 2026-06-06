@@ -1079,13 +1079,16 @@ function _secondsLeftForRoom(room) {
 
 function _broadcastTimerSync(room) {
     if (!_isHost || !_channel || !room || room.state !== 'discussion') return;
-    const payload = { phase:'discussion', timerEndAt: room.timer_end_at, left: _hostSecondsLeft(room) };
+    const payload = { phase:'discussion', timerEndAt: room.timer_end_at, left: _secondsLeftForRoom(room) };
     const sent = _channel.send({ type:'broadcast', event:'timer-sync', payload });
     if (sent && typeof sent.catch === 'function') sent.catch(() => {});
 }
 
 function _handleTimerSync(payload) {
     if (_isHost || !_room || !payload) return;
+    if (payload.timerEndAt) {
+        _room.timer_end_at = payload.timerEndAt;
+    }
 }
 
 function _startClientTimer(room) {
